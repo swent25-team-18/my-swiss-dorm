@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SampleApp"
+rootProject.name = "my-swiss-dorm"
 include(":app")
  

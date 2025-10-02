@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.android.sample"
+    namespace = "com.android.mySwissDorm"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.android.sample"
+        applicationId = "com.android.mySwissDorm"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
@@ -91,20 +91,20 @@ android {
     }
 }
 
-sonar {
-    properties {
-        property("sonar.projectKey", "gf_android-sample")
-        property("sonar.projectName", "Android-Sample")
-        property("sonar.organization", "gabrielfleischer")
-        property("sonar.host.url", "https://sonarcloud.io")
-        // Comma-separated paths to the various directories containing the *.xml JUnit report files. Each path may be absolute or relative to the project base directory.
-        property("sonar.junit.reportPaths", "${project.layout.buildDirectory.get()}/test-results/testDebugunitTest/")
-        // Paths to xml files with Android Lint issues. If the main flavor is changed, this file will have to be changed too.
-        property("sonar.androidLint.reportPaths", "${project.layout.buildDirectory.get()}/reports/lint-results-debug.xml")
-        // Paths to JaCoCo XML coverage report files.
-        property("sonar.coverage.jacoco.xmlReportPaths", "${project.layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml")
-    }
-}
+//sonar {
+//    properties {
+//        property("sonar.projectKey", "gf_android-sample")
+//        property("sonar.projectName", "Android-Sample")
+//        property("sonar.organization", "gabrielfleischer")
+//        property("sonar.host.url", "https://sonarcloud.io")
+//        // Comma-separated paths to the various directories containing the *.xml JUnit report files. Each path may be absolute or relative to the project base directory.
+//        property("sonar.junit.reportPaths", "${project.layout.buildDirectory.get()}/test-results/testDebugunitTest/")
+//        // Paths to xml files with Android Lint issues. If the main flavor is changed, this file will have to be changed too.
+//        property("sonar.androidLint.reportPaths", "${project.layout.buildDirectory.get()}/reports/lint-results-debug.xml")
+//        // Paths to JaCoCo XML coverage report files.
+//        property("sonar.coverage.jacoco.xmlReportPaths", "${project.layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml")
+//    }
+//}
 
 // When a library is used both by robolectric and connected tests, use this function
 fun DependencyHandlerScope.globalTestImplementation(dep: Any) {

@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">My Swiss Dorm</string>
+    <string name="app_name">MySwissDorm</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_second">SecondActivity</string>
+    <string name="login_in_text">Log In</string>
+    <string name="create_account_text">Don\'t have an account? Sign up !</string>
 </resources>

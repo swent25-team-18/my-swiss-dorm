@@ -121,12 +121,11 @@ dependencies {
     testImplementation(libs.junit)
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)
-
     // ------------- Jetpack Compose ------------------
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     globalTestImplementation(composeBom)
-
+    implementation("androidx.compose.material:material-icons-extended:1.4.0")
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
     // Material Design 3

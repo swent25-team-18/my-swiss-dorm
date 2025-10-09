@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.authentification
 
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -44,7 +43,6 @@ fun SignInScreen(
 
   LaunchedEffect(uiState.user) {
     uiState.user?.let {
-      Log.d("MySwissDormLogIn", "LOGGGEEEEDD")
       onSignedIn()
     }
   }

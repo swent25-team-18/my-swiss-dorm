@@ -18,20 +18,20 @@ val Typography =
                 fontSize = 16.sp,
                 lineHeight = 24.sp,
                 letterSpacing = 0.5.sp),
-        titleLarge = TextStyle(
-            fontFamily = FontFamily(Font(R.font.lexend_giga_bold)),
-            fontWeight = FontWeight.Normal,
-            fontSize = 32.sp,
-            lineHeight = 28.sp,
-            letterSpacing = 0.sp
-        ),
-/* Other default text styles to override
-labelSmall = TextStyle(
-    fontFamily = FontFamily.Default,
-    fontWeight = FontWeight.Medium,
-    fontSize = 11.sp,
-    lineHeight = 16.sp,
-    letterSpacing = 0.5.sp
-)
-*/
+        titleLarge =
+            TextStyle(
+                fontFamily = FontFamily(Font(R.font.lexend_giga_bold)),
+                fontWeight = FontWeight.Normal,
+                fontSize = 32.sp,
+                lineHeight = 28.sp,
+                letterSpacing = 0.sp),
+        /* Other default text styles to override
+        labelSmall = TextStyle(
+            fontFamily = FontFamily.Default,
+            fontWeight = FontWeight.Medium,
+            fontSize = 11.sp,
+            lineHeight = 16.sp,
+            letterSpacing = 0.5.sp
         )
+        */
+    )

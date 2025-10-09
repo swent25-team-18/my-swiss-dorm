@@ -39,64 +39,55 @@ fun SignInScreen(
     authViewModel: SignInViewModel = viewModel(),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current)
 ) {
-    val context = LocalContext.current
-    val uiState by authViewModel.uiState.collectAsState()
+  val context = LocalContext.current
+  val uiState by authViewModel.uiState.collectAsState()
 
-    LaunchedEffect(uiState.user) {
-        uiState.user?.let {
-            Log.d("MySwissDormLogIn", "LOGGGEEEEDD")
-            onSignedIn()
-        }
+  LaunchedEffect(uiState.user) {
+    uiState.user?.let {
+      Log.d("MySwissDormLogIn", "LOGGGEEEEDD")
+      onSignedIn()
     }
+  }
 
-    Scaffold(modifier = Modifier
-        .fillMaxSize()
-        .testTag(C.Tag.SIGN_IN_SCREEN)) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Spacer(modifier = Modifier.height(160.dp))
-            Text(
-                text = stringResource(R.string.app_name),
-                style = Typography.titleLarge,
-                color = PalePink,
-                modifier = Modifier.testTag(C.Tag.SIGN_IN_APP_LOGO)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    if (!uiState.isLoading) {
-                        authViewModel.signIn(context, credentialManager)
-                    }
-                },
-                shape = RoundedCornerShape(4.dp),
-                colors =
-                    ButtonColors(
-                        containerColor = PalePink,
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.Transparent,
-                        disabledContentColor = Color.Transparent
-                    ),
-                modifier = Modifier.testTag(C.Tag.SIGN_IN_LOG_IN_BUTTON)
-            ) {
+  Scaffold(modifier = Modifier.fillMaxSize().testTag(C.Tag.SIGN_IN_SCREEN)) { padding ->
+    Column(
+        modifier = Modifier.padding(padding).fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center) {
+          Spacer(modifier = Modifier.height(160.dp))
+          Text(
+              text = stringResource(R.string.app_name),
+              style = Typography.titleLarge,
+              color = PalePink,
+              modifier = Modifier.testTag(C.Tag.SIGN_IN_APP_LOGO))
+          Spacer(modifier = Modifier.height(16.dp))
+          Button(
+              onClick = {
+                if (!uiState.isLoading) {
+                  authViewModel.signIn(context, credentialManager)
+                }
+              },
+              shape = RoundedCornerShape(4.dp),
+              colors =
+                  ButtonColors(
+                      containerColor = PalePink,
+                      contentColor = Color.White,
+                      disabledContainerColor = Color.Transparent,
+                      disabledContentColor = Color.Transparent),
+              modifier = Modifier.testTag(C.Tag.SIGN_IN_LOG_IN_BUTTON)) {
                 Text(text = stringResource(R.string.login_in_text))
-            }
-            Spacer(modifier = Modifier.height(256.dp))
-            TextButton(
-                onClick = onSignUp, modifier = Modifier.testTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON)
-            ) {
+              }
+          Spacer(modifier = Modifier.height(256.dp))
+          TextButton(
+              onClick = onSignUp, modifier = Modifier.testTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON)) {
                 Text(text = stringResource(R.string.create_account_text), color = Color.Gray)
-            }
+              }
         }
-    }
+  }
 }
 
 @Preview
 @Composable
 private fun SignInScreenPreview() {
-    SignInScreen()
+  SignInScreen()
 }

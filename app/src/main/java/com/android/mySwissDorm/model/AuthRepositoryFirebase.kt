@@ -11,6 +11,13 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.tasks.await
 
+/**
+ * A Firebase implementation of [AuthRepository]
+ *
+ * Retrieves a Google ID token via Credential Manager and authenticates the user with Firebase.
+ *
+ * @param auth the [FirebaseAuth] instance for Firebase authentification
+ */
 class AuthRepositoryFirebase(private val auth: FirebaseAuth = Firebase.auth) : AuthRepository {
   override suspend fun signInWithGoogle(credential: Credential): Result<FirebaseUser> {
     return try {

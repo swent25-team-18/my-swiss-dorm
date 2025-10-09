@@ -18,6 +18,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * This data class keeps information about the logging process
+ */
 data class AuthUIState(
     val isLoading: Boolean = false,
     val user: FirebaseUser? = null,
@@ -25,6 +28,11 @@ data class AuthUIState(
     val signedOut: Boolean = false
 )
 
+/**
+ * This is an implementation of a [ViewModel] for the [SignInScreen] compose element.
+ *
+ * @param repository is the authentification repository used in the app.
+ */
 class SignInViewModel(private val repository: AuthRepository = AuthRepositoryProvider.repository) :
     ViewModel() {
 
@@ -37,6 +45,9 @@ class SignInViewModel(private val repository: AuthRepository = AuthRepositoryPro
         .build()
   }
 
+  /**
+   * Handle the sign in event by trying to log in with a Google account.
+   */
   fun signIn(context: Context, credentialManager: CredentialManager) {
     if (_uiState.value.isLoading) return
 

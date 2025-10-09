@@ -31,6 +31,14 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.PalePink
 import com.android.mySwissDorm.ui.theme.Typography
 
+/**
+ * This compose element represents the Sign In screen of the application
+ *
+ * @param onSignedIn is the code executed after the user successfully signed in. It could be an instruction to navigate to another screen.
+ * @param onSignUp is the code executed if the user do not have an account in our application.
+ * @param authViewModel is an implementation of [androidx.lifecycle.ViewModel] for this view.
+ * @param credentialManager is the credential manager used in this app.
+ */
 @Composable
 fun SignInScreen(
     onSignedIn: () -> Unit = {},

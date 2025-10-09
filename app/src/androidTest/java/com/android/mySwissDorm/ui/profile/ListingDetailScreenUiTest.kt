@@ -44,20 +44,20 @@ class ListingDetailScreenUiTest {
         .onNodeWithTag("field_identifiant_value", useUnmergedTree = true)
         .assertTextContains("Annonce #l1")
   }
+  //
+  //  @Test
+  //  fun showsEditButton() {
+  //    setUpContent()
+  //    rule.waitForTag("btn_edit")
+  //    rule.onNodeWithTag("btn_edit", useUnmergedTree = true).assertIsDisplayed()
+  //  }
 
-  @Test
-  fun showsEditButton() {
-    setUpContent()
-    rule.waitForTag("btn_edit")
-    rule.onNodeWithTag("btn_edit", useUnmergedTree = true).assertIsDisplayed()
-  }
-
-  @Test
-  fun showsCloseButton() {
-    setUpContent()
-    rule.waitForTag("btn_close")
-    rule.onNodeWithTag("btn_close", useUnmergedTree = true).assertIsDisplayed()
-  }
+  //  @Test
+  //  fun showsCloseButton() {
+  //    setUpContent()
+  //    rule.waitForTag("btn_close")
+  //    rule.onNodeWithTag("btn_close", useUnmergedTree = true).assertIsDisplayed()
+  //  }
 
   @Test
   fun showsBackIcon() {

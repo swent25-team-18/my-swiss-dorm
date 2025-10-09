@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.model.city
 
 import android.location.Location
+import com.android.mySwissDorm.R
 
 /** Represents a repository that manages a local list of todos. */
 class CitiesRepositoryLocal : CitiesRepository {
@@ -11,7 +12,8 @@ class CitiesRepositoryLocal : CitiesRepository {
             location = Location("manual").apply {
                 latitude = 46.5197
                 longitude = 6.6323
-            }
+            },
+            imageId = R.drawable.lausanne
         ),
         City(
             name = CityName.GENEVA,
@@ -19,7 +21,8 @@ class CitiesRepositoryLocal : CitiesRepository {
             location = Location("manual").apply {
                 latitude = 46.2044
                 longitude = 6.1432
-            }
+            },
+            R.drawable.geneve
         ),
         City(
             name = CityName.ZURICH,
@@ -27,7 +30,8 @@ class CitiesRepositoryLocal : CitiesRepository {
             location = Location("manual").apply {
                 latitude = 47.3769
                 longitude = 8.5417
-            }
+            },
+            R.drawable.zurich
         ),
         City(
             name = CityName.FRIBOURG,
@@ -35,7 +39,8 @@ class CitiesRepositoryLocal : CitiesRepository {
             location = Location("manual").apply {
                 latitude = 46.8065
                 longitude = 7.16197
-            }
+            },
+            R.drawable.fribourg
         )
     )
 

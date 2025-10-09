@@ -1,11 +1,13 @@
 package com.android.mySwissDorm.model.city
 
 import android.location.Location
+import android.media.Image
 
 data class City(
     val name: CityName,
     val description: String,
     val location: Location?,
+    val imageId: Int
 )
 
 enum class CityName(val value: String) {

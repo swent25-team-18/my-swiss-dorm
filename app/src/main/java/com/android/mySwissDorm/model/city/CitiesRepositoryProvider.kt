@@ -5,7 +5,7 @@ package com.android.mySwissDorm.model.city
  * purposes.
  */
 object CitiesRepositoryProvider {
-    private val _repository: CitiesRepository by lazy { CitiesRepositoryLocal() }
+  private val _repository: CitiesRepository by lazy { CitiesRepositoryLocal() }
 
-    var repository: CitiesRepository = _repository
+  var repository: CitiesRepository = _repository
 }

@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.model.city
 
 import android.location.Location
-import android.media.Image
 
 data class City(
     val name: CityName,

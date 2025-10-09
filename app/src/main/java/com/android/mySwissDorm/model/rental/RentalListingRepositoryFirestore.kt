@@ -39,8 +39,7 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
 
   override suspend fun getRentalListing(rentalPostId: String): RentalListing {
     val document =
-        rentalListingDb.collection(RENTAL_LISTINGS_COLLECTION).
-        document(rentalPostId).get().await()
+        rentalListingDb.collection(RENTAL_LISTINGS_COLLECTION).document(rentalPostId).get().await()
     return documentToRentalListing(document)
         ?: throw Exception("RentalListingRepositoryFirestore: Rental listing not found")
   }
@@ -62,8 +61,7 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
   }
 
   override suspend fun deleteRentalListing(rentalPostId: String) {
-    rentalListingDb.collection(RENTAL_LISTINGS_COLLECTION).
-    document(rentalPostId).delete().await()
+    rentalListingDb.collection(RENTAL_LISTINGS_COLLECTION).document(rentalPostId).delete().await()
   }
 
   /**
@@ -78,10 +76,14 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
       val title = document.getString("title") ?: return null
       val description = document.getString("description") ?: return null
       val postedAt = document.getTimestamp("postedAt") ?: return null
+      val roomType = document.get("roomType") as? RoomType ?: return null
+      val pricePerMonth = document.getDouble("pricePerMonth") ?: return null
+      val areaInM2 = document.getLong("areaInM2")?.toInt() ?: return null
+      val startDate = document.getTimestamp("startDate") ?: return null
       val statusString = document.getString("status") ?: return null
       val status = RentalStatus.valueOf(statusString)
       val ownerId = document.getString("ownerId") ?: return null
-      val imageUrl = document.getString("imageUrl") ?: return null
+      val imageUrls = document.get("imageUrls") as? List<String> ?: emptyList()
       val residencyMap = document.get("residency") as? Map<*, *>
       val residency =
           residencyMap?.let {
@@ -96,23 +98,26 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
             )
           }
       if (residency == null) {
-        Log.e("RentalListingRepository",
-            "Failed to parse residency from document: $document")
+        Log.e("RentalListingRepository", "Failed to parse residency from document: $document")
         return null
       } else {
         RentalListing(
             uid = uid,
-            title = title,
-            description = description,
-            postedAt = postedAt,
-            status = status,
             ownerId = ownerId,
-            imageUrl = imageUrl,
-            residency = residency)
+            postedAt = postedAt,
+            residency = residency,
+            title = title,
+            roomType = roomType,
+            description = description,
+            pricePerMonth = pricePerMonth,
+            areaInM2 = areaInM2,
+            startDate = startDate,
+            imageUrls = imageUrls,
+            status = status,
+        )
       }
     } catch (e: Exception) {
-      Log.e("RentalListingsRepositoryFirestore",
-          "Error converting document to RentalListing", e)
+      Log.e("RentalListingsRepositoryFirestore", "Error converting document to RentalListing", e)
       null
     }
   }

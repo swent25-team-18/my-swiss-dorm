@@ -11,7 +11,7 @@ data class Residency(
     val city: CityName,
     val email: String?,
     val phone: String?,
-    val website: URL,
+    val website: URL?,
 )
 
 enum class ResidencyName(val value: String) {
@@ -23,7 +23,9 @@ enum class ResidencyName(val value: String) {
   CUG("Cité Universitaire de Genève"),
   WOKO("WOKO"),
   ETHZSH("ETH Zurich Student Housing"),
-  PRIVATE("Private Accommodation"),;
+  PRIVATE("Private Accommodation"),
+  ;
+
   override fun toString(): String {
     return value
   }

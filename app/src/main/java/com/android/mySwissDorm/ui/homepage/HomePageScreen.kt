@@ -51,130 +51,98 @@ fun HomePageScreen(
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
     onSelectCity: (City) -> Unit = {},
 ) {
-    val uiState by homePageViewModel.uiState.collectAsState()
+  val uiState by homePageViewModel.uiState.collectAsState()
 
-    Scaffold(
-        bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                HorizontalDivider(
-                    color = Color.Gray,
-                    thickness = 1.dp,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Box(
-                    modifier = Modifier.padding(vertical = 12.dp)
-                ) {
-                    Text(
-                        modifier = Modifier.clickable {
-                            /* TODO: Implement the Contact Support functionnality */
-                        },
-                        text = "Contact Support",
-                        color = Color.Gray
-                    )
-                }
-            }
-
-        }
-    ) { paddingValues ->
-        var inputText by remember { mutableStateOf("") }
+  Scaffold(
+      bottomBar = {
         Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                contentAlignment = Alignment.Center
-            ) {
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center) {
+              HorizontalDivider(
+                  color = Color.Gray, thickness = 1.dp, modifier = Modifier.fillMaxWidth())
+              Box(modifier = Modifier.padding(vertical = 12.dp)) {
+                Text(
+                    modifier =
+                        Modifier.clickable {
+                          /* TODO: Implement the Contact Support functionnality */
+                        },
+                    text = "Contact Support",
+                    color = Color.Gray)
+              }
+            }
+      }) { paddingValues ->
+        var inputText by remember { mutableStateOf("") }
+        Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+          Box(
+              modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+              contentAlignment = Alignment.Center) {
                 TextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp, horizontal = 32.dp)
-                        .border(2.dp, Color.Black, RoundedCornerShape(20.dp)),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(vertical = 8.dp, horizontal = 32.dp)
+                            .border(2.dp, Color.Black, RoundedCornerShape(20.dp)),
                     value = inputText,
                     onValueChange = { inputText = it },
                     placeholder = { Text("Browse", fontSize = 18.sp) },
                     leadingIcon = {
-                        Icon(
-                            Icons.Default.Search,
-                            modifier = Modifier.size(30.dp),
-                            contentDescription = "Search",
-                            tint = Color(0xFFFF6666)
-                        )
+                      Icon(
+                          Icons.Default.Search,
+                          modifier = Modifier.size(30.dp),
+                          contentDescription = "Search",
+                          tint = Color(0xFFFF6666))
                     },
                     singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent
-                    )
-                )
-            }
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
-                    .padding(top = 10.dp)
-            ) {
+                    colors =
+                        TextFieldDefaults.colors(
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent))
+              }
+          LazyColumn(
+              modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).padding(top = 10.dp)) {
                 items(uiState.cities.size) { index ->
-                    val city = uiState.cities[index]
-                    if (city.name.value.contains(inputText, ignoreCase = true)
-                        || city.description.contains(inputText, ignoreCase = true)) {
-                        CityCard(city = city, onClick = { onSelectCity(city) } )
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
+                  val city = uiState.cities[index]
+                  if (city.name.value.contains(inputText, ignoreCase = true) ||
+                      city.description.contains(inputText, ignoreCase = true)) {
+                    CityCard(city = city, onClick = { onSelectCity(city) })
+                    Spacer(modifier = Modifier.height(16.dp))
+                  }
                 }
-            }
+              }
         }
-    }
+      }
 }
 
 @Composable
 fun CityCard(city: City, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .border(2.dp, Color.Black, RoundedCornerShape(10.dp))
-            .clickable { onClick },
-    ) {
-        Box {
-            Image(
-                painter = painterResource(city.imageId),
-                contentDescription = city.name.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopStart)
-                    .padding(8.dp)
-            ) {
-                Text(
-                    text = city.name.value,
-                    color = Color.Black,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 20.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    modifier = Modifier.fillMaxWidth(0.9f),
-                    text = city.description,
-                    color = Color.Black,
-                    fontSize = 12.sp
-                )
-            }
-        }
+  Card(
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(vertical = 6.dp)
+              .border(2.dp, Color.Black, RoundedCornerShape(10.dp))
+              .clickable { onClick },
+  ) {
+    Box {
+      Image(
+          painter = painterResource(city.imageId),
+          contentDescription = city.name.name,
+          contentScale = ContentScale.Crop,
+          modifier = Modifier.fillMaxWidth().height(180.dp))
+      Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(8.dp)) {
+        Text(
+            text = city.name.value,
+            color = Color.Black,
+            fontWeight = FontWeight.Black,
+            fontSize = 20.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            modifier = Modifier.fillMaxWidth(0.9f),
+            text = city.description,
+            color = Color.Black,
+            fontSize = 12.sp)
+      }
     }
+  }
 }

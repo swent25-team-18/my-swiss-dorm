@@ -2,7 +2,9 @@ package com.android.mySwissDorm.ui.profile
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -41,12 +43,16 @@ fun ListingDetailScreen(id: String, onBack: () -> Unit) {
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color.White, titleContentColor = Color.Black))
       }) { inner ->
+        val scroll = rememberScrollState()
+
         Column(
             modifier =
-                Modifier.padding(inner).fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
+                Modifier.padding(inner)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .verticalScroll(scroll), // <-- make content scrollable
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               // Champs façon “formulaire” plein largeur (comme la 1ère photo)
-
               FieldBlock(label = "Identifiant", value = "Annonce #$id", tag = "field_identifiant")
               FieldBlock(label = "Titre", value = "Titre de l’annonce", tag = "field_title")
 

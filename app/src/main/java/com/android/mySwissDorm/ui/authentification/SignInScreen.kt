@@ -34,7 +34,8 @@ import com.android.mySwissDorm.ui.theme.Typography
 /**
  * This compose element represents the Sign In screen of the application
  *
- * @param onSignedIn is the code executed after the user successfully signed in. It could be an instruction to navigate to another screen.
+ * @param onSignedIn is the code executed after the user successfully signed in. It could be an
+ *   instruction to navigate to another screen.
  * @param onSignUp is the code executed if the user do not have an account in our application.
  * @param authViewModel is an implementation of [androidx.lifecycle.ViewModel] for this view.
  * @param credentialManager is the credential manager used in this app.
@@ -49,11 +50,7 @@ fun SignInScreen(
   val context = LocalContext.current
   val uiState by authViewModel.uiState.collectAsState()
 
-  LaunchedEffect(uiState.user) {
-    uiState.user?.let {
-      onSignedIn()
-    }
-  }
+  LaunchedEffect(uiState.user) { uiState.user?.let { onSignedIn() } }
 
   Scaffold(modifier = Modifier.fillMaxSize().testTag(C.Tag.SIGN_IN_SCREEN)) { padding ->
     Column(

@@ -18,9 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * This data class keeps information about the logging process
- */
+/** This data class keeps information about the logging process */
 data class AuthUIState(
     val isLoading: Boolean = false,
     val user: FirebaseUser? = null,
@@ -45,9 +43,7 @@ class SignInViewModel(private val repository: AuthRepository = AuthRepositoryPro
         .build()
   }
 
-  /**
-   * Handle the sign in event by trying to log in with a Google account.
-   */
+  /** Handle the sign in event by trying to log in with a Google account. */
   fun signIn(context: Context, credentialManager: CredentialManager) {
     if (_uiState.value.isLoading) return
 

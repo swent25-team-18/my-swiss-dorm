@@ -3,9 +3,7 @@ package com.android.mySwissDorm.model
 import androidx.credentials.Credential
 import com.google.firebase.auth.FirebaseUser
 
-/**
- * Handles authentification operations
- */
+/** Handles authentification operations */
 interface AuthRepository {
   /**
    * Signs in the user using a Google account through the Credential Manager API.

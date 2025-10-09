@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.profile
 
 import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,6 +14,12 @@ class ProfileContributionsFlowTest {
 
   @get:Rule val rule = createComposeRule()
 
+  // Helper to wait for a tag
+  @OptIn(ExperimentalTestApi::class)
+  private fun ComposeContentTestRule.waitForTag(tag: String, timeoutMs: Long = 5_000) {
+    waitUntilAtLeastOneExists(hasTestTag(tag), timeoutMs)
+  }
+
   private fun setContentWithTestNavHost() {
     rule.setContent {
       MySwissDormAppTheme {
@@ -20,14 +27,14 @@ class ProfileContributionsFlowTest {
 
         NavHost(navController = nav, startDestination = "profile") {
           composable("profile") {
-            // two demo items so _0 => listing, _1 => request
+            // Two demo items so _0 ⇒ listing, _1 ⇒ request
             val items =
                 listOf(
                     Contribution("Annonce l1", "Jolie chambre proche EPFL"),
                     Contribution("Demande r1", "Étudiant intéressé par une chambre"))
             ProfileContributionsScreen(
                 contributions = items,
-                onBackClick = {}, // not used in test
+                onBackClick = {},
                 onContributionClick = { c ->
                   if (c.title.startsWith("Demande", ignoreCase = true)) {
                     nav.navigate("request/${c.title}")
@@ -53,12 +60,17 @@ class ProfileContributionsFlowTest {
   fun openListingDetail_thenBack_toProfile() {
     setContentWithTestNavHost()
 
-    rule.onNodeWithText("Mes contributions").assertIsDisplayed()
+    // Wait for list/button to appear, then click
+    rule.waitForTag("btn_contrib_details_0")
     rule.onNodeWithTag("btn_contrib_details_0").performClick()
 
+    // Wait for detail, assert, then back
+    rule.waitForTag("field_identifiant")
     rule.onNodeWithTag("field_identifiant").assertIsDisplayed()
+
     rule.onNodeWithTag("nav_back").performClick()
 
+    // List again
     rule.onNodeWithText("Mes contributions").assertIsDisplayed()
   }
 
@@ -66,9 +78,12 @@ class ProfileContributionsFlowTest {
   fun openRequestDetail_thenBack_toProfile() {
     setContentWithTestNavHost()
 
+    rule.waitForTag("btn_contrib_details_1")
     rule.onNodeWithTag("btn_contrib_details_1").performClick()
 
+    rule.waitForTag("req_field_identifiant")
     rule.onNodeWithTag("req_field_identifiant").assertIsDisplayed()
+
     rule.onNodeWithTag("nav_back").performClick()
 
     rule.onNodeWithText("Mes contributions").assertIsDisplayed()

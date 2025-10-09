@@ -69,7 +69,13 @@ fun HomePageScreen(
                 Box(
                     modifier = Modifier.padding(vertical = 12.dp)
                 ) {
-                    Text("Contact Support", color = Color.Gray)
+                    Text(
+                        modifier = Modifier.clickable {
+                            /* TODO: Implement the Contact Support functionnality */
+                        },
+                        text = "Contact Support",
+                        color = Color.Gray
+                    )
                 }
             }
 
@@ -120,7 +126,8 @@ fun HomePageScreen(
             ) {
                 items(uiState.cities.size) { index ->
                     val city = uiState.cities[index]
-                    if (city.name.value.contains(inputText, ignoreCase = true)) {
+                    if (city.name.value.contains(inputText, ignoreCase = true)
+                        || city.description.contains(inputText, ignoreCase = true)) {
                         CityCard(city = city, onClick = { onSelectCity(city) } )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
@@ -159,6 +166,13 @@ fun CityCard(city: City, onClick: () -> Unit) {
                     color = Color.Black,
                     fontWeight = FontWeight.Black,
                     fontSize = 20.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    text = city.description,
+                    color = Color.Black,
+                    fontSize = 12.sp
                 )
             }
         }

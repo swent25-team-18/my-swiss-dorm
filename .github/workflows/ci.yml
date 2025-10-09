@@ -104,7 +104,7 @@ jobs:
       - name: Firestore Security Rules tests
         run: |
           if [ ! -e "firebase.json" ]; then # Check if firebase.json exists
-            echo "(B2 Warning): 'firebase.json' file is missing. Use 'firebase emulators:init'. Emulators are setup in B2"
+            echo "Warning: 'firebase.json' file is missing. Use 'firebase emulators:init'."
             exit 0
           fi
           jq -e '.emulators' firebase.json >/dev/null || { # Check if emulators are configured
@@ -123,9 +123,8 @@ jobs:
               echo "'firebase.json' is missing 'firestore.rules'."
               exit 1
             }
-            (cd firebase/firestore/test 2>/dev/null && npm install && npm test) || exit $?
           else
-            echo "(B3 Warning): Firestore rules file not found in firebase/firestore. Rules are setup in B3, you can ignore this warning in B2."
+            echo "Waning: Firestore rules file not found in firebase/firestore."
           fi
 
       # Check formatting

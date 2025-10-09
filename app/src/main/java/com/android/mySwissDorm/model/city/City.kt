@@ -3,16 +3,15 @@ package com.android.mySwissDorm.model.city
 import android.location.Location
 
 data class City(
-    val uid: String,
-    val name: CitiesNames,
+    val name: CityName,
     val description: String,
     val location: Location?,
 )
 
-enum class CitiesNames(val value: String) {
+enum class CityName(val value: String) {
   LAUSANNE("Lausanne"),
   GENEVA("Geneva"),
-  ZÜRICH("Zürich"),
+  ZURICH("Zürich"),
   FRIBOURG("Fribourg"),
   ;
 

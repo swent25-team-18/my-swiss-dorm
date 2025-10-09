@@ -9,7 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.AuthRepository
-import com.android.mySwissDorm.model.AuthRepositoryFirebase
+import com.android.mySwissDorm.model.AuthRepositoryProvider
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +25,7 @@ data class AuthUIState(
     val signedOut: Boolean = false
 )
 
-class SignInViewModel(private val repository: AuthRepository = AuthRepositoryFirebase()): ViewModel() {
+class SignInViewModel(private val repository: AuthRepository = AuthRepositoryProvider.repository): ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUIState())
     val uiState: StateFlow<AuthUIState> = _uiState.asStateFlow()

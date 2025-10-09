@@ -120,8 +120,10 @@ fun HomePageScreen(
             ) {
                 items(uiState.cities.size) { index ->
                     val city = uiState.cities[index]
-                    CityCard(city = city, onClick = { onSelectCity(city) } )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    if (city.name.value.contains(inputText, ignoreCase = true)) {
+                        CityCard(city = city, onClick = { onSelectCity(city) } )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }

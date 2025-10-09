@@ -1,19 +1,17 @@
 package com.android.mySwissDorm.model.rental
 
-import android.location.Location
-import com.android.mySwissDorm.model.residency.ResidencyName
+import com.android.mySwissDorm.model.residency.Residency
 import com.google.firebase.Timestamp
 
-data class Rental(
+data class RentalListing(
     val uid: String,
     val title: String,
     val description: String,
-    val dueDate: Timestamp,
-    val location: Location?,
+    val postedAt: Timestamp,
     val status: RentalStatus,
     val ownerId: String,
     val imageUrl: String,
-    val residency: ResidencyName
+    val residency: Residency
 )
 
 enum class RentalStatus {

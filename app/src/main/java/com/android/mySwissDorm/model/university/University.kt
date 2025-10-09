@@ -14,14 +14,15 @@ data class University(
 )
 
 enum class UniversityNames(val value: String) {
-    EPFL("EPFL"),
-    UNIL("UNIL"),
-    UNIGE("UNIGE"),
-    ETHZ("ETHZ"),
-    UZH("UZH"),
-    UNIFR("UNIFR"),;
+  EPFL("EPFL"),
+  UNIL("UNIL"),
+  UNIGE("UNIGE"),
+  ETHZ("ETHZ"),
+  UZH("UZH"),
+  UNIFR("UNIFR"),
+  ;
 
-    override fun toString(): String {
-        return value
-    }
+  override fun toString(): String {
+    return value
+  }
 }

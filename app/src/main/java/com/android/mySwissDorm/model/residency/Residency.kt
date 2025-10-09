@@ -4,7 +4,6 @@ import android.location.Location
 import com.android.mySwissDorm.model.city.CitiesNames
 import java.net.URL
 
-
 data class Residency(
     val name: ResidencyNames,
     val description: String,
@@ -16,16 +15,16 @@ data class Residency(
 )
 
 enum class ResidencyNames(val value: String) {
-    VORTEX("Vortex"),
-    ATRIUM("Atrium"),
-    CSJ("Cité St-Justin"),
-    SALVATORHAUS("Salvatorhaus"),
-    IHEID("IHEID"),
-    CUG("Cité Universitaire de Genève"),
-    WOKO("WOKO"),
-    ETHZSH("ETH Zurich Student Housing");
+  VORTEX("Vortex"),
+  ATRIUM("Atrium"),
+  CSJ("Cité St-Justin"),
+  SALVATORHAUS("Salvatorhaus"),
+  IHEID("IHEID"),
+  CUG("Cité Universitaire de Genève"),
+  WOKO("WOKO"),
+  ETHZSH("ETH Zurich Student Housing");
 
-    override fun toString(): String {
-        return value
-    }
+  override fun toString(): String {
+    return value
+  }
 }

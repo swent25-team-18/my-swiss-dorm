@@ -13,9 +13,10 @@ enum class CitiesNames(val value: String) {
   LAUSANNE("Lausanne"),
   GENEVA("Geneva"),
   ZÜRICH("Zürich"),
-  FRIBOURG("Fribourg"),;
+  FRIBOURG("Fribourg"),
+  ;
 
-    override fun toString(): String{
-        return value
-    }
+  override fun toString(): String {
+    return value
+  }
 }

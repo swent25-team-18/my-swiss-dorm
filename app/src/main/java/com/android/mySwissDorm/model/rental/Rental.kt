@@ -1,8 +1,8 @@
 package com.android.mySwissDorm.model.rental
 
 import android.location.Location
-import com.google.firebase.Timestamp
 import com.android.mySwissDorm.model.residency.ResidencyNames
+import com.google.firebase.Timestamp
 
 data class Rental(
     val uid: String,
@@ -14,14 +14,13 @@ data class Rental(
     val ownerId: String,
     val imageUrl: String,
     val residency: ResidencyNames
-
-    )
+)
 
 enum class RentalStatus {
-    CREATED,
-    STARTED,
-    ENDED,
-    ARCHIVED
+  CREATED,
+  STARTED,
+  ENDED,
+  ARCHIVED
 }
 
 /**
@@ -30,9 +29,7 @@ enum class RentalStatus {
  * @return A string representation of the ToDoStatus, formatted for display.
  */
 /**
- * fun RentalStatus.displayString(): String =
- *     name.replace("_", " ").lowercase(Locale.ROOT).replaceFirstChar {
- *         if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
- *     }
- *
+ * fun RentalStatus.displayString(): String = name.replace("_", "
+ * ").lowercase(Locale.ROOT).replaceFirstChar { if (it.isLowerCase())
+ * it.titlecase(Locale.getDefault()) else it.toString() }
  */

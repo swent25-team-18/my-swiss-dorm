@@ -27,7 +27,7 @@ class ListingDetailScreenUiTest {
     rule.waitForTag("field_identifiant")
   }
 
-  // ----- Tests ultra-safe (wait avant CHAQUE assertion) ---------------------
+  // ----- Tests ultra-safe (wait + scroll si nécessaire) ---------------------
 
   @Test
   fun showsIdentifiantBlock() {
@@ -44,20 +44,26 @@ class ListingDetailScreenUiTest {
         .onNodeWithTag("field_identifiant_value", useUnmergedTree = true)
         .assertTextContains("Annonce #l1")
   }
-  //
-  //  @Test
-  //  fun showsEditButton() {
-  //    setUpContent()
-  //    rule.waitForTag("btn_edit")
-  //    rule.onNodeWithTag("btn_edit", useUnmergedTree = true).assertIsDisplayed()
-  //  }
 
-  //  @Test
-  //  fun showsCloseButton() {
-  //    setUpContent()
-  //    rule.waitForTag("btn_close")
-  //    rule.onNodeWithTag("btn_close", useUnmergedTree = true).assertIsDisplayed()
-  //  }
+  @Test
+  fun showsEditButton() {
+    setUpContent()
+    rule.waitForTag("btn_edit")
+    rule
+        .onNodeWithTag("btn_edit", useUnmergedTree = true)
+        .performScrollTo() // <-- scroll into view
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun showsCloseButton() {
+    setUpContent()
+    rule.waitForTag("btn_close")
+    rule
+        .onNodeWithTag("btn_close", useUnmergedTree = true)
+        .performScrollTo() // <-- scroll into view
+        .assertIsDisplayed()
+  }
 
   @Test
   fun showsBackIcon() {

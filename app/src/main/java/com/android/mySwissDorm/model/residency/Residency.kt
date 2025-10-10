@@ -11,7 +11,7 @@ data class Residency(
     val city: CityName,
     val email: String?,
     val phone: String?,
-    val website: URL,
+    val website: URL?,
 )
 
 enum class ResidencyName(val value: String) {

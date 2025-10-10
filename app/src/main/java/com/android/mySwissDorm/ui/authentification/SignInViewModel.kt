@@ -8,8 +8,8 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
-import com.android.mySwissDorm.model.AuthRepository
-import com.android.mySwissDorm.model.AuthRepositoryProvider
+import com.android.mySwissDorm.model.authentification.AuthRepository
+import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow

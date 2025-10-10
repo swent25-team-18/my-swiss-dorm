@@ -3,8 +3,8 @@ package com.android.mySwissDorm.ui.authentification
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.mySwissDorm.model.AuthRepositoryFirebase
-import com.android.mySwissDorm.model.AuthRepositoryProvider
+import com.android.mySwissDorm.model.authentification.AuthRepositoryFirebase
+import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator

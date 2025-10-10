@@ -1,4 +1,4 @@
-package com.android.mySwissDorm.model
+package com.android.mySwissDorm.model.authentification
 
 import androidx.credentials.Credential
 import androidx.credentials.CustomCredential

@@ -18,10 +18,14 @@ data class RentalListing(
     val status: RentalStatus
 )
 
-enum class RoomType(val toString: String) {
+enum class RoomType(val value: String) {
   STUDIO("Studio"),
   APARTMENT("Apartment"),
-  COLOCATION("Coloc"),
+  COLOCATION("Room in flatshare");
+
+  override fun toString(): String {
+    return value
+  }
 }
 
 enum class RentalStatus {

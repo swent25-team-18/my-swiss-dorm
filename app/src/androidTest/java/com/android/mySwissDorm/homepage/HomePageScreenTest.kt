@@ -37,32 +37,57 @@ class HomePageScreenTest {
   @Test
   fun testCityCards() {
     // Check that the "Lausanne" card is displayed
-    composeTestRule.onNodeWithText("Lausanne").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Lausanne").performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText("Lausanne").assertIsDisplayed()
+
     composeTestRule
         .onNodeWithText(
             "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.")
         .performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule
+        .onNodeWithText(
+            "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.")
         .assertIsDisplayed()
 
     // Check that the "Geneva" card is displayed
+    composeTestRule.onNodeWithText("Geneva").performScrollTo()
+    composeTestRule.waitForIdle()
     composeTestRule.onNodeWithText("Geneva").assertIsDisplayed()
+
     composeTestRule
         .onNodeWithText("Geneva is a global city, hosting numerous international organizations.")
         .performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule
+        .onNodeWithText("Geneva is a global city, hosting numerous international organizations.")
         .assertIsDisplayed()
 
     // Check that the "Zürich" card is displayed
+    composeTestRule.onNodeWithText("Zürich").performScrollTo()
+    composeTestRule.waitForIdle()
     composeTestRule.onNodeWithText("Zürich").assertIsDisplayed()
+
     composeTestRule
         .onNodeWithText("Zurich is the largest city in Switzerland and a major financial hub.")
         .performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule
+        .onNodeWithText("Zurich is the largest city in Switzerland and a major financial hub.")
         .assertIsDisplayed()
 
     // Check that the "Fribourg" card is displayed
+    composeTestRule.onNodeWithText("Fribourg").performScrollTo()
+    composeTestRule.waitForIdle()
     composeTestRule.onNodeWithText("Fribourg").assertIsDisplayed()
+
     composeTestRule
         .onNodeWithText("Fribourg is a bilingual city famous for its medieval architecture.")
         .performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule
+        .onNodeWithText("Fribourg is a bilingual city famous for its medieval architecture.")
         .assertIsDisplayed()
   }
 
@@ -84,22 +109,32 @@ class HomePageScreenTest {
     composeTestRule.onNodeWithText("Browse").assertIsDisplayed()
 
     // Check that the "Lausanne" card is displayed
-    composeTestRule.onNodeWithText("Lausanne").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Lausanne").performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText("Lausanne").assertIsDisplayed()
 
     // Check that the "Geneva" card is displayed
-    composeTestRule.onNodeWithText("Geneva").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Geneva").performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText("Geneva").assertIsDisplayed()
 
     // Check that the "Zürich" card is displayed
-    composeTestRule.onNodeWithText("Zürich").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Zürich").performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText("Zürich").assertIsDisplayed()
 
     // Check that the "Fribourg" card is displayed
-    composeTestRule.onNodeWithText("Fribourg").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Fribourg").performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText("Fribourg").assertIsDisplayed()
 
     // Type text into the search bar
     composeTestRule.onNodeWithText("Browse").performTextInput("Laus")
 
     // Check that the "Lausanne" card is still displayed
-    composeTestRule.onNodeWithText("Lausanne").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Lausanne").performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText("Lausanne").assertIsDisplayed()
 
     // Check that the "Geneva" card is not displayed anymore
     composeTestRule.onNodeWithText("Geneva").assertIsNotDisplayed()

@@ -29,7 +29,7 @@ private val defaultListing =
         areaInM2 = 0,
         startDate = Timestamp.now(),
         description = "",
-        imageUrl = emptyList(),
+        imageUrls = emptyList(),
         status = RentalStatus.POSTED,
         residency =
             Residency(

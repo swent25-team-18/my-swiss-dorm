@@ -93,7 +93,7 @@ fun ViewListingScreen(
                   modifier = Modifier.fillMaxWidth().background(Color.Gray).padding(16.dp),
                   verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Add other UI components here
-                    BulletPointText(text = listing.roomType.toString)
+                    BulletPointText(text = listing.roomType.toString())
                     BulletPointText(text = "${listing.pricePerMonth} .-/month")
                     BulletPointText(text = "${listing.areaInM2} m²")
                     BulletPointText(text = "Starting ${formatTimestamp(listing.startDate)}")

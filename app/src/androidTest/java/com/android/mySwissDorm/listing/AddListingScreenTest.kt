@@ -3,9 +3,8 @@ package com.android.mySwissDorm.ui.overview
 import AddListingScreen
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.ui.listing.HousingType
-import com.android.mySwissDorm.ui.listing.ListingViewModel
+import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -14,11 +13,11 @@ class AddListingScreenTest {
 
   @get:Rule val composeTestRule = createComposeRule()
 
-  private lateinit var viewModel: ListingViewModel
+  private lateinit var viewModel: AddListingViewModel
 
   @Before
   fun setup() {
-    viewModel = ListingViewModel()
+    viewModel = AddListingViewModel()
     composeTestRule.setContent { AddListingScreen(onOpenMap = {}, onConfirm = {}) }
   }
 
@@ -47,10 +46,10 @@ class AddListingScreenTest {
     composeTestRule.onNodeWithText("Housing type").performClick()
 
     // Select a housing type
-    composeTestRule.onNodeWithText(HousingType.STUDIO.label).performClick()
+    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).performClick()
 
     // Check that the selected housing type is displayed
-    composeTestRule.onNodeWithText(HousingType.STUDIO.label).assertExists()
+    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).assertExists()
   }
 
   @Test
@@ -59,7 +58,7 @@ class AddListingScreenTest {
     composeTestRule.onNodeWithText("Listing title").performTextInput("Beautiful Studio")
     composeTestRule.onNodeWithText("Location / Residency name").performTextInput("Green Apartments")
     composeTestRule.onNodeWithText("Housing type").performClick()
-    composeTestRule.onNodeWithText(HousingType.STUDIO.label).performClick()
+    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).performClick()
     composeTestRule.onNodeWithText("Room size (m²)").performTextInput("25")
 
     // Verify that the submit button is enabled
@@ -71,7 +70,7 @@ class AddListingScreenTest {
     // Simulate invalid data (e.g., empty title)
     composeTestRule.onNodeWithText("Location / Residency name").performTextInput("Green Apartments")
     composeTestRule.onNodeWithText("Housing type").performClick()
-    composeTestRule.onNodeWithText(HousingType.STUDIO.label).performClick()
+    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).performClick()
     composeTestRule.onNodeWithText("Room size (m²)").performTextInput("25")
 
     // Verify that the submit button is disabled due to missing title

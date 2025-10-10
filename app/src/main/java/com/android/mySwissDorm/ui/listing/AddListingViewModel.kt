@@ -3,12 +3,13 @@ package com.android.mySwissDorm.ui.listing
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import com.android.mySwissDorm.model.rental.RoomType
 
-class ListingViewModel : ViewModel() {
+class AddListingViewModel : ViewModel() {
   // Mutable state for form fields
   var title = mutableStateOf("")
   var residency = mutableStateOf("")
-  var housingType = mutableStateOf<HousingType?>(null)
+  var housingType = mutableStateOf<RoomType?>(null)
   var roommates = mutableStateOf("")
   var sizeSqm = mutableStateOf("")
   var description = mutableStateOf("")
@@ -21,7 +22,7 @@ class ListingViewModel : ViewModel() {
     get() {
       val sizeOk = sizeSqm.value.toDoubleOrNull()?.let { it in 1.0..1000.0 } == true
       val roommatesOk =
-          if (housingType.value == HousingType.ROOM_IN_SHARED_APT) {
+          if (housingType.value == RoomType.COLOCATION) {
             roommates.value.toIntOrNull()?.let { it in 1..20 } == true
           } else {
             true

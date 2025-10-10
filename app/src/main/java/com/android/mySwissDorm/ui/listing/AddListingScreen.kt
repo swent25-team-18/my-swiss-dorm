@@ -1,8 +1,11 @@
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowBack
@@ -18,9 +21,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.ui.listing.HousingType
+import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.ui.listing.ListingForm
-import com.android.mySwissDorm.ui.listing.ListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
 
@@ -32,20 +35,26 @@ fun AddListingScreen(
     onOpenMap: () -> Unit, // navigate to "drop a pin" screen
     onConfirm: (ListingForm) -> Unit // called when form valid
 ) {
-  val viewModel: ListingViewModel = viewModel()
+  val viewModel: AddListingViewModel = viewModel()
 
   // Validation and form submission moved to the ViewModel
   val isFormValid = viewModel.isFormValid
   val mapLat = viewModel.mapLat.value
   val mapLng = viewModel.mapLng.value
 
+  // Remember scroll state
+  val scrollState = rememberScrollState()
+
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("Add Listing") },
             navigationIcon = {
-              IconButton(onClick = { /* Handle Back Navigation */}) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = accentColor)
+              IconButton(onClick = { /* TODO: Handle Back Navigation */}) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = accentColor)
               }
             })
       },
@@ -70,8 +79,13 @@ fun AddListingScreen(
           }
         }
       }) { padding ->
+        // Wrap the content in a vertical scrollable column
         Column(
-            modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .verticalScroll(scrollState), // Make the column scrollable
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               OutlinedTextField(
                   value = viewModel.title.value,
@@ -124,7 +138,7 @@ fun AddListingScreen(
                   onSelected = { viewModel.housingType.value = it },
                   accentColor = accentColor)
 
-              if (viewModel.housingType.value == HousingType.ROOM_IN_SHARED_APT) {
+              if (viewModel.housingType.value == RoomType.COLOCATION) {
                 OutlinedTextField(
                     value = viewModel.roommates.value,
                     onValueChange = { input ->
@@ -154,6 +168,7 @@ fun AddListingScreen(
                                 Color.Gray // Optional: Change label color when not focused
                             ))
               }
+
               val isValid = viewModel.sizeSqm.value.toDoubleOrNull() != null
               OutlinedTextField(
                   value = viewModel.sizeSqm.value,
@@ -252,10 +267,6 @@ fun AddListingScreen(
                           Spacer(Modifier.width(8.dp))
                           Text("Add pictures")
                         }
-                    AssistChip(
-                        onClick = { // TODO: handle image clearing }
-                        },
-                        label = { Text("Clear") })
                   }
             }
       }
@@ -263,13 +274,9 @@ fun AddListingScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HousingTypeDropdown(
-    selected: HousingType?,
-    onSelected: (HousingType) -> Unit,
-    accentColor: Color
-) {
+fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, accentColor: Color) {
   var expanded by remember { mutableStateOf(false) }
-  val label = selected?.label ?: "Select housing type"
+  val label = selected?.toString() ?: "Select housing type"
 
   ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
     OutlinedTextField(
@@ -290,9 +297,9 @@ fun HousingTypeDropdown(
         modifier = Modifier.menuAnchor().fillMaxWidth(),
     )
     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-      HousingType.values().forEach { type ->
+      RoomType.entries.forEach { type ->
         DropdownMenuItem(
-            text = { Text(type.label) },
+            text = { Text(type.toString()) },
             onClick = {
               onSelected(type)
               expanded = false

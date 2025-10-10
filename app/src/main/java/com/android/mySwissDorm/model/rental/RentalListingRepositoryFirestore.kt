@@ -83,7 +83,8 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
       val statusString = document.getString("status") ?: return null
       val status = RentalStatus.valueOf(statusString)
       val ownerId = document.getString("ownerId") ?: return null
-      val imageUrls = document.get("imageUrls") as? List<String> ?: emptyList()
+      val imageUrls =
+          (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
       val residencyMap = document.get("residency") as? Map<*, *>
       val residency =
           residencyMap?.let {

@@ -5,7 +5,7 @@ import android.location.Location
 data class City(
     val name: CityName,
     val description: String,
-    val location: Location?,
+    val location: Location,
     val imageId: Int
 )
 

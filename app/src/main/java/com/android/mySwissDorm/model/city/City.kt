@@ -6,6 +6,7 @@ data class City(
     val name: CityName,
     val description: String,
     val location: Location?,
+    val imageId: Int
 )
 
 enum class CityName(val value: String) {

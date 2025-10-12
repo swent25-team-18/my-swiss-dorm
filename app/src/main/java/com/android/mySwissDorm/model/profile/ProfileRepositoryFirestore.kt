@@ -3,7 +3,6 @@ package com.android.mySwissDorm.model.profile
 import android.util.Log
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.university.UniversityName
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.get
@@ -58,9 +57,9 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
           val location =
               locationData?.let { map2 ->
                 Location(
-                    name = map2["name"] as? String ?: "",
-                    latitude = map2["latitude"] as? Double ?: 0.0,
-                    longitude = map2["longitude"] as? Double ?: 0.0)
+                    name = map2["name"] as? String ?: return null,
+                    latitude = (map2["latitude"] as? Number ?: return null).toDouble(),
+                    longitude = (map2["longitude"] as? Number ?: return null).toDouble())
               }
           UserInfo(
               name = map["name"] as? String ?: return null,
@@ -68,10 +67,20 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
               email = map["email"] as? String ?: return null,
               phoneNumber = map["phoneNumber"] as? String ?: return null,
               universityName =
-                  UniversityName.valueOf(map["universityName"] as? String ?: return null),
+                  map["universityName"].let { name ->
+                    when (name) {
+                      is String ->
+                          try {
+                            UniversityName.valueOf(name)
+                          } catch (_: IllegalArgumentException) {
+                            null
+                          }
+                      else -> null
+                    }
+                  },
               location = location,
               residency = null, // TODO change that when types are updated
-              birthDate = map["birthDate"] as? Timestamp)
+          )
         }
     return userInfo
   }

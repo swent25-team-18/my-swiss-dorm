@@ -3,6 +3,8 @@ package com.android.mySwissDorm.utils
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import io.mockk.InternalPlatformDsl.toArray
@@ -11,6 +13,7 @@ import kotlin.runCatching
 import kotlin.text.contains
 import kotlin.text.trimIndent
 import kotlin.toString
+import kotlinx.coroutines.tasks.await
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -67,6 +70,19 @@ object FirebaseEmulator {
     }
   }
 
+  suspend fun signInFakeUser(fakeUser: FakeUser = FakeUser.FakeUser1): AuthCredential {
+    val fakeToken =
+        FakeJwtGenerator.createFakeGoogleIdToken(name = fakeUser.userName, email = fakeUser.email)
+    createGoogleUser(fakeToken)
+    val firebaseCred = GoogleAuthProvider.getCredential(fakeToken, null)
+
+    // Sign in using fake token
+    auth.signInWithCredential(firebaseCred).await()
+
+    assert(auth.currentUser != null) { "Fake sign in failed" }
+    return firebaseCred
+  }
+
   private fun clearEmulator(endpoint: String) {
     val client = httpClient
     val request = Request.Builder().url(endpoint).delete().build()
@@ -87,7 +103,6 @@ object FirebaseEmulator {
    * Seeds a Google user in the Firebase Auth Emulator using a fake JWT id_token.
    *
    * @param fakeIdToken A JWT-shaped string, must contain at least "sub".
-   * @param email The email address to associate with the account.
    */
   fun createGoogleUser(fakeIdToken: String) {
     val url =

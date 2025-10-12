@@ -120,6 +120,8 @@ class ProfileRepositoryFirestoreTest : FirestoreTest() {
     assertEquals(0, getProfileCount())
   }
 
+  @Test fun arbitraryGetProfileThrowException() = runTest { runCatching { repo.getProfile("") } }
+
   @After
   override fun tearDown() {
     super.tearDown()

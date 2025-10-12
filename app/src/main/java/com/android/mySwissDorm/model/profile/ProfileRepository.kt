@@ -20,6 +20,13 @@ interface ProfileRepository {
   suspend fun getProfile(ownerId: String): Profile
 
   /**
+   * Retrieves all profiles
+   *
+   * @return a list of [Profile] registered to the app.
+   */
+  suspend fun getAllProfile(): List<Profile>
+
+  /**
    * Edits an existing profile
    *
    * @throws Exception if the given [Profile] does not exist

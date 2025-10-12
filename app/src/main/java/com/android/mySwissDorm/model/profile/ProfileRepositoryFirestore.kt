@@ -21,6 +21,12 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
         ?: throw NoSuchElementException("ProfileRepositoryFirestore: Profile not found")
   }
 
+  override suspend fun getAllProfile(): List<Profile> {
+    val snapshot = db.collection(PROFILE_COLLECTION_PATH).get().await()
+
+    return snapshot.mapNotNull { documentToProfile(it) }
+  }
+
   override suspend fun editProfile(profile: Profile) {
     db.collection(PROFILE_COLLECTION_PATH).document(profile.ownerId).set(profile).await()
   }

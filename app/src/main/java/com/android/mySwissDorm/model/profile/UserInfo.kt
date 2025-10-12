@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.model.profile
 
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.university.UniversityName
 import com.google.firebase.Timestamp

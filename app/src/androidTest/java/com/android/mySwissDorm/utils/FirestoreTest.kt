@@ -1,6 +1,6 @@
 package com.android.mySwissDorm.utils
 
-import com.android.mySwissDorm.model.profile.Location
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.UserInfo

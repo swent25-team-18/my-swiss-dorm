@@ -25,7 +25,7 @@ class RequestDetailScreenUiTest {
     rule.onNodeWithTag("req_field_identifiant", useUnmergedTree = true).assertIsDisplayed()
     rule
         .onNodeWithTag("req_field_identifiant_value", useUnmergedTree = true)
-        .assertTextContains("Demande #r1")
+        .assertTextContains("Request #r1") // <-- updated to English
     rule.onNodeWithTag("req_field_requester", useUnmergedTree = true).assertIsDisplayed()
     rule.onNodeWithTag("req_field_message", useUnmergedTree = true).assertIsDisplayed()
     rule.onNodeWithTag("btn_reject", useUnmergedTree = true).assertIsDisplayed()

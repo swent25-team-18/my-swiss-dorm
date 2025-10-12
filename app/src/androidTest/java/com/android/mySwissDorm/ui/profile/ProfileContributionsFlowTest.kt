@@ -14,7 +14,6 @@ class ProfileContributionsFlowTest {
 
   @get:Rule val rule = createComposeRule()
 
-  // Helper to wait for a tag
   @OptIn(ExperimentalTestApi::class)
   private fun ComposeContentTestRule.waitForTag(tag: String, timeoutMs: Long = 5_000) {
     waitUntilAtLeastOneExists(hasTestTag(tag), timeoutMs)
@@ -30,13 +29,14 @@ class ProfileContributionsFlowTest {
             // Two demo items so _0 ⇒ listing, _1 ⇒ request
             val items =
                 listOf(
-                    Contribution("Annonce l1", "Jolie chambre proche EPFL"),
-                    Contribution("Demande r1", "Étudiant intéressé par une chambre"))
+                    Contribution("Listing l1", "Nice room near EPFL"),
+                    Contribution("Request r1", "Student interested in a room"))
             ProfileContributionsScreen(
                 contributions = items,
                 onBackClick = {},
                 onContributionClick = { c ->
-                  if (c.title.startsWith("Demande", ignoreCase = true)) {
+                  // Route by English prefix; mirrors our demo data
+                  if (c.title.startsWith("Request", ignoreCase = true)) {
                     nav.navigate("request/${c.title}")
                   } else {
                     nav.navigate("listing/${c.title}")
@@ -60,18 +60,16 @@ class ProfileContributionsFlowTest {
   fun openListingDetail_thenBack_toProfile() {
     setContentWithTestNavHost()
 
-    // Wait for list/button to appear, then click
     rule.waitForTag("btn_contrib_details_0")
     rule.onNodeWithTag("btn_contrib_details_0").performClick()
 
-    // Wait for detail, assert, then back
     rule.waitForTag("field_identifiant")
     rule.onNodeWithTag("field_identifiant").assertIsDisplayed()
 
     rule.onNodeWithTag("nav_back").performClick()
 
-    // List again
-    rule.onNodeWithText("Mes contributions").assertIsDisplayed()
+    // Title is in English now
+    rule.onNodeWithText("My contributions").assertIsDisplayed()
   }
 
   @Test
@@ -86,6 +84,6 @@ class ProfileContributionsFlowTest {
 
     rule.onNodeWithTag("nav_back").performClick()
 
-    rule.onNodeWithText("Mes contributions").assertIsDisplayed()
+    rule.onNodeWithText("My contributions").assertIsDisplayed()
   }
 }

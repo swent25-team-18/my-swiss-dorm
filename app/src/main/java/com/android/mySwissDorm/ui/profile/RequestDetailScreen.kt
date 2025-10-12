@@ -42,7 +42,6 @@ fun RequestDetailScreen(id: String, onBack: () -> Unit) {
             modifier =
                 Modifier.padding(inner).fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-              // Header-style blocks
               FieldBlock(
                   label = "Identifier", value = "Request #$id", tag = "req_field_identifiant")
               FieldBlock(label = "Requester", value = "…", tag = "req_field_requester")
@@ -50,7 +49,6 @@ fun RequestDetailScreen(id: String, onBack: () -> Unit) {
 
               Spacer(Modifier.height(4.dp))
 
-              // Actions
               Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = { /* TODO reject */},
@@ -73,21 +71,10 @@ fun RequestDetailScreen(id: String, onBack: () -> Unit) {
                       Text("Accept")
                     }
               }
-
-              // Optional hint / footer
-              // Text(
-              //     "Please verify the information before accepting.",
-              //     style = MaterialTheme.typography.bodySmall,
-              //     color = HintGrey
-              // )
             }
       }
 }
 
-/**
- * Full-width block that imitates a disabled TextField / flat card (light background, rounded
- * corners, grey label above value)
- */
 @Composable
 private fun FieldBlock(label: String, value: String, tag: String? = null) {
   Surface(

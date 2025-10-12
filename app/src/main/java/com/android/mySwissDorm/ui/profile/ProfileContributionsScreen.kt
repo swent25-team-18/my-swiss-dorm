@@ -49,7 +49,6 @@ fun ProfileContributionsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
               itemsIndexed(contributions) { index, c ->
-                // Flat white card with subtle border
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable { onContributionClick(c) },
                     shape = MaterialTheme.shapes.large,

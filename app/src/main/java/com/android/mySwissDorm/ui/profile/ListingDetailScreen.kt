@@ -27,7 +27,7 @@ fun ListingDetailScreen(
     id: String,
     onBack: () -> Unit,
     onEdit: () -> Unit = {},
-    onClose: () -> Unit = {}
+    onClose: () -> Unit = onBack, // Close behaves like back by default
 ) {
   Scaffold(
       containerColor = ScreenBg,

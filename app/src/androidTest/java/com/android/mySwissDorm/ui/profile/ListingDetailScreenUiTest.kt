@@ -13,21 +13,20 @@ class ListingDetailScreenUiTest {
 
   // ----- Helpers ------------------------------------------------------------
 
-  /** Attend qu'au moins un nœud avec ce tag existe dans l'arbre NON fusionné. */
+  /** Wait until at least one node with this tag exists (using unmerged tree). */
   private fun ComposeContentTestRule.waitForTag(tag: String, timeoutMs: Long = 5_000) {
     waitUntil(timeoutMs) {
       onAllNodes(hasTestTag(tag), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
     }
   }
 
-  /** Monte l'écran et attend le premier bloc "identifiant" comme point de synchro. */
+  /** Mount the screen and wait for the first "identifier" block as sync point. */
   private fun setUpContent(id: String = "l1") {
     rule.setContent { MySwissDormAppTheme { ListingDetailScreen(id = id, onBack = {}) } }
-    // Point d'ancrage initial
     rule.waitForTag("field_identifiant")
   }
 
-  // ----- Tests ultra-safe (wait + scroll si nécessaire) ---------------------
+  // ----- Tests --------------------------------------------------------------
 
   @Test
   fun showsIdentifiantBlock() {
@@ -42,27 +41,21 @@ class ListingDetailScreenUiTest {
     rule.waitForTag("field_identifiant_value")
     rule
         .onNodeWithTag("field_identifiant_value", useUnmergedTree = true)
-        .assertTextContains("Annonce #l1")
+        .assertTextContains("Listing #l1") // updated expectation (EN)
   }
 
   @Test
   fun showsEditButton() {
     setUpContent()
     rule.waitForTag("btn_edit")
-    rule
-        .onNodeWithTag("btn_edit", useUnmergedTree = true)
-        .performScrollTo() // <-- scroll into view
-        .assertIsDisplayed()
+    rule.onNodeWithTag("btn_edit", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
   }
 
   @Test
   fun showsCloseButton() {
     setUpContent()
     rule.waitForTag("btn_close")
-    rule
-        .onNodeWithTag("btn_close", useUnmergedTree = true)
-        .performScrollTo() // <-- scroll into view
-        .assertIsDisplayed()
+    rule.onNodeWithTag("btn_close", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
   }
 
   @Test

@@ -72,6 +72,8 @@ abstract class FirestoreTest : TestCase() {
 
   @Before
   open fun setUp() {
+    FirebaseEmulator.clearAuthEmulator()
+    FirebaseEmulator.clearFirestoreEmulator()
     createRepositories()
   }
 

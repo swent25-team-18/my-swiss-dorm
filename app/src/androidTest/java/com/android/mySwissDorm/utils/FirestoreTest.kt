@@ -7,7 +7,6 @@ import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.university.UniversityName
 import com.android.mySwissDorm.utils.FirebaseEmulator.auth
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import java.lang.NullPointerException
@@ -96,7 +95,7 @@ abstract class FirestoreTest : TestCase() {
                   universityName = UniversityName.EPFL,
                   location = Location("Somewhere", 0.0, 0.0),
                   residency = null, // TODO need to change when types are updated
-                  birthDate = Timestamp.now()),
+              ),
           userSettings = UserSettings(),
           ownerId = "",
       )
@@ -109,10 +108,10 @@ abstract class FirestoreTest : TestCase() {
                   lastName = "Queen",
                   email = FakeUser.FakeUser2.email,
                   phoneNumber = "+41223334455",
-                  universityName = UniversityName.ETHZ,
-                  location = Location("There", 10.0, 10.0),
+                  universityName = null,
+                  location = null,
                   residency = null, // TODO need to change when types are updated
-                  birthDate = Timestamp.now()),
+              ),
           userSettings = UserSettings(),
           ownerId = "",
       )

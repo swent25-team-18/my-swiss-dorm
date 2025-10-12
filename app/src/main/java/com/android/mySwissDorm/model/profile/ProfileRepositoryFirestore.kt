@@ -73,7 +73,8 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
                           try {
                             UniversityName.valueOf(name)
                           } catch (_: IllegalArgumentException) {
-                            null
+                            // A string but not one of the string defined
+                            return null
                           }
                       else -> null
                     }

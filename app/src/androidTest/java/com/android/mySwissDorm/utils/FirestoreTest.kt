@@ -8,7 +8,7 @@ import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.university.UniversityName
 import com.android.mySwissDorm.utils.FirebaseEmulator.auth
 import com.google.firebase.Timestamp
-import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.GoogleAuthProvider
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import java.lang.NullPointerException
 import kotlinx.coroutines.tasks.await
@@ -24,22 +24,16 @@ enum class FakeUser(val userName: String, val email: String) {
 abstract class FirestoreTest : TestCase() {
   var currentFakeUser: FakeUser = FakeUser.FakeUser1
 
-  val credentialMap = mutableMapOf<FakeUser, AuthCredential>()
-
   suspend fun switchToUser(fakeUser: FakeUser) {
     currentFakeUser = fakeUser
-    val cred =
-        credentialMap.getOrElse(fakeUser) {
-          val newCred = FirebaseEmulator.signInFakeUser(fakeUser = fakeUser)
-          credentialMap.put(fakeUser, newCred)
-          newCred
-        }
-    auth.signInWithCredential(cred).await()
+    val fakeToken = FakeJwtGenerator.createFakeGoogleIdToken(fakeUser.userName, fakeUser.email)
+    FakeCredentialManager.create(fakeToken)
+    val firebaseCred = GoogleAuthProvider.getCredential(fakeToken, null)
+    auth.signInWithCredential(firebaseCred).await()
   }
 
   init {
     assert(FirebaseEmulator.isRunning) { "FirebaseEmulator must be running for these tests" }
-    runTest { switchToUser(FakeUser.FakeUser1) }
   }
 
   /** Should change the repository providers if needed. Called in [setUp] fun */
@@ -55,13 +49,17 @@ abstract class FirestoreTest : TestCase() {
 
   private suspend fun clearProfileTestCollection() {
     if (getProfileCount() > 0) {
-      credentialMap.forEach { (fakeUser, _) ->
+      FakeUser.entries.forEach { fakeUser ->
         switchToUser(fakeUser)
-        FirebaseEmulator.firestore
-            .collection(PROFILE_COLLECTION_PATH)
-            .document(auth.currentUser?.uid ?: throw NullPointerException())
-            .delete()
-            .await()
+        val doc =
+            FirebaseEmulator.firestore
+                .collection(PROFILE_COLLECTION_PATH)
+                .document(auth.currentUser?.uid ?: throw NullPointerException())
+                .get()
+                .await()
+        if (doc.exists()) {
+          doc.reference.delete().await()
+        }
       }
     }
 
@@ -80,8 +78,9 @@ abstract class FirestoreTest : TestCase() {
   @After
   open fun tearDown() {
     runTest { clearTestCollection() }
-    FirebaseEmulator.clearAuthEmulator()
     FirebaseEmulator.clearFirestoreEmulator()
+    auth.signOut()
+    FirebaseEmulator.clearAuthEmulator()
   }
 
   var profile1 =

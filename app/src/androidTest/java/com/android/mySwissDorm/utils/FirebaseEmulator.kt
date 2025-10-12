@@ -3,8 +3,6 @@ package com.android.mySwissDorm.utils
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.AuthCredential
-import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import io.mockk.InternalPlatformDsl.toArray
@@ -13,7 +11,6 @@ import kotlin.runCatching
 import kotlin.text.contains
 import kotlin.text.trimIndent
 import kotlin.toString
-import kotlinx.coroutines.tasks.await
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -68,19 +65,6 @@ object FirebaseEmulator {
         "Failed to connect to Firebase Firestore Emulator."
       }
     }
-  }
-
-  suspend fun signInFakeUser(fakeUser: FakeUser = FakeUser.FakeUser1): AuthCredential {
-    val fakeToken =
-        FakeJwtGenerator.createFakeGoogleIdToken(name = fakeUser.userName, email = fakeUser.email)
-    createGoogleUser(fakeToken)
-    val firebaseCred = GoogleAuthProvider.getCredential(fakeToken, null)
-
-    // Sign in using fake token
-    auth.signInWithCredential(firebaseCred).await()
-
-    assert(auth.currentUser != null) { "Fake sign in failed" }
-    return firebaseCred
   }
 
   private fun clearEmulator(endpoint: String) {

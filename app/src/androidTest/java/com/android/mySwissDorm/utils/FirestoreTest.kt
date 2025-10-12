@@ -24,6 +24,7 @@ enum class FakeUser(val userName: String, val email: String) {
 abstract class FirestoreTest : TestCase() {
   var currentFakeUser: FakeUser = FakeUser.FakeUser1
 
+  /** This function allows to switch easily the current user to a [FakeUser]. */
   suspend fun switchToUser(fakeUser: FakeUser) {
     currentFakeUser = fakeUser
     val fakeToken = FakeJwtGenerator.createFakeGoogleIdToken(fakeUser.userName, fakeUser.email)
@@ -83,6 +84,7 @@ abstract class FirestoreTest : TestCase() {
     FirebaseEmulator.clearAuthEmulator()
   }
 
+  /** The ownerId must be updated before using it with Firestore */
   var profile1 =
       Profile(
           userInfo =
@@ -98,6 +100,7 @@ abstract class FirestoreTest : TestCase() {
           userSettings = UserSettings(),
           ownerId = "",
       )
+  /** The ownerId must be updated before using it with Firestore */
   var profile2 =
       Profile(
           userInfo =

@@ -5,6 +5,7 @@ import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.university.UniversityName
 import com.google.firebase.Timestamp
 
+/** This data class represents the personal information related to the user. */
 data class UserInfo(
     val name: String,
     val lastName: String,

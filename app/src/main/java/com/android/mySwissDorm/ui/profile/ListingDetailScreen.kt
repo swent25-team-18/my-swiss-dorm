@@ -15,27 +15,30 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-// --- Design tokens (same palette used elsewhere) ---
-private val AccentRed = Color(0xFFE57373) // rouge des maquettes
-private val ScreenBg = Color(0xFFF7F7FA) // fond gris très léger
-private val BlockBg = Color(0xFFF4F4F7) // fond “champ” style formulaire
-private val HintGrey = Color(0xFF7A7A7A)
-private val BlockBorder = Color(0xFFE6E6EB)
+import com.android.mySwissDorm.ui.theme.AccentRed
+import com.android.mySwissDorm.ui.theme.BlockBg
+import com.android.mySwissDorm.ui.theme.BlockBorder
+import com.android.mySwissDorm.ui.theme.HintGrey
+import com.android.mySwissDorm.ui.theme.ScreenBg
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ListingDetailScreen(id: String, onBack: () -> Unit) {
+fun ListingDetailScreen(
+    id: String,
+    onBack: () -> Unit,
+    onEdit: () -> Unit = {},
+    onClose: () -> Unit = {}
+) {
   Scaffold(
       containerColor = ScreenBg,
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Détail annonce") },
+            title = { Text("Listing details") },
             navigationIcon = {
               IconButton(onClick = onBack, modifier = Modifier.testTag("nav_back")) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Retour",
+                    contentDescription = "Back",
                     tint = AccentRed)
               }
             },
@@ -50,19 +53,18 @@ fun ListingDetailScreen(id: String, onBack: () -> Unit) {
                 Modifier.padding(inner)
                     .fillMaxSize()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .verticalScroll(scroll), // <-- make content scrollable
+                    .verticalScroll(scroll),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-              // Champs façon “formulaire” plein largeur (comme la 1ère photo)
-              FieldBlock(label = "Identifiant", value = "Annonce #$id", tag = "field_identifiant")
-              FieldBlock(label = "Titre", value = "Titre de l’annonce", tag = "field_title")
+              // Form-like read-only blocks
+              FieldBlock(label = "Identifier", value = "Listing #$id", tag = "field_identifiant")
+              FieldBlock(label = "Title", value = "Listing title", tag = "field_title")
 
-              FieldBlock("Localisation / Résidence", "—", tag = "field_location")
-              FieldBlock("Type de logement", "—", tag = "field_type")
-              FieldBlock("Surface (m²)", "—", tag = "field_area")
-              FieldBlock("Localisation sur la carte", "—", tag = "field_map")
+              FieldBlock("Location / Residence", "—", tag = "field_location")
+              FieldBlock("Housing type", "—", tag = "field_type")
+              FieldBlock("Area (m²)", "—", tag = "field_area")
+              FieldBlock("Map location", "—", tag = "field_map")
               FieldBlock("Description", "—", tag = "field_description")
-              // placeholder en forme de bloc
-              FieldBlock("Photos", "Aucune photo", tag = "field_photos")
+              FieldBlock("Photos", "No photos", tag = "field_photos")
 
               Spacer(Modifier.height(4.dp))
 
@@ -70,34 +72,31 @@ fun ListingDetailScreen(id: String, onBack: () -> Unit) {
                   modifier = Modifier.fillMaxWidth(),
                   horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(
-                        onClick = { /* TODO edit */},
+                        onClick = onEdit,
                         modifier = Modifier.testTag("btn_edit"),
                         border = BorderStroke(1.dp, AccentRed),
                         colors =
                             ButtonDefaults.outlinedButtonColors(
                                 containerColor = Color.Transparent, contentColor = AccentRed),
                         shape = MaterialTheme.shapes.medium) {
-                          Text("Éditer")
+                          Text("Edit")
                         }
 
                     Button(
-                        onClick = { /* TODO close */},
+                        onClick = onClose,
                         modifier = Modifier.testTag("btn_close"),
                         colors =
                             ButtonDefaults.buttonColors(
                                 containerColor = AccentRed, contentColor = Color.White),
                         shape = MaterialTheme.shapes.medium) {
-                          Text("Fermer")
+                          Text("Close")
                         }
                   }
             }
       }
 }
 
-/**
- * Bloc plein largeur qui imite un champ de formulaire en lecture seule : fond clair, coin arrondi,
- * fine bordure, label gris + valeur.
- */
+/** Full-width block that mimics a read-only form field. */
 @Composable
 private fun FieldBlock(label: String, value: String, tag: String? = null) {
   Surface(

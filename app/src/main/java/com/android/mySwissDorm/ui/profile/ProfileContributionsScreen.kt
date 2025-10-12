@@ -14,10 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-private val AccentRed = Color(0xFFE57373) // rouge des maquettes
-private val ScreenBg = Color(0xFFF7F7FA) // fond gris très léger
-private val CardBorder = Color(0xFFE6E6EB) // bordure fine style iOS/Material flat
+import com.android.mySwissDorm.ui.theme.AccentRed
+import com.android.mySwissDorm.ui.theme.CardBorder
+import com.android.mySwissDorm.ui.theme.ScreenBg
 
 data class Contribution(val title: String, val description: String)
 
@@ -32,12 +31,12 @@ fun ProfileContributionsScreen(
       containerColor = ScreenBg,
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Mes contributions") },
+            title = { Text("My contributions") },
             navigationIcon = {
               IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Retour",
+                    contentDescription = "Back",
                     tint = AccentRed)
               }
             },
@@ -50,7 +49,7 @@ fun ProfileContributionsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
               itemsIndexed(contributions) { index, c ->
-                // Carte plate, blanche, bordure fine, coins arrondis
+                // Flat white card with subtle border
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable { onContributionClick(c) },
                     shape = MaterialTheme.shapes.large,
@@ -75,7 +74,7 @@ fun ProfileContributionsScreen(
                                 ButtonDefaults.outlinedButtonColors(
                                     containerColor = Color.Transparent, contentColor = AccentRed),
                             shape = MaterialTheme.shapes.medium) {
-                              Text("Voir détails")
+                              Text("View details")
                             }
                       }
                     }

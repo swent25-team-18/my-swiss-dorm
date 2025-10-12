@@ -12,13 +12,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-// --- design tokens (same palette as other screens) ---
-private val AccentRed = Color(0xFFE57373) // rouge des maquettes
-private val ScreenBg = Color(0xFFF7F7FA) // fond gris très léger
-private val BlockBg = Color(0xFFF4F4F7) // fond des "champs" (comme la 1ère photo)
-private val HintGrey = Color(0xFF7A7A7A)
-private val BlockBorder = Color(0xFFE6E6EB)
+import com.android.mySwissDorm.ui.theme.AccentRed
+import com.android.mySwissDorm.ui.theme.BlockBg
+import com.android.mySwissDorm.ui.theme.BlockBorder
+import com.android.mySwissDorm.ui.theme.HintGrey
+import com.android.mySwissDorm.ui.theme.ScreenBg
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,12 +25,12 @@ fun RequestDetailScreen(id: String, onBack: () -> Unit) {
       containerColor = ScreenBg,
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Demande reçue") },
+            title = { Text("Received request") },
             navigationIcon = {
               IconButton(onClick = onBack, modifier = Modifier.testTag("nav_back")) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Retour",
+                    contentDescription = "Back",
                     tint = AccentRed)
               }
             },
@@ -44,17 +42,15 @@ fun RequestDetailScreen(id: String, onBack: () -> Unit) {
             modifier =
                 Modifier.padding(inner).fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-              // En-tête type "champ" (plein largeur)
+              // Header-style blocks
               FieldBlock(
-                  label = "Identifiant", value = "Demande #$id", tag = "req_field_identifiant")
-
-              FieldBlock(label = "Demandeur", value = "…", tag = "req_field_requester")
-
-              FieldBlock(label = "Message", value = "“Hello, je suis…”", tag = "req_field_message")
+                  label = "Identifier", value = "Request #$id", tag = "req_field_identifiant")
+              FieldBlock(label = "Requester", value = "…", tag = "req_field_requester")
+              FieldBlock(label = "Message", value = "“Hello, I am…”", tag = "req_field_message")
 
               Spacer(Modifier.height(4.dp))
 
-              // actions (mêmes styles que les autres écrans)
+              // Actions
               Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = { /* TODO reject */},
@@ -64,7 +60,7 @@ fun RequestDetailScreen(id: String, onBack: () -> Unit) {
                         ButtonDefaults.outlinedButtonColors(
                             containerColor = Color.Transparent, contentColor = AccentRed),
                     shape = MaterialTheme.shapes.medium) {
-                      Text("Refuser")
+                      Text("Reject")
                     }
 
                 Button(
@@ -74,13 +70,13 @@ fun RequestDetailScreen(id: String, onBack: () -> Unit) {
                         ButtonDefaults.buttonColors(
                             containerColor = AccentRed, contentColor = Color.White),
                     shape = MaterialTheme.shapes.medium) {
-                      Text("Accepter")
+                      Text("Accept")
                     }
               }
 
-              // astuce/bas de page (facultatif, comme l’avertissement gris de la 1ère photo)
+              // Optional hint / footer
               // Text(
-              //     "Veuillez vérifier les informations avant d’accepter.",
+              //     "Please verify the information before accepting.",
               //     style = MaterialTheme.typography.bodySmall,
               //     color = HintGrey
               // )
@@ -89,27 +85,28 @@ fun RequestDetailScreen(id: String, onBack: () -> Unit) {
 }
 
 /**
- * Bloc plein largeur qui imite un TextField désactivé / carte plate (fond clair, coins arrondis,
- * label gris au-dessus de la valeur)
+ * Full-width block that imitates a disabled TextField / flat card (light background, rounded
+ * corners, grey label above value)
  */
-// Make FieldBlock accept an optional tag and apply it:
 @Composable
 private fun FieldBlock(label: String, value: String, tag: String? = null) {
   Surface(
       modifier = Modifier.fillMaxWidth().then(if (tag != null) Modifier.testTag(tag) else Modifier),
-      // …rest unchanged
-  ) {
-    // optional: tag the value text too
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-      Text(text = label, color = HintGrey, style = MaterialTheme.typography.labelMedium)
-      Spacer(Modifier.height(4.dp))
-      Text(
-          text = value,
-          modifier = if (tag != null) Modifier.testTag("${tag}_value") else Modifier,
-          style =
-              MaterialTheme.typography.bodyLarge.copy(
-                  fontSize = 16.sp, fontWeight = FontWeight.Medium),
-          color = Color.Black)
-    }
-  }
+      color = BlockBg,
+      border = BorderStroke(1.dp, BlockBorder),
+      shadowElevation = 0.dp,
+      tonalElevation = 0.dp,
+      shape = MaterialTheme.shapes.large) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+          Text(text = label, color = HintGrey, style = MaterialTheme.typography.labelMedium)
+          Spacer(Modifier.height(4.dp))
+          Text(
+              text = value,
+              modifier = if (tag != null) Modifier.testTag("${tag}_value") else Modifier,
+              style =
+                  MaterialTheme.typography.bodyLarge.copy(
+                      fontSize = 16.sp, fontWeight = FontWeight.Medium),
+              color = Color.Black)
+        }
+      }
 }

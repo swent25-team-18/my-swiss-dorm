@@ -87,7 +87,6 @@ object FirebaseEmulator {
    * Seeds a Google user in the Firebase Auth Emulator using a fake JWT id_token.
    *
    * @param fakeIdToken A JWT-shaped string, must contain at least "sub".
-   * @param email The email address to associate with the account.
    */
   fun createGoogleUser(fakeIdToken: String) {
     val url =

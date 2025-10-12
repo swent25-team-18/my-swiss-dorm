@@ -3,13 +3,11 @@ package com.android.mySwissDorm.ui.authentification
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.mySwissDorm.model.authentification.AuthRepositoryFirebase
-import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator
 import com.android.mySwissDorm.utils.FirebaseEmulator
-import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
+import com.android.mySwissDorm.utils.FirestoreTest
 import io.github.kakaocup.compose.node.element.ComposeScreen
 import org.junit.After
 import org.junit.Before
@@ -18,20 +16,19 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class SignInScreenTest : TestCase() {
+class SignInScreenTest : FirestoreTest() {
+
+  override fun createRepositories() {}
 
   @get:Rule val composeTestRule = createComposeRule()
 
   private val fakeIdToken = "123"
   private val fakeEmailToken = "john.doe@bob.com"
 
-  init {
-    assert(FirebaseEmulator.isRunning) { "FirebaseEmulator must be running for these tests" }
-  }
-
   @Before
   fun setup() {
-    AuthRepositoryProvider.repository = AuthRepositoryFirebase(auth = FirebaseEmulator.auth)
+    super.setUp()
+    FirebaseEmulator.auth.signOut()
   }
 
   @Test
@@ -74,8 +71,7 @@ class SignInScreenTest : TestCase() {
   }
 
   @After
-  fun tearDown() {
-    FirebaseEmulator.clearAuthEmulator()
-    FirebaseEmulator.clearFirestoreEmulator()
+  override fun tearDown() {
+    super.tearDown()
   }
 }

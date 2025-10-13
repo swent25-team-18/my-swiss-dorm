@@ -8,25 +8,29 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.theme.AccentRed
 import com.android.mySwissDorm.ui.theme.CardBorder
 import com.android.mySwissDorm.ui.theme.ScreenBg
-
-data class Contribution(val title: String, val description: String)
+import androidx.compose.ui.tooling.preview.Preview
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileContributionsScreen(
-    contributions: List<Contribution>,
     onBackClick: () -> Unit,
-    onContributionClick: (Contribution) -> Unit
+    onContributionClick: (Contribution) -> Unit,
+    vm: ProfileContributionsViewModel = viewModel()
 ) {
+  LaunchedEffect(Unit) { vm.load() }
+  val ui by vm.ui.collectAsState()
+
   Scaffold(
       containerColor = ScreenBg,
       topBar = {
@@ -44,11 +48,23 @@ fun ProfileContributionsScreen(
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color.White, titleContentColor = Color.Black))
       }) { inner ->
+        if (ui.isLoading) {
+          LinearProgressIndicator(
+              modifier = Modifier.padding(inner).fillMaxWidth().padding(horizontal = 16.dp))
+        }
+
+        ui.error?.let {
+          Text(
+              it,
+              modifier = Modifier.padding(inner).padding(16.dp),
+              color = MaterialTheme.colorScheme.error)
+        }
+
         LazyColumn(
             modifier = Modifier.padding(inner).fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
-              itemsIndexed(contributions) { index, c ->
+              itemsIndexed(ui.items) { index, c ->
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable { onContributionClick(c) },
                     shape = MaterialTheme.shapes.large,
@@ -80,4 +96,37 @@ fun ProfileContributionsScreen(
               }
             }
       }
+}
+
+/**
+ * Backward-compatible overload so existing call-sites that pass a list don’t break immediately. It
+ * seeds the ViewModel with that list.
+ */
+@Composable
+fun ProfileContributionsScreen(
+    contributions: List<Contribution>,
+    onBackClick: () -> Unit,
+    onContributionClick: (Contribution) -> Unit,
+    vm: ProfileContributionsViewModel = viewModel()
+) {
+  LaunchedEffect(contributions) { vm.setFromExternal(contributions) }
+  ProfileContributionsScreen(
+      onBackClick = onBackClick, onContributionClick = onContributionClick, vm = vm)
+}
+
+
+@Preview(showBackground = true)
+@Composable
+private fun ProfileContributionsScreenPreview() {
+    MySwissDormAppTheme {
+        val items = listOf(
+            Contribution("Listing l1", "Nice room near EPFL"),
+            Contribution("Request r1", "Student interested in a room")
+        )
+        ProfileContributionsScreen(
+            contributions = items,
+            onBackClick = {},
+            onContributionClick = {}
+        )
+    }
 }

@@ -8,18 +8,22 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.theme.AccentRed
 import com.android.mySwissDorm.ui.theme.BlockBg
 import com.android.mySwissDorm.ui.theme.BlockBorder
 import com.android.mySwissDorm.ui.theme.HintGrey
 import com.android.mySwissDorm.ui.theme.ScreenBg
+import androidx.compose.ui.tooling.preview.Preview
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,8 +31,13 @@ fun ListingDetailScreen(
     id: String,
     onBack: () -> Unit,
     onEdit: () -> Unit = {},
-    onClose: () -> Unit = onBack, // Close behaves like back by default
+    onClose: () -> Unit = onBack,
+    vm: ListingDetailViewModel = viewModel()
 ) {
+  // Load the data for this id
+  LaunchedEffect(id) { vm.load(id) }
+  val ui by vm.ui.collectAsState()
+
   Scaffold(
       containerColor = ScreenBg,
       topBar = {
@@ -55,16 +64,28 @@ fun ListingDetailScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .verticalScroll(scroll),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-              // Form-like read-only blocks
-              FieldBlock(label = "Identifier", value = "Listing #$id", tag = "field_identifiant")
-              FieldBlock(label = "Title", value = "Listing title", tag = "field_title")
 
-              FieldBlock("Location / Residence", "—", tag = "field_location")
-              FieldBlock("Housing type", "—", tag = "field_type")
-              FieldBlock("Area (m²)", "—", tag = "field_area")
-              FieldBlock("Map location", "—", tag = "field_map")
-              FieldBlock("Description", "—", tag = "field_description")
-              FieldBlock("Photos", "No photos", tag = "field_photos")
+              // Error / loading guards (simple and unobtrusive)
+              if (ui.isLoading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+              }
+              ui.error?.let { msg ->
+                Text(
+                    text = msg,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall)
+              }
+
+              // Form-like read-only blocks (use ViewModel state)
+              FieldBlock(
+                  label = "Identifier", value = "Listing #${ui.id}", tag = "field_identifiant")
+              FieldBlock(label = "Title", value = ui.title, tag = "field_title")
+              FieldBlock("Location / Residence", ui.location, tag = "field_location")
+              FieldBlock("Housing type", ui.type, tag = "field_type")
+              FieldBlock("Area (m²)", ui.areaM2, tag = "field_area")
+              FieldBlock("Map location", ui.mapLocation, tag = "field_map")
+              FieldBlock("Description", ui.description, tag = "field_description")
+              FieldBlock("Photos", ui.photosSummary, tag = "field_photos")
 
               Spacer(Modifier.height(4.dp))
 
@@ -118,4 +139,17 @@ private fun FieldBlock(label: String, value: String, tag: String? = null) {
               color = Color.Black)
         }
       }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ListingDetailScreenPreview() {
+    MySwissDormAppTheme {
+        ListingDetailScreen(
+            id = "l1",
+            onBack = {},
+            onEdit = {},
+            onClose = {}
+        )
+    }
 }

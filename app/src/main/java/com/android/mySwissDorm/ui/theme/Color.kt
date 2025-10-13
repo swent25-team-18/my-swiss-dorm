@@ -7,8 +7,6 @@ val White = Color(0xFFFFFFFF)
 val LightGray = Color(0xFFF0F0F0)
 val LightGray0 = Color(0xFFB0BEC5)
 
-val PalePink = Color(0xFFFC6C85)
-
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)

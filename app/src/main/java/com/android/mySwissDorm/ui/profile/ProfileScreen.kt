@@ -194,7 +194,6 @@ fun SettingToggle(
   }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditableTextField(label: String, value: String, onValueChange: (String) -> Unit, tag: String) {
   Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -209,12 +208,13 @@ fun EditableTextField(label: String, value: String, onValueChange: (String) -> U
         placeholder = { Text(text = label) },
         shape = RoundedCornerShape(12.dp),
         colors =
-            TextFieldDefaults.outlinedTextFieldColors(
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = Red0,
+            TextFieldDefaults.colors(
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Red0,
                 focusedLabelColor = Red0,
                 cursorColor = Red0,
-                containerColor = LightGray),
+                focusedContainerColor = LightGray,
+                unfocusedContainerColor = LightGray),
         textStyle = TextStyle(color = Color.Black, fontSize = 16.sp, textAlign = TextAlign.Start),
         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done))
   }

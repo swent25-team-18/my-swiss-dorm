@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.city.CityName
+import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalStatus
@@ -43,12 +44,14 @@ private val defaultListing =
 
 data class ViewListingUIState(
     val listing: RentalListing = defaultListing,
+    val fullNameOfPoster: String = "",
     val errorMsg: String? = null,
     val contactMessage: String = "",
 )
 
 class ViewListingViewModel(
-    private val repository: RentalListingRepository,
+    private val rentalListingRepository: RentalListingRepository,
+    private val profileRepository: ProfileRepository,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
@@ -71,12 +74,10 @@ class ViewListingViewModel(
   fun loadListing(listingId: String) {
     viewModelScope.launch {
       try {
-        val listing = repository.getRentalListing(listingId)
-        _uiState.value =
-            ViewListingUIState(
-                listing = listing,
-                errorMsg = null,
-            )
+        val listing = rentalListingRepository.getRentalListing(listingId)
+        val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
+        val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
+        _uiState.value = ViewListingUIState(listing = listing, fullNameOfPoster = fullNameOfPoster)
       } catch (e: Exception) {
         Log.e("EditTodoViewModel", "Error loading ToDo by ID: $listingId", e)
         setErrorMsg("Failed to load Listing: ${e.message}")

@@ -8,22 +8,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.ui.theme.AccentRed
-import com.android.mySwissDorm.ui.theme.BlockBg
-import com.android.mySwissDorm.ui.theme.BlockBorder
-import com.android.mySwissDorm.ui.theme.HintGrey
-import com.android.mySwissDorm.ui.theme.ScreenBg
-import androidx.compose.ui.tooling.preview.Preview
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-
+import com.android.mySwissDorm.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,14 +24,9 @@ fun ListingDetailScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit = {},
     onClose: () -> Unit = onBack,
-    vm: ListingDetailViewModel = viewModel()
 ) {
-  // Load the data for this id
-  LaunchedEffect(id) { vm.load(id) }
-  val ui by vm.ui.collectAsState()
-
   Scaffold(
-      containerColor = ScreenBg,
+      containerColor = LightGray,
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("Listing details") },
@@ -48,12 +35,12 @@ fun ListingDetailScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = AccentRed)
+                    tint = Red0)
               }
             },
             colors =
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White, titleContentColor = Color.Black))
+                    containerColor = White, titleContentColor = Color.Black))
       }) { inner ->
         val scroll = rememberScrollState()
 
@@ -64,28 +51,14 @@ fun ListingDetailScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .verticalScroll(scroll),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-
-              // Error / loading guards (simple and unobtrusive)
-              if (ui.isLoading) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-              }
-              ui.error?.let { msg ->
-                Text(
-                    text = msg,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall)
-              }
-
-              // Form-like read-only blocks (use ViewModel state)
-              FieldBlock(
-                  label = "Identifier", value = "Listing #${ui.id}", tag = "field_identifiant")
-              FieldBlock(label = "Title", value = ui.title, tag = "field_title")
-              FieldBlock("Location / Residence", ui.location, tag = "field_location")
-              FieldBlock("Housing type", ui.type, tag = "field_type")
-              FieldBlock("Area (m²)", ui.areaM2, tag = "field_area")
-              FieldBlock("Map location", ui.mapLocation, tag = "field_map")
-              FieldBlock("Description", ui.description, tag = "field_description")
-              FieldBlock("Photos", ui.photosSummary, tag = "field_photos")
+              FieldBlock("Identifier", "Listing #$id", "field_identifiant")
+              FieldBlock("Title", "Listing title", "field_title")
+              FieldBlock("Location / Residence", "—", "field_location")
+              FieldBlock("Housing type", "—", "field_type")
+              FieldBlock("Area (m²)", "—", "field_area")
+              FieldBlock("Map location", "—", "field_map")
+              FieldBlock("Description", "—", "field_description")
+              FieldBlock("Photos", "No photos", "field_photos")
 
               Spacer(Modifier.height(4.dp))
 
@@ -95,10 +68,10 @@ fun ListingDetailScreen(
                     OutlinedButton(
                         onClick = onEdit,
                         modifier = Modifier.testTag("btn_edit"),
-                        border = BorderStroke(1.dp, AccentRed),
+                        border = BorderStroke(1.dp, Red0),
                         colors =
                             ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.Transparent, contentColor = AccentRed),
+                                containerColor = Color.Transparent, contentColor = Red0),
                         shape = MaterialTheme.shapes.medium) {
                           Text("Edit")
                         }
@@ -108,7 +81,7 @@ fun ListingDetailScreen(
                         modifier = Modifier.testTag("btn_close"),
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = AccentRed, contentColor = Color.White),
+                                containerColor = Red0, contentColor = White),
                         shape = MaterialTheme.shapes.medium) {
                           Text("Close")
                         }
@@ -117,21 +90,20 @@ fun ListingDetailScreen(
       }
 }
 
-/** Full-width block that mimics a read-only form field. */
 @Composable
 private fun FieldBlock(label: String, value: String, tag: String? = null) {
   Surface(
       modifier = Modifier.fillMaxWidth().let { m -> if (tag != null) m.testTag(tag) else m },
       shape = RoundedCornerShape(14.dp),
-      color = BlockBg,
-      border = BorderStroke(1.dp, BlockBorder),
+      color = LightGray,
+      border = BorderStroke(1.dp, LightGray0),
       shadowElevation = 0.dp,
       tonalElevation = 0.dp) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-          Text(text = label, color = HintGrey, style = MaterialTheme.typography.labelMedium)
+          Text(label, color = HintGrey, style = MaterialTheme.typography.labelMedium)
           Spacer(Modifier.height(4.dp))
           Text(
-              text = value,
+              value,
               modifier = if (tag != null) Modifier.testTag("${tag}_value") else Modifier,
               style =
                   MaterialTheme.typography.bodyLarge.copy(
@@ -139,17 +111,4 @@ private fun FieldBlock(label: String, value: String, tag: String? = null) {
               color = Color.Black)
         }
       }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ListingDetailScreenPreview() {
-    MySwissDormAppTheme {
-        ListingDetailScreen(
-            id = "l1",
-            onBack = {},
-            onEdit = {},
-            onClose = {}
-        )
-    }
 }

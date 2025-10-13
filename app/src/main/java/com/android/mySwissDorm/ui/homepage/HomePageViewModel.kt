@@ -10,10 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class HomePageUIState(
-    val cities: List<City> = emptyList(),
-    val errorMsg: String? = null
-)
+data class HomePageUIState(val cities: List<City> = emptyList(), val errorMsg: String? = null)
 
 class HomePageViewModel(
     private val citiesRepository: CitiesRepository = CitiesRepositoryProvider.repository

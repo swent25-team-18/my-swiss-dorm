@@ -8,7 +8,9 @@ import com.google.firebase.firestore.firestore
  * purposes.
  */
 object CitiesRepositoryProvider {
-  private val _repository: CitiesRepository by lazy { CitiesRepositoryFirestore(Firebase.firestore) }
+  private val _repository: CitiesRepository by lazy {
+    CitiesRepositoryFirestore(Firebase.firestore)
+  }
 
   var repository: CitiesRepository = _repository
 }

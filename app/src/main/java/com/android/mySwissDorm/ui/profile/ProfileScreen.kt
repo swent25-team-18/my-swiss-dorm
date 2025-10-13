@@ -1,12 +1,15 @@
 package com.android.mySwissDorm.ui.profile
 
+// NEW imports (only additions)
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
@@ -88,7 +91,12 @@ private fun ProfileScreenContent(
             })
       }) { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()) // ← added
+                    .testTag("profile_list"), // ← added
             horizontalAlignment = Alignment.CenterHorizontally) {
               // Profile Picture
               Box(

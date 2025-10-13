@@ -26,13 +26,22 @@ class ProfileScreenTest {
       ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {})
     }
 
-    // Verify key structural elements are found by their tags
+    // App bar items are already visible (not scrollable)
     composeTestRule.onNodeWithTag("profile_title").assertIsDisplayed().assertTextEquals("Profile")
     composeTestRule.onNodeWithTag("profile_back_button").assertIsDisplayed()
+
+    // Content lives inside the scrollable Column tagged "profile_list"
+    composeTestRule
+        .onNodeWithTag("profile_list")
+        .performScrollToNode(hasTestTag("profile_logout_button"))
     composeTestRule.onNodeWithTag("profile_logout_button").assertIsDisplayed()
 
-    // Verify a sample text field and switch are present
+    composeTestRule.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("field_username"))
     composeTestRule.onNodeWithTag("field_username").assertIsDisplayed()
+
+    composeTestRule
+        .onNodeWithTag("profile_list")
+        .performScrollToNode(hasTestTag("switch_anonymous"))
     composeTestRule.onNodeWithTag("switch_anonymous").assertIsDisplayed()
   }
 
@@ -75,12 +84,23 @@ class ProfileScreenTest {
           onBack = { backClicked = true })
     }
 
-    // Test Logout Button
-    composeTestRule.onNodeWithTag("profile_logout_button").performClick()
+    // Logout: scroll the **Button** into view, ensure it's clickable, then click
+    composeTestRule
+        .onNode(hasTestTag("profile_logout_button") and hasClickAction(), useUnmergedTree = true)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.waitUntil(2_000) { logoutClicked }
     assert(logoutClicked) { "Logout handler was not called." }
 
-    // Test Back Button
-    composeTestRule.onNodeWithTag("profile_back_button").performClick()
+    // Back button (likely an IconButton in TopAppBar)
+    composeTestRule
+        .onNode(hasTestTag("profile_back_button") and hasClickAction(), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.waitUntil(2_000) { backClicked }
     assert(backClicked) { "Back handler was not called." }
   }
 

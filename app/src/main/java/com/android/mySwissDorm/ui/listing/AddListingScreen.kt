@@ -19,11 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
-import com.android.mySwissDorm.ui.listing.ListingForm
 
 @OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
 
@@ -33,7 +35,8 @@ fun AddListingScreen(
     modifier: Modifier = Modifier,
     accentColor: Color = Color(0xFFFF0004), // Red color for buttons and arrow
     onOpenMap: () -> Unit, // navigate to "drop a pin" screen
-    onConfirm: (ListingForm) -> Unit // called when form valid
+    onConfirm: (RentalListing) -> Unit, // called when form valid
+    onBack: () -> Unit //navigate back
 ) {
   val viewModel: AddListingViewModel = viewModel()
 
@@ -50,7 +53,7 @@ fun AddListingScreen(
         CenterAlignedTopAppBar(
             title = { Text("Add Listing") },
             navigationIcon = {
-              IconButton(onClick = { /* TODO: Handle Back Navigation */}) {
+              IconButton(onClick = { onBack }) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
@@ -72,7 +75,7 @@ fun AddListingScreen(
             Spacer(Modifier.height(8.dp))
             if (!isFormValid) {
               Text(
-                  "Please complete all required fields (valid size and roommates if shared).",
+                  "Please complete all required fields (valid size, price, and starting date).",
                   style = MaterialTheme.typography.bodySmall,
                   color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -110,75 +113,28 @@ fun AddListingScreen(
                               Color.Gray // Optional: Change label color when not focused
                           ))
 
-              OutlinedTextField(
-                  value = viewModel.residency.value,
-                  onValueChange = { viewModel.residency.value = it },
-                  leadingIcon = { Icon(Icons.Default.Apartment, null, tint = Color(coralColor)) },
-                  label = { Text("Location / Residency name") },
-                  singleLine = true,
-                  keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                  modifier =
-                      Modifier.fillMaxWidth()
-                          .background(
-                              Color(0xFFF0F0F0),
-                              RoundedCornerShape(10.dp)), // Gray with rounded edges
-                  colors =
-                      androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                          focusedBorderColor = Color(coralColor), // Focused outline color (Red)
-                          unfocusedBorderColor =
-                              Color.Transparent, // Remove the default border when not focused
-                          focusedLabelColor =
-                              Color(coralColor), // Optional: Change label color when focused
-                          unfocusedLabelColor =
-                              Color.Gray // Optional: Change label color when not focused
-                          ))
+              ResidencyDropdown(
+                  selected = viewModel.residency.value,
+                  onSelected = { viewModel.residency.value = it},
+                  accentColor = accentColor
+              )
 
               HousingTypeDropdown(
                   selected = viewModel.housingType.value,
                   onSelected = { viewModel.housingType.value = it },
                   accentColor = accentColor)
 
-              if (viewModel.housingType.value == RoomType.COLOCATION) {
-                OutlinedTextField(
-                    value = viewModel.roommates.value,
-                    onValueChange = { input ->
-                      // Allow only digits and update the value
-                      if (input.isEmpty() || input.all { it.isDigit() }) {
-                        viewModel.roommates.value = input
-                      }
-                    },
-                    label = { Text("Number of roommates") },
-                    singleLine = true,
-                    supportingText = { Text("Between 1 and 20") },
-                    isError = viewModel.roommates.value.toIntOrNull() !in 1..20,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .background(
-                                Color(0xFFF0F0F0),
-                                RoundedCornerShape(10.dp)), // Gray with rounded edges
-                    colors =
-                        androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(coralColor), // Focused outline color (Red)
-                            unfocusedBorderColor =
-                                Color.Transparent, // Remove the default border when not focused
-                            focusedLabelColor =
-                                Color(coralColor), // Optional: Change label color when focused
-                            unfocusedLabelColor =
-                                Color.Gray // Optional: Change label color when not focused
-                            ))
-              }
 
-              val isValid = viewModel.sizeSqm.value.toDoubleOrNull() != null
+              val isSizeValid = viewModel.sizeSqm.value.toDoubleOrNull() != null
               OutlinedTextField(
                   value = viewModel.sizeSqm.value,
                   onValueChange = { input ->
-                    if (input.isEmpty() || input.matches(Regex("^[0-9]*\\.?[0-9]*$"))) {
+                    if (input.isEmpty() || input.matches(Regex("""^(?:0|[1-9]\d*)(?:[.,]\d*)?$"""))) {
                       viewModel.sizeSqm.value = input
                     }
                   },
                   label = { Text("Room size (m²)") },
-                  isError = !isValid, // Show error state if invalid
+                  isError = !isSizeValid, // Show error state if invalid
                   singleLine = true,
                   keyboardOptions =
                       KeyboardOptions(
@@ -193,29 +149,63 @@ fun AddListingScreen(
                           focusedLabelColor = Color(coralColor),
                           unfocusedLabelColor = Color.Gray))
 
-              if (!isValid) {
+              if (!isSizeValid) {
                 Text(
                     text = "Please enter a valid number.",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
               }
 
+
+            val isPriceValid = viewModel.price.value.toDoubleOrNull() != null
+            OutlinedTextField(
+                value = viewModel.price.value,
+                onValueChange = { input ->
+                    if (input.isEmpty() || input.matches(Regex("^(?:0|[1-9]\\d*)\$"))) {
+                        viewModel.price.value = input
+                    }
+                },
+                label = { Text("Monthly rent (CHF)") },
+                isError = !isPriceValid, // Show error state if invalid
+                singleLine = true,
+                keyboardOptions =
+                    KeyboardOptions(
+                        imeAction = ImeAction.Done, keyboardType = KeyboardType.Number),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
+                colors =
+                    androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(coralColor),
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedLabelColor = Color(coralColor),
+                        unfocusedLabelColor = Color.Gray))
+
+            if (!isPriceValid) {
+                Text(
+                    text = "Please enter a valid number.",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall)
+            }
+
               // Map button
-              ElevatedButton(
-                  onClick = onOpenMap,
-                  modifier = Modifier.fillMaxWidth(),
-                  colors =
-                      ButtonDefaults.buttonColors(
-                          containerColor = Color(0xFFF0F0F0), // Background color (optional)
-                          contentColor = Color(coralColor) // Text color (your desired purple shade)
-                          ),
-                  shape = RoundedCornerShape(14.dp)) {
-                    Icon(Icons.Default.Map, null, tint = Color(coralColor))
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        if (mapLat != null && mapLng != null) "Location selected (tap to change)"
-                        else "Add location on the map")
-                  }
+//              ElevatedButton(
+//                  onClick = onOpenMap,
+//                  modifier = Modifier.fillMaxWidth(),
+//                  colors =
+//                      ButtonDefaults.buttonColors(
+//                          containerColor = Color(0xFFF0F0F0), // Background color (optional)
+//                          contentColor = Color(coralColor) // Text color (your desired purple shade)
+//                          ),
+//                  shape = RoundedCornerShape(14.dp)) {
+//                    Icon(Icons.Default.Map, null, tint = Color(coralColor))
+//                    Spacer(Modifier.width(8.dp))
+//                    Text(
+//                        if (mapLat != null && mapLng != null) "Location selected (tap to change)"
+//                        else "Add location on the map")
+//                  }
+
+
 
               OutlinedTextField(
                   value = viewModel.description.value,
@@ -285,7 +275,7 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
         readOnly = true,
         label = { Text("Housing type") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-        leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(coralColor)) },
+        leadingIcon = { Icon(Icons.Default.Apartment, null, tint = Color(coralColor)) },
         colors =
             androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color(coralColor), // Focused outline color (Red)
@@ -308,3 +298,52 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
     }
   }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ResidencyDropdown(selected: ResidencyName?, onSelected: (ResidencyName) -> Unit, accentColor: Color) {
+    var expanded by remember { mutableStateOf(false) }
+    val label = selected?.toString() ?: "Select residency"
+
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = label,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Residency Name") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(coralColor)) },
+            colors =
+                androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(coralColor), // Focused outline color (Red)
+                    unfocusedBorderColor =
+                        Color(coralColor), // Remove the default border when not focused
+                    focusedLabelColor = Color(coralColor), // Optional: Change label color when focused
+                    unfocusedLabelColor = Color.Gray // Optional: Change label color when not focused
+                ),
+            modifier = Modifier.menuAnchor().fillMaxWidth(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            ResidencyName.entries.forEach { type ->
+                DropdownMenuItem(
+                    text = { Text(type.toString()) },
+                    onClick = {
+                        onSelected(type)
+                        expanded = false
+                    })
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun AddListingScreenPreview(){
+    AddListingScreen(
+        onBack = {},
+        onConfirm = {},
+        onOpenMap = {}
+    )
+}
+
+

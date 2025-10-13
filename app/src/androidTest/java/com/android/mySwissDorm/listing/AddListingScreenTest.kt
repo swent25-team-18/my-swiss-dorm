@@ -18,7 +18,7 @@ class AddListingScreenTest {
   @Before
   fun setup() {
     viewModel = AddListingViewModel()
-    composeTestRule.setContent { AddListingScreen(onOpenMap = {}, onConfirm = {}) }
+    composeTestRule.setContent { AddListingScreen(onOpenMap = {}, onConfirm = {}, onBack = {}) }
   }
 
   @Test

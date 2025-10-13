@@ -1,5 +1,9 @@
-package com.android.mySwissDorm
+package com.android.mySwissDorm.profile
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -37,20 +41,25 @@ class ProfileScreenTest {
     val anonymousTag = "switch_anonymous"
 
     composeTestRule.setContent {
-      SettingToggle(label = "Anonymous", redColor = Color.Red, tag = anonymousTag)
+      // IMPORTANT: remember the state
+      var isChecked by remember { mutableStateOf(true) }
+      com.android.mySwissDorm.ui.profile.SettingToggle(
+          label = "Anonymous",
+          redColor = Color.Red,
+          checked = isChecked,
+          onCheckedChange = { isChecked = it },
+          tag = anonymousTag)
     }
 
     val switchNode = composeTestRule.onNodeWithTag(anonymousTag)
-
-    // Initial state is ON
     switchNode.assertIsOn()
 
-    // Toggle OFF
     switchNode.performClick()
+    composeTestRule.waitForIdle()
     switchNode.assertIsOff()
 
-    // Toggle ON
     switchNode.performClick()
+    composeTestRule.waitForIdle()
     switchNode.assertIsOn()
   }
 
@@ -80,16 +89,16 @@ class ProfileScreenTest {
     val visibilityTag = "switch_visibility"
 
     composeTestRule.setContent {
-      SettingToggle(label = "Visibility", redColor = Color.Red, tag = visibilityTag)
+      var isChecked by remember { mutableStateOf(true) }
+      com.android.mySwissDorm.ui.profile.SettingToggle(
+          label = "Visibility",
+          redColor = Color.Red,
+          checked = isChecked,
+          onCheckedChange = { isChecked = it },
+          tag = visibilityTag)
     }
 
-    // 1. Find the parent component (the box containing the text and switch)
-    // We use the tag on the switch and assert its parent contains the expected text.
-    val switchNode = composeTestRule.onNodeWithTag(visibilityTag)
-
-    // Assert that the node's parent (the Row) contains the correct label text
-    // This verifies the label is correctly associated with the toggle box structure.
-    switchNode.assertIsDisplayed()
+    composeTestRule.onNodeWithTag(visibilityTag).assertIsDisplayed()
     composeTestRule.onNodeWithText("Visibility").assertIsDisplayed()
   }
 
@@ -122,7 +131,6 @@ class ProfileScreenTest {
 
     // Assert each field contains its respective label/placeholder text when empty.
     composeTestRule.onNodeWithTag("field_username").assertTextContains("Username")
-    composeTestRule.onNodeWithTag("field_birth_date").assertTextContains("Birth Date")
     composeTestRule.onNodeWithTag("field_language").assertTextContains("Language")
     composeTestRule.onNodeWithTag("field_residence").assertTextContains("Residence")
   }

@@ -2,13 +2,16 @@ package com.android.mySwissDorm.homepage
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
-import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
+import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
+import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
 import com.android.mySwissDorm.ui.homepage.HomePageViewModel
 import org.junit.Before
 import org.junit.Rule
@@ -21,128 +24,157 @@ class HomePageScreenTest {
   private lateinit var viewModel: HomePageViewModel
 
   val repository = CitiesRepositoryProvider.repository
+  val allCities = CityName.entries.toTypedArray()
 
   @Before
   fun setup() {
     viewModel = HomePageViewModel(repository)
-    composeTestRule.setContent { HomePageScreen() }
+    composeTestRule.setContent { HomePageScreen(viewModel) }
   }
 
   @Test
   fun testBasicElementsAreDisplayed() {
-    composeTestRule.onNodeWithText("Browse").isDisplayed()
-    composeTestRule.onNodeWithText("Contact Support").isDisplayed()
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CONTACT_SUPPORT).assertIsDisplayed()
   }
 
   @Test
   fun testCityCards() {
-    // Check that the "Lausanne" card is displayed
-    composeTestRule.onNodeWithText("Lausanne").performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Lausanne").assertIsDisplayed()
+    allCities.forEach {
+      composeTestRule.waitUntil(timeoutMillis = 3_000) {
+        composeTestRule
+            .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+          .performScrollTo()
+      composeTestRule.waitForIdle()
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+          .assertIsDisplayed()
 
-    composeTestRule
-        .onNodeWithText(
-            "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.")
-        .performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule
-        .onNodeWithText(
-            "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.")
-        .assertIsDisplayed()
+      composeTestRule
+          .onNodeWithTag(
+              HomePageScreenTestTags.getTestTagForCityCardTitle(it), useUnmergedTree = true)
+          .assertIsDisplayed()
 
-    // Check that the "Geneva" card is displayed
-    composeTestRule.onNodeWithText("Geneva").performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Geneva").assertIsDisplayed()
-
-    composeTestRule
-        .onNodeWithText("Geneva is a global city, hosting numerous international organizations.")
-        .performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule
-        .onNodeWithText("Geneva is a global city, hosting numerous international organizations.")
-        .assertIsDisplayed()
-
-    // Check that the "Zürich" card is displayed
-    composeTestRule.onNodeWithText("Zürich").performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Zürich").assertIsDisplayed()
-
-    composeTestRule
-        .onNodeWithText("Zurich is the largest city in Switzerland and a major financial hub.")
-        .performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule
-        .onNodeWithText("Zurich is the largest city in Switzerland and a major financial hub.")
-        .assertIsDisplayed()
-
-    // Check that the "Fribourg" card is displayed
-    composeTestRule.onNodeWithText("Fribourg").performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Fribourg").assertIsDisplayed()
-
-    composeTestRule
-        .onNodeWithText("Fribourg is a bilingual city famous for its medieval architecture.")
-        .performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule
-        .onNodeWithText("Fribourg is a bilingual city famous for its medieval architecture.")
-        .assertIsDisplayed()
+      composeTestRule
+          .onNodeWithTag(
+              HomePageScreenTestTags.getTestTagForCityCardDescription(it), useUnmergedTree = true)
+          .assertIsDisplayed()
+    }
   }
 
   @Test
   fun testSearchTextField() {
     // Check that the search bar field is displayed
-    composeTestRule.onNodeWithText("Browse").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD).assertIsDisplayed()
 
     // Type text into the search bar
-    composeTestRule.onNodeWithText("Browse").performTextInput("Example")
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
+        .performTextInput("Example")
 
     // Verify that the value is updated
-    composeTestRule.onNodeWithText("Example").assertExists()
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
+        .assertTextEquals("Example")
   }
 
   @Test
-  fun testSearchTextFieldWorks() {
+  fun testSearchTextFieldWorksForCityName() {
     // Check that the search bar field is displayed
-    composeTestRule.onNodeWithText("Browse").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD).assertIsDisplayed()
 
-    // Check that the "Lausanne" card is displayed
-    composeTestRule.onNodeWithText("Lausanne").performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Lausanne").assertIsDisplayed()
-
-    // Check that the "Geneva" card is displayed
-    composeTestRule.onNodeWithText("Geneva").performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Geneva").assertIsDisplayed()
-
-    // Check that the "Zürich" card is displayed
-    composeTestRule.onNodeWithText("Zürich").performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Zürich").assertIsDisplayed()
-
-    // Check that the "Fribourg" card is displayed
-    composeTestRule.onNodeWithText("Fribourg").performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Fribourg").assertIsDisplayed()
+    allCities.forEach {
+      composeTestRule.waitUntil(timeoutMillis = 3_000) {
+        composeTestRule
+            .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+          .performScrollTo()
+      composeTestRule.waitForIdle()
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+          .assertIsDisplayed()
+    }
 
     // Type text into the search bar
-    composeTestRule.onNodeWithText("Browse").performTextInput("Laus")
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
+        .performTextInput("Laus")
 
     // Check that the "Lausanne" card is still displayed
-    composeTestRule.onNodeWithText("Lausanne").performScrollTo()
+    composeTestRule.waitUntil(timeoutMillis = 3_000) {
+      composeTestRule
+          .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard(CityName.LAUSANNE))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(CityName.LAUSANNE))
+        .performScrollTo()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Lausanne").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(CityName.LAUSANNE))
+        .assertIsDisplayed()
 
-    // Check that the "Geneva" card is not displayed anymore
-    composeTestRule.onNodeWithText("Geneva").assertIsNotDisplayed()
+    allCities
+        .filter { city -> city != CityName.LAUSANNE }
+        .forEach {
+          composeTestRule
+              .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+              .assertIsNotDisplayed()
+        }
+  }
 
-    // Check that the "Zürich" card is not displayed anymore
-    composeTestRule.onNodeWithText("Zürich").assertIsNotDisplayed()
+  @Test
+  fun testSearchTextFieldWorksForCityDescription() {
+    // Check that the search bar field is displayed
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD).assertIsDisplayed()
 
-    // Check that the "Fribourg" card is not displayed anymore
-    composeTestRule.onNodeWithText("Fribourg").assertIsNotDisplayed()
+    allCities.forEach {
+      composeTestRule.waitUntil(timeoutMillis = 3_000) {
+        composeTestRule
+            .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+          .performScrollTo()
+      composeTestRule.waitForIdle()
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+          .assertIsDisplayed()
+    }
+
+    // Type text into the search bar
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
+        .performTextInput("major financial")
+
+    // Check that the "Zürich" card is still displayed
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(CityName.ZURICH))
+        .performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(CityName.ZURICH))
+        .assertIsDisplayed()
+
+    allCities
+        .filter { city -> city != CityName.ZURICH }
+        .forEach {
+          composeTestRule
+              .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
+              .assertIsNotDisplayed()
+        }
   }
 }

@@ -10,10 +10,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class HomePageUIState(val cities: List<City> = emptyList(), val errorMsg: String? = null)
+data class HomePageUIState(
+    val cities: List<City> = emptyList(),
+    val errorMsg: String? = null
+)
 
 class HomePageViewModel(
-    private val repository: CitiesRepository = CitiesRepositoryProvider.repository
+    private val citiesRepository: CitiesRepository = CitiesRepositoryProvider.repository
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(HomePageUIState())
@@ -26,10 +29,10 @@ class HomePageViewModel(
   private fun loadCities() {
     viewModelScope.launch {
       try {
-        val cities = repository.getAllCities()
-        _uiState.value = HomePageUIState(cities = cities)
+        val cities = citiesRepository.getAllCities()
+        _uiState.value = _uiState.value.copy(cities = cities)
       } catch (e: Exception) {
-        _uiState.value = HomePageUIState(errorMsg = e.message)
+        _uiState.value = _uiState.value.copy(errorMsg = e.message)
       }
     }
   }

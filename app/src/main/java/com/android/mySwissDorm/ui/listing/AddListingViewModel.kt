@@ -16,8 +16,8 @@ import java.net.URL
 class AddListingViewModel : ViewModel() {
   // Mutable state for form fields
   var title = mutableStateOf("")
-    var residency = mutableStateOf<ResidencyName?>(null)
-    var price = mutableStateOf("")
+  var residency = mutableStateOf<ResidencyName?>(null)
+  var price = mutableStateOf("")
   var housingType = mutableStateOf<RoomType?>(null)
   var sizeSqm = mutableStateOf("")
   var description = mutableStateOf("")
@@ -29,12 +29,12 @@ class AddListingViewModel : ViewModel() {
   val isFormValid: Boolean
     get() {
       val sizeOk = sizeSqm.value.toDoubleOrNull()?.let { it in 1.0..1000.0 } == true
-      val priceOk = price.value.toIntOrNull()?.let {  it in 1..10000 } == true
+      val priceOk = price.value.toIntOrNull()?.let { it in 1..10000 } == true
       return title.value.isNotBlank() &&
           residency.value != null &&
           housingType.value != null &&
           sizeOk &&
-              priceOk
+          priceOk
     }
 
   // Function to handle form submission
@@ -43,19 +43,25 @@ class AddListingViewModel : ViewModel() {
       onConfirm(
           RentalListing(
               uid = "uid",
-          ownerId = "ownerId",
-        postedAt = Timestamp.now(),
-        residency = Residency(ResidencyName.VORTEX, "", Location("Vortex"), CityName.LAUSANNE, "123@gmail.com", "12345678", URL("www.website.com") ),
-        title= "title",
-        roomType=  RoomType.STUDIO,
-        pricePerMonth = 630.0,
-        areaInM2 = 12,
-        startDate=  Timestamp.now(),
-        description = "description",
-        imageUrls = listOf(""),
-        status=  RentalStatus.POSTED
-        )
-      )
+              ownerId = "ownerId",
+              postedAt = Timestamp.now(),
+              residency =
+                  Residency(
+                      ResidencyName.VORTEX,
+                      "",
+                      Location("Vortex"),
+                      CityName.LAUSANNE,
+                      "123@gmail.com",
+                      "12345678",
+                      URL("www.website.com")),
+              title = "title",
+              roomType = RoomType.STUDIO,
+              pricePerMonth = 630.0,
+              areaInM2 = 12,
+              startDate = Timestamp.now(),
+              description = "description",
+              imageUrls = listOf(""),
+              status = RentalStatus.POSTED))
     }
   }
 }

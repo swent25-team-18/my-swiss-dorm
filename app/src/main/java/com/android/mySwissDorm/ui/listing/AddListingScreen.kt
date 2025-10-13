@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,7 +35,7 @@ fun AddListingScreen(
     accentColor: Color = Color(0xFFFF0004), // Red color for buttons and arrow
     onOpenMap: () -> Unit, // navigate to "drop a pin" screen
     onConfirm: (RentalListing) -> Unit, // called when form valid
-    onBack: () -> Unit //navigate back
+    onBack: () -> Unit // navigate back
 ) {
   val viewModel: AddListingViewModel = viewModel()
 
@@ -115,21 +114,20 @@ fun AddListingScreen(
 
               ResidencyDropdown(
                   selected = viewModel.residency.value,
-                  onSelected = { viewModel.residency.value = it},
-                  accentColor = accentColor
-              )
+                  onSelected = { viewModel.residency.value = it },
+                  accentColor = accentColor)
 
               HousingTypeDropdown(
                   selected = viewModel.housingType.value,
                   onSelected = { viewModel.housingType.value = it },
                   accentColor = accentColor)
 
-
               val isSizeValid = viewModel.sizeSqm.value.toDoubleOrNull() != null
               OutlinedTextField(
                   value = viewModel.sizeSqm.value,
                   onValueChange = { input ->
-                    if (input.isEmpty() || input.matches(Regex("""^(?:0|[1-9]\d*)(?:[.,]\d*)?$"""))) {
+                    if (input.isEmpty() ||
+                        input.matches(Regex("""^(?:0|[1-9]\d*)(?:[.,]\d*)?$"""))) {
                       viewModel.sizeSqm.value = input
                     }
                   },
@@ -156,56 +154,56 @@ fun AddListingScreen(
                     style = MaterialTheme.typography.bodySmall)
               }
 
-
-            val isPriceValid = viewModel.price.value.toDoubleOrNull() != null
-            OutlinedTextField(
-                value = viewModel.price.value,
-                onValueChange = { input ->
+              val isPriceValid = viewModel.price.value.toDoubleOrNull() != null
+              OutlinedTextField(
+                  value = viewModel.price.value,
+                  onValueChange = { input ->
                     if (input.isEmpty() || input.matches(Regex("^(?:0|[1-9]\\d*)\$"))) {
-                        viewModel.price.value = input
+                      viewModel.price.value = input
                     }
-                },
-                label = { Text("Monthly rent (CHF)") },
-                isError = !isPriceValid, // Show error state if invalid
-                singleLine = true,
-                keyboardOptions =
-                    KeyboardOptions(
-                        imeAction = ImeAction.Done, keyboardType = KeyboardType.Number),
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
-                colors =
-                    androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(coralColor),
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedLabelColor = Color(coralColor),
-                        unfocusedLabelColor = Color.Gray))
+                  },
+                  label = { Text("Monthly rent (CHF)") },
+                  isError = !isPriceValid, // Show error state if invalid
+                  singleLine = true,
+                  keyboardOptions =
+                      KeyboardOptions(
+                          imeAction = ImeAction.Done, keyboardType = KeyboardType.Number),
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
+                  colors =
+                      androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                          focusedBorderColor = Color(coralColor),
+                          unfocusedBorderColor = Color.Transparent,
+                          focusedLabelColor = Color(coralColor),
+                          unfocusedLabelColor = Color.Gray))
 
-            if (!isPriceValid) {
+              if (!isPriceValid) {
                 Text(
                     text = "Please enter a valid number.",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
-            }
+              }
 
               // Map button
-//              ElevatedButton(
-//                  onClick = onOpenMap,
-//                  modifier = Modifier.fillMaxWidth(),
-//                  colors =
-//                      ButtonDefaults.buttonColors(
-//                          containerColor = Color(0xFFF0F0F0), // Background color (optional)
-//                          contentColor = Color(coralColor) // Text color (your desired purple shade)
-//                          ),
-//                  shape = RoundedCornerShape(14.dp)) {
-//                    Icon(Icons.Default.Map, null, tint = Color(coralColor))
-//                    Spacer(Modifier.width(8.dp))
-//                    Text(
-//                        if (mapLat != null && mapLng != null) "Location selected (tap to change)"
-//                        else "Add location on the map")
-//                  }
-
-
+              //              ElevatedButton(
+              //                  onClick = onOpenMap,
+              //                  modifier = Modifier.fillMaxWidth(),
+              //                  colors =
+              //                      ButtonDefaults.buttonColors(
+              //                          containerColor = Color(0xFFF0F0F0), // Background color
+              // (optional)
+              //                          contentColor = Color(coralColor) // Text color (your
+              // desired purple shade)
+              //                          ),
+              //                  shape = RoundedCornerShape(14.dp)) {
+              //                    Icon(Icons.Default.Map, null, tint = Color(coralColor))
+              //                    Spacer(Modifier.width(8.dp))
+              //                    Text(
+              //                        if (mapLat != null && mapLng != null) "Location selected
+              // (tap to change)"
+              //                        else "Add location on the map")
+              //                  }
 
               OutlinedTextField(
                   value = viewModel.description.value,
@@ -301,49 +299,47 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResidencyDropdown(selected: ResidencyName?, onSelected: (ResidencyName) -> Unit, accentColor: Color) {
-    var expanded by remember { mutableStateOf(false) }
-    val label = selected?.toString() ?: "Select residency"
+fun ResidencyDropdown(
+    selected: ResidencyName?,
+    onSelected: (ResidencyName) -> Unit,
+    accentColor: Color
+) {
+  var expanded by remember { mutableStateOf(false) }
+  val label = selected?.toString() ?: "Select residency"
 
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = label,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Residency Name") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(coralColor)) },
-            colors =
-                androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(coralColor), // Focused outline color (Red)
-                    unfocusedBorderColor =
-                        Color(coralColor), // Remove the default border when not focused
-                    focusedLabelColor = Color(coralColor), // Optional: Change label color when focused
-                    unfocusedLabelColor = Color.Gray // Optional: Change label color when not focused
+  ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+    OutlinedTextField(
+        value = label,
+        onValueChange = {},
+        readOnly = true,
+        label = { Text("Residency Name") },
+        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+        leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(coralColor)) },
+        colors =
+            androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(coralColor), // Focused outline color (Red)
+                unfocusedBorderColor =
+                    Color(coralColor), // Remove the default border when not focused
+                focusedLabelColor = Color(coralColor), // Optional: Change label color when focused
+                unfocusedLabelColor = Color.Gray // Optional: Change label color when not focused
                 ),
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            ResidencyName.entries.forEach { type ->
-                DropdownMenuItem(
-                    text = { Text(type.toString()) },
-                    onClick = {
-                        onSelected(type)
-                        expanded = false
-                    })
-            }
-        }
+        modifier = Modifier.menuAnchor().fillMaxWidth(),
+    )
+    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+      ResidencyName.entries.forEach { type ->
+        DropdownMenuItem(
+            text = { Text(type.toString()) },
+            onClick = {
+              onSelected(type)
+              expanded = false
+            })
+      }
     }
+  }
 }
 
 @Preview
 @Composable
-fun AddListingScreenPreview(){
-    AddListingScreen(
-        onBack = {},
-        onConfirm = {},
-        onOpenMap = {}
-    )
+fun AddListingScreenPreview() {
+  AddListingScreen(onBack = {}, onConfirm = {}, onOpenMap = {})
 }
-
-

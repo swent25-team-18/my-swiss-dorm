@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.android.mySwissDorm.ui.theme.*
@@ -39,8 +40,8 @@ fun RequestDetailScreen(id: String, onBack: () -> Unit) {
                 Modifier.padding(inner).fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               FieldBlock("Identifier", "Request #$id", "req_field_identifiant")
-              FieldBlock("Requester", "…", "req_field_requester")
-              FieldBlock("Message", "“Hello, I am…”", "req_field_message")
+              FieldBlock("Requester", "Valerie S.", "req_field_requester")
+              FieldBlock("Message", "“Hello, I am interested in your flat”", "req_field_message")
 
               Spacer(Modifier.height(4.dp))
 
@@ -90,4 +91,10 @@ private fun FieldBlock(label: String, value: String, tag: String? = null) {
               color = Color.Black)
         }
       }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RequestDetailScreenPreview() {
+  MySwissDormAppTheme { RequestDetailScreen(id = "r1", onBack = {}) }
 }

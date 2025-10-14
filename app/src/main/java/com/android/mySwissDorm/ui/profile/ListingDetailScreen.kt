@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.android.mySwissDorm.ui.theme.*
@@ -100,7 +101,7 @@ private fun FieldBlock(label: String, value: String, tag: String? = null) {
       shadowElevation = 0.dp,
       tonalElevation = 0.dp) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-          Text(label, color = HintGrey, style = MaterialTheme.typography.labelMedium)
+          Text(label, color = LightGray0, style = MaterialTheme.typography.labelMedium)
           Spacer(Modifier.height(4.dp))
           Text(
               value,
@@ -111,4 +112,10 @@ private fun FieldBlock(label: String, value: String, tag: String? = null) {
               color = Color.Black)
         }
       }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ListingDetailScreenPreview() {
+  ListingDetailScreen(id = "12345", onBack = {}, onEdit = {}, onClose = {})
 }

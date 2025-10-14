@@ -18,7 +18,8 @@ data class RequestDetailUiState(
 class FakeRequestRepository {
   suspend fun fetchRequest(id: String): RequestDetailUiState {
     delay(200) // simulate I/O
-    return RequestDetailUiState(id = id)
+    return RequestDetailUiState(
+        id = id, requester = "Valerie S.", message = "“Hello, I am interested in your flat”")
   }
 }
 
@@ -29,7 +30,7 @@ class RequestDetailViewModel(private val repo: FakeRequestRepository = FakeReque
   val ui: StateFlow<RequestDetailUiState> = _ui
 
   fun load(id: String) {
-    // set id immediately so "Request #<id>" is visible on the first frame (good for tests/UX)
+    // Make id visible immediately for tests/UX
     _ui.value = _ui.value.copy(id = id, isLoading = true, error = null)
 
     viewModelScope.launch {
@@ -43,10 +44,10 @@ class RequestDetailViewModel(private val repo: FakeRequestRepository = FakeReque
   }
 
   fun accept() {
-    /* TODO: implement */
+    // TODO: backend call
   }
 
   fun reject() {
-    /* TODO: implement */
+    // TODO: backend call
   }
 }

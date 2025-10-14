@@ -8,14 +8,63 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.theme.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileContributionsRoute(
+    onBackClick: () -> Unit,
+    onContributionClick: (Contribution) -> Unit,
+    viewModel: ProfileContributionsViewModel = viewModel()
+) {
+  // Collect UI state from the ViewModel
+  val ui by viewModel.ui.collectAsState()
+
+  // Kick off loading once, but VM will no-op if items already set
+  LaunchedEffect(Unit) { viewModel.load() }
+
+  // Optional basic loading/error handling; the test focuses on items presence
+  when {
+    ui.isLoading && ui.items.isEmpty() -> {
+      Scaffold(
+          containerColor = LightGray,
+          topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("My contributions") },
+                navigationIcon = {
+                  IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Red0)
+                  }
+                },
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = White, titleContentColor = Color.Black))
+          }) { inner ->
+            Box(Modifier.padding(inner).fillMaxSize(), contentAlignment = Alignment.Center) {
+              CircularProgressIndicator()
+            }
+          }
+    }
+    else -> {
+      ProfileContributionsScreen(
+          contributions = ui.items,
+          onBackClick = onBackClick,
+          onContributionClick = onContributionClick)
+    }
+  }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

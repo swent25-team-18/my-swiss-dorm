@@ -20,12 +20,12 @@ class RequestDetailScreenUiTest {
   fun showsRequestInfoAndActions() {
     rule.setContent { MySwissDormAppTheme { RequestDetailScreen(id = "r1", onBack = {}) } }
 
+    // The VM sets id immediately; other fields can be default or loaded later.
     rule.waitForTag("req_field_identifiant")
-
     rule.onNodeWithTag("req_field_identifiant", useUnmergedTree = true).assertIsDisplayed()
     rule
         .onNodeWithTag("req_field_identifiant_value", useUnmergedTree = true)
-        .assertTextContains("Request #r1") // <-- updated to English
+        .assertTextContains("Request #r1")
     rule.onNodeWithTag("req_field_requester", useUnmergedTree = true).assertIsDisplayed()
     rule.onNodeWithTag("req_field_message", useUnmergedTree = true).assertIsDisplayed()
     rule.onNodeWithTag("btn_reject", useUnmergedTree = true).assertIsDisplayed()

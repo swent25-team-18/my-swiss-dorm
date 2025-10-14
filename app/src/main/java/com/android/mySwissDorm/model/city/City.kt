@@ -1,6 +1,6 @@
 package com.android.mySwissDorm.model.city
 
-import android.location.Location
+import com.android.mySwissDorm.model.map.Location
 
 data class City(
     val name: CityName,

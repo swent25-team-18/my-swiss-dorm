@@ -8,27 +8,92 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
+import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.city.CityName
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
 import com.android.mySwissDorm.ui.homepage.HomePageViewModel
+import com.android.mySwissDorm.utils.FakeUser
+import com.android.mySwissDorm.utils.FirebaseEmulator
+import com.android.mySwissDorm.utils.FirestoreTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-class HomePageScreenTest {
+class HomePageScreenTest : FirestoreTest() {
 
   @get:Rule val composeTestRule = createComposeRule()
 
   private lateinit var viewModel: HomePageViewModel
 
-  val repository = CitiesRepositoryProvider.repository
   val allCities = CityName.entries.toTypedArray()
+
+    override fun createRepositories() {
+        CitiesRepositoryProvider.repository = CitiesRepositoryFirestore(db = FirebaseEmulator.firestore)
+
+        val repository = CitiesRepositoryProvider.repository
+
+        val cityLausanne =
+            City(
+                name = CityName.LAUSANNE,
+                description =
+                    "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.",
+                location = Location(
+                    name = "Lausanne",
+                    latitude = 46.5197,
+                    longitude = 6.6323
+                ),
+                imageId = R.drawable.lausanne
+            )
+        val cityGeneva =
+            City(
+                name = CityName.GENEVA,
+                description = "Geneva is a global city, hosting numerous international organizations.",
+                location = Location(
+                    name = "Geneva",
+                    latitude = 46.2044,
+                    longitude = 6.1432
+                ),
+                imageId = R.drawable.geneve
+            )
+        val cityZurich =
+            City(
+                name = CityName.ZURICH,
+                description = "Zurich is the largest city in Switzerland and a major financial hub.",
+                location = Location(
+                    name = "Zürich",
+                    latitude = 47.3769,
+                    longitude = 8.5417
+                ),
+                imageId = R.drawable.zurich
+            )
+        val cityFribourg =
+            City(
+                name = CityName.FRIBOURG,
+                description = "Fribourg is a bilingual city famous for its medieval architecture.",
+                location = Location(
+                    name = "Fribourg",
+                    latitude = 46.8065,
+                    longitude = 7.16197
+                ),
+                imageId = R.drawable.fribourg
+            )
+
+        val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
+        runTest {
+            switchToUser(FakeUser.FakeUser1)
+            cities.forEach { repository.addCity(it) }
+        }
+    }
 
   @Before
   fun setup() {
-    viewModel = HomePageViewModel(repository)
+    viewModel = HomePageViewModel(CitiesRepositoryProvider.repository)
     composeTestRule.setContent { HomePageScreen(viewModel) }
   }
 

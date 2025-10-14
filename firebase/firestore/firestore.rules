@@ -13,5 +13,8 @@ service cloud.firestore {
     match /{collection} {
       allow read, write: if true;
     }
+    match /cities/{cityId} {
+        allow read, write: if true;
+    }
   }
 }

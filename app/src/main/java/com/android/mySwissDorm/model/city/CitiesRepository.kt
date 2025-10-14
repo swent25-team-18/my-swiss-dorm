@@ -17,4 +17,11 @@ interface CitiesRepository {
    * @throws Exception if the City item is not found.
    */
   suspend fun getCity(cityName: CityName): City
+
+  /**
+   * Adds a new City item to the repository (primarily for test purposes).
+   *
+   * @param city The City item to add.
+   */
+  suspend fun addCity(city: City)
 }

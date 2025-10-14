@@ -44,10 +44,9 @@ fun ViewListingScreen(
   val fullNameOfPoster = listingUIState.fullNameOfPoster
   val errorMsg = listingUIState.errorMsg
   val canApply = listingUIState.contactMessage.any { !it.isWhitespace() }
-    val isOwner = FirebaseAuth.getInstance().currentUser?.uid == listing.ownerId
+  val isOwner = FirebaseAuth.getInstance().currentUser?.uid == listing.ownerId
 
-
-    val context = LocalContext.current
+  val context = LocalContext.current
 
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {
@@ -110,20 +109,17 @@ fun ViewListingScreen(
               // Location placeholder
               PlaceholderBlock(text = "LOCATION (Not implemented yet)", height = 180.dp)
 
-            if (isOwner) {
+              if (isOwner) {
                 // Owner sees an Edit button centered, same size as Apply
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Button(
-                        onClick = onEdit,
-                        modifier = Modifier
-                            .fillMaxWidth(0.55f)
-                            .height(52.dp),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
+                  Button(
+                      onClick = onEdit,
+                      modifier = Modifier.fillMaxWidth(0.55f).height(52.dp),
+                      shape = RoundedCornerShape(16.dp)) {
                         Text("Edit", style = MaterialTheme.typography.titleMedium)
-                    }
+                      }
                 }
-            } else {
+              } else {
                 // Contact message
                 OutlinedTextField(
                     value = listingUIState.contactMessage,
@@ -133,37 +129,35 @@ fun ViewListingScreen(
                     shape = RoundedCornerShape(16.dp),
                     singleLine = false,
                     minLines = 1,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFFF0F0F0),
-                        unfocusedContainerColor = Color(0xFFF0F0F0),
-                        disabledContainerColor = Color(0xFFF0F0F0),
-                        focusedBorderColor = MaterialTheme.colorScheme.outline,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    )
-                )
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFF0F0F0),
+                            unfocusedContainerColor = Color(0xFFF0F0F0),
+                            disabledContainerColor = Color(0xFFF0F0F0),
+                            focusedBorderColor = MaterialTheme.colorScheme.outline,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline))
 
                 // Apply now button (centered, half width, rounded, red)
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Button(
-                        onClick = onApply,
-                        enabled = canApply,
-                        modifier = Modifier
-                            .fillMaxWidth(0.55f)
-                            .height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFE66D66),
-                            disabledContainerColor = Color(0xFFEBD0CE),
-                            disabledContentColor = Color(0xFFFFFFFF)
-                        )
-                    ) {
-                        Text("Apply now !", color = Color.White, style = MaterialTheme.typography.titleMedium)
-                    }
+                  Button(
+                      onClick = onApply,
+                      enabled = canApply,
+                      modifier = Modifier.fillMaxWidth(0.55f).height(52.dp),
+                      shape = RoundedCornerShape(16.dp),
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = Color(0xFFE66D66),
+                              disabledContainerColor = Color(0xFFEBD0CE),
+                              disabledContentColor = Color(0xFFFFFFFF))) {
+                        Text(
+                            "Apply now !",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium)
+                      }
                 }
+              }
             }
-        }
-      }
-  )
+      })
 }
 
 @Composable

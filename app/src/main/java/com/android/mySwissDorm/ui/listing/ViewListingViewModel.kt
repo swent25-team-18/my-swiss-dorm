@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.city.CityName
-import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalStatus

@@ -1,44 +1,41 @@
-
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.*
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.model.residency.ResidencyName
+import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.Rule
 import org.junit.Test
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AddListingScreenTest {
 
-  @get:Rule
-  val compose = createAndroidComposeRule<ComponentActivity>()
+  @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
   private fun confirmButton() =
-    compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.Text, listOf()) // dummy
-    ).also {
-      // helper replaced by direct matcher in tests; kept for structure
-    }
+      compose
+          .onNode(
+              SemanticsMatcher.expectValue(SemanticsProperties.Text, listOf()) // dummy
+              )
+          .also {
+            // helper replaced by direct matcher in tests; kept for structure
+          }
 
   private fun btnMatcher() = hasText("Confirm listing") and hasClickAction()
 
   @Test
   fun initial_state_shows_two_numeric_errors_and_submit_disabled() {
-    compose.setContent {
-      AddListingScreen(
-        onOpenMap = {},
-        onConfirm = {},
-        onBack = {}
-      )
-    }
+    compose.setContent { AddListingScreen(onOpenMap = {}, onConfirm = {}, onBack = {}) }
 
     // Two identical error texts (size & price) must be visible initially.
     compose.onAllNodesWithText("Please enter a valid number.").assertCountEquals(2)
 
     // Bottom info helper is visible while invalid.
-    compose.onNodeWithText("Please complete all required fields (valid size, price, and starting date).")
-      .assertIsDisplayed()
+    compose
+        .onNodeWithText(
+            "Please complete all required fields (valid size, price, and starting date).")
+        .assertIsDisplayed()
 
     // Confirm disabled.
     compose.onNode(btnMatcher()).assertIsNotEnabled()
@@ -46,13 +43,7 @@ class AddListingScreenTest {
 
   @Test
   fun can_select_residency_and_housing_from_dropdowns() {
-    compose.setContent {
-      AddListingScreen(
-        onOpenMap = {},
-        onConfirm = {},
-        onBack = {}
-      )
-    }
+    compose.setContent { AddListingScreen(onOpenMap = {}, onConfirm = {}, onBack = {}) }
 
     // Residency dropdown open + select first entry
     compose.onNodeWithText("Residency Name").performClick()
@@ -69,13 +60,7 @@ class AddListingScreenTest {
 
   @Test
   fun size_accepts_dot_or_comma_decimals_price_only_integers() {
-    compose.setContent {
-      AddListingScreen(
-        onOpenMap = {},
-        onConfirm = {},
-        onBack = {}
-      )
-    }
+    compose.setContent { AddListingScreen(onOpenMap = {}, onConfirm = {}, onBack = {}) }
 
     // Fill other required fields quickly.
     compose.onNodeWithText("Listing title").performTextInput("Sunny Studio")
@@ -100,13 +85,7 @@ class AddListingScreenTest {
 
   @Test
   fun price_over_upper_bound_keeps_form_invalid_even_without_error_banner() {
-    compose.setContent {
-      AddListingScreen(
-        onOpenMap = {},
-        onConfirm = {},
-        onBack = {}
-      )
-    }
+    compose.setContent { AddListingScreen(onOpenMap = {}, onConfirm = {}, onBack = {}) }
 
     // Valid fields except price range
     compose.onNodeWithText("Listing title").performTextInput("Nice room")
@@ -127,13 +106,7 @@ class AddListingScreenTest {
 
   @Test
   fun invalid_then_valid_size_toggles_error_visibility() {
-    compose.setContent {
-      AddListingScreen(
-        onOpenMap = {},
-        onConfirm = {},
-        onBack = {}
-      )
-    }
+    compose.setContent { AddListingScreen(onOpenMap = {}, onConfirm = {}, onBack = {}) }
 
     // Make all else valid except size
     compose.onNodeWithText("Listing title").performTextInput("Modern flat")
@@ -163,11 +136,7 @@ class AddListingScreenTest {
     val submitted = AtomicBoolean(false)
 
     compose.setContent {
-      AddListingScreen(
-        onOpenMap = {},
-        onConfirm = { submitted.set(true) },
-        onBack = {}
-      )
+      AddListingScreen(onOpenMap = {}, onConfirm = { submitted.set(true) }, onBack = {})
     }
 
     // Fill form validly
@@ -187,13 +156,7 @@ class AddListingScreenTest {
 
   @Test
   fun back_button_is_clickable_does_not_crash() {
-    compose.setContent {
-      AddListingScreen(
-        onOpenMap = {},
-        onConfirm = {},
-        onBack = {}
-      )
-    }
+    compose.setContent { AddListingScreen(onOpenMap = {}, onConfirm = {}, onBack = {}) }
 
     // Just ensure the back icon exists and clickable; current implementation uses { onBack }
     // (no invocation), so we don't assert callback behavior, only that click doesn't crash.

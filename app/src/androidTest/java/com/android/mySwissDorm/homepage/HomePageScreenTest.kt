@@ -73,6 +73,7 @@ class HomePageScreenTest : FirestoreTest() {
 
   @Before
   fun setup() {
+    super.setUp()
     viewModel = HomePageViewModel(CitiesRepositoryProvider.repository)
     composeTestRule.setContent { HomePageScreen(viewModel) }
   }

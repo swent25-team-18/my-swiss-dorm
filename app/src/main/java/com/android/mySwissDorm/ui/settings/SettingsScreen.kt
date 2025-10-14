@@ -3,8 +3,11 @@ package com.android.mySwissDorm.ui.settings
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -14,8 +17,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +24,9 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,8 +37,8 @@ private val previewUiState =
     SettingsUiState(
         userName = "John Doe", errorMsg = null, topItems = emptyList(), accountItems = emptyList())
 
-// ---------- Main Composable ----------
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) // <-- add Foundation opt-in
 @Composable
 fun SettingsScreenContent(
     ui: SettingsUiState,
@@ -170,7 +174,10 @@ fun SettingsScreenContent(
                       Text(
                           "Blocked contacts (${blockedContacts.size})",
                           style = MaterialTheme.typography.bodyLarge)
-                      val rotation by animateFloatAsState(if (blockedExpanded) 90f else 0f)
+                      val rotation by
+                          animateFloatAsState(
+                              targetValue = if (blockedExpanded) 90f else 0f,
+                              label = "blockedArrowRotation")
                       IconButton(
                           onClick = { blockedExpanded = !blockedExpanded },
                           modifier = Modifier.testTag("BlockedContactsToggle")) {
@@ -182,6 +189,12 @@ fun SettingsScreenContent(
                           }
                     }
 
+                // Bring the list into view when expanding
+                val blockedBringIntoView = remember { BringIntoViewRequester() }
+                LaunchedEffect(blockedExpanded) {
+                  if (blockedExpanded) blockedBringIntoView.bringIntoView()
+                }
+
                 if (blockedExpanded) {
                   Surface(
                       color = LightGray.copy(alpha = 0.6f),
@@ -190,6 +203,7 @@ fun SettingsScreenContent(
                       modifier =
                           Modifier.fillMaxWidth()
                               .padding(horizontal = 16.dp, vertical = 6.dp)
+                              .bringIntoViewRequester(blockedBringIntoView)
                               .testTag("BlockedContactsList")) {
                         Column(Modifier.padding(12.dp)) {
                           blockedContacts.forEach { name ->
@@ -243,7 +257,10 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
       horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, style = MaterialTheme.typography.bodyLarge)
         Switch(
-            modifier = Modifier.testTag("SettingSwitch_${label}"),
+            modifier =
+                Modifier.testTag("SettingSwitch_${label}").semantics {
+                  role = Role.Switch
+                }, // <-- set role via semantics
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors =

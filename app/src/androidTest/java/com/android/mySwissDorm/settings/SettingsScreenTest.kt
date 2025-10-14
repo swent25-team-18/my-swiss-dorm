@@ -15,19 +15,17 @@ class SettingsScreenTest {
 
   @Test
   fun settingsScreen_displaysCorrectUsernameAndProfileButton() {
-    // Arrange
     val testUiState = SettingsUiState(userName = "Sophie Urrea")
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreenContent(ui = testUiState) } }
 
-    // Assert
     composeTestRule.onNodeWithText("Sophie Urrea").assertIsDisplayed()
     composeTestRule.onNodeWithText("View profile").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("ProfileButton").assertIsDisplayed()
+    // In case semantics are merged, use unmerged tree for direct hit
+    composeTestRule.onNodeWithTag("ProfileButton", useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
   fun backButton_triggersOnGoBackCallback() {
-    // Arrange
     val onGoBackCalled = AtomicBoolean(false)
     composeTestRule.setContent {
       MySwissDormAppTheme {
@@ -35,16 +33,12 @@ class SettingsScreenTest {
       }
     }
 
-    // Act
-    composeTestRule.onNodeWithTag("BackButton").performClick()
-
-    // Assert
+    composeTestRule.onNodeWithTag("BackButton", useUnmergedTree = true).performClick()
     assert(onGoBackCalled.get()) { "onGoBack callback was not called." }
   }
 
   @Test
   fun deleteAccountButton_triggersOnItemClickCallback() {
-    // Arrange
     val clickedItem = AtomicReference<String?>(null)
     composeTestRule.setContent {
       MySwissDormAppTheme {
@@ -53,10 +47,7 @@ class SettingsScreenTest {
       }
     }
 
-    // Act
-    composeTestRule.onNodeWithTag("DeleteAccountButton").performClick()
-
-    // Assert
+    composeTestRule.onNodeWithTag("DeleteAccountButton", useUnmergedTree = true).performClick()
     assert(clickedItem.get() == "Delete my account") {
       "onItemClick was not called with 'Delete my account'."
     }
@@ -64,67 +55,59 @@ class SettingsScreenTest {
 
   @Test
   fun notificationSwitches_toggleStateCorrectly() {
-    // Arrange
     composeTestRule.setContent {
       MySwissDormAppTheme { SettingsScreenContent(ui = SettingsUiState()) }
     }
 
-    // Act & Assert for Messages Switch
+    // Messages Switch
     val messagesSwitch =
-        composeTestRule.onNodeWithTag("SettingSwitch_Show notifications for messages")
-    messagesSwitch.assertIsOn() // Initially checked in the composable's state
+        composeTestRule.onNodeWithTag(
+            "SettingSwitch_Show notifications for messages", useUnmergedTree = true)
+    messagesSwitch.assertIsOn()
     messagesSwitch.performClick()
     messagesSwitch.assertIsOff()
 
-    // Act & Assert for Listings Switch
+    // Listings Switch
     val listingsSwitch =
-        composeTestRule.onNodeWithTag("SettingSwitch_Show notifications for new listings")
-    listingsSwitch.assertIsOff() // Initially unchecked in the composable's state
+        composeTestRule.onNodeWithTag(
+            "SettingSwitch_Show notifications for new listings", useUnmergedTree = true)
+    listingsSwitch.assertIsOff()
     listingsSwitch.performClick()
     listingsSwitch.assertIsOn()
   }
 
   @Test
   fun blockedContacts_expandsAndCollapsesOnClick() {
-    // Arrange
     composeTestRule.setContent {
       MySwissDormAppTheme { SettingsScreenContent(ui = SettingsUiState()) }
     }
 
-    // Assert initial state (collapsed)
+    // Initially collapsed
     composeTestRule.onNodeWithTag("BlockedContactsList").assertDoesNotExist()
 
-    // Act: Expand the list
-    composeTestRule.onNodeWithTag("BlockedContactsToggle").performClick()
+    // Expand
+    composeTestRule.onNodeWithTag("BlockedContactsToggle", useUnmergedTree = true).performClick()
 
-    // Assert expanded state
+    // Now list should exist and be visible (auto-scrolled into view)
     composeTestRule.onNodeWithTag("BlockedContactsList").assertIsDisplayed()
     composeTestRule.onNodeWithText("Clarisse K.").assertIsDisplayed()
 
-    // Act: Collapse the list
-    composeTestRule.onNodeWithTag("BlockedContactsToggle").performClick()
-
-    // Assert collapsed state
+    // Collapse
+    composeTestRule.onNodeWithTag("BlockedContactsToggle", useUnmergedTree = true).performClick()
     composeTestRule.onNodeWithTag("BlockedContactsList").assertDoesNotExist()
   }
 
   @Test
   fun emailField_updatesValueOnInput() {
-    // Arrange
     composeTestRule.setContent {
       MySwissDormAppTheme { SettingsScreenContent(ui = SettingsUiState()) }
     }
 
-    val emailField = composeTestRule.onNodeWithTag("EmailField")
+    val emailField = composeTestRule.onNodeWithTag("EmailField", useUnmergedTree = true)
 
-    // Assert initial value
     emailField.assert(hasText("john.doe@email.com"))
-
-    // Act: Clear and type new email
     emailField.performTextClearance()
     emailField.performTextInput("new.email@example.com")
-
-    // Assert new value
     emailField.assert(hasText("new.email@example.com"))
   }
 }

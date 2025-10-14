@@ -16,10 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class SettingItem(
-    val icon: ImageVector,
-    val title: String,
-)
+data class SettingItem(val icon: ImageVector, val title: String)
 
 data class SettingsUiState(
     val userName: String = "Sophie",
@@ -49,18 +46,13 @@ class SettingsViewModel : ViewModel() {
                   )))
   val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
-  /** Example: refresh content (kept simple for now). */
-  fun refresh() =
-      viewModelScope.launch {
-        // If later you fetch from a repo, update _uiState here
-        _uiState.value = _uiState.value.copy(errorMsg = null)
-      }
+  fun refresh() = viewModelScope.launch { _uiState.value = _uiState.value.copy(errorMsg = null) }
 
   fun clearError() {
     _uiState.value = _uiState.value.copy(errorMsg = null)
   }
 
   fun onItemClick(title: String) {
-    // Handle navigation or actions later; keep it here to mirror your pattern
+    // No-op for now
   }
 }

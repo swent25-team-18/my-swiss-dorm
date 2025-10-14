@@ -31,7 +31,36 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.theme.*
+
+/** Wrapper: screen owns its VM and collects state. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(
+    onGoBack: () -> Unit = {},
+    onItemClick: (String) -> Unit = {},
+    vm: SettingsViewModel = viewModel()
+) {
+  val ui by vm.uiState.collectAsState()
+
+  // Example refresh
+  LaunchedEffect(Unit) { vm.refresh() }
+
+  // Bubble up error via Toast (same behavior as before)
+  val context = LocalContext.current
+  LaunchedEffect(ui.errorMsg) {
+    ui.errorMsg?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+  }
+
+  SettingsScreenContent(
+      ui = ui,
+      onGoBack = onGoBack,
+      onItemClick = {
+        vm.onItemClick(it) // keep VM as the source of truth, but still forward to caller
+        onItemClick(it)
+      })
+}
 
 private val previewUiState =
     SettingsUiState(
@@ -44,18 +73,13 @@ fun SettingsScreenContent(
     onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {}
 ) {
-  val context = LocalContext.current
-
+  // Local UI states
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
   var readReceipts by remember { mutableStateOf(true) }
   var email by remember { mutableStateOf("john.doe@email.com") }
   var blockedExpanded by remember { mutableStateOf(false) }
   val blockedContacts = listOf("Clarisse K.", "Alice P.", "Benjamin M.")
-
-  LaunchedEffect(ui.errorMsg) {
-    ui.errorMsg?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
-  }
 
   Scaffold(
       containerColor = LightGray,
@@ -259,7 +283,6 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
             modifier =
                 Modifier.testTag("SettingSwitch_${label}").semantics(mergeDescendants = true) {
                   role = Role.Switch
-                  // Stable, testable state (avoids ToggleableState flakiness)
                   stateDescription = if (checked) "On" else "Off"
                 },
             checked = checked,
@@ -276,7 +299,5 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenPreview() {
-  MySwissDormAppTheme {
-    SettingsScreenContent(ui = previewUiState, onGoBack = {}, onItemClick = {})
-  }
+  MySwissDormAppTheme { SettingsScreen() }
 }

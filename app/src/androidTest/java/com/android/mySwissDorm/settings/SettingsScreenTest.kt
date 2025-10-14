@@ -16,12 +16,11 @@ import java.util.concurrent.atomic.AtomicReference
 import org.junit.Rule
 import org.junit.Test
 
-/** UI tests for the [SettingsScreenContent] composable. */
+/** UI tests for the Settings screen (screen owns its ViewModel). */
 class SettingsScreenTest {
 
   @get:Rule val composeTestRule = createComposeRule()
 
-  // Wait until a node with this tag is displayed (compatible with older APIs)
   private fun waitUntilDisplayed(tag: String, timeoutMs: Long = 5_000) {
     composeTestRule.waitUntil(timeoutMs) {
       try {
@@ -34,11 +33,11 @@ class SettingsScreenTest {
   }
 
   @Test
-  fun settingsScreen_displaysCorrectUsernameAndProfileButton() {
-    val testUiState = SettingsUiState(userName = "Sophie Urrea")
-    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreenContent(ui = testUiState) } }
+  fun settingsScreen_showsProfileRowAndButton() {
+    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
 
-    composeTestRule.onNodeWithText("Sophie Urrea").assertIsDisplayed()
+    // Default VM username is "Sophie"
+    composeTestRule.onNodeWithText("Sophie").assertIsDisplayed()
     composeTestRule.onNodeWithText("View profile").assertIsDisplayed()
     composeTestRule.onNodeWithTag("ProfileButton", useUnmergedTree = true).assertIsDisplayed()
   }
@@ -47,9 +46,7 @@ class SettingsScreenTest {
   fun backButton_triggersOnGoBackCallback() {
     val onGoBackCalled = AtomicBoolean(false)
     composeTestRule.setContent {
-      MySwissDormAppTheme {
-        SettingsScreenContent(ui = SettingsUiState(), onGoBack = { onGoBackCalled.set(true) })
-      }
+      MySwissDormAppTheme { SettingsScreen(onGoBack = { onGoBackCalled.set(true) }) }
     }
     composeTestRule.onNodeWithTag("BackButton", useUnmergedTree = true).performClick()
     assert(onGoBackCalled.get()) { "onGoBack callback was not called." }
@@ -59,10 +56,7 @@ class SettingsScreenTest {
   fun deleteAccountButton_triggersOnItemClickCallback() {
     val clickedItem = AtomicReference<String?>(null)
     composeTestRule.setContent {
-      MySwissDormAppTheme {
-        SettingsScreenContent(
-            ui = SettingsUiState(), onItemClick = { item -> clickedItem.set(item) })
-      }
+      MySwissDormAppTheme { SettingsScreen(onItemClick = { item -> clickedItem.set(item) }) }
     }
     composeTestRule.onNodeWithTag("DeleteAccountButton", useUnmergedTree = true).performClick()
     assert(clickedItem.get() == "Delete my account") {
@@ -72,9 +66,7 @@ class SettingsScreenTest {
 
   @Test
   fun notificationSwitches_toggleStateCorrectly() {
-    composeTestRule.setContent {
-      MySwissDormAppTheme { SettingsScreenContent(ui = SettingsUiState()) }
-    }
+    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
 
     val messagesTag = "SettingSwitch_Show notifications for messages"
     val listingsTag = "SettingSwitch_Show notifications for new listings"
@@ -100,30 +92,23 @@ class SettingsScreenTest {
 
   @Test
   fun blockedContacts_expandsAndCollapsesOnClick() {
-    composeTestRule.setContent {
-      MySwissDormAppTheme { SettingsScreenContent(ui = SettingsUiState()) }
-    }
+    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
 
-    // Initially absent
     composeTestRule.onNodeWithTag("BlockedContactsList").assertDoesNotExist()
 
-    // Expand and wait until it appears
     composeTestRule.onNodeWithTag("BlockedContactsToggle", useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
     waitUntilDisplayed("BlockedContactsList")
     composeTestRule.onNodeWithTag("BlockedContactsList").assertIsDisplayed()
     composeTestRule.onNodeWithText("Clarisse K.").assertIsDisplayed()
 
-    // Collapse
     composeTestRule.onNodeWithTag("BlockedContactsToggle", useUnmergedTree = true).performClick()
     composeTestRule.onNodeWithTag("BlockedContactsList").assertDoesNotExist()
   }
 
   @Test
   fun emailField_updatesValueOnInput() {
-    composeTestRule.setContent {
-      MySwissDormAppTheme { SettingsScreenContent(ui = SettingsUiState()) }
-    }
+    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
 
     val emailFieldTag = "EmailField"
     composeTestRule

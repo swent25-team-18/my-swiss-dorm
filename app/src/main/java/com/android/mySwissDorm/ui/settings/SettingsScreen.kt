@@ -14,28 +14,19 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.android.mySwissDorm.ui.theme.* // Red0, White, LightGray, LightGray0, PalePink,
-
-// MySwissDormAppTheme
-
-// ---------- UI State for Preview ----------
-// data class SettingsUiState(
-//    val userName: String = "John Doe",
-//    val errorMsg: String? = null,
-//    val topItems: List<String> = emptyList(),
-//    val accountItems: List<String> = emptyList()
-// )
-//
-// private val previewUiState = SettingsUiState()
+import com.android.mySwissDorm.ui.theme.*
 
 // ✅ keep a preview instance only
 private val previewUiState =
@@ -69,7 +60,7 @@ fun SettingsScreenContent(
         CenterAlignedTopAppBar(
             title = { Text("Settings") },
             navigationIcon = {
-              IconButton(onClick = onGoBack) {
+              IconButton(onClick = onGoBack, modifier = Modifier.testTag("BackButton")) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
@@ -112,11 +103,13 @@ fun SettingsScreenContent(
                               color = Color(0xFF7A7A7A))
                         }
                       }
-                      IconButton(onClick = { /* TODO: open profile */}) {
-                        Icon(
-                            imageVector = Icons.Filled.ChevronRight,
-                            contentDescription = "Open profile")
-                      }
+                      IconButton(
+                          onClick = { /* TODO: open profile */},
+                          modifier = Modifier.testTag("ProfileButton")) {
+                            Icon(
+                                imageVector = Icons.Filled.ChevronRight,
+                                contentDescription = "Open profile")
+                          }
                     }
               }
 
@@ -141,7 +134,10 @@ fun SettingsScreenContent(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email address") },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .testTag("EmailField"))
                 SoftDivider()
                 Button(
                     onClick = { onItemClick("Delete my account") },
@@ -149,7 +145,9 @@ fun SettingsScreenContent(
                         ButtonDefaults.buttonColors(containerColor = Red0, contentColor = White),
                     shape = MaterialTheme.shapes.medium,
                     modifier =
-                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        Modifier.fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .testTag("DeleteAccountButton")) {
                       Text("Delete my account")
                     }
               }
@@ -173,13 +171,15 @@ fun SettingsScreenContent(
                           "Blocked contacts (${blockedContacts.size})",
                           style = MaterialTheme.typography.bodyLarge)
                       val rotation by animateFloatAsState(if (blockedExpanded) 90f else 0f)
-                      IconButton(onClick = { blockedExpanded = !blockedExpanded }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription =
-                                if (blockedExpanded) "Hide blocked" else "Show blocked",
-                            modifier = Modifier.rotate(rotation))
-                      }
+                      IconButton(
+                          onClick = { blockedExpanded = !blockedExpanded },
+                          modifier = Modifier.testTag("BlockedContactsToggle")) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription =
+                                    if (blockedExpanded) "Hide blocked" else "Show blocked",
+                                modifier = Modifier.rotate(rotation))
+                          }
                     }
 
                 if (blockedExpanded) {
@@ -188,7 +188,9 @@ fun SettingsScreenContent(
                       shape = MaterialTheme.shapes.medium,
                       border = BorderStroke(1.dp, LightGray0),
                       modifier =
-                          Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+                          Modifier.fillMaxWidth()
+                              .padding(horizontal = 16.dp, vertical = 6.dp)
+                              .testTag("BlockedContactsList")) {
                         Column(Modifier.padding(12.dp)) {
                           blockedContacts.forEach { name ->
                             Text(
@@ -241,6 +243,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
       horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, style = MaterialTheme.typography.bodyLarge)
         Switch(
+            modifier = Modifier.testTag("SettingSwitch_${label}"),
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors =

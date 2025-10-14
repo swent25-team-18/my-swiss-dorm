@@ -3,6 +3,7 @@ package com.android.mySwissDorm.ui.settings
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -10,6 +11,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -22,19 +25,25 @@ class SettingsScreenTest {
   @get:Rule val composeTestRule = createComposeRule()
 
   /** Robust existence wait that works on slow emulators. */
-  private fun waitUntilTagExists(tag: String, timeoutMs: Long = 15_000) {
-    composeTestRule.waitUntil(timeoutMs) {
-      composeTestRule
-          .onAllNodesWithTag(tag, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+  private fun ComposeTestRule.waitUntilTagExists(tag: String, timeoutMs: Long = 15_000) {
+    waitUntil(timeoutMs) {
+      onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
     }
   }
 
-  /** Wait until **no** nodes with tag exist (for collapse). */
-  private fun waitUntilTagGone(tag: String, timeoutMs: Long = 15_000) {
-    composeTestRule.waitUntil(timeoutMs) {
-      composeTestRule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+  /** Scroll the main scrollable until a node with [targetTag] is present, or run out of swipes. */
+  private fun ComposeTestRule.scrollUntilTagVisible(
+      scrollTag: String,
+      targetTag: String,
+      maxSwipes: Int = 12
+  ) {
+    val scrollNode = onNodeWithTag(scrollTag, useUnmergedTree = true)
+    var swipes = 0
+    while (onAllNodesWithTag(targetTag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty() &&
+        swipes < maxSwipes) {
+      scrollNode.performTouchInput { swipeUp() }
+      waitForIdle()
+      swipes++
     }
   }
 
@@ -107,23 +116,27 @@ class SettingsScreenTest {
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
     composeTestRule.waitForIdle()
 
+    val scrollTag = "SettingsScroll"
     val listTag = "BlockedContactsList"
     val toggleTag = "BlockedContactsToggle"
 
     // Starts collapsed
     composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
 
-    // Expand
+    // Ensure the toggle is on-screen, then click it
+    composeTestRule.scrollUntilTagVisible(scrollTag, toggleTag)
     composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
-    waitUntilTagExists(listTag)
+
+    // Wait for the expanded list to appear (CI can be slow)
+    composeTestRule.waitUntilTagExists(listTag)
     composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertExists()
     composeTestRule.onNodeWithText("Clarisse K.").assertExists()
 
-    // Collapse
+    // Collapse again (if the toggle moved, scroll again)
+    composeTestRule.scrollUntilTagVisible(scrollTag, toggleTag)
     composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
-    waitUntilTagGone(listTag)
     composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
   }
 

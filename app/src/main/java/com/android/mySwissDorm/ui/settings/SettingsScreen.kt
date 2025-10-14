@@ -103,6 +103,7 @@ fun SettingsScreenContent(
                 Modifier.padding(inner)
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
+                    .testTag("SettingsScroll") // <-- added for test-driven scrolling
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
 

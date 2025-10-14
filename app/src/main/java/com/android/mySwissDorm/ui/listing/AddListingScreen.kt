@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.rental.RentalListing
@@ -127,7 +126,7 @@ fun AddListingScreen(
                   value = viewModel.sizeSqm.value,
                   onValueChange = { input ->
                     if (input.isEmpty() ||
-                        input.matches(Regex("""^(?:0|[1-9]\d*)(?:[.,]\d*)?$"""))) {
+                        input.matches(Regex("""^(?:0|[1-9]\d*)(?:[.]\d*)?$"""))) {
                       viewModel.sizeSqm.value = input
                     }
                   },
@@ -336,10 +335,4 @@ fun ResidencyDropdown(
       }
     }
   }
-}
-
-@Preview
-@Composable
-fun AddListingScreenPreview() {
-  AddListingScreen(onBack = {}, onConfirm = {}, onOpenMap = {})
 }

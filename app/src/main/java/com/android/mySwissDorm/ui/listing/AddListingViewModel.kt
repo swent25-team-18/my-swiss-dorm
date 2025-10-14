@@ -53,7 +53,7 @@ class AddListingViewModel : ViewModel() {
                       CityName.LAUSANNE,
                       "123@gmail.com",
                       "12345678",
-                      URL("www.website.com")),
+                      URL("https://www.google.com")),
               title = "title",
               roomType = RoomType.STUDIO,
               pricePerMonth = 630.0,

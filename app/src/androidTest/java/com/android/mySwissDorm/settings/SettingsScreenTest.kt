@@ -1,18 +1,8 @@
 package com.android.mySwissDorm.ui.settings
 
-import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.hasStateDescription
-import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextClearance
-import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipeUp
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -24,27 +14,43 @@ class SettingsScreenTest {
 
   @get:Rule val composeTestRule = createComposeRule()
 
-  /** Robust existence wait that works on slow emulators. */
-  private fun ComposeTestRule.waitUntilTagExists(tag: String, timeoutMs: Long = 15_000) {
+  /** Wait for any node with [tag] to exist in the semantics tree. */
+  private fun ComposeTestRule.waitUntilTagExists(tag: String, timeoutMs: Long = 30_000) {
     waitUntil(timeoutMs) {
       onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
     }
   }
 
-  /** Scroll the main scrollable until a node with [targetTag] is present, or run out of swipes. */
-  private fun ComposeTestRule.scrollUntilTagVisible(
+  /** Wait for any node with [tag] to be gone from the semantics tree. */
+  private fun ComposeTestRule.waitUntilTagGone(tag: String, timeoutMs: Long = 30_000) {
+    waitUntil(timeoutMs) {
+      onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+    }
+  }
+
+  /**
+   * Scrolls the scrollable with [scrollTag] until a node with [targetTag] is actually *displayed*
+   * (visible on screen), or we hit [maxSwipes].
+   */
+  private fun ComposeTestRule.scrollUntilDisplayed(
       scrollTag: String,
       targetTag: String,
-      maxSwipes: Int = 12
+      maxSwipes: Int = 18
   ) {
     val scrollNode = onNodeWithTag(scrollTag, useUnmergedTree = true)
     var swipes = 0
-    while (onAllNodesWithTag(targetTag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty() &&
-        swipes < maxSwipes) {
-      scrollNode.performTouchInput { swipeUp() }
-      waitForIdle()
-      swipes++
+    while (swipes < maxSwipes) {
+      try {
+        onNodeWithTag(targetTag, useUnmergedTree = true).assertIsDisplayed()
+        return
+      } catch (_: AssertionError) {
+        scrollNode.performTouchInput { swipeUp() }
+        waitForIdle()
+        swipes++
+      }
     }
+    // Final assert to throw a clear error if not visible after scrolling.
+    onNodeWithTag(targetTag, useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
@@ -52,7 +58,6 @@ class SettingsScreenTest {
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
     composeTestRule.waitForIdle()
 
-    // Default VM username is "Sophie"
     composeTestRule.onNodeWithText("Sophie").assertExists()
     composeTestRule.onNodeWithText("View profile").assertExists()
     composeTestRule.onNodeWithTag("ProfileButton", useUnmergedTree = true).assertExists()
@@ -92,7 +97,6 @@ class SettingsScreenTest {
     val messagesTag = "SettingSwitch_Show notifications for messages"
     val listingsTag = "SettingSwitch_Show notifications for new listings"
 
-    // Messages: starts On -> click -> Off
     composeTestRule
         .onNodeWithTag(messagesTag, useUnmergedTree = true)
         .assert(hasStateDescription("On"))
@@ -101,7 +105,6 @@ class SettingsScreenTest {
         .onNodeWithTag(messagesTag, useUnmergedTree = true)
         .assert(hasStateDescription("Off"))
 
-    // Listings: starts Off -> click -> On
     composeTestRule
         .onNodeWithTag(listingsTag, useUnmergedTree = true)
         .assert(hasStateDescription("Off"))
@@ -123,20 +126,25 @@ class SettingsScreenTest {
     // Starts collapsed
     composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
 
-    // Ensure the toggle is on-screen, then click it
-    composeTestRule.scrollUntilTagVisible(scrollTag, toggleTag)
+    // Make sure the toggle is actually on screen (not just present in semantics)
+    composeTestRule.scrollUntilDisplayed(scrollTag, toggleTag)
     composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
 
-    // Wait for the expanded list to appear (CI can be slow)
-    composeTestRule.waitUntilTagExists(listTag)
-    composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertExists()
+    // Wait for the list to exist, then ensure it's displayed (it may render below the fold)
+    composeTestRule.waitUntilTagExists(listTag, timeoutMs = 30_000)
+    // If it's not displayed yet, scroll more until it is.
+    composeTestRule.scrollUntilDisplayed(scrollTag, listTag)
+    composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertIsDisplayed()
     composeTestRule.onNodeWithText("Clarisse K.").assertExists()
 
-    // Collapse again (if the toggle moved, scroll again)
-    composeTestRule.scrollUntilTagVisible(scrollTag, toggleTag)
+    // Collapse again — the toggle may have moved, so re-scroll to it
+    composeTestRule.scrollUntilDisplayed(scrollTag, toggleTag)
     composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
+
+    // Optionally ensure it disappears from the tree (not just off-screen)
+    composeTestRule.waitUntilTagGone(listTag, timeoutMs = 30_000)
     composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
   }
 

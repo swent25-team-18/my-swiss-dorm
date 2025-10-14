@@ -10,7 +10,6 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -54,12 +53,8 @@ fun MySwissDormAppTheme(
   if (!view.isInEditMode) {
     SideEffect {
       val window = (view.context as Activity).window
-      window.statusBarColor = Color.White.toArgb()
-      window.navigationBarColor = Color.White.toArgb()
-      WindowCompat.getInsetsController(window, view).apply {
-        isAppearanceLightStatusBars = true // icônes sombres sur fond blanc
-        isAppearanceLightNavigationBars = true
-      }
+      window.statusBarColor = colorScheme.primary.toArgb()
+      WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
     }
   }
 

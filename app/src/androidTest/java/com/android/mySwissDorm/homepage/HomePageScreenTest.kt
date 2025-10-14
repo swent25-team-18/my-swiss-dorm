@@ -33,63 +33,43 @@ class HomePageScreenTest : FirestoreTest() {
 
   val allCities = CityName.entries.toTypedArray()
 
-    override fun createRepositories() {
-        CitiesRepositoryProvider.repository = CitiesRepositoryFirestore(db = FirebaseEmulator.firestore)
+  override fun createRepositories() {
+    CitiesRepositoryProvider.repository = CitiesRepositoryFirestore(db = FirebaseEmulator.firestore)
 
-        val repository = CitiesRepositoryProvider.repository
+    val repository = CitiesRepositoryProvider.repository
 
-        val cityLausanne =
-            City(
-                name = CityName.LAUSANNE,
-                description =
-                    "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.",
-                location = Location(
-                    name = "Lausanne",
-                    latitude = 46.5197,
-                    longitude = 6.6323
-                ),
-                imageId = R.drawable.lausanne
-            )
-        val cityGeneva =
-            City(
-                name = CityName.GENEVA,
-                description = "Geneva is a global city, hosting numerous international organizations.",
-                location = Location(
-                    name = "Geneva",
-                    latitude = 46.2044,
-                    longitude = 6.1432
-                ),
-                imageId = R.drawable.geneve
-            )
-        val cityZurich =
-            City(
-                name = CityName.ZURICH,
-                description = "Zurich is the largest city in Switzerland and a major financial hub.",
-                location = Location(
-                    name = "Zürich",
-                    latitude = 47.3769,
-                    longitude = 8.5417
-                ),
-                imageId = R.drawable.zurich
-            )
-        val cityFribourg =
-            City(
-                name = CityName.FRIBOURG,
-                description = "Fribourg is a bilingual city famous for its medieval architecture.",
-                location = Location(
-                    name = "Fribourg",
-                    latitude = 46.8065,
-                    longitude = 7.16197
-                ),
-                imageId = R.drawable.fribourg
-            )
+    val cityLausanne =
+        City(
+            name = CityName.LAUSANNE,
+            description =
+                "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.",
+            location = Location(name = "Lausanne", latitude = 46.5197, longitude = 6.6323),
+            imageId = R.drawable.lausanne)
+    val cityGeneva =
+        City(
+            name = CityName.GENEVA,
+            description = "Geneva is a global city, hosting numerous international organizations.",
+            location = Location(name = "Geneva", latitude = 46.2044, longitude = 6.1432),
+            imageId = R.drawable.geneve)
+    val cityZurich =
+        City(
+            name = CityName.ZURICH,
+            description = "Zurich is the largest city in Switzerland and a major financial hub.",
+            location = Location(name = "Zürich", latitude = 47.3769, longitude = 8.5417),
+            imageId = R.drawable.zurich)
+    val cityFribourg =
+        City(
+            name = CityName.FRIBOURG,
+            description = "Fribourg is a bilingual city famous for its medieval architecture.",
+            location = Location(name = "Fribourg", latitude = 46.8065, longitude = 7.16197),
+            imageId = R.drawable.fribourg)
 
-        val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
-        runTest {
-            switchToUser(FakeUser.FakeUser1)
-            cities.forEach { repository.addCity(it) }
-        }
+    val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
+    runTest {
+      switchToUser(FakeUser.FakeUser1)
+      cities.forEach { repository.addCity(it) }
     }
+  }
 
   @Before
   fun setup() {

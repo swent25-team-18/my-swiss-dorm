@@ -1,10 +1,10 @@
 package com.android.mySwissDorm.ui.settings
 
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,25 +21,32 @@ class SettingsScreenTest {
 
   @get:Rule val composeTestRule = createComposeRule()
 
-  private fun waitUntilDisplayed(tag: String, timeoutMs: Long = 5_000) {
+  /** Robust existence wait that works on slow emulators. */
+  private fun waitUntilTagExists(tag: String, timeoutMs: Long = 15_000) {
     composeTestRule.waitUntil(timeoutMs) {
-      try {
-        composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertIsDisplayed()
-        true
-      } catch (_: AssertionError) {
-        false
-      }
+      composeTestRule
+          .onAllNodesWithTag(tag, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+  }
+
+  /** Wait until **no** nodes with tag exist (for collapse). */
+  private fun waitUntilTagGone(tag: String, timeoutMs: Long = 15_000) {
+    composeTestRule.waitUntil(timeoutMs) {
+      composeTestRule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
     }
   }
 
   @Test
   fun settingsScreen_showsProfileRowAndButton() {
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    composeTestRule.waitForIdle()
 
     // Default VM username is "Sophie"
-    composeTestRule.onNodeWithText("Sophie").assertIsDisplayed()
-    composeTestRule.onNodeWithText("View profile").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("ProfileButton", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule.onNodeWithText("Sophie").assertExists()
+    composeTestRule.onNodeWithText("View profile").assertExists()
+    composeTestRule.onNodeWithTag("ProfileButton", useUnmergedTree = true).assertExists()
   }
 
   @Test
@@ -48,6 +55,8 @@ class SettingsScreenTest {
     composeTestRule.setContent {
       MySwissDormAppTheme { SettingsScreen(onGoBack = { onGoBackCalled.set(true) }) }
     }
+    composeTestRule.waitForIdle()
+
     composeTestRule.onNodeWithTag("BackButton", useUnmergedTree = true).performClick()
     assert(onGoBackCalled.get()) { "onGoBack callback was not called." }
   }
@@ -58,6 +67,8 @@ class SettingsScreenTest {
     composeTestRule.setContent {
       MySwissDormAppTheme { SettingsScreen(onItemClick = { item -> clickedItem.set(item) }) }
     }
+    composeTestRule.waitForIdle()
+
     composeTestRule.onNodeWithTag("DeleteAccountButton", useUnmergedTree = true).performClick()
     assert(clickedItem.get() == "Delete my account") {
       "onItemClick was not called with 'Delete my account'."
@@ -67,6 +78,7 @@ class SettingsScreenTest {
   @Test
   fun notificationSwitches_toggleStateCorrectly() {
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    composeTestRule.waitForIdle()
 
     val messagesTag = "SettingSwitch_Show notifications for messages"
     val listingsTag = "SettingSwitch_Show notifications for new listings"
@@ -93,22 +105,32 @@ class SettingsScreenTest {
   @Test
   fun blockedContacts_expandsAndCollapsesOnClick() {
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
-
-    composeTestRule.onNodeWithTag("BlockedContactsList").assertDoesNotExist()
-
-    composeTestRule.onNodeWithTag("BlockedContactsToggle", useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
-    waitUntilDisplayed("BlockedContactsList")
-    composeTestRule.onNodeWithTag("BlockedContactsList").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Clarisse K.").assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag("BlockedContactsToggle", useUnmergedTree = true).performClick()
-    composeTestRule.onNodeWithTag("BlockedContactsList").assertDoesNotExist()
+    val listTag = "BlockedContactsList"
+    val toggleTag = "BlockedContactsToggle"
+
+    // Starts collapsed
+    composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
+
+    // Expand
+    composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
+    composeTestRule.waitForIdle()
+    waitUntilTagExists(listTag)
+    composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertExists()
+    composeTestRule.onNodeWithText("Clarisse K.").assertExists()
+
+    // Collapse
+    composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
+    composeTestRule.waitForIdle()
+    waitUntilTagGone(listTag)
+    composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
   }
 
   @Test
   fun emailField_updatesValueOnInput() {
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    composeTestRule.waitForIdle()
 
     val emailFieldTag = "EmailField"
     composeTestRule

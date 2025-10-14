@@ -16,28 +16,28 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MySwissDormAppTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
-                    color = MaterialTheme.colorScheme.background) {
-                    Greeting("Android")
-                }
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContent {
+      MySwissDormAppTheme {
+        // A surface container using the 'background' color from the theme
+        Surface(
+            modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
+            color = MaterialTheme.colorScheme.background) {
+              Greeting("Android")
             }
-        }
+      }
     }
+  }
 }
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting })
+  Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting })
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    MySwissDormAppTheme { Greeting("Android") }
+  MySwissDormAppTheme { Greeting("Android") }
 }

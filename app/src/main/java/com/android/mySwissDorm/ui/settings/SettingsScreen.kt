@@ -24,7 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.ui.theme.* // Red0, White, LightGray, LightGray0, PalePink,
-                                          // MySwissDormAppTheme
+
+// MySwissDormAppTheme
 
 // ---------- UI State for Preview ----------
 // data class SettingsUiState(

@@ -1,8 +1,8 @@
 package com.android.mySwissDorm.model.university
 
-import android.location.Location
 import android.util.Log
 import com.android.mySwissDorm.model.city.CityName
+import com.android.mySwissDorm.model.map.Location
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import java.net.URL
@@ -24,7 +24,7 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
 
   override suspend fun getUniversity(universityName: UniversityName): University {
     val doc =
-        db.collection(UNIVERSITIES_COLLECTION_PATH).document(universityName.name).get().await()
+        db.collection(UNIVERSITIES_COLLECTION_PATH).document(universityName.value).get().await()
     return documentToUniversity(doc)
         ?: throw Exception("UniversitiesRepositoryFirestore: University not found")
   }
@@ -33,13 +33,14 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
     return try {
       val nameString = document.getString("name") ?: return null
       val name = UniversityName.valueOf(nameString)
-      val latitude = document.getDouble("latitude") ?: return null
-      val longitude = document.getDouble("longitude") ?: return null
-      val location =
-          Location("manual").apply {
-            this.latitude = latitude
-            this.longitude = longitude
-          }
+        val locationData = document.get("location") as? Map<*, *>
+        val location = locationData?.let {
+            Location(
+                name = it["name"] as? String ?: return null,
+                latitude = it["latitude"] as? Double ?: return null,
+                longitude = it["longitude"] as? Double ?: return null
+            )
+        } ?: return null
       val cityString = document.getString("cityName") ?: return null
       val cityName = CityName.valueOf(cityString)
       val email = document.getString("email") ?: return null

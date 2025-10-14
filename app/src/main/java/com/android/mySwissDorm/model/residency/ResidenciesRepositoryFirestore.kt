@@ -1,8 +1,8 @@
 package com.android.mySwissDorm.model.residency
 
-import android.location.Location
 import android.util.Log
 import com.android.mySwissDorm.model.city.CityName
+import com.android.mySwissDorm.model.map.Location
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -34,6 +34,7 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
             "name" to residency.name.name,
             "description" to residency.description,
             "location" to mapOf(
+                "name" to residency.location.name,
                 "latitude" to residency.location.latitude,
                 "longitude" to residency.location.longitude,
             ),
@@ -56,10 +57,11 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
             val locationData = document.get("location") as? Map<*, *>
             val location =
                 locationData?.let {
-                    Location("manual").apply {
-                        latitude = it["latitude"] as? Double ?: return null
+                    Location(
+                        name = it["name"] as? String ?: return null,
+                        latitude = it["latitude"] as? Double ?: return null,
                         longitude = it["longitude"] as? Double ?: return null
-                    }
+                    )
                 } ?: return null
             val cityString = document.getString("cityName") ?: return null
             val cityName = CityName.valueOf(cityString)

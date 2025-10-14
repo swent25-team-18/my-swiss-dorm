@@ -1,7 +1,7 @@
 package com.android.mySwissDorm.model.university
 
-import android.location.Location
 import com.android.mySwissDorm.model.city.CityName
+import com.android.mySwissDorm.model.map.Location
 import java.net.URL
 
 data class University(

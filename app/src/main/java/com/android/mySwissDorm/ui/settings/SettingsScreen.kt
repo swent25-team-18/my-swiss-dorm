@@ -27,18 +27,17 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.ui.theme.*
 
-// ✅ keep a preview instance only
 private val previewUiState =
     SettingsUiState(
         userName = "John Doe", errorMsg = null, topItems = emptyList(), accountItems = emptyList())
 
-@OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) // <-- add Foundation opt-in
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun SettingsScreenContent(
     ui: SettingsUiState,
@@ -189,7 +188,7 @@ fun SettingsScreenContent(
                           }
                     }
 
-                // Bring the list into view when expanding
+                // Bring the list into view when expanding (stabilizes CI)
                 val blockedBringIntoView = remember { BringIntoViewRequester() }
                 LaunchedEffect(blockedExpanded) {
                   if (blockedExpanded) blockedBringIntoView.bringIntoView()
@@ -258,9 +257,11 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
         Text(label, style = MaterialTheme.typography.bodyLarge)
         Switch(
             modifier =
-                Modifier.testTag("SettingSwitch_${label}").semantics {
+                Modifier.testTag("SettingSwitch_${label}").semantics(mergeDescendants = true) {
                   role = Role.Switch
-                }, // <-- set role via semantics
+                  // Stable, testable state (avoids ToggleableState flakiness)
+                  stateDescription = if (checked) "On" else "Off"
+                },
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors =
@@ -272,7 +273,6 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
       }
 }
 
-// ---------- Preview ----------
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenPreview() {

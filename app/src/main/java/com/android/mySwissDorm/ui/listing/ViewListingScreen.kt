@@ -110,23 +110,6 @@ fun ViewListingScreen(
               // Location placeholder
               PlaceholderBlock(text = "LOCATION (Not implemented yet)", height = 180.dp)
 
-              // Contact message
-              OutlinedTextField(
-                  value = listingUIState.contactMessage,
-                  onValueChange = { viewListingViewModel.setContactMessage(it) },
-                  placeholder = { Text("Contact the announcer") },
-                  modifier = Modifier.fillMaxWidth(),
-                  shape = RoundedCornerShape(16.dp),
-                  singleLine = false,
-                  minLines = 1,
-                  colors =
-                      OutlinedTextFieldDefaults.colors(
-                          focusedContainerColor = Color(0xFFF0F0F0),
-                          unfocusedContainerColor = Color(0xFFF0F0F0),
-                          disabledContainerColor = Color(0xFFF0F0F0),
-                          focusedBorderColor = MaterialTheme.colorScheme.outline,
-                          unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-
             if (isOwner) {
                 // Owner sees an Edit button centered, same size as Apply
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

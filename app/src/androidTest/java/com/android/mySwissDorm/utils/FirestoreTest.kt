@@ -1,12 +1,18 @@
 package com.android.mySwissDorm.utils
 
+import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
+import com.android.mySwissDorm.model.rental.*
+import com.android.mySwissDorm.model.rental.RentalListing
+import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.model.university.UniversityName
 import com.android.mySwissDorm.utils.FirebaseEmulator.auth
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import java.lang.NullPointerException
@@ -43,8 +49,33 @@ abstract class FirestoreTest : TestCase() {
     return FirebaseEmulator.firestore.collection(PROFILE_COLLECTION_PATH).get().await().size()
   }
 
+  suspend fun getRentalListingCount(): Int {
+    return FirebaseEmulator.firestore.collection(RENTAL_LISTINGS_COLLECTION).get().await().size()
+  }
+
   private suspend fun clearTestCollection() {
     clearProfileTestCollection()
+    clearRentalListingsTestCollection()
+  }
+
+  private suspend fun clearRentalListingsTestCollection() {
+    if (getRentalListingCount() > 0)
+        FakeUser.entries.forEach { fakeUser ->
+          switchToUser(fakeUser)
+          val rentalListings =
+              FirebaseEmulator.firestore
+                  .collection(RENTAL_LISTINGS_COLLECTION)
+                  .whereEqualTo("ownerId", auth.currentUser?.uid ?: throw NullPointerException())
+                  .get()
+                  .await()
+
+          val batch = FirebaseEmulator.firestore.batch()
+          rentalListings.documents.forEach { batch.delete(it.reference) }
+          batch.commit().await()
+        }
+    assert(getRentalListingCount() == 0) {
+      "Test collection is not empty after clearing, count: ${getRentalListingCount()}"
+    }
   }
 
   private suspend fun clearProfileTestCollection() {
@@ -99,6 +130,7 @@ abstract class FirestoreTest : TestCase() {
           userSettings = UserSettings(),
           ownerId = "",
       )
+
   /** The ownerId must be updated before using it with Firestore */
   var profile2 =
       Profile(
@@ -115,4 +147,56 @@ abstract class FirestoreTest : TestCase() {
           userSettings = UserSettings(),
           ownerId = "",
       )
+
+  var resTest =
+      Residency(
+          name = ResidencyName.VORTEX,
+          description = "Student housing",
+          location = Location(name = "EPFL Votex", latitude = 46.5197, longitude = 6.6323),
+          city = CityName.LAUSANNE,
+          email = "info@example.com",
+          phone = "+41220000000",
+          website = null)
+  var rentalListing1 =
+      RentalListing(
+          uid = "rental1",
+          ownerId = "",
+          postedAt = Timestamp.now(),
+          residency = resTest,
+          title = "title1",
+          roomType = RoomType.STUDIO,
+          pricePerMonth = 1200.0,
+          areaInM2 = 25,
+          startDate = Timestamp.now(),
+          description = "A good studio close to the campus.",
+          imageUrls = emptyList(),
+          status = RentalStatus.POSTED)
+  var rentalListing2 =
+      RentalListing(
+          uid = "rental2",
+          ownerId = "",
+          postedAt = Timestamp.now(),
+          residency = resTest,
+          title = "title2",
+          roomType = RoomType.STUDIO,
+          pricePerMonth = 1500.0,
+          areaInM2 = 32,
+          startDate = Timestamp.now(),
+          description = "A good studio close to the campus.",
+          imageUrls = emptyList(),
+          status = RentalStatus.POSTED)
+  var rentalListing3 =
+      RentalListing(
+          uid = "rental3",
+          ownerId = "",
+          postedAt = Timestamp.now(),
+          residency = resTest,
+          title = "title3",
+          roomType = RoomType.STUDIO,
+          pricePerMonth = 900.0,
+          areaInM2 = 20,
+          startDate = Timestamp.now(),
+          description = "A good studio close to the campus but a bit small.",
+          imageUrls = emptyList(),
+          status = RentalStatus.POSTED)
 }

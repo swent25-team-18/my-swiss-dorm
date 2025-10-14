@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.ui.profile
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -44,7 +43,10 @@ class ProfileContributionsScreenTest {
     rule.onNodeWithText("Student interested in a room").assertIsDisplayed()
 
     // Click second item's "View details" button
-    rule.onNodeWithTag("btn_contrib_details_1").assertIsDisplayed().performClick()
+    rule
+        .onNodeWithTag("btn_contrib_details_1", useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
     assertEquals("Request r1", clickedTitle)
   }
 
@@ -65,13 +67,8 @@ class ProfileContributionsScreenTest {
       }
     }
 
-    // Click the CARD itself for the first item (find a clickable node that contains the title)
-    rule
-        .onNode(
-            hasClickAction() and androidx.compose.ui.test.hasText("Listing l1"),
-            useUnmergedTree = true)
-        .performClick()
-
+    // Click the clickable Card (using the new stable tag)
+    rule.onNodeWithTag("card_contrib_0", useUnmergedTree = true).performClick()
     assertEquals("Listing l1", clickedTitle)
   }
 

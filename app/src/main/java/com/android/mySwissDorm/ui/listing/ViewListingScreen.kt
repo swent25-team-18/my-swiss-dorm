@@ -146,7 +146,7 @@ fun ViewListingScreen(
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Button(
                         onClick = onApply,
-                        enabled = listingUIState.contactMessage.any { !it.isWhitespace() },
+                        enabled = canApply,
                         modifier = Modifier
                             .fillMaxWidth(0.55f)
                             .height(52.dp),

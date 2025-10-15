@@ -42,7 +42,7 @@ fun ProfileContributionsScreen(
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = White, titleContentColor = Color.Black))
       }) { inner ->
-        LazyColumn( //
+        LazyColumn( ////
             modifier = Modifier.padding(inner).fillMaxSize().background(White),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {

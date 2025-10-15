@@ -115,13 +115,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     compose.waitForIdle()
 
-    //    compose.waitUntil(5_000) {
-    //      compose
-    //          .onAllNodesWithTag(C.ViewListingTags.EDIT_BTN, useUnmergedTree = true)
-    //          .fetchSemanticsNodes()
-    //          .isNotEmpty()
-    //    }
-
     compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN).performScrollTo().assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()

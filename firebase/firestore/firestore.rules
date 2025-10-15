@@ -16,5 +16,11 @@ service cloud.firestore {
     match /{collection} {
       allow read, write: if true;
     }
+    match /universities/{universityId} {
+      allow read, write: if true;
+    }
+    match /residencies/{residencyId} {
+      allow read, write: if true;
+    }
   }
 }

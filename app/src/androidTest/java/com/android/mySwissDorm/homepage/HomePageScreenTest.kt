@@ -83,7 +83,6 @@ class HomePageScreenTest : FirestoreTest() {
   fun testBasicElementsAreDisplayed() {
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR).assertIsDisplayed()
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CONTACT_SUPPORT).assertIsDisplayed()
   }
 
   @Test

@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -21,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -52,7 +50,6 @@ import com.android.mySwissDorm.model.city.CityName
 object HomePageScreenTestTags {
   const val SEARCH_BAR = "searchBar"
   const val SEARCH_BAR_TEXT_FIELD = "searchBarTextField"
-  const val CONTACT_SUPPORT = "contactSupport"
   const val CITIES_LIST = "citiesList"
 
   fun getTestTagForCityCard(cityName: CityName): String = "cityCard${cityName.name}"
@@ -78,75 +75,57 @@ fun HomePageScreen(
     uiState.errorMsg?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
   }
 
-  Scaffold(
-      bottomBar = {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center) {
-              HorizontalDivider(
-                  color = Color.Gray, thickness = 1.dp, modifier = Modifier.fillMaxWidth())
-              Box(modifier = Modifier.padding(vertical = 12.dp)) {
-                Text(
-                    modifier =
-                        Modifier.testTag(HomePageScreenTestTags.CONTACT_SUPPORT).clickable {
-                          /* TODO: Implement the Contact Support functionnality */
-                        },
-                    text = "Contact Support",
-                    color = Color.Gray)
+  Scaffold { paddingValues ->
+    var inputText by remember { mutableStateOf("") }
+    Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+      Box(
+          modifier =
+              Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR)
+                  .fillMaxWidth()
+                  .wrapContentHeight(),
+          contentAlignment = Alignment.Center) {
+            TextField(
+                modifier =
+                    Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp, horizontal = 32.dp)
+                        .border(2.dp, Color.Black, RoundedCornerShape(20.dp)),
+                value = inputText,
+                onValueChange = { inputText = it },
+                placeholder = { Text("Browse", fontSize = 18.sp) },
+                leadingIcon = {
+                  Icon(
+                      Icons.Default.Search,
+                      modifier = Modifier.size(30.dp),
+                      contentDescription = "Search",
+                      tint = com.android.mySwissDorm.ui.theme.PalePink)
+                },
+                singleLine = true,
+                colors =
+                    TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent))
+          }
+      LazyColumn(
+          modifier =
+              Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
+                  .fillMaxWidth()
+                  .padding(horizontal = 32.dp)
+                  .padding(top = 10.dp),
+          state = lazyState) {
+            items(uiState.cities.size) { index ->
+              val city = uiState.cities[index]
+              if (city.name.value.contains(inputText, ignoreCase = true) ||
+                  city.description.contains(inputText, ignoreCase = true)) {
+                CityCard(city = city, onClick = { onSelectCity(city) })
+                Spacer(modifier = Modifier.height(16.dp))
               }
             }
-      }) { paddingValues ->
-        var inputText by remember { mutableStateOf("") }
-        Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-          Box(
-              modifier =
-                  Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR)
-                      .fillMaxWidth()
-                      .wrapContentHeight(),
-              contentAlignment = Alignment.Center) {
-                TextField(
-                    modifier =
-                        Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp, horizontal = 32.dp)
-                            .border(2.dp, Color.Black, RoundedCornerShape(20.dp)),
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    placeholder = { Text("Browse", fontSize = 18.sp) },
-                    leadingIcon = {
-                      Icon(
-                          Icons.Default.Search,
-                          modifier = Modifier.size(30.dp),
-                          contentDescription = "Search",
-                          tint = com.android.mySwissDorm.ui.theme.PalePink)
-                    },
-                    singleLine = true,
-                    colors =
-                        TextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent))
-              }
-          LazyColumn(
-              modifier =
-                  Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
-                      .fillMaxWidth()
-                      .padding(horizontal = 32.dp)
-                      .padding(top = 10.dp),
-              state = lazyState) {
-                items(uiState.cities.size) { index ->
-                  val city = uiState.cities[index]
-                  if (city.name.value.contains(inputText, ignoreCase = true) ||
-                      city.description.contains(inputText, ignoreCase = true)) {
-                    CityCard(city = city, onClick = { onSelectCity(city) })
-                    Spacer(modifier = Modifier.height(16.dp))
-                  }
-                }
-              }
-        }
-      }
+          }
+    }
+  }
 }
 
 @Composable

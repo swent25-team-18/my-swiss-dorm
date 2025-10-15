@@ -5,13 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.residency.ResidencyName
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,12 +47,16 @@ private val defaultListing =
 
 data class ViewListingUIState(
     val listing: RentalListing = defaultListing,
+    val fullNameOfPoster: String = "",
     val errorMsg: String? = null,
     val contactMessage: String = "",
+    val isOwner: Boolean = false,
 )
 
 class ViewListingViewModel(
-    private val repository: RentalListingRepository,
+    private val rentalListingRepository: RentalListingRepository =
+        RentalListingRepositoryProvider.repository,
+    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
@@ -71,12 +79,13 @@ class ViewListingViewModel(
   fun loadListing(listingId: String) {
     viewModelScope.launch {
       try {
-        val listing = repository.getRentalListing(listingId)
+        val listing = rentalListingRepository.getRentalListing(listingId)
+        val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
+        val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
+        val isOwner = FirebaseAuth.getInstance().currentUser?.uid == listing.ownerId
         _uiState.value =
             ViewListingUIState(
-                listing = listing,
-                errorMsg = null,
-            )
+                listing = listing, fullNameOfPoster = fullNameOfPoster, isOwner = isOwner)
       } catch (e: Exception) {
         Log.e("EditTodoViewModel", "Error loading ToDo by ID: $listingId", e)
         setErrorMsg("Failed to load Listing: ${e.message}")

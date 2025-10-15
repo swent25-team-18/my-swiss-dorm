@@ -5,7 +5,6 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -116,12 +115,12 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     compose.waitForIdle()
 
-//    compose.waitUntil(5_000) {
-//      compose
-//          .onAllNodesWithTag(C.ViewListingTags.EDIT_BTN, useUnmergedTree = true)
-//          .fetchSemanticsNodes()
-//          .isNotEmpty()
-//    }
+    //    compose.waitUntil(5_000) {
+    //      compose
+    //          .onAllNodesWithTag(C.ViewListingTags.EDIT_BTN, useUnmergedTree = true)
+    //          .fetchSemanticsNodes()
+    //          .isNotEmpty()
+    //    }
 
     compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN).performScrollTo().assertIsDisplayed()

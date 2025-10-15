@@ -84,9 +84,9 @@ class ViewListingViewModel(
         val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
         val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
         val isOwner = FirebaseAuth.getInstance().currentUser?.uid == listing.ownerId
-          _uiState.update { it.copy(listing = listing,
-              fullNameOfPoster = fullNameOfPoster,
-              isOwner = isOwner) }
+        _uiState.update {
+          it.copy(listing = listing, fullNameOfPoster = fullNameOfPoster, isOwner = isOwner)
+        }
       } catch (e: Exception) {
         Log.e("EditTodoViewModel", "Error loading ToDo by ID: $listingId", e)
         setErrorMsg("Failed to load Listing: ${e.message}")

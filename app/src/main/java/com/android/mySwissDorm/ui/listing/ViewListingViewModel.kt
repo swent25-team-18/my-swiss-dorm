@@ -54,7 +54,8 @@ data class ViewListingUIState(
 )
 
 class ViewListingViewModel(
-    private val rentalListingRepository: RentalListingRepository = RentalListingRepositoryProvider.repository,
+    private val rentalListingRepository: RentalListingRepository =
+        RentalListingRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())

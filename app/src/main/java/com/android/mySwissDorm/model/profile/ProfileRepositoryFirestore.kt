@@ -69,28 +69,36 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
               phoneNumber = map["phoneNumber"] as? String ?: return null,
               universityName =
                   map["universityName"].let { name ->
-                    when (name) {
-                      is String ->
-                          try {
-                            UniversityName.valueOf(name)
-                          } catch (_: IllegalArgumentException) {
-                            // A string but not one of the string defined
-                            return null
-                          }
-                      else -> null
+                    if (name == null) {
+                      null
+                    } else {
+                      when (name) {
+                        is String ->
+                            try {
+                              UniversityName.valueOf(name)
+                            } catch (_: IllegalArgumentException) {
+                              // A string but not one of the string defined
+                              return null
+                            }
+                        else -> return null
+                      }
                     }
                   },
               location = location,
               residencyName =
                   map["residencyName"].let { residency ->
-                    when (residency) {
-                      is String ->
-                          try {
-                            ResidencyName.valueOf(residency)
-                          } catch (_: IllegalArgumentException) {
-                            return null
-                          }
-                      else -> null
+                    if (residency == null) {
+                      null
+                    } else {
+                      when (residency) {
+                        is String ->
+                            try {
+                              ResidencyName.valueOf(residency)
+                            } catch (_: IllegalArgumentException) {
+                              return null
+                            }
+                        else -> return null
+                      }
                     }
                   }, // TODO change that when types are updated
           )

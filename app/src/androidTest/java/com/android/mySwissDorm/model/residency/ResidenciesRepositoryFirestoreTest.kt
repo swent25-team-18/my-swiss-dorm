@@ -67,7 +67,7 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun getNonExistentUniversityFail() = runTest {
+  fun getNonExistentResidencyFail() = runTest {
     switchToUser(FakeUser.FakeUser1)
     assertEquals(runCatching { repo.getResidency(ResidencyName.VORTEX) }.isFailure, true)
   }

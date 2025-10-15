@@ -78,7 +78,7 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
           phone = phone,
           website = website)
     } catch (e: Exception) {
-      Log.e("UniversitiesRepositoryFirestore", "Error converting document to University", e)
+      Log.e("ResidenciesRepositoryFirestore", "Error converting document to Residency", e)
       null
     }
   }

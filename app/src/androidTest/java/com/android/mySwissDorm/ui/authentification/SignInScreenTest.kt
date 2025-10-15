@@ -37,9 +37,9 @@ class SignInScreenTest : FirestoreTest() {
       composeTestRule.setContent { SignInScreen() }
       ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
         assertIsDisplayed()
-        app_logo { assertIsDisplayed() }
-        log_in_button { assertIsDisplayed() }
-        sign_up_button { assertIsDisplayed() }
+        appLogo { assertIsDisplayed() }
+        logInButton { assertIsDisplayed() }
+        signUpButton { assertIsDisplayed() }
       }
     }
   }
@@ -58,7 +58,7 @@ class SignInScreenTest : FirestoreTest() {
 
       ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
         assertIsDisplayed()
-        log_in_button {
+        logInButton {
           assertIsDisplayed()
           performClick()
         }

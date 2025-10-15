@@ -9,7 +9,7 @@ class SignInScreen(semanticsProvider: SemanticsNodeInteractionsProvider) :
     ComposeScreen<SignInScreen>(
         semanticsProvider = semanticsProvider,
         viewBuilderAction = { hasTestTag(C.Tag.SIGN_IN_SCREEN) }) {
-  val app_logo: KNode = child { hasTestTag(C.Tag.SIGN_IN_APP_LOGO) }
-  val log_in_button: KNode = child { hasTestTag(C.Tag.SIGN_IN_LOG_IN_BUTTON) }
-  val sign_up_button: KNode = child { hasTestTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON) }
+  val appLogo: KNode = child { hasTestTag(C.Tag.SIGN_IN_APP_LOGO) }
+  val logInButton: KNode = child { hasTestTag(C.Tag.SIGN_IN_LOG_IN_BUTTON) }
+  val signUpButton: KNode = child { hasTestTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON) }
 }

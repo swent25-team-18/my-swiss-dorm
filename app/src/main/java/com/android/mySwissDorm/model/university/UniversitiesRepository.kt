@@ -17,4 +17,6 @@ interface UniversitiesRepository {
    * @throws Exception if the University item is not found.
    */
   suspend fun getUniversity(universityName: UniversityName): University
+
+  suspend fun addUniversity(university: University)
 }

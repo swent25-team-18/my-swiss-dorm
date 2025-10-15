@@ -29,6 +29,25 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
         ?: throw Exception("UniversitiesRepositoryFirestore: University not found")
   }
 
+  override suspend fun addUniversity(university: University) {
+    val universityData = mapOf(
+      "name" to university.name.name,
+      "location" to mapOf(
+        "name" to university.location.name,
+        "latitude" to university.location.latitude,
+        "longitude" to university.location.longitude
+      ),
+      "cityName" to university.city.name,
+      "email" to university.email,
+      "phone" to university.phone,
+      "websiteURL" to university.websiteURL.toString()
+    )
+    db.collection(UNIVERSITIES_COLLECTION_PATH)
+      .document(university.name.value)
+      .set(universityData)
+      .await()
+  }
+
   private fun documentToUniversity(document: DocumentSnapshot): University? {
     return try {
       val nameString = document.getString("name") ?: return null

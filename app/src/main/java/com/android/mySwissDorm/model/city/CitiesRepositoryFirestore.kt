@@ -42,7 +42,7 @@ class CitiesRepositoryFirestore(private val db: FirebaseFirestore) : CitiesRepos
   private fun documentToCity(document: DocumentSnapshot): City? {
     return try {
       val nameString = document.getString("name") ?: return null
-      val name = CityName.valueOf(nameString)
+      val name = enumValues<CityName>().firstOrNull {it.name == nameString } ?: return null
       val description = document.getString("description") ?: return null
       val locationData = document.get("location") as? Map<*, *>
       val location =

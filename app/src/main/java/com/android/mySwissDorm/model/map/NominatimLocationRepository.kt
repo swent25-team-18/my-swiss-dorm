@@ -1,71 +1,104 @@
-package com.github.se.bootcamp.model.map
+package com.android.mySwissDorm.model.map
 
+import CachedLocations
+import GeoCache
+import InMemoryGeoCache
 import android.util.Log
-import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.map.LocationRepository
 import java.io.IOException
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 
-class NominatimLocationRepository(private val client: OkHttpClient) : LocationRepository {
+class NominatimLocationRepository(
+    private val client: OkHttpClient,
+    private val cache: GeoCache = InMemoryGeoCache()
+) : LocationRepository {
+  private var lastCall = 0L
+  private val MIN_INTERVAL_MS = 1100L
+  private val gate = Mutex()
 
-    private fun parseBody(body: String): List<Location> {
-        val jsonArray = JSONArray(body)
+  private suspend fun respectRateLimit() =
+      gate.withLock {
+        val now = System.currentTimeMillis()
+        val wait = (lastCall + MIN_INTERVAL_MS) - now
+        if (wait > 0) delay(wait)
+        lastCall = System.currentTimeMillis()
+      }
 
-        return List(jsonArray.length()) { i ->
-            val jsonObject = jsonArray.getJSONObject(i)
-            val lat = jsonObject.getDouble("lat")
-            val lon = jsonObject.getDouble("lon")
-            val name = jsonObject.getString("display_name")
-            Location(latitude = lat, name = name, longitude = lon)
-        }
+  private fun normalizeKey(query: String, countryCodes: String, locale: Locale): String {
+    val normQ = query.trim().lowercase(locale).replace(Regex("\\s+"), " ")
+    return "q=$normQ|cc=$countryCodes|lang=${locale.toLanguageTag()}"
+  }
+
+  private fun parseBody(body: String): List<Location> {
+    val jsonArray = JSONArray(body)
+
+    return List(jsonArray.length()) { i ->
+      val jsonObject = jsonArray.getJSONObject(i)
+      val lat = jsonObject.getDouble("lat")
+      val lon = jsonObject.getDouble("lon")
+      val name = jsonObject.getString("display_name")
+      Location(latitude = lat, name = name, longitude = lon)
     }
+  }
 
-    override suspend fun search(query: String): List<Location> =
-        withContext(Dispatchers.IO) {
-            val url =
-                HttpUrl.Builder()
-                    .scheme("https")
-                    .host("nominatim.openstreetmap.org")
-                    .addPathSegment("search")
-                    .addQueryParameter("q", query)
-                    .addQueryParameter("format", "json")
-                    .addQueryParameter("countrycodes", "ch")
-                    .build()
-            val request =
-                Request.Builder()
-                    .url(url)
-                    .header(
-                        "User-Agent",
-                        "MySwissDorm/1.0 (contact@myswissdorm.ch)"
-                    )
-                    .header("Referer", "https://myswissdorm.com")
-                    .build()
-
-            try {
-                val response = client.newCall(request).execute()
-                response.use {
-                    if (!response.isSuccessful) {
-                        Log.d("NominatimLocationRepository", "Unexpected code $response")
-                        throw Exception("Unexpected code $response")
-                    }
-
-                    val body = response.body?.string()
-                    if (body != null) {
-                        Log.d("NominatimLocationRepository", "Body: $body")
-                        return@withContext parseBody(body)
-                    } else {
-                        Log.d("NominatimLocationRepository", "Empty body")
-                        return@withContext emptyList()
-                    }
-                }
-            } catch (e: IOException) {
-                Log.e("NominatimLocationRepository", "Failed to execute request", e)
-                throw e
-            }
+  override suspend fun search(query: String): List<Location> =
+      withContext(Dispatchers.IO) {
+        val locale = Locale.getDefault()
+        val countryCodes = "ch"
+        val cacheKey = normalizeKey(query, countryCodes, locale)
+        cache.get(cacheKey)?.let { cached ->
+          val age = System.currentTimeMillis() - cached.fetchedTime
+          if (age <= cache.timeToLive) return@withContext cached.locations
         }
+
+        val url =
+            HttpUrl.Builder()
+                .scheme("https")
+                .host("nominatim.openstreetmap.org")
+                .addPathSegment("search")
+                .addQueryParameter("q", query)
+                .addQueryParameter("format", "json")
+                .addQueryParameter("countrycodes", countryCodes)
+                .build()
+        val request =
+            Request.Builder()
+                .url(url)
+                .header("User-Agent", "MySwissDorm/1.0 (contact@myswissdorm.ch)")
+                .header("Referer", "https://myswissdorm.com")
+                .header("Accept-Language", locale.toLanguageTag())
+                .build()
+
+        try {
+          respectRateLimit()
+          val response = client.newCall(request).execute()
+
+          response.use {
+            if (response.code == 429) {
+              val retryAfter = response.header("Retry-After")?.toLongOrNull() ?: 2L
+              delay(retryAfter * 1000)
+              throw IOException("Rate limited by Nominatim (429). Try later.")
+            }
+            if (!response.isSuccessful) {
+              Log.d("NominatimLocationRepository", "Unexpected code $response")
+              throw Exception("Unexpected code $response")
+            }
+
+            val body = response.body?.string() ?: return@withContext emptyList<Location>()
+            val results = parseBody(body)
+            cache.put(cacheKey, CachedLocations(results, System.currentTimeMillis()))
+            return@withContext results
+          }
+        } catch (e: IOException) {
+          Log.e("NominatimLocationRepository", "Failed to execute request", e)
+          throw e
+        }
+      }
 }

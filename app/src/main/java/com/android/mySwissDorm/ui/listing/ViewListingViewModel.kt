@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
@@ -52,8 +54,8 @@ data class ViewListingUIState(
 )
 
 class ViewListingViewModel(
-    private val rentalListingRepository: RentalListingRepository,
-    private val profileRepository: ProfileRepository,
+    private val rentalListingRepository: RentalListingRepository = RentalListingRepositoryProvider.repository,
+    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()

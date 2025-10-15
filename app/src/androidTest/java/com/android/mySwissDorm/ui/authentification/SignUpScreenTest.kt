@@ -370,7 +370,9 @@ class SignUpScreenTest : FirestoreTest() {
     composeTestRule.setContent { SignUpScreen() }
     step("Check cannot be pressed if nothing is filled") {
       ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
+        signUpButton.performScrollTo()
         signUpButton.assertIsNotEnabled()
+        signUpHelpText.performScrollTo()
         signUpHelpText.assertIsDisplayed()
       }
     }
@@ -379,16 +381,20 @@ class SignUpScreenTest : FirestoreTest() {
         signUpNameField.performTextInput(badName)
         signUpLastNameField.performTextInput(fakeLastName)
         signUpPhoneNumberField.performTextInput(fakePhoneNumber)
+        signUpHelpText.performScrollTo()
         signUpButton.assertIsNotEnabled()
         signUpHelpText.assertIsDisplayed()
 
+        signUpNameField.performScrollTo()
         signUpNameField.performTextReplacement(fakeName)
         signUpLastNameField.performTextReplacement(badLastName)
+        signUpHelpText.performScrollTo()
         signUpButton.assertIsNotEnabled()
         signUpHelpText.assertIsDisplayed()
 
         signUpLastNameField.performTextReplacement(fakeLastName)
         signUpPhoneNumberField.performTextReplacement(badPhoneNumber1)
+        signUpHelpText.performScrollTo()
         signUpButton.assertIsNotEnabled()
         signUpHelpText.assertIsDisplayed()
       }
@@ -396,7 +402,7 @@ class SignUpScreenTest : FirestoreTest() {
     step("Check can press if everything is good and help text is hidden") {
       ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
         signUpPhoneNumberField.performTextReplacement(fakePhoneNumber)
-
+        signUpButton.performScrollTo()
         signUpButton.assertIsEnabled()
         signUpHelpText.assertIsNotDisplayed()
       }
@@ -417,6 +423,7 @@ class SignUpScreenTest : FirestoreTest() {
       signUpNameField.performTextInput(fakeName)
       signUpLastNameField.performTextInput(fakeLastName)
       signUpPhoneNumberField.performTextInput(fakePhoneNumber)
+      signUpButton.performScrollTo()
       signUpButton.performClick()
     }
     composeTestRule.waitUntil(5_000) { connected.value }
@@ -461,15 +468,18 @@ class SignUpScreenTest : FirestoreTest() {
       signUpNameField.performTextInput(fakeName)
       signUpLastNameField.performTextInput(fakeLastName)
       signUpPhoneNumberField.performTextInput(fakePhoneNumber)
+      signUpButton.performScrollTo()
       signUpButton.performClick()
     }
     composeTestRule.waitUntil(5_000) { connected.value }
     connected.value = false
 
     ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
+      signUpNameField.performScrollTo()
       signUpNameField.performTextReplacement(fakeName2)
       signUpLastNameField.performTextReplacement(fakeLastName2)
       signUpPhoneNumberField.performTextReplacement(fakePhoneNumber2)
+      signUpButton.performScrollTo()
       signUpButton.performClick()
     }
     composeTestRule.waitUntil(5_000) { connected.value }

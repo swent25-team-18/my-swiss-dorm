@@ -8,9 +8,9 @@ import com.google.firebase.firestore.firestore
  * purposes.
  */
 object ResidenciesRepositoryProvider {
-    private val _repository: ResidenciesRepository by lazy {
-        ResidenciesRepositoryFirestore(Firebase.firestore)
-    }
+  private val _repository: ResidenciesRepository by lazy {
+    ResidenciesRepositoryFirestore(Firebase.firestore)
+  }
 
-    var repository: ResidenciesRepository = _repository
+  var repository: ResidenciesRepository = _repository
 }

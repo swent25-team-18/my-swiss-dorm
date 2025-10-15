@@ -20,6 +20,7 @@ import kotlin.String
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private val defaultListing =
@@ -83,9 +84,9 @@ class ViewListingViewModel(
         val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
         val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
         val isOwner = FirebaseAuth.getInstance().currentUser?.uid == listing.ownerId
-        _uiState.value =
-            ViewListingUIState(
-                listing = listing, fullNameOfPoster = fullNameOfPoster, isOwner = isOwner)
+        _uiState.update {
+          it.copy(listing = listing, fullNameOfPoster = fullNameOfPoster, isOwner = isOwner)
+        }
       } catch (e: Exception) {
         Log.e("EditTodoViewModel", "Error loading ToDo by ID: $listingId", e)
         setErrorMsg("Failed to load Listing: ${e.message}")

@@ -5,7 +5,6 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -92,6 +91,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
+    compose.waitForIdle()
 
     compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).performScrollTo().assertIsDisplayed()
@@ -113,13 +113,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
     }
-
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewListingTags.EDIT_BTN, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+    compose.waitForIdle()
 
     compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN).performScrollTo().assertIsDisplayed()
@@ -135,6 +129,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
+    compose.waitForIdle()
 
     compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).performScrollTo().assertIsDisplayed()
   }
@@ -163,6 +158,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
+    compose.waitForIdle()
 
     compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).performScrollTo().performTextInput("   ")
     compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertIsNotEnabled()
@@ -177,7 +173,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
 
-    runTest { vm.setContactMessage("Testing message") }
+    compose.runOnIdle { vm.setContactMessage("Testing message") }
+    compose.waitForIdle()
 
     compose
         .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD)
@@ -194,6 +191,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
     }
+    compose.waitForIdle()
 
     compose
         .onNodeWithTag(C.ViewListingTags.POSTED_BY)

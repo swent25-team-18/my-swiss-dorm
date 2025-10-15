@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.profile
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,7 +26,7 @@ fun ProfileContributionsScreen(
     onContributionClick: (Contribution) -> Unit
 ) {
   Scaffold(
-      containerColor = LightGray,
+      containerColor = White,
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("My contributions") },
@@ -42,15 +43,15 @@ fun ProfileContributionsScreen(
                     containerColor = White, titleContentColor = Color.Black))
       }) { inner ->
         LazyColumn(
-            modifier = Modifier.padding(inner).fillMaxSize(),
+            modifier = Modifier.padding(inner).fillMaxSize().background(White),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
               itemsIndexed(contributions) { index, c ->
                 Card(
                     modifier =
-                        Modifier.fillMaxWidth()
-                            .testTag("card_contrib_$index") // <-- added tag for test clicks
-                            .clickable { onContributionClick(c) },
+                        Modifier.fillMaxWidth().testTag("card_contrib_$index").clickable {
+                          onContributionClick(c)
+                        },
                     shape = MaterialTheme.shapes.large,
                     colors = CardDefaults.cardColors(containerColor = White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -58,12 +59,13 @@ fun ProfileContributionsScreen(
                       Column(Modifier.padding(16.dp)) {
                         Text(
                             text = c.title,
-                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp))
+                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                            color = Color.Black)
                         Spacer(Modifier.height(6.dp))
                         Text(
                             text = c.description,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = LightGray0)
+                            color = Color(0xFF7A7A7A))
                         Spacer(Modifier.height(12.dp))
                         OutlinedButton(
                             onClick = { onContributionClick(c) },

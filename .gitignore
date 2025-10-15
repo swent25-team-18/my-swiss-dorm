@@ -36,8 +36,3 @@ google-services.json
 
 .DS_Store
 
-
-# exclude unfinished listing detail files
-app/src/main/java/com/android/mySwissDorm/ui/profile/ListingDetailScreen.kt
-app/src/androidTest/java/com/android/mySwissDorm/ui/profile/ListingDetailScreenUiTest.kt
-app/src/main/java/com/android/mySwissDorm/ui/profile/ListingDetailViewModel.kt

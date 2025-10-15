@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.profile
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -28,7 +29,7 @@ fun RequestDetailScreen(
   LaunchedEffect(id) { vm.load(id) }
 
   Scaffold(
-      containerColor = LightGray,
+      containerColor = White,
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("Received request") },
@@ -46,13 +47,15 @@ fun RequestDetailScreen(
       }) { inner ->
         Column(
             modifier =
-                Modifier.padding(inner).fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
+                Modifier.padding(inner)
+                    .fillMaxSize()
+                    .background(White)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               FieldBlock("Identifier", "Request #${ui.id}", "req_field_identifiant")
               FieldBlock("Requester", ui.requester, "req_field_requester")
               FieldBlock("Message", ui.message, "req_field_message")
 
-              // ---- FIX: avoid smart-cast error with delegated Compose state ----
               ui.error?.let { errorText ->
                 Text(
                     text = errorText,
@@ -91,13 +94,13 @@ fun RequestDetailScreen(
 private fun FieldBlock(label: String, value: String, tag: String? = null) {
   Surface(
       modifier = Modifier.fillMaxWidth().then(if (tag != null) Modifier.testTag(tag) else Modifier),
-      color = LightGray,
+      color = White, // white field like Figma
       border = BorderStroke(1.dp, LightGray0),
       shadowElevation = 0.dp,
       tonalElevation = 0.dp,
       shape = MaterialTheme.shapes.large) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-          Text(label, color = LightGray0, style = MaterialTheme.typography.labelMedium)
+          Text(label, color = Color(0xFF9AA0A6), style = MaterialTheme.typography.labelMedium)
           Spacer(Modifier.height(4.dp))
           Text(
               value,

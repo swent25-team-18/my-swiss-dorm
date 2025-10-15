@@ -95,7 +95,9 @@ class HomePageScreenTest : FirestoreTest() {
             .fetchSemanticsNodes()
             .isNotEmpty()
       }
-        composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(allCities.indexOf(it))
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.CITIES_LIST)
+          .performScrollToIndex(allCities.indexOf(it))
       composeTestRule
           .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
           .performScrollTo()

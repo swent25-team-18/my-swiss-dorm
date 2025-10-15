@@ -72,7 +72,7 @@ fun HomePageScreen(
 ) {
   val uiState by homePageViewModel.uiState.collectAsState()
   val context = LocalContext.current
-    val lazyState = LazyListState()
+  val lazyState = LazyListState()
 
   LaunchedEffect(uiState.errorMsg) {
     uiState.errorMsg?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
@@ -130,12 +130,12 @@ fun HomePageScreen(
                             focusedIndicatorColor = Color.Transparent))
               }
           LazyColumn(
-              modifier = Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
-                  .fillMaxWidth()
-                  .padding(horizontal = 32.dp)
-                  .padding(top = 10.dp),
-              state = lazyState
-          ) {
+              modifier =
+                  Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
+                      .fillMaxWidth()
+                      .padding(horizontal = 32.dp)
+                      .padding(top = 10.dp),
+              state = lazyState) {
                 items(uiState.cities.size) { index ->
                   val city = uiState.cities[index]
                   if (city.name.value.contains(inputText, ignoreCase = true) ||

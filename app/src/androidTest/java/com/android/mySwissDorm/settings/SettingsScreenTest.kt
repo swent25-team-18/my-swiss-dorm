@@ -60,7 +60,9 @@ class SettingsScreenTest {
 
     composeTestRule.onNodeWithText("Sophie").assertExists()
     composeTestRule.onNodeWithText("View profile").assertExists()
-    composeTestRule.onNodeWithTag("ProfileButton", useUnmergedTree = true).assertExists()
+    composeTestRule
+        .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+        .assertExists()
   }
 
   @Test
@@ -71,7 +73,9 @@ class SettingsScreenTest {
     }
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithTag("BackButton", useUnmergedTree = true).performClick()
+    composeTestRule
+        .onNodeWithTag(SettingsTestTags.BackButton, useUnmergedTree = true)
+        .performClick()
     assert(onGoBackCalled.get()) { "onGoBack callback was not called." }
   }
 
@@ -83,7 +87,9 @@ class SettingsScreenTest {
     }
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithTag("DeleteAccountButton", useUnmergedTree = true).performClick()
+    composeTestRule
+        .onNodeWithTag(SettingsTestTags.DeleteAccountButton, useUnmergedTree = true)
+        .performClick()
     assert(clickedItem.get() == "Delete my account") {
       "onItemClick was not called with 'Delete my account'."
     }
@@ -94,8 +100,8 @@ class SettingsScreenTest {
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
     composeTestRule.waitForIdle()
 
-    val messagesTag = "SettingSwitch_Show notifications for messages"
-    val listingsTag = "SettingSwitch_Show notifications for new listings"
+    val messagesTag = SettingsTestTags.switch("Show notifications for messages")
+    val listingsTag = SettingsTestTags.switch("Show notifications for new listings")
 
     composeTestRule
         .onNodeWithTag(messagesTag, useUnmergedTree = true)
@@ -119,9 +125,9 @@ class SettingsScreenTest {
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
     composeTestRule.waitForIdle()
 
-    val scrollTag = "SettingsScroll"
-    val listTag = "BlockedContactsList"
-    val toggleTag = "BlockedContactsToggle"
+    val scrollTag = SettingsTestTags.SettingsScroll
+    val listTag = SettingsTestTags.BlockedContactsList
+    val toggleTag = SettingsTestTags.BlockedContactsToggle
 
     // Starts collapsed
     composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
@@ -131,19 +137,17 @@ class SettingsScreenTest {
     composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
 
-    // Wait for the list to exist, then ensure it's displayed (it may render below the fold)
+    // Wait for the list to exist, then ensure it's displayed
     composeTestRule.waitUntilTagExists(listTag, timeoutMs = 30_000)
-    // If it's not displayed yet, scroll more until it is.
     composeTestRule.scrollUntilDisplayed(scrollTag, listTag)
     composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertIsDisplayed()
     composeTestRule.onNodeWithText("Clarisse K.").assertExists()
 
-    // Collapse again — the toggle may have moved, so re-scroll to it
+    // Collapse again
     composeTestRule.scrollUntilDisplayed(scrollTag, toggleTag)
     composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
 
-    // Optionally ensure it disappears from the tree (not just off-screen)
     composeTestRule.waitUntilTagGone(listTag, timeoutMs = 30_000)
     composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
   }
@@ -153,7 +157,7 @@ class SettingsScreenTest {
     composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
     composeTestRule.waitForIdle()
 
-    val emailFieldTag = "EmailField"
+    val emailFieldTag = SettingsTestTags.EmailField
     composeTestRule
         .onNodeWithTag(emailFieldTag, useUnmergedTree = true)
         .assert(hasText("john.doe@email.com"))
@@ -164,5 +168,20 @@ class SettingsScreenTest {
     composeTestRule
         .onNodeWithTag(emailFieldTag, useUnmergedTree = true)
         .assert(hasText("new.email@example.com"))
+  }
+
+  @Test
+  fun emailField_clearsFocusOnDone() {
+    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    composeTestRule.waitForIdle()
+
+    val emailFieldTag = SettingsTestTags.EmailField
+    val emailNode = composeTestRule.onNodeWithTag(emailFieldTag, useUnmergedTree = true)
+
+    // Focus then send IME action (Done) and verify focus is cleared.
+    emailNode.performClick()
+    emailNode.assertIsFocused()
+    emailNode.performImeAction()
+    emailNode.assertIsNotFocused()
   }
 }

@@ -38,6 +38,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.theme.*
 
+/** Centralized test tags for the Settings screen. */
+object SettingsTestTags {
+  const val BackButton = "BackButton"
+  const val SettingsScroll = "SettingsScroll"
+  const val ProfileButton = "ProfileButton"
+  const val EmailField = "EmailField"
+  const val DeleteAccountButton = "DeleteAccountButton"
+  const val BlockedContactsToggle = "BlockedContactsToggle"
+  const val BlockedContactsList = "BlockedContactsList"
+
+  fun switch(label: String) = "SettingSwitch_$label"
+}
+
 /** Wrapper: screen owns its VM and collects state. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +65,11 @@ fun SettingsScreen(
 
   val context = LocalContext.current
   LaunchedEffect(ui.errorMsg) {
-    ui.errorMsg?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    ui.errorMsg?.let {
+      Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+      // clear one-shot error after displaying it
+      vm.clearError()
+    }
   }
 
   SettingsScreenContent(
@@ -89,12 +106,13 @@ fun SettingsScreenContent(
         CenterAlignedTopAppBar(
             title = { Text("Settings") },
             navigationIcon = {
-              IconButton(onClick = onGoBack, modifier = Modifier.testTag("BackButton")) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Red0)
-              }
+              IconButton(
+                  onClick = onGoBack, modifier = Modifier.testTag(SettingsTestTags.BackButton)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Red0)
+                  }
             },
             colors =
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -106,7 +124,7 @@ fun SettingsScreenContent(
                     .fillMaxSize()
                     .background(White)
                     .verticalScroll(rememberScrollState())
-                    .testTag("SettingsScroll")
+                    .testTag(SettingsTestTags.SettingsScroll)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
@@ -117,13 +135,15 @@ fun SettingsScreenContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween) {
                       Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Avatar initial from user's name (fallback to "A")
+                        val initial = (ui.userName.firstOrNull()?.uppercaseChar() ?: 'A').toString()
                         Box(
                             modifier =
                                 Modifier.size(56.dp)
                                     .clip(CircleShape)
                                     .background(PalePink.copy(alpha = 0.16f)),
                             contentAlignment = Alignment.Center) {
-                              Text("A", fontWeight = FontWeight.Bold, color = Red0)
+                              Text(initial, fontWeight = FontWeight.Bold, color = Red0)
                             }
                         Spacer(Modifier.width(12.dp))
                         Column {
@@ -136,7 +156,7 @@ fun SettingsScreenContent(
                       }
                       IconButton(
                           onClick = { /* TODO: open profile */},
-                          modifier = Modifier.testTag("ProfileButton")) {
+                          modifier = Modifier.testTag(SettingsTestTags.ProfileButton)) {
                             Icon(
                                 imageVector = Icons.Filled.ChevronRight,
                                 contentDescription = "Open profile")
@@ -171,7 +191,7 @@ fun SettingsScreenContent(
                     modifier =
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .testTag("EmailField"))
+                            .testTag(SettingsTestTags.EmailField))
                 SoftDivider()
                 Button(
                     onClick = { onItemClick("Delete my account") },
@@ -181,7 +201,7 @@ fun SettingsScreenContent(
                     modifier =
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .testTag("DeleteAccountButton")) {
+                            .testTag(SettingsTestTags.DeleteAccountButton)) {
                       Text("Delete my account")
                     }
               }
@@ -210,7 +230,7 @@ fun SettingsScreenContent(
                               label = "blockedArrowRotation")
                       IconButton(
                           onClick = { blockedExpanded = !blockedExpanded },
-                          modifier = Modifier.testTag("BlockedContactsToggle")) {
+                          modifier = Modifier.testTag(SettingsTestTags.BlockedContactsToggle)) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription =
@@ -233,7 +253,7 @@ fun SettingsScreenContent(
                           Modifier.fillMaxWidth()
                               .padding(horizontal = 16.dp, vertical = 6.dp)
                               .bringIntoViewRequester(blockedBringIntoView)
-                              .testTag("BlockedContactsList")) {
+                              .testTag(SettingsTestTags.BlockedContactsList)) {
                         Column(Modifier.padding(12.dp)) {
                           blockedContacts.forEach { name ->
                             Text(
@@ -288,10 +308,11 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
         Text(label, style = MaterialTheme.typography.bodyLarge, color = Color.Black)
         Switch(
             modifier =
-                Modifier.testTag("SettingSwitch_${label}").semantics(mergeDescendants = true) {
-                  role = Role.Switch
-                  stateDescription = if (checked) "On" else "Off"
-                },
+                Modifier.testTag(SettingsTestTags.switch(label)).semantics(
+                    mergeDescendants = true) {
+                      role = Role.Switch
+                      stateDescription = if (checked) "On" else "Off"
+                    },
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors =
@@ -301,7 +322,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
                     uncheckedThumbColor = LightGray0,
                     uncheckedTrackColor = LightGray0.copy(alpha = 0.5f)))
       }
-} //
+}
 
 @Preview(showBackground = true)
 @Composable

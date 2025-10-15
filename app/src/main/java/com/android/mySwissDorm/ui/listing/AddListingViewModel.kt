@@ -1,10 +1,10 @@
 package com.android.mySwissDorm.ui.listing
 
-import android.location.Location
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.android.mySwissDorm.model.city.CityName
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
@@ -49,7 +49,7 @@ class AddListingViewModel : ViewModel() {
                   Residency(
                       ResidencyName.VORTEX,
                       "",
-                      Location("Vortex"),
+                      Location(name = "Vortex", latitude = 0.0, longitude = 0.0),
                       CityName.LAUSANNE,
                       "123@gmail.com",
                       "12345678",

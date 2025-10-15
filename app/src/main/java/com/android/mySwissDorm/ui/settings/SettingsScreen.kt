@@ -10,6 +10,8 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,12 +25,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -44,10 +48,8 @@ fun SettingsScreen(
 ) {
   val ui by vm.uiState.collectAsState()
 
-  // Example refresh
   LaunchedEffect(Unit) { vm.refresh() }
 
-  // Bubble up error via Toast (same behavior as before)
   val context = LocalContext.current
   LaunchedEffect(ui.errorMsg) {
     ui.errorMsg?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
@@ -57,7 +59,7 @@ fun SettingsScreen(
       ui = ui,
       onGoBack = onGoBack,
       onItemClick = {
-        vm.onItemClick(it) // keep VM as the source of truth, but still forward to caller
+        vm.onItemClick(it)
         onItemClick(it)
       })
 }
@@ -73,16 +75,16 @@ fun SettingsScreenContent(
     onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {}
 ) {
-  // Local UI states
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
   var readReceipts by remember { mutableStateOf(true) }
   var email by remember { mutableStateOf("john.doe@email.com") }
   var blockedExpanded by remember { mutableStateOf(false) }
   val blockedContacts = listOf("Clarisse K.", "Alice P.", "Benjamin M.")
+  val focusManager = LocalFocusManager.current
 
   Scaffold(
-      containerColor = LightGray,
+      containerColor = White,
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("Settings") },
@@ -102,8 +104,9 @@ fun SettingsScreenContent(
             modifier =
                 Modifier.padding(inner)
                     .fillMaxSize()
+                    .background(White)
                     .verticalScroll(rememberScrollState())
-                    .testTag("SettingsScroll") // <-- added for test-driven scrolling
+                    .testTag("SettingsScroll")
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
@@ -118,7 +121,7 @@ fun SettingsScreenContent(
                             modifier =
                                 Modifier.size(56.dp)
                                     .clip(CircleShape)
-                                    .background(PalePink.copy(alpha = 0.3f)),
+                                    .background(PalePink.copy(alpha = 0.16f)),
                             contentAlignment = Alignment.Center) {
                               Text("A", fontWeight = FontWeight.Bold, color = Red0)
                             }
@@ -162,6 +165,9 @@ fun SettingsScreenContent(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email address") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     modifier =
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -213,7 +219,6 @@ fun SettingsScreenContent(
                           }
                     }
 
-                // Bring the list into view when expanding (stabilizes CI)
                 val blockedBringIntoView = remember { BringIntoViewRequester() }
                 LaunchedEffect(blockedExpanded) {
                   if (blockedExpanded) blockedBringIntoView.bringIntoView()
@@ -221,7 +226,7 @@ fun SettingsScreenContent(
 
                 if (blockedExpanded) {
                   Surface(
-                      color = LightGray.copy(alpha = 0.6f),
+                      color = White,
                       shape = MaterialTheme.shapes.medium,
                       border = BorderStroke(1.dp, LightGray0),
                       modifier =
@@ -234,7 +239,8 @@ fun SettingsScreenContent(
                             Text(
                                 text = name,
                                 style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(vertical = 4.dp))
+                                modifier = Modifier.padding(vertical = 4.dp),
+                                color = Color.Black)
                           }
                         }
                       }
@@ -270,7 +276,7 @@ private fun SectionLabel(text: String) {
 
 @Composable
 private fun SoftDivider() {
-  HorizontalDivider(thickness = 1.dp, color = LightGray0.copy(alpha = 0.4f))
+  HorizontalDivider(thickness = 1.dp, color = LightGray0.copy(alpha = 0.25f))
 }
 
 @Composable
@@ -279,7 +285,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
       modifier = Modifier.fillMaxWidth().padding(horizontal = 0.dp, vertical = 4.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyLarge)
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = Color.Black)
         Switch(
             modifier =
                 Modifier.testTag("SettingSwitch_${label}").semantics(mergeDescendants = true) {
@@ -290,10 +296,10 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
             onCheckedChange = onCheckedChange,
             colors =
                 SwitchDefaults.colors(
-                    checkedThumbColor = PalePink,
+                    checkedThumbColor = White,
                     checkedTrackColor = Red0,
                     uncheckedThumbColor = LightGray0,
-                    uncheckedTrackColor = LightGray0.copy(alpha = 0.6f)))
+                    uncheckedTrackColor = LightGray0.copy(alpha = 0.5f)))
       }
 }
 

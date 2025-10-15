@@ -27,6 +27,31 @@ import com.android.mySwissDorm.ui.listing.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
 
+//helper function to sanitize size input
+// Keep only digits and at most one dot; then cap int/frac lengths
+private fun limitDecimal(input: String, maxInt: Int, maxFrac: Int): String {
+    if (input.isEmpty()) return ""
+    val sanitized = buildString {
+        var dotSeen = false
+        for (c in input) {
+            when {
+                c.isDigit() -> append(c)
+                c == '.' && !dotSeen -> { append('.'); dotSeen = true }
+            }
+        }
+    }
+    val parts = sanitized.split('.', limit = 2)
+    val intPart = parts[0].take(maxInt)
+    val fracPart = if (parts.size == 2) parts[1].take(maxFrac) else ""
+    return if (parts.size == 2) "$intPart.$fracPart" else intPart
+}
+
+private fun limitDigits(input: String, maxLen: Int) =
+    input.filter { it.isDigit() }.take(maxLen)
+
+private val SIZE_REGEX = Regex("""^(?:0|[1-9]\d*)(?:\.\d*)?$""")          // 0 or non-leading-zero int, optional .digits
+private val PRICE_INT_REGEX = Regex("""^(?:0|[1-9]\d*)$""")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddListingScreen(
@@ -124,11 +149,13 @@ fun AddListingScreen(
               val isSizeValid = viewModel.sizeSqm.value.toDoubleOrNull() != null
               OutlinedTextField(
                   value = viewModel.sizeSqm.value,
-                  onValueChange = { input ->
-                    if (input.isEmpty() ||
-                        input.matches(Regex("""^(?:0|[1-9]\d*)(?:[.]\d*)?$"""))) {
-                      viewModel.sizeSqm.value = input
-                    }
+                  onValueChange = { raw ->
+                      if (raw.isEmpty() || SIZE_REGEX.matches(raw)) {
+                          val limited = limitDecimal(raw, maxInt = 4, maxFrac = 1)
+                          // preserve a trailing '.' while user is typing, if your UX wants that
+                          viewModel.sizeSqm.value =
+                              if (raw.endsWith(".") && !limited.endsWith(".")) raw else limited
+                      }
                   },
                   label = { Text("Room size (m²)") },
                   isError = !isSizeValid, // Show error state if invalid
@@ -156,10 +183,10 @@ fun AddListingScreen(
               val isPriceValid = viewModel.price.value.toDoubleOrNull() != null
               OutlinedTextField(
                   value = viewModel.price.value,
-                  onValueChange = { input ->
-                    if (input.isEmpty() || input.matches(Regex("^(?:0|[1-9]\\d*)\$"))) {
-                      viewModel.price.value = input
-                    }
+                  onValueChange = { raw ->
+                      if (raw.isEmpty() || PRICE_INT_REGEX.matches(raw)) {
+                          viewModel.price.value = limitDigits(raw, maxLen = 5) // e.g., up to 6 digits
+                      }
                   },
                   label = { Text("Monthly rent (CHF)") },
                   isError = !isPriceValid, // Show error state if invalid

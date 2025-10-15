@@ -13,4 +13,17 @@ object C {
     const val SIGN_IN_LOG_IN_BUTTON = "signInLogInButton"
     const val SIGN_IN_SIGN_UP_BUTTON = "signInSignUpButton"
   }
+
+  object ViewListingTags {
+    const val ROOT = "viewListingRoot"
+    const val TITLE = "viewListingTitle"
+    const val POSTED_BY = "viewListingPostedBy"
+    const val BULLETS = "viewListingBullets"
+    const val DESCRIPTION = "viewListingDescription"
+    const val PHOTOS = "viewListingPhotos"
+    const val LOCATION = "viewListingLocation"
+    const val CONTACT_FIELD = "viewListingContactField"
+    const val APPLY_BTN = "viewListingApplyBtn"
+    const val EDIT_BTN = "viewListingEditBtn"
+  }
 }

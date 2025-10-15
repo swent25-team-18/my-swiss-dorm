@@ -16,16 +16,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.firebase.Timestamp
-import com.google.firebase.auth.FirebaseAuth
-import java.text.SimpleDateFormat
-import java.util.Locale
+import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Red0
+import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,7 +45,7 @@ fun ViewListingScreen(
   val fullNameOfPoster = listingUIState.fullNameOfPoster
   val errorMsg = listingUIState.errorMsg
   val canApply = listingUIState.contactMessage.any { !it.isWhitespace() }
-  val isOwner = FirebaseAuth.getInstance().currentUser?.uid == listing.ownerId
+  val isOwner = listingUIState.isOwner
 
   val context = LocalContext.current
 
@@ -74,22 +75,30 @@ fun ViewListingScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .verticalScroll(rememberScrollState())
-                    .imePadding(),
+                    .imePadding()
+                    .testTag(C.ViewListingTags.ROOT),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
                   text = listing.title,
                   fontSize = 28.sp,
                   fontWeight = FontWeight.SemiBold,
-                  lineHeight = 32.sp)
+                  lineHeight = 32.sp,
+                  modifier = Modifier.testTag(C.ViewListingTags.TITLE))
 
               Text(
-                  text = "Posted by $fullNameOfPoster ${formatRelative(listing.postedAt)}",
+                  text =
+                      buildString {
+                        append("Posted by $fullNameOfPoster")
+                        if (isOwner) append(" (You)")
+                        append(" ${formatRelative(listing.postedAt)}")
+                      },
                   style =
                       MaterialTheme.typography.bodyMedium.copy(
-                          color = MaterialTheme.colorScheme.onSurfaceVariant))
+                          color = MaterialTheme.colorScheme.onSurfaceVariant),
+                  modifier = Modifier.testTag(C.ViewListingTags.POSTED_BY))
 
               // Bullet section
-              SectionCard {
+              SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
                 BulletRow("${listing.roomType}")
                 BulletRow("${listing.pricePerMonth}.-/month")
                 BulletRow("${listing.areaInM2}m²")
@@ -97,24 +106,33 @@ fun ViewListingScreen(
               }
 
               // Description
-              SectionCard {
+              SectionCard(modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION)) {
                 Text("Description :", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(3.dp))
                 Text(listing.description, style = MaterialTheme.typography.bodyLarge)
               }
 
               // Photos placeholder
-              PlaceholderBlock(text = "PHOTOS (Not implemented yet)", height = 220.dp)
+              PlaceholderBlock(
+                  text = "PHOTOS (Not implemented yet)",
+                  height = 220.dp,
+                  modifier = Modifier.testTag(C.ViewListingTags.PHOTOS))
 
               // Location placeholder
-              PlaceholderBlock(text = "LOCATION (Not implemented yet)", height = 180.dp)
+              PlaceholderBlock(
+                  text = "LOCATION (Not implemented yet)",
+                  height = 180.dp,
+                  modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
 
               if (isOwner) {
                 // Owner sees an Edit button centered, same size as Apply
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                   Button(
                       onClick = onEdit,
-                      modifier = Modifier.fillMaxWidth(0.55f).height(52.dp),
+                      modifier =
+                          Modifier.fillMaxWidth(0.55f)
+                              .height(52.dp)
+                              .testTag(C.ViewListingTags.EDIT_BTN),
                       shape = RoundedCornerShape(16.dp)) {
                         Text("Edit", style = MaterialTheme.typography.titleMedium)
                       }
@@ -125,7 +143,7 @@ fun ViewListingScreen(
                     value = listingUIState.contactMessage,
                     onValueChange = { viewListingViewModel.setContactMessage(it) },
                     placeholder = { Text("Contact the announcer") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag(C.ViewListingTags.CONTACT_FIELD),
                     shape = RoundedCornerShape(16.dp),
                     singleLine = false,
                     minLines = 1,
@@ -142,11 +160,14 @@ fun ViewListingScreen(
                   Button(
                       onClick = onApply,
                       enabled = canApply,
-                      modifier = Modifier.fillMaxWidth(0.55f).height(52.dp),
+                      modifier =
+                          Modifier.fillMaxWidth(0.55f)
+                              .height(52.dp)
+                              .testTag(C.ViewListingTags.APPLY_BTN),
                       shape = RoundedCornerShape(16.dp),
                       colors =
                           ButtonDefaults.buttonColors(
-                              containerColor = Color(0xFFE66D66),
+                              containerColor = Red0,
                               disabledContainerColor = Color(0xFFEBD0CE),
                               disabledContentColor = Color(0xFFFFFFFF))) {
                         Text(
@@ -161,9 +182,12 @@ fun ViewListingScreen(
 }
 
 @Composable
-private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
+private fun SectionCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
   Surface(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = modifier.fillMaxWidth(),
       color = Color(0xFFF0F0F0),
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 0.dp) {
@@ -183,38 +207,17 @@ private fun BulletRow(text: String) {
 }
 
 @Composable
-private fun PlaceholderBlock(text: String, height: Dp) {
+private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
   Box(
       modifier =
-          Modifier.fillMaxWidth()
+          modifier
+              .fillMaxWidth()
               .height(height)
               .clip(RoundedCornerShape(16.dp))
               .background(Color(0xFFF0F0F0)),
       contentAlignment = Alignment.Center) {
         Text(text, style = MaterialTheme.typography.titleMedium)
       }
-}
-
-// --- utilities
-
-private fun formatDate(ts: Timestamp?): String =
-    ts?.toDate()?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it) } ?: "—"
-
-private fun formatRelative(ts: Timestamp?, nowMillis: Long = System.currentTimeMillis()): String {
-  if (ts == null) return "—"
-
-  val then = ts.toDate().time
-  var diff = nowMillis - then
-  if (diff < 0) diff = 0L // future-safe
-
-  val seconds = diff / 1000
-  return when {
-    seconds < 60 -> "${seconds}s ago"
-    seconds < 60 * 60 -> "${seconds / 60} min ago" // < 1 hour → minutes
-    seconds < 24 * 60 * 60 -> "${seconds / 3600}h ago" // < 24h → hours
-    seconds < 7 * 24 * 60 * 60 -> "${seconds / 86400}d ago" // < 7d → days
-    else -> "on ${formatDate(ts)}" // ≥ 7d → date
-  }
 }
 
 @Composable

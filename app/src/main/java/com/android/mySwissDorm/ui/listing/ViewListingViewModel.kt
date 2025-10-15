@@ -13,6 +13,7 @@ import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.residency.ResidencyName
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +48,7 @@ data class ViewListingUIState(
     val fullNameOfPoster: String = "",
     val errorMsg: String? = null,
     val contactMessage: String = "",
+    val isOwner: Boolean = false,
 )
 
 class ViewListingViewModel(
@@ -77,7 +79,10 @@ class ViewListingViewModel(
         val listing = rentalListingRepository.getRentalListing(listingId)
         val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
         val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
-        _uiState.value = ViewListingUIState(listing = listing, fullNameOfPoster = fullNameOfPoster)
+        val isOwner = FirebaseAuth.getInstance().currentUser?.uid == listing.ownerId
+        _uiState.value =
+            ViewListingUIState(
+                listing = listing, fullNameOfPoster = fullNameOfPoster, isOwner = isOwner)
       } catch (e: Exception) {
         Log.e("EditTodoViewModel", "Error loading ToDo by ID: $listingId", e)
         setErrorMsg("Failed to load Listing: ${e.message}")

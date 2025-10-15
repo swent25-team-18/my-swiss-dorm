@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
@@ -94,6 +95,7 @@ class HomePageScreenTest : FirestoreTest() {
             .fetchSemanticsNodes()
             .isNotEmpty()
       }
+        composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(allCities.indexOf(it))
       composeTestRule
           .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
           .performScrollTo()

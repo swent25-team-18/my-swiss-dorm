@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -52,7 +53,7 @@ object HomePageScreenTestTags {
   const val SEARCH_BAR = "searchBar"
   const val SEARCH_BAR_TEXT_FIELD = "searchBarTextField"
   const val CONTACT_SUPPORT = "contactSupport"
-  const val CITY_CARD = "cityCard"
+  const val CITIES_LIST = "citiesList"
 
   fun getTestTagForCityCard(cityName: CityName): String = "cityCard${cityName.name}"
 
@@ -71,6 +72,7 @@ fun HomePageScreen(
 ) {
   val uiState by homePageViewModel.uiState.collectAsState()
   val context = LocalContext.current
+    val lazyState = LazyListState()
 
   LaunchedEffect(uiState.errorMsg) {
     uiState.errorMsg?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
@@ -128,7 +130,12 @@ fun HomePageScreen(
                             focusedIndicatorColor = Color.Transparent))
               }
           LazyColumn(
-              modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).padding(top = 10.dp)) {
+              modifier = Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
+                  .fillMaxWidth()
+                  .padding(horizontal = 32.dp)
+                  .padding(top = 10.dp),
+              state = lazyState
+          ) {
                 items(uiState.cities.size) { index ->
                   val city = uiState.cities[index]
                   if (city.name.value.contains(inputText, ignoreCase = true) ||

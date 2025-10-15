@@ -10,10 +10,11 @@ data class City(
 )
 
 enum class CityName(val value: String) {
-  LAUSANNE("Lausanne"),
-  GENEVA("Geneva"),
+    FRIBOURG("Fribourg"),
+    GENEVA("Geneva"),
+    LAUSANNE("Lausanne"),
   ZURICH("Zürich"),
-  FRIBOURG("Fribourg"),
+
   ;
 
   override fun toString(): String {

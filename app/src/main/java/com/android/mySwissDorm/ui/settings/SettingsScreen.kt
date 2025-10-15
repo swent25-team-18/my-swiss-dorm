@@ -301,7 +301,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
                     uncheckedThumbColor = LightGray0,
                     uncheckedTrackColor = LightGray0.copy(alpha = 0.5f)))
       }
-}
+} //
 
 @Preview(showBackground = true)
 @Composable

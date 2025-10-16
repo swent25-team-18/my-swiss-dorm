@@ -8,6 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,19 +22,26 @@ data class SignInState(
     val isLoading: Boolean = false,
     val user: FirebaseUser? = null,
     val errMsg: String? = null,
-    val signedOut: Boolean = false
+    val signedOut: Boolean = false,
 )
 
 /**
  * This is an implementation of a [ViewModel] for the [SignInScreen] compose element.
  *
- * @param repository is the authentification repository used in the app.
+ * @param authRepository is the authentification repository used in the app.
  */
-class SignInViewModel(private val repository: AuthRepository = AuthRepositoryProvider.repository) :
-    ViewModel() {
+class SignInViewModel(
+    private val authRepository: AuthRepository = AuthRepositoryProvider.repository,
+    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository
+) : ViewModel() {
 
   private val _uiState = MutableStateFlow(SignInState())
   val uiState: StateFlow<SignInState> = _uiState.asStateFlow()
+
+  /** Clear the error message */
+  fun clearErrMessage() {
+    _uiState.update { it.copy(errMsg = null) }
+  }
 
   /** Handle the sign in event by trying to log in with a Google account. */
   fun signIn(context: Context, credentialManager: CredentialManager) {
@@ -45,9 +54,21 @@ class SignInViewModel(private val repository: AuthRepository = AuthRepositoryPro
       try {
         val credential = credentialManager.getCredential(context, signInRequest).credential
 
-        repository.signInWithGoogle(credential).fold({ user ->
-          _uiState.update {
-            it.copy(isLoading = false, user = user, errMsg = null, signedOut = false)
+        authRepository.signInWithGoogle(credential).fold({ user ->
+          val isRegistered = runCatching { profileRepository.getProfile(user.uid) }.isSuccess
+          if (isRegistered) {
+            _uiState.update {
+              it.copy(isLoading = false, user = user, errMsg = null, signedOut = false)
+            }
+          } else {
+            authRepository.signOut()
+            _uiState.update {
+              it.copy(
+                  isLoading = false,
+                  user = null,
+                  errMsg = "This account is not registered",
+                  signedOut = true)
+            }
           }
         }) { failure ->
           _uiState.update {

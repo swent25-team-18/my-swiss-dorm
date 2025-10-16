@@ -7,7 +7,7 @@ import java.net.URL
 data class Residency(
     val name: ResidencyName,
     val description: String,
-    val location: Location?,
+    val location: Location,
     val city: CityName,
     val email: String?,
     val phone: String?,

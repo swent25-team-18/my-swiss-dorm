@@ -426,6 +426,7 @@ class SignUpScreenTest : FirestoreTest() {
       signUpButton.performScrollTo()
       signUpButton.performClick()
     }
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(5_000) { connected.value }
     val userId = FirebaseEmulator.auth.uid ?: throw NoSuchElementException()
     val expectedProfile =
@@ -471,6 +472,7 @@ class SignUpScreenTest : FirestoreTest() {
       signUpButton.performScrollTo()
       signUpButton.performClick()
     }
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(5_000) { connected.value }
     connected.value = false
 
@@ -482,6 +484,7 @@ class SignUpScreenTest : FirestoreTest() {
       signUpButton.performScrollTo()
       signUpButton.performClick()
     }
+    composeTestRule.waitForIdle()
     composeTestRule.waitUntil(5_000) { connected.value }
     val userId = FirebaseEmulator.auth.uid ?: throw NoSuchElementException()
     val expectedProfile =

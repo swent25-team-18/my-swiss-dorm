@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,7 +62,10 @@ data class BrowseCityUiState(
  * @property listingsRepository The repository used to fetch and manage rental listings. // Future
  *   enhancement: add reviews repository here as well
  */
-class BrowseCityViewModel(private val listingsRepository: RentalListingRepository) : ViewModel() {
+class BrowseCityViewModel(
+    private val listingsRepository: RentalListingRepository =
+        RentalListingRepositoryProvider.repository
+) : ViewModel() {
 
   private val _uiState = MutableStateFlow(BrowseCityUiState())
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()

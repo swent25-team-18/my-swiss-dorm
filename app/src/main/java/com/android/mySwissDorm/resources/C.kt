@@ -53,4 +53,19 @@ object C {
     const val APPLY_BTN = "viewListingApplyBtn"
     const val EDIT_BTN = "viewListingEditBtn"
   }
+
+  object BrowseCityTags {
+    const val ROOT = "browseCityRoot"
+    const val BACK_BUTTON = "browseCityBackButton"
+
+    const val TAB_REVIEWS = "browseCityTabReviews"
+    const val TAB_LISTINGS = "browseCityTabListings"
+
+    const val LIST = "browseCityList"
+    const val LOADING = "browseCityLoading"
+    const val ERROR = "browseCityError"
+    const val EMPTY = "browseCityEmpty"
+
+    fun card(listingUid: String) = "browseCityCard_$listingUid"
+  }
 }

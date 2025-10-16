@@ -16,11 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Red0
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,15 +59,16 @@ private fun BrowseCityScreenUI(
         CenterAlignedTopAppBar(
             title = { Text(cityName) },
             navigationIcon = {
-              IconButton(onClick = onGoBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Red0)
-              }
+              IconButton(
+                  onClick = onGoBack, modifier = Modifier.testTag(C.BrowseCityTags.BACK_BUTTON)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Red0)
+                  }
             })
       }) { pd ->
-        Column(modifier = Modifier.padding(pd).fillMaxSize()) {
+        Column(modifier = Modifier.padding(pd).fillMaxSize().testTag(C.BrowseCityTags.ROOT)) {
           TabRow(
               selectedTabIndex = selectedTab,
               containerColor = Color.Transparent,
@@ -82,13 +85,15 @@ private fun BrowseCityScreenUI(
                     onClick = { selectedTab = 0 },
                     selectedContentColor = Color.Black,
                     unselectedContentColor = Color.Black,
-                    text = { Text("Reviews") })
+                    text = { Text("Reviews") },
+                    modifier = Modifier.testTag(C.BrowseCityTags.TAB_REVIEWS))
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
                     selectedContentColor = Color.Black,
                     unselectedContentColor = Color.Black,
-                    text = { Text("Listings") })
+                    text = { Text("Listings") },
+                    modifier = Modifier.testTag(C.BrowseCityTags.TAB_LISTINGS))
               }
 
           when (selectedTab) {
@@ -104,22 +109,28 @@ private fun BrowseCityScreenUI(
               when {
                 listingsState.loading -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(modifier = Modifier.testTag(C.BrowseCityTags.LOADING))
                   }
                 }
                 listingsState.error != null -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = listingsState.error, color = MaterialTheme.colorScheme.error)
+                    Text(
+                        text = listingsState.error,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.testTag(C.BrowseCityTags.ERROR))
                   }
                 }
                 listingsState.items.isEmpty() -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No listings yet.")
+                    Text("No listings yet.", modifier = Modifier.testTag(C.BrowseCityTags.EMPTY))
                   }
                 }
                 else -> {
                   LazyColumn(
-                      modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                      modifier =
+                          Modifier.fillMaxSize()
+                              .padding(horizontal = 16.dp)
+                              .testTag(C.BrowseCityTags.LIST),
                       contentPadding = PaddingValues(vertical = 12.dp),
                       verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(listingsState.items) { item -> ListingCard(item, onSelectListing) }
@@ -136,7 +147,7 @@ private fun BrowseCityScreenUI(
 private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.card(data.listingUid)),
       onClick = { onClick(data) }) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
           // Image placeholder (left)
@@ -197,15 +208,12 @@ private fun BrowseCityScreen_Preview() {
                       title = "Subletting my room",
                       leftBullets = listOf("Room in flatshare", "600.-/month", "19m²"),
                       rightBullets = listOf("Starting 15/09/2025", "Vortex"),
-                      listingUid = "preview1"
-                  ),
+                      listingUid = "preview1"),
                   ListingCardUI(
                       title = "Bright studio near EPFL",
                       leftBullets = listOf("Studio", "1’150.-/month", "24m²"),
                       rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
-                      listingUid = "preview2"
-                  )
-              ),
+                      listingUid = "preview2")),
       )
   BrowseCityScreenUI(
       cityName = "Lausanne", listingsState = sampleUi, onGoBack = {}, onSelectListing = {})

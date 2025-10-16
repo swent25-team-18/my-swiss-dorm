@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material3.*
@@ -33,14 +32,33 @@ import com.android.mySwissDorm.ui.theme.Red0
 import com.github.se.bootcamp.ui.profile.ViewProfileScreenViewModel
 import com.github.se.bootcamp.ui.profile.ViewProfileUiState
 
+/**
+ * Displays a read-only view of another user's profile.
+ *
+ * This composable supports two modes:
+ * 1) **Runtime mode** (default): provide a [ViewProfileScreenViewModel] (or let it be created) and
+ *    a non-null [ownerId]. The VM will be used and data loaded.
+ * 2) **Preview / Static mode**: pass a non-null [previewUi]. When [previewUi] is provided, the VM
+ *    is never touched and no data is loaded (useful for @Preview).
+ *
+ * Test tags are provided via [T] for stable UI tests.
+ *
+ * @param viewModel Optional VM. If null (and not in preview), one will be created via [viewModel].
+ * @param ownerId The user id of the profile owner. Required in runtime mode. Null for preview.
+ * @param onBack Callback invoked when the top bar back icon is tapped.
+ * @param onSendMessage Callback invoked when "Send a message" row is tapped. It is gated on a
+ *   non-null [ownerId].
+ * @param previewUi If non-null, the screen renders from this state only (VM and loading are
+ *   skipped).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewUserProfileScreen(
-    viewModel: ViewProfileScreenViewModel? = null, // nullable so Preview won't instantiate it
-    ownerId: String?, // real user id; null in preview
+    viewModel: ViewProfileScreenViewModel? = null,
+    ownerId: String?,
     onBack: () -> Unit,
-    onSendMessage: () -> Unit, // invoked when "Send a message" is tapped
-    previewUi: ViewProfileUiState? = null // when non-null, VM is not touched
+    onSendMessage: () -> Unit,
+    previewUi: ViewProfileUiState? = null
 ) {
   // Obtain a real VM only when NOT in preview
   val realVm: ViewProfileScreenViewModel? =
@@ -48,13 +66,17 @@ fun ViewUserProfileScreen(
 
   // Trigger data load only when we have a VM and a real ownerId
   if (realVm != null && ownerId != null) {
-    LaunchedEffect(ownerId) { realVm.loadProfile(ownerId) }
+    LaunchedEffect(ownerId) {
+      // Idempotent load tied to ownerId changes
+      realVm.loadProfile(ownerId)
+    }
   }
 
-  // Decide the UI source
+  // Decide the UI source (previewUi takes precedence when provided)
   val ui: ViewProfileUiState =
       previewUi
           ?: run {
+            // In runtime mode, observe the VM's state
             val vmUi by realVm!!.uiState.collectAsState()
             vmUi
           }
@@ -94,6 +116,7 @@ fun ViewUserProfileScreen(
                 }
               }
         } else {
+          // Normal content
           LazyColumn(
               modifier = Modifier.fillMaxSize().padding(padding).testTag(T.ROOT),
               contentPadding = PaddingValues(horizontal = 24.dp, vertical = 24.dp)) {
@@ -123,6 +146,7 @@ fun ViewUserProfileScreen(
                   Spacer(Modifier.height(28.dp))
                 }
 
+                // Residence chip (only when non-blank)
                 if (ui.residence.isNotBlank()) {
                   item {
                     Surface(
@@ -145,8 +169,8 @@ fun ViewUserProfileScreen(
                   }
                 }
 
+                // Send a message row (enabled only when ownerId is non-null)
                 item {
-                  // Send a message
                   Surface(
                       onClick = { ownerId?.let { onSendMessage() } },
                       shape = RoundedCornerShape(12.dp),
@@ -176,7 +200,10 @@ fun ViewUserProfileScreen(
       }
 }
 
-/* Preview that never touches the ViewModel */
+/**
+ * Preview that never touches the ViewModel. We provide a static previewUI so the composable renders
+ * without creating or using a VM.
+ */
 @Preview(showBackground = true, name = "ViewUserProfile – Preview")
 @Composable
 private fun Preview_ViewUserProfile() {

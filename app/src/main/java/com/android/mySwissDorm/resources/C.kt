@@ -33,11 +33,11 @@ object C {
     const val SIGN_UP_BACK_BUTTON = "signUpBackButton"
 
     fun universityNameTestTag(universityName: UniversityName?): String {
-      return "${universityName?.name ?: "nullValUniversityName"}TestTag"
+      return "${universityName?.hashCode() ?: "nullValUniversityName"}TestTag"
     }
 
     fun residencyNameTestTag(residencyName: ResidencyName?): String {
-      return "${residencyName?.name ?: "nullValResidencyName"}TestTag"
+      return "${residencyName?.hashCode() ?: "nullValResidencyName"}TestTag"
     }
   }
 
@@ -64,5 +64,20 @@ object C {
     const val RETRY_BTN = "view_user_profile_retry"
     const val ERROR_TEXT = "view_user_profile_error"
     const val LOADING = "view_user_profile_loading"
+  }
+
+  object BrowseCityTags {
+    const val ROOT = "browseCityRoot"
+    const val BACK_BUTTON = "browseCityBackButton"
+
+    const val TAB_REVIEWS = "browseCityTabReviews"
+    const val TAB_LISTINGS = "browseCityTabListings"
+
+    const val LIST = "browseCityList"
+    const val LOADING = "browseCityLoading"
+    const val ERROR = "browseCityError"
+    const val EMPTY = "browseCityEmpty"
+
+    fun card(listingUid: String) = "browseCityCard_$listingUid"
   }
 }

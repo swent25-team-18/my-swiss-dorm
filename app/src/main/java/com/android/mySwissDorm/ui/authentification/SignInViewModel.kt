@@ -2,15 +2,12 @@ package com.android.mySwissDorm.ui.authentification
 
 import android.content.Context
 import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** This data class keeps information about the logging process */
-data class AuthUIState(
+data class SignInState(
     val isLoading: Boolean = false,
     val user: FirebaseUser? = null,
     val errMsg: String? = null,
@@ -34,14 +31,8 @@ data class AuthUIState(
 class SignInViewModel(private val repository: AuthRepository = AuthRepositoryProvider.repository) :
     ViewModel() {
 
-  private val _uiState = MutableStateFlow(AuthUIState())
-  val uiState: StateFlow<AuthUIState> = _uiState.asStateFlow()
-
-  private fun getSignInOptions(context: Context): GetSignInWithGoogleOption {
-    return GetSignInWithGoogleOption.Builder(
-            serverClientId = context.getString(R.string.default_web_client_id))
-        .build()
-  }
+  private val _uiState = MutableStateFlow(SignInState())
+  val uiState: StateFlow<SignInState> = _uiState.asStateFlow()
 
   /** Handle the sign in event by trying to log in with a Google account. */
   fun signIn(context: Context, credentialManager: CredentialManager) {
@@ -49,8 +40,7 @@ class SignInViewModel(private val repository: AuthRepository = AuthRepositoryPro
 
     viewModelScope.launch {
       _uiState.update { it.copy(isLoading = true, errMsg = null) }
-      val signInOptions = getSignInOptions(context)
-      val signInRequest = GetCredentialRequest.Builder().addCredentialOption(signInOptions).build()
+      val signInRequest = GoogleHelper.getSignInRequest(context)
 
       try {
         val credential = credentialManager.getCredential(context, signInRequest).credential

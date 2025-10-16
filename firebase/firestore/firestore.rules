@@ -21,6 +21,8 @@ service cloud.firestore {
     }
     match /residencies/{residencyId} {
       allow read, write: if true;
+    match /cities/{cityId} {
+        allow read, write: if true;
     }
   }
 }

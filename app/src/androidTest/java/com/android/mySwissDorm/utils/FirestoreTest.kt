@@ -125,7 +125,8 @@ abstract class FirestoreTest : TestCase() {
                   phoneNumber = "+41001112233",
                   universityName = UniversityName.EPFL,
                   location = Location("Somewhere", 0.0, 0.0),
-                  residency = null, // TODO need to change when types are updated
+                  residencyName =
+                      ResidencyName.VORTEX, // TODO need to change when types are updated
               ),
           userSettings = UserSettings(),
           ownerId = "",
@@ -142,7 +143,7 @@ abstract class FirestoreTest : TestCase() {
                   phoneNumber = "+41223334455",
                   universityName = null,
                   location = null,
-                  residency = null, // TODO need to change when types are updated
+                  residencyName = null, // TODO need to change when types are updated
               ),
           userSettings = UserSettings(),
           ownerId = "",

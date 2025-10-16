@@ -183,37 +183,21 @@ class ViewUserProfileScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun residenceChip_hidden_whenBlank() = run {
-    // Overwrite the profile with blank residencyName => chip should be absent
-    runTest {
-      switchToUser(FakeUser.FakeUser1)
-      val blankResidenceUser =
-          profile1.copy(
-              ownerId = ownerUid,
-              userInfo =
-                  profile1.userInfo.copy(
-                      residencyName = null // ensure blank
-                      ))
-      profileRepo.createProfile(blankResidenceUser)
-    }
-
+  fun residenceChip_shown_whenNonBlank() {
     compose.setContent {
-      val vm = ViewProfileScreenViewModel(profileRepo)
-      ViewUserProfileScreen(viewModel = vm, ownerId = ownerUid, onBack = {}, onSendMessage = {})
+      ViewUserProfileScreen(
+          ownerId = null,
+          onBack = {},
+          onSendMessage = {},
+          previewUi =
+              ViewProfileUiState(
+                  name = "Mansour Kanaan", residence = "Vortex, Coloc", image = null, error = null))
     }
 
-    // Wait for title (loaded)
-    compose.waitUntil(5_000) {
-      compose.onAllNodesWithTag(T.TITLE, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
-    }
+    // Scroll the LazyColumn (ROOT) to the node by tag, then assert it’s displayed
+    compose.onNodeWithTag(T.ROOT).performScrollToNode(hasTestTag(T.RESIDENCE_CHIP))
 
-    // Residence chip should not exist when blank
-    val exists =
-        compose
-            .onAllNodesWithTag(T.RESIDENCE_CHIP, useUnmergedTree = true)
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-    assert(!exists)
+    compose.onNodeWithTag(T.RESIDENCE_CHIP).assertExists().assertIsDisplayed()
   }
 
   @Test

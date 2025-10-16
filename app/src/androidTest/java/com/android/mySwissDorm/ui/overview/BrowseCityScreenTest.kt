@@ -27,8 +27,6 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @get:Rule val compose = createComposeRule()
 
-  //    private lateinit var profileRepo: ProfileRepository
-  //    private lateinit var listingsRepo: RentalListingRepository
   private val profileRepo = ProfileRepositoryProvider.repository
   private val listingsRepo = RentalListingRepositoryProvider.repository
 
@@ -39,10 +37,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private lateinit var laus2: RentalListing
   private lateinit var zurich: RentalListing
 
-  override fun createRepositories() {
-    //        profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    //        listingsRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
-  }
+  override fun createRepositories() {}
 
   @Before
   override fun setUp() {
@@ -188,13 +183,13 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         error("unused")
       }
 
-      override suspend fun getRentalListing(uid: String): RentalListing = error("unused")
+      override suspend fun getRentalListing(rentalPostId: String): RentalListing = error("unused")
 
-      override suspend fun addRentalListing(rentalListing: RentalListing) {}
+      override suspend fun addRentalListing(rentalPost: RentalListing) {}
 
-      override suspend fun editRentalListing(uid: String, newValue: RentalListing) {}
+      override suspend fun editRentalListing(rentalPostId: String, newValue: RentalListing) {}
 
-      override suspend fun deleteRentalListing(uid: String) {}
+      override suspend fun deleteRentalListing(rentalPostId: String) {}
     }
     val vm = BrowseCityViewModel(ThrowingRepo())
 

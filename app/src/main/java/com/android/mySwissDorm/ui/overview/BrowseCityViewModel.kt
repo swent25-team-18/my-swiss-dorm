@@ -1,4 +1,4 @@
-package com.android.mySwissDorm.ui.listing
+package com.android.mySwissDorm.ui.overview
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

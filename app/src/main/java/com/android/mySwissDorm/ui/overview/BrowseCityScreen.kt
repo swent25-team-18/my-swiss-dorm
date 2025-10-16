@@ -1,4 +1,4 @@
-package com.android.mySwissDorm.ui.listing
+package com.android.mySwissDorm.ui.overview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -197,12 +197,15 @@ private fun BrowseCityScreen_Preview() {
                       title = "Subletting my room",
                       leftBullets = listOf("Room in flatshare", "600.-/month", "19m²"),
                       rightBullets = listOf("Starting 15/09/2025", "Vortex"),
-                      listingUid = "preview1"),
+                      listingUid = "preview1"
+                  ),
                   ListingCardUI(
                       title = "Bright studio near EPFL",
                       leftBullets = listOf("Studio", "1’150.-/month", "24m²"),
                       rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
-                      listingUid = "preview2")),
+                      listingUid = "preview2"
+                  )
+              ),
       )
   BrowseCityScreenUI(
       cityName = "Lausanne", listingsState = sampleUi, onGoBack = {}, onSelectListing = {})

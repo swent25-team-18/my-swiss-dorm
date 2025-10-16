@@ -1,157 +1,202 @@
 package com.android.mySwissDorm.profile
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.ui.profile.ProfileScreen
-import com.android.mySwissDorm.ui.profile.SettingToggle
-import kotlin.assert
+import com.android.mySwissDorm.utils.FakeUser
+import com.android.mySwissDorm.utils.FirebaseEmulator
+import com.android.mySwissDorm.utils.FirestoreTest
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Firestore-backed tests for ProfileScreen using the emulator. Screen uses ProfileViewModel ->
+ * Firebase directly (no repository), so we seed Firestore in setUp() and verify writes after Save.
+ */
 @RunWith(AndroidJUnit4::class)
-class ProfileScreenTest {
+class ProfileScreenFirestoreTest : FirestoreTest() {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  @get:Rule val compose = createComposeRule()
 
-  @Test
-  fun profileScreen_initialElements_areDisplayed() {
-    composeTestRule.setContent {
-      ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {})
+  private lateinit var uid: String
+
+  /** No repositories are needed for this screen; it talks to Firestore directly. */
+  override fun createRepositories() {
+    // Intentionally empty
+  }
+
+  @Before
+  override fun setUp() {
+    super.setUp()
+    runTest {
+      // Sign in a fake user on the emulator and seed their profile doc
+      switchToUser(FakeUser.FakeUser1)
+      uid = FirebaseEmulator.auth.currentUser!!.uid
+
+      FirebaseEmulator.firestore
+          .collection("profiles")
+          .document(uid)
+          .set(
+              mapOf(
+                  "ownerId" to uid, // required by your rules
+                  "firstName" to "Mansour",
+                  "lastName" to "Kanaan",
+                  "language" to "English",
+                  "residence" to "Vortex, Coloc"))
+          .await()
     }
-
-    // App bar items are already visible (not scrollable)
-    composeTestRule.onNodeWithTag("profile_title").assertIsDisplayed().assertTextEquals("Profile")
-    composeTestRule.onNodeWithTag("profile_back_button").assertIsDisplayed()
-
-    // Content lives inside the scrollable Column tagged "profile_list"
-    composeTestRule
-        .onNodeWithTag("profile_list")
-        .performScrollToNode(hasTestTag("profile_logout_button"))
-    composeTestRule.onNodeWithTag("profile_logout_button").assertIsDisplayed()
-
-    composeTestRule.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("field_username"))
-    composeTestRule.onNodeWithTag("field_username").assertIsDisplayed()
-
-    composeTestRule
-        .onNodeWithTag("profile_list")
-        .performScrollToNode(hasTestTag("switch_anonymous"))
-    composeTestRule.onNodeWithTag("switch_anonymous").assertIsDisplayed()
   }
 
   @Test
-  fun settingToggle_click_changesState() {
-    val anonymousTag = "switch_anonymous"
+  fun initialElements_viewMode_and_nonClickable_avatar() {
+    compose.setContent { ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}) }
 
-    composeTestRule.setContent {
-      // IMPORTANT: remember the state
-      var isChecked by remember { mutableStateOf(true) }
-      com.android.mySwissDorm.ui.profile.SettingToggle(
-          label = "Anonymous",
-          redColor = Color.Red,
-          checked = isChecked,
-          onCheckedChange = { isChecked = it },
-          tag = anonymousTag)
+    // Wait until UI renders
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag("profile_title", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
-    val switchNode = composeTestRule.onNodeWithTag(anonymousTag)
-    switchNode.assertIsOn()
+    // App bar & edit toggle
+    compose.onNodeWithTag("profile_title").assertIsDisplayed().assertTextEquals("Profile")
+    compose.onNodeWithTag("profile_back_button").assertIsDisplayed()
+    compose.onNodeWithTag("profile_edit_toggle").assertIsDisplayed()
 
-    switchNode.performClick()
-    composeTestRule.waitForIdle()
-    switchNode.assertIsOff()
+    // Logout visible, Save not
+    compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_logout_button"))
+    compose.onNodeWithTag("profile_logout_button").assertIsDisplayed()
+    compose.onNodeWithTag("profile_save_button").assertDoesNotExist()
 
-    switchNode.performClick()
-    composeTestRule.waitForIdle()
-    switchNode.assertIsOn()
-  }
+    // Fields disabled in view mode
+    compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("field_first_name"))
+    compose.onNodeWithTag("field_first_name").assertIsNotEnabled()
+    compose.onNodeWithTag("field_last_name").assertIsNotEnabled()
+    compose.onNodeWithTag("field_language").assertIsNotEnabled()
+    compose.onNodeWithTag("field_residence").assertIsNotEnabled()
 
-  @Test
-  fun buttonInteractions_areExecuted() {
-    var logoutClicked = false
-    var backClicked = false
-
-    composeTestRule.setContent {
-      ProfileScreen(
-          onLogout = { logoutClicked = true },
-          onChangeProfilePicture = {},
-          onBack = { backClicked = true })
-    }
-
-    // Logout: scroll the **Button** into view, ensure it's clickable, then click
-    composeTestRule
-        .onNode(hasTestTag("profile_logout_button") and hasClickAction(), useUnmergedTree = true)
-        .performScrollTo()
+    // Avatar shows click action but is DISABLED in view mode
+    compose
+        .onNodeWithTag("profile_picture_box")
         .assertIsDisplayed()
-        .performClick()
+        .assertIsNotEnabled()
+        .assert(hasClickAction())
+  }
 
-    composeTestRule.waitUntil(2_000) { logoutClicked }
-    assert(logoutClicked) { "Logout handler was not called." }
+  @Test
+  fun editToggle_enablesFields_save_writes_to_firestore() = runTest {
+    compose.setContent { ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}) }
 
-    // Back button (likely an IconButton in TopAppBar)
-    composeTestRule
-        .onNode(hasTestTag("profile_back_button") and hasClickAction(), useUnmergedTree = true)
+    // Enter edit mode
+    compose.onNodeWithTag("profile_edit_toggle").performClick()
+
+    // Save visible, Logout hidden
+    compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_save_button"))
+    compose.onNodeWithTag("profile_save_button").assertIsDisplayed()
+    compose.onNodeWithTag("profile_logout_button").assertDoesNotExist()
+
+    // Fields enabled
+    compose.onNodeWithTag("field_first_name").assertIsEnabled()
+    compose.onNodeWithTag("field_last_name").assertIsEnabled()
+    compose.onNodeWithTag("field_language").assertIsEnabled() // dropdown
+    compose.onNodeWithTag("field_residence").assertIsEnabled() // dropdown
+
+    // Type first/last — call methods on the same node (no chaining)
+    val first = compose.onNodeWithTag("field_first_name")
+    first.performTextClearance()
+    first.performTextInput("John")
+
+    val last = compose.onNodeWithTag("field_last_name")
+    last.performTextClearance()
+    last.performTextInput("Doe")
+
+    // LANGUAGE (dropdown): open and pick "français" (Language.FRENCH("français"))
+    compose.onNodeWithTag("field_language").performClick()
+    val languagePick = "Français" // exact display string from your Language enum
+    // ensure it exists (useUnmergedTree for popup)
+    compose.onAllNodesWithText(languagePick, useUnmergedTree = true).fetchSemanticsNodes().also {
+      require(it.isNotEmpty()) { "Could not find language option '$languagePick' in dropdown." }
+    }
+    compose.onNodeWithText(languagePick, useUnmergedTree = true).performClick()
+
+    // RESIDENCE (dropdown): open and pick enum display
+    compose.onNodeWithTag("field_residence").performClick()
+    val residencePick = ResidencyName.ATRIUM.toString() // "Atrium"
+    compose.onNodeWithText(residencePick, useUnmergedTree = true).performClick()
+
+    // Save
+    compose.onNodeWithTag("profile_save_button").performClick()
+
+    // After save, back to view mode (Logout visible)
+    compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_logout_button"))
+    compose.onNodeWithTag("profile_logout_button").assertIsDisplayed()
+
+    // Verify Firestore document
+    val snap = FirebaseEmulator.firestore.collection("profiles").document(uid).get().await()
+    val data = snap.data!!
+    assertEquals("John", data["firstName"])
+    assertEquals("Doe", data["lastName"])
+    assertEquals(languagePick, data["language"])
+    assertEquals(residencePick, data["residence"])
+  }
+
+  @Test
+  fun editToggle_tap_twice_cancels_and_restores_viewMode() {
+    compose.setContent { ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}) }
+
+    compose.onNodeWithTag("profile_edit_toggle").performClick()
+    compose.onNodeWithTag("profile_edit_toggle").performClick()
+
+    compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_logout_button"))
+    compose.onNodeWithTag("profile_logout_button").assertIsDisplayed()
+    compose.onNodeWithTag("profile_save_button").assertDoesNotExist()
+
+    compose.onNodeWithTag("field_first_name").assertIsNotEnabled()
+    compose.onNodeWithTag("field_last_name").assertIsNotEnabled()
+    compose.onNodeWithTag("field_language").assertIsNotEnabled()
+    compose.onNodeWithTag("field_residence").assertIsNotEnabled()
+  }
+
+  @Test
+  fun avatar_clickable_only_in_edit_mode() {
+    compose.setContent { ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}) }
+
+    // View mode: present, disabled, has click action
+    compose
+        .onNodeWithTag("profile_picture_box")
         .assertIsDisplayed()
-        .performClick()
+        .assertIsNotEnabled()
+        .assert(hasClickAction())
 
-    composeTestRule.waitUntil(2_000) { backClicked }
-    assert(backClicked) { "Back handler was not called." }
-  }
-
-  @Test
-  fun settingToggle_contains_correctLabel() {
-    val visibilityTag = "switch_visibility"
-
-    composeTestRule.setContent {
-      var isChecked by remember { mutableStateOf(true) }
-      com.android.mySwissDorm.ui.profile.SettingToggle(
-          label = "Visibility",
-          redColor = Color.Red,
-          checked = isChecked,
-          onCheckedChange = { isChecked = it },
-          tag = visibilityTag)
-    }
-
-    composeTestRule.onNodeWithTag(visibilityTag).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Visibility").assertIsDisplayed()
-  }
-
-  @Test
-  fun profilePictureBox_isClickable() {
-    var pictureChangeClicked = false
-
-    composeTestRule.setContent {
-      ProfileScreen(
-          onLogout = {}, onChangeProfilePicture = { pictureChangeClicked = true }, onBack = {})
-    }
-
-    // Find the profile picture box by its tag
-    val pictureNode = composeTestRule.onNodeWithTag("profile_picture_box")
-
-    // Assert it has clickable properties and perform the click
-    pictureNode.assertIsDisplayed()
-    pictureNode.assertHasClickAction()
-    pictureNode.performClick()
-
-    // 3. Verify the handler was called
-    assert(pictureChangeClicked) { "Profile picture change handler was not called." }
-  }
-
-  @Test
-  fun allEditableTextFields_are_initial_empty() {
-    composeTestRule.setContent {
-      ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {})
-    }
-
-    // Assert each field contains its respective label/placeholder text when empty.
-    composeTestRule.onNodeWithTag("field_username").assertTextContains("Username")
-    composeTestRule.onNodeWithTag("field_language").assertTextContains("Language")
-    composeTestRule.onNodeWithTag("field_residence").assertTextContains("Residence")
+    // Edit mode: enabled and clickable
+    compose.onNodeWithTag("profile_edit_toggle").performClick()
+    compose
+        .onNodeWithTag("profile_picture_box")
+        .assertIsDisplayed()
+        .assertIsEnabled()
+        .assertHasClickAction()
   }
 }

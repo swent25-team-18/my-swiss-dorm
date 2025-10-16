@@ -33,11 +33,11 @@ object C {
     const val SIGN_UP_BACK_BUTTON = "signUpBackButton"
 
     fun universityNameTestTag(universityName: UniversityName?): String {
-      return "${universityName?.name ?: "nullValUniversityName"}TestTag"
+      return "${universityName?.hashCode() ?: "nullValUniversityName"}TestTag"
     }
 
     fun residencyNameTestTag(residencyName: ResidencyName?): String {
-      return "${residencyName?.name ?: "nullValResidencyName"}TestTag"
+      return "${residencyName?.hashCode() ?: "nullValResidencyName"}TestTag"
     }
   }
 

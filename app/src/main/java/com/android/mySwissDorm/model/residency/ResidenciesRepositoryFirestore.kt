@@ -52,7 +52,7 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
   private fun documentToResidency(document: DocumentSnapshot): Residency? {
     return try {
       val nameString = document.getString("name") ?: return null
-      val name = ResidencyName.valueOf(nameString)
+      val name = enumValues<ResidencyName>().firstOrNull { it.name == nameString } ?: return null
       val description = document.getString("description") ?: return null
       val locationData = document.get("location") as? Map<*, *>
       val location =
@@ -63,7 +63,7 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
                 longitude = it["longitude"] as? Double ?: return null)
           } ?: return null
       val cityString = document.getString("cityName") ?: return null
-      val cityName = CityName.valueOf(cityString)
+      val cityName = enumValues<CityName>().firstOrNull { it.name == cityString } ?: return null
       val email = document.getString("email")
       val phone = document.getString("phone")
       val websiteString = document.getString("website")

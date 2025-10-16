@@ -51,7 +51,7 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
   private fun documentToUniversity(document: DocumentSnapshot): University? {
     return try {
       val nameString = document.getString("name") ?: return null
-      val name = UniversityName.valueOf(nameString)
+      val name = enumValues<UniversityName>().firstOrNull { it.name == nameString } ?: return null
       val locationData = document.get("location") as? Map<*, *>
       val location =
           locationData?.let {
@@ -61,7 +61,7 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
                 longitude = it["longitude"] as? Double ?: return null)
           } ?: return null
       val cityString = document.getString("cityName") ?: return null
-      val cityName = CityName.valueOf(cityString)
+      val cityName = enumValues<CityName>().firstOrNull { it.name == cityString } ?: return null
       val email = document.getString("email") ?: return null
       val phone = document.getString("phone") ?: return null
       val websiteURLString = document.getString("websiteURL") ?: return null

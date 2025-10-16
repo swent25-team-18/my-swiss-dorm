@@ -1,4 +1,4 @@
-package com.android.mySwissDorm.model
+package com.android.mySwissDorm.model.authentification
 
 /**
  * Provides a single instance of the authentification repository in the app. `repository` is mutable

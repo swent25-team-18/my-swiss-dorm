@@ -2,15 +2,14 @@ package com.android.mySwissDorm.ui.authentification
 
 import android.content.Context
 import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.mySwissDorm.R
-import com.android.mySwissDorm.model.AuthRepository
-import com.android.mySwissDorm.model.AuthRepositoryProvider
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.android.mySwissDorm.model.authentification.AuthRepository
+import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,28 +18,29 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** This data class keeps information about the logging process */
-data class AuthUIState(
+data class SignInState(
     val isLoading: Boolean = false,
     val user: FirebaseUser? = null,
     val errMsg: String? = null,
-    val signedOut: Boolean = false
+    val signedOut: Boolean = false,
 )
 
 /**
  * This is an implementation of a [ViewModel] for the [SignInScreen] compose element.
  *
- * @param repository is the authentification repository used in the app.
+ * @param authRepository is the authentification repository used in the app.
  */
-class SignInViewModel(private val repository: AuthRepository = AuthRepositoryProvider.repository) :
-    ViewModel() {
+class SignInViewModel(
+    private val authRepository: AuthRepository = AuthRepositoryProvider.repository,
+    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository
+) : ViewModel() {
 
-  private val _uiState = MutableStateFlow(AuthUIState())
-  val uiState: StateFlow<AuthUIState> = _uiState.asStateFlow()
+  private val _uiState = MutableStateFlow(SignInState())
+  val uiState: StateFlow<SignInState> = _uiState.asStateFlow()
 
-  private fun getSignInOptions(context: Context): GetSignInWithGoogleOption {
-    return GetSignInWithGoogleOption.Builder(
-            serverClientId = context.getString(R.string.default_web_client_id))
-        .build()
+  /** Clear the error message */
+  fun clearErrMessage() {
+    _uiState.update { it.copy(errMsg = null) }
   }
 
   /** Handle the sign in event by trying to log in with a Google account. */
@@ -49,15 +49,26 @@ class SignInViewModel(private val repository: AuthRepository = AuthRepositoryPro
 
     viewModelScope.launch {
       _uiState.update { it.copy(isLoading = true, errMsg = null) }
-      val signInOptions = getSignInOptions(context)
-      val signInRequest = GetCredentialRequest.Builder().addCredentialOption(signInOptions).build()
+      val signInRequest = GoogleHelper.getSignInRequest(context)
 
       try {
         val credential = credentialManager.getCredential(context, signInRequest).credential
 
-        repository.signInWithGoogle(credential).fold({ user ->
-          _uiState.update {
-            it.copy(isLoading = false, user = user, errMsg = null, signedOut = false)
+        authRepository.signInWithGoogle(credential).fold({ user ->
+          val isRegistered = runCatching { profileRepository.getProfile(user.uid) }.isSuccess
+          if (isRegistered) {
+            _uiState.update {
+              it.copy(isLoading = false, user = user, errMsg = null, signedOut = false)
+            }
+          } else {
+            authRepository.signOut()
+            _uiState.update {
+              it.copy(
+                  isLoading = false,
+                  user = null,
+                  errMsg = "This account is not registered",
+                  signedOut = true)
+            }
           }
         }) { failure ->
           _uiState.update {

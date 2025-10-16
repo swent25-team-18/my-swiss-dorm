@@ -1,13 +1,13 @@
 package com.android.mySwissDorm.model.residency
 
-import android.location.Location
 import com.android.mySwissDorm.model.city.CityName
+import com.android.mySwissDorm.model.map.Location
 import java.net.URL
 
 data class Residency(
     val name: ResidencyName,
     val description: String,
-    val location: Location,
+    val location: Location?,
     val city: CityName,
     val email: String?,
     val phone: String?,

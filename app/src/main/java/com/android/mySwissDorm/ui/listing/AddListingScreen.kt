@@ -38,7 +38,7 @@ fun AddListingScreen(
     addListingViewModel: AddListingViewModel = viewModel(),
     modifier: Modifier = Modifier,
     accentColor: Color = Color(0xFFFF0004),
-    // onOpenMap: () -> Unit, // navigate to "drop a pin" screen
+    onOpenMap: () -> Unit, // navigate to "drop a pin" screen
     onConfirm: (RentalListing) -> Unit, // called when form valid
     onBack: () -> Unit // navigate back
 ) {
@@ -139,7 +139,7 @@ fun AddListingScreen(
                       Modifier.fillMaxWidth()
                           .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
                   colors =
-                      androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                      OutlinedTextFieldDefaults.colors(
                           focusedBorderColor = Color(coralColor),
                           unfocusedBorderColor = Color.Transparent,
                           focusedLabelColor = Color(coralColor),
@@ -173,7 +173,7 @@ fun AddListingScreen(
                       Modifier.fillMaxWidth()
                           .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
                   colors =
-                      androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                     OutlinedTextFieldDefaults.colors(
                           focusedBorderColor = Color(coralColor),
                           unfocusedBorderColor = Color.Transparent,
                           focusedLabelColor = Color(coralColor),

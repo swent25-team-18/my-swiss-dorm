@@ -37,6 +37,7 @@ class AddListingScreenTest : FirestoreTest() {
     composeRule.setContent {
       AddListingScreen(
           onConfirm = { added -> onConfirmCapture(added.uid) },
+          onOpenMap = {},
           onBack = { /* not implemented yet */})
     }
   }

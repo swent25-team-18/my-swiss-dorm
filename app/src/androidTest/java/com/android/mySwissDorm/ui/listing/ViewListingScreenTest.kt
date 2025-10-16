@@ -194,7 +194,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     compose.waitForIdle()
 
     compose
-        .onNodeWithTag(C.ViewListingTags.POSTED_BY)
+        .onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextContains("(You)", substring = true)
   }

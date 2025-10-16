@@ -118,17 +118,16 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun clickingCard_callsOnSelectListing_withCorrectUid() = run {
-    var clicked: ListingCardUI? = null
+    val clicked = mutableStateOf<ListingCardUI?>(null)
     runTest { switchToUser(FakeUser.FakeUser1) }
 
     compose.setContent {
-      BrowseCityScreen(cityName = "Lausanne", onSelectListing = { clicked = it })
+      BrowseCityScreen(cityName = "Lausanne", onSelectListing = { clicked.value = it })
     }
     compose.waitForIdle()
 
     compose.onNodeWithTag(C.BrowseCityTags.card(laus1.uid)).performScrollTo().performClick()
-    compose.waitForIdle()
-    assert(clicked?.listingUid == laus1.uid)
+    compose.waitUntil(5_000) { clicked.value?.listingUid == laus1.uid }
   }
 
   @Test

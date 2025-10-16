@@ -8,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Apartment
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.*
@@ -20,56 +19,34 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.model.city.CityName
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
 
-// helper function to sanitize size input
-// Keep only digits and at most one dot; then cap int/frac lengths
-private fun limitDecimal(input: String, maxInt: Int, maxFrac: Int): String {
-  if (input.isEmpty()) return ""
-  val sanitized = buildString {
-    var dotSeen = false
-    for (c in input) {
-      when {
-        c.isDigit() -> append(c)
-        c == '.' && !dotSeen -> {
-          append('.')
-          dotSeen = true
-        }
-      }
-    }
-  }
-  val parts = sanitized.split('.', limit = 2)
-  val intPart = parts[0].take(maxInt)
-  val fracPart = if (parts.size == 2) parts[1].take(maxFrac) else ""
-  return if (parts.size == 2) "$intPart.$fracPart" else intPart
-}
-
-private fun limitDigits(input: String, maxLen: Int) = input.filter { it.isDigit() }.take(maxLen)
-
-private val SIZE_REGEX =
-    Regex("""^(?:0|[1-9]\d*)(?:\.\d*)?$""") // 0 or non-leading-zero int, optional .digits
+private val SIZE_REGEX = Regex("""^(?:0|[1-9]\d*)(?:\.\d*)?$""")
 private val PRICE_INT_REGEX = Regex("""^(?:0|[1-9]\d*)$""")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddListingScreen(
+    addListingViewModel: AddListingViewModel = viewModel(),
     modifier: Modifier = Modifier,
-    accentColor: Color = Color(0xFFFF0004), // Red color for buttons and arrow
+    accentColor: Color = Color(0xFFFF0004),
     onOpenMap: () -> Unit, // navigate to "drop a pin" screen
     onConfirm: (RentalListing) -> Unit, // called when form valid
     onBack: () -> Unit // navigate back
 ) {
-  val viewModel: AddListingViewModel = viewModel()
-
+  val listingUIState by addListingViewModel.uiState.collectAsState()
   // Validation and form submission moved to the ViewModel
-  val isFormValid = viewModel.isFormValid
-  val mapLat = viewModel.mapLat.value
-  val mapLng = viewModel.mapLng.value
+  // val isFormValid = viewModel.isFormValid
+  // val mapLat = viewModel.mapLat.value
+  //  val mapLng = viewModel.mapLng.value
 
   // Remember scroll state
   val scrollState = rememberScrollState()
@@ -90,16 +67,17 @@ fun AddListingScreen(
       bottomBar = {
         Surface(shadowElevation = 8.dp) {
           Column(Modifier.padding(16.dp)) {
+            val ui = listingUIState
             Button(
-                onClick = { viewModel.submitForm(onConfirm) },
-                enabled = isFormValid,
+                onClick = { addListingViewModel.submitForm(onConfirm) },
+                enabled = ui.isFormValid,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(coralColor)),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(16.dp)) {
                   Text("Confirm listing", color = Color.White)
                 }
             Spacer(Modifier.height(8.dp))
-            if (!isFormValid) {
+            if (!(listingUIState.isFormValid)) {
               Text(
                   "Please complete all required fields (valid size, price, and starting date).",
                   style = MaterialTheme.typography.bodySmall,
@@ -117,51 +95,42 @@ fun AddListingScreen(
                 .verticalScroll(scrollState), // Make the column scrollable
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               OutlinedTextField(
-                  value = viewModel.title.value,
+                  value = listingUIState.title.take(30), // Limit to 30 characters
                   leadingIcon = { Icon(Icons.Default.Title, null, tint = Color(coralColor)) },
-                  onValueChange = { viewModel.title.value = it },
+                  onValueChange = { addListingViewModel.setTitle(it) },
                   label = { Text("Listing title") },
                   singleLine = true,
                   keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                   modifier =
                       Modifier.fillMaxWidth()
-                          .background(
-                              Color(0xFFF0F0F0),
-                              RoundedCornerShape(10.dp)), // Gray with rounded edges
+                          .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
                   colors =
-                      androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                          focusedBorderColor = Color(coralColor), // Focused outline color (Red)
-                          unfocusedBorderColor =
-                              Color.Transparent, // Remove the default border when not focused
-                          focusedLabelColor =
-                              Color(coralColor), // Optional: Change label color when focused
-                          unfocusedLabelColor =
-                              Color.Gray // Optional: Change label color when not focused
-                          ))
+                      OutlinedTextFieldDefaults.colors(
+                          focusedBorderColor = Color(coralColor),
+                          unfocusedBorderColor = Color.Transparent,
+                          focusedLabelColor = Color(coralColor),
+                          unfocusedLabelColor = Color.Gray))
 
               ResidencyDropdown(
-                  selected = viewModel.residency.value,
-                  onSelected = { viewModel.residency.value = it },
+                  selected = listingUIState.residency.name,
+                  onSelected = { addListingViewModel.setResidency(it) },
                   accentColor = accentColor)
 
               HousingTypeDropdown(
-                  selected = viewModel.housingType.value,
-                  onSelected = { viewModel.housingType.value = it },
+                  selected = listingUIState.housingType,
+                  onSelected = { addListingViewModel.setHousingType(it) },
                   accentColor = accentColor)
-
-              val isSizeValid = viewModel.sizeSqm.value.toDoubleOrNull() != null
+              val isSizeInvalid =
+                  listingUIState.sizeSqm.isNotBlank() && listingUIState.sizeSqm.toInt() >= 1000
               OutlinedTextField(
-                  value = viewModel.sizeSqm.value,
+                  value = listingUIState.sizeSqm,
                   onValueChange = { raw ->
                     if (raw.isEmpty() || SIZE_REGEX.matches(raw)) {
-                      val limited = limitDecimal(raw, maxInt = 4, maxFrac = 1)
-                      // preserve a trailing '.' while user is typing, if your UX wants that
-                      viewModel.sizeSqm.value =
-                          if (raw.endsWith(".") && !limited.endsWith(".")) raw else limited
+                      addListingViewModel.setSizeSqm(raw)
                     }
                   },
                   label = { Text("Room size (m²)") },
-                  isError = !isSizeValid, // Show error state if invalid
+                  isError = isSizeInvalid, // Show error state if invalid
                   singleLine = true,
                   keyboardOptions =
                       KeyboardOptions(
@@ -170,29 +139,32 @@ fun AddListingScreen(
                       Modifier.fillMaxWidth()
                           .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
                   colors =
-                      androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                      OutlinedTextFieldDefaults.colors(
                           focusedBorderColor = Color(coralColor),
                           unfocusedBorderColor = Color.Transparent,
                           focusedLabelColor = Color(coralColor),
                           unfocusedLabelColor = Color.Gray))
 
-              if (!isSizeValid) {
+              if (isSizeInvalid) {
                 Text(
-                    text = "Please enter a valid number.",
+                    text = "Please enter a valid number under 1000.",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
               }
 
-              val isPriceValid = viewModel.price.value.toDoubleOrNull() != null
+              val isPriceInvalid =
+                  listingUIState.price.isNotBlank() &&
+                      listingUIState.price.toDouble() >= 10000.0 &&
+                      PRICE_INT_REGEX.matches(listingUIState.price)
               OutlinedTextField(
-                  value = viewModel.price.value,
+                  value = listingUIState.price.take(7),
                   onValueChange = { raw ->
                     if (raw.isEmpty() || PRICE_INT_REGEX.matches(raw)) {
-                      viewModel.price.value = limitDigits(raw, maxLen = 5) // e.g., up to 6 digits
+                      addListingViewModel.setPrice(raw)
                     }
                   },
                   label = { Text("Monthly rent (CHF)") },
-                  isError = !isPriceValid, // Show error state if invalid
+                  isError = isPriceInvalid, // Show error state if invalid
                   singleLine = true,
                   keyboardOptions =
                       KeyboardOptions(
@@ -201,15 +173,15 @@ fun AddListingScreen(
                       Modifier.fillMaxWidth()
                           .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
                   colors =
-                      androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                      OutlinedTextFieldDefaults.colors(
                           focusedBorderColor = Color(coralColor),
                           unfocusedBorderColor = Color.Transparent,
                           focusedLabelColor = Color(coralColor),
                           unfocusedLabelColor = Color.Gray))
 
-              if (!isPriceValid) {
+              if (isPriceInvalid) {
                 Text(
-                    text = "Please enter a valid number.",
+                    text = "Please enter a valid number under 10000.",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
               }
@@ -235,8 +207,10 @@ fun AddListingScreen(
               //                  }
 
               OutlinedTextField(
-                  value = viewModel.description.value,
-                  onValueChange = { viewModel.description.value = it },
+                  maxLines = 6,
+                  minLines = 6,
+                  value = listingUIState.description.take(500),
+                  onValueChange = { addListingViewModel.setDescription(it) },
                   label = { Text("Description") },
                   placeholder = {
                     Text(
@@ -245,20 +219,14 @@ fun AddListingScreen(
                   modifier =
                       Modifier.fillMaxWidth()
                           .heightIn(min = 140.dp)
-                          .background(
-                              Color(0xFFF0F0F0),
-                              RoundedCornerShape(10.dp)), // Gray with rounded edges
+                          .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
                   colors =
                       androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                          focusedBorderColor = Color(coralColor), // Focused outline color (Red)
-                          unfocusedBorderColor =
-                              Color.Transparent, // Remove the default border when not focused
-                          focusedLabelColor =
-                              Color(coralColor), // Optional: Change label color when focused
-                          unfocusedLabelColor =
-                              Color.Gray // Optional: Change label color when not focused
-                          ),
-                  maxLines = 6)
+                          focusedBorderColor = Color(coralColor),
+                          unfocusedBorderColor = Color.Transparent,
+                          focusedLabelColor = Color(coralColor),
+                          unfocusedLabelColor = Color.Gray),
+              )
 
               // Image picker button
               Text("Photos", style = MaterialTheme.typography.titleMedium)
@@ -270,15 +238,11 @@ fun AddListingScreen(
                           // TODO: implement image selection
                         },
                         colors =
-                            androidx.compose.material3.ButtonColors(
-                                containerColor = Color(0xFFF0F0F0), // Focused outline color (Red)
-                                contentColor =
-                                    Color(coralColor), // Remove the default border when not focused
-                                disabledContentColor =
-                                    Color(coralColor), // Optional: Change label color when focused
-                                disabledContainerColor =
-                                    Color.Gray // Optional: Change label color when not focused
-                                ),
+                            ButtonColors(
+                                containerColor = Color(0xFFF0F0F0),
+                                contentColor = Color(coralColor),
+                                disabledContentColor = Color(coralColor),
+                                disabledContainerColor = Color.Gray),
                         shape = RoundedCornerShape(14.dp)) {
                           Icon(Icons.Default.AddAPhoto, null, tint = Color(coralColor))
                           Spacer(Modifier.width(8.dp))
@@ -293,7 +257,7 @@ fun AddListingScreen(
 @Composable
 fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, accentColor: Color) {
   var expanded by remember { mutableStateOf(false) }
-  val label = selected?.toString() ?: "Select housing type"
+  val label = selected.toString()
 
   ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
     OutlinedTextField(
@@ -330,7 +294,7 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
 @Composable
 fun ResidencyDropdown(
     selected: ResidencyName?,
-    onSelected: (ResidencyName) -> Unit,
+    onSelected: (Residency) -> Unit,
     accentColor: Color
 ) {
   var expanded by remember { mutableStateOf(false) }
@@ -345,13 +309,11 @@ fun ResidencyDropdown(
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
         leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(coralColor)) },
         colors =
-            androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(coralColor), // Focused outline color (Red)
-                unfocusedBorderColor =
-                    Color(coralColor), // Remove the default border when not focused
-                focusedLabelColor = Color(coralColor), // Optional: Change label color when focused
-                unfocusedLabelColor = Color.Gray // Optional: Change label color when not focused
-                ),
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(coralColor),
+                unfocusedBorderColor = Color(coralColor),
+                focusedLabelColor = Color(coralColor),
+                unfocusedLabelColor = Color.Gray),
         modifier = Modifier.menuAnchor().fillMaxWidth(),
     )
     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -359,7 +321,15 @@ fun ResidencyDropdown(
         DropdownMenuItem(
             text = { Text(type.toString()) },
             onClick = {
-              onSelected(type)
+              onSelected(
+                  Residency(
+                      name = type,
+                      description = "",
+                      location = Location(name = "", latitude = 0.0, longitude = 0.0),
+                      city = CityName.LAUSANNE,
+                      email = "",
+                      phone = "",
+                      website = null))
               expanded = false
             })
       }

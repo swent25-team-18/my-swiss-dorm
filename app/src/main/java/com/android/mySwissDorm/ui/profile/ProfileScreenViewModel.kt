@@ -60,23 +60,23 @@ class ProfileScreenViewModel(
   val uiState: StateFlow<ProfileUiState> = _uiState
 
   /** Update first name in UI state and clear any transient error. */
-  fun onFirstNameChange(v: String) {
-    _uiState.value = _uiState.value.copy(firstName = v, errorMsg = null)
+  fun onFirstNameChange(value: String) {
+    _uiState.value = _uiState.value.copy(firstName = value, errorMsg = null)
   }
 
   /** Update last name in UI state and clear any transient error. */
-  fun onLastNameChange(v: String) {
-    _uiState.value = _uiState.value.copy(lastName = v, errorMsg = null)
+  fun onLastNameChange(value: String) {
+    _uiState.value = _uiState.value.copy(lastName = value, errorMsg = null)
   }
 
   /** Update language in UI state and clear any transient error. */
-  fun onLanguageChange(v: String) {
-    _uiState.value = _uiState.value.copy(language = v, errorMsg = null)
+  fun onLanguageChange(value: String) {
+    _uiState.value = _uiState.value.copy(language = value, errorMsg = null)
   }
 
   /** Update residence in UI state and clear any transient error. */
-  fun onResidenceChange(v: String) {
-    _uiState.value = _uiState.value.copy(residence = v, errorMsg = null)
+  fun onResidenceChange(value: String) {
+    _uiState.value = _uiState.value.copy(residence = value, errorMsg = null)
   }
 
   /** Flip between view and edit modes; clears any transient error on toggle. */
@@ -105,14 +105,14 @@ class ProfileScreenViewModel(
     }
 
     // Snapshot current UI values for this write
-    val s = _uiState.value
+    val statev = _uiState.value
     val updates =
         mapOf(
             "ownerId" to uid, // included on every write to satisfy common security rules
-            "firstName" to s.firstName,
-            "lastName" to s.lastName,
-            "language" to s.language,
-            "residence" to s.residence)
+            "firstName" to statev.firstName,
+            "lastName" to statev.lastName,
+            "language" to statev.language,
+            "residence" to statev.residence)
 
     viewModelScope.launch {
       try {

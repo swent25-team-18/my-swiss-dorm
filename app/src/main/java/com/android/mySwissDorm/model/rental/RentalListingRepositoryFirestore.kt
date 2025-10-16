@@ -111,7 +111,7 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
                 name = map2["name"] as? String ?: return null,
                 latitude = (map2["latitude"] as? Number)?.toDouble() ?: 0.0,
                 longitude = (map2["longitude"] as? Number)?.toDouble() ?: 0.0)
-          }
+          } ?: return null
       val residency =
           Residency(
               name = resName,

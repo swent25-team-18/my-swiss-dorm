@@ -2,13 +2,27 @@ package com.android.mySwissDorm.ui.authentification
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.credentials.Credential
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialInterruptedException
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.authentification.AuthRepository
+import com.android.mySwissDorm.model.authentification.AuthRepositoryFirebase
+import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator
+import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import com.google.firebase.auth.FirebaseUser
 import io.github.kakaocup.compose.node.element.ComposeScreen
+import junit.framework.TestCase.assertTrue
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -21,9 +35,6 @@ class SignInScreenTest : FirestoreTest() {
   override fun createRepositories() {}
 
   @get:Rule val composeTestRule = createComposeRule()
-
-  private val fakeIdToken = "123"
-  private val fakeEmailToken = "john.doe@bob.com"
 
   @Before
   fun setup() {
@@ -45,28 +56,152 @@ class SignInScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun canSignInWithGoogle() = run {
+  fun canSignInWithGoogle() = runTest {
     val fakeGoogleIdToken =
-        FakeJwtGenerator.createFakeGoogleIdToken(fakeIdToken, email = fakeEmailToken)
+        FakeJwtGenerator.createFakeGoogleIdToken(
+            FakeUser.FakeUser1.userName, email = FakeUser.FakeUser1.email)
     val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
     val connected = mutableStateOf(false)
-    step("Click on Log In") {
-      composeTestRule.setContent {
-        SignInScreen(
-            credentialManager = fakeCredentialManager, onSignedIn = { connected.value = true })
-      }
-
-      ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
+    AuthRepositoryProvider.repository = AuthRepositoryFirebase(FirebaseEmulator.auth)
+    composeTestRule.setContent {
+      SignInScreen(
+          credentialManager = fakeCredentialManager, onSignedIn = { connected.value = true })
+    }
+    switchToUser(FakeUser.FakeUser1)
+    ProfileRepositoryProvider.repository.createProfile(
+        Profile(
+            ownerId = FirebaseEmulator.auth.currentUser?.uid ?: throw NoSuchElementException(),
+            userInfo =
+                UserInfo(
+                    name = "John",
+                    lastName = "Doe",
+                    email = FirebaseEmulator.auth.currentUser?.email ?: "",
+                    phoneNumber = ""),
+            userSettings = UserSettings()))
+    FirebaseEmulator.auth.signOut()
+    ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
+      assertIsDisplayed()
+      logInButton {
         assertIsDisplayed()
-        logInButton {
-          assertIsDisplayed()
-          performClick()
-        }
+        performClick()
       }
+    }
 
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(5000L) { connected.value }
+  }
+
+  @Test
+  fun cannotSignInIfNotRegistered() {
+    val fakeGoogleIdToken =
+        FakeJwtGenerator.createFakeGoogleIdToken(
+            FakeUser.FakeUser1.userName, email = FakeUser.FakeUser1.email)
+    val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
+    val connected = mutableStateOf(false)
+    AuthRepositoryProvider.repository = AuthRepositoryFirebase(FirebaseEmulator.auth)
+    composeTestRule.setContent {
+      SignInScreen(
+          credentialManager = fakeCredentialManager, onSignedIn = { connected.value = true })
+    }
+    ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
+      assertIsDisplayed()
+      logInButton {
+        assertIsDisplayed()
+        performClick()
+      }
       composeTestRule.waitForIdle()
+      assertIsDisplayed()
+    }
+  }
 
-      composeTestRule.waitUntil(5000L) { connected.value }
+  @Test
+  fun credentialCancellationDoesNotThrow() {
+    val fakeAuthRepository: AuthRepository =
+        object : AuthRepository {
+          override suspend fun signInWithGoogle(credential: Credential): Result<FirebaseUser> {
+            throw GetCredentialCancellationException()
+          }
+
+          override fun signOut(): Result<Unit> {
+            return Result.success(Unit)
+          }
+        }
+
+    AuthRepositoryProvider.repository = fakeAuthRepository
+
+    val fakeGoogleIdToken =
+        FakeJwtGenerator.createFakeGoogleIdToken(
+            FakeUser.FakeUser1.userName, email = FakeUser.FakeUser1.email)
+    val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
+
+    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
+      assertIsDisplayed()
+      logInButton {
+        assertIsDisplayed()
+        assertTrue(runCatching { performClick() }.isSuccess)
+      }
+    }
+  }
+
+  @Test
+  fun credentialExceptionDoesNotThrow() {
+    val fakeAuthRepository: AuthRepository =
+        object : AuthRepository {
+          override suspend fun signInWithGoogle(credential: Credential): Result<FirebaseUser> {
+            throw GetCredentialInterruptedException()
+          }
+
+          override fun signOut(): Result<Unit> {
+            return Result.success(Unit)
+          }
+        }
+
+    AuthRepositoryProvider.repository = fakeAuthRepository
+
+    val fakeGoogleIdToken =
+        FakeJwtGenerator.createFakeGoogleIdToken(
+            FakeUser.FakeUser1.userName, email = FakeUser.FakeUser1.email)
+    val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
+
+    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
+      assertIsDisplayed()
+      logInButton {
+        assertIsDisplayed()
+        assertTrue(runCatching { performClick() }.isSuccess)
+      }
+    }
+  }
+
+  @Test
+  fun exceptionDoesNotThrow() {
+    val fakeAuthRepository: AuthRepository =
+        object : AuthRepository {
+          override suspend fun signInWithGoogle(credential: Credential): Result<FirebaseUser> {
+            throw Exception()
+          }
+
+          override fun signOut(): Result<Unit> {
+            return Result.success(Unit)
+          }
+        }
+
+    AuthRepositoryProvider.repository = fakeAuthRepository
+
+    val fakeGoogleIdToken =
+        FakeJwtGenerator.createFakeGoogleIdToken(
+            FakeUser.FakeUser1.userName, email = FakeUser.FakeUser1.email)
+    val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
+
+    composeTestRule.setContent { SignInScreen(credentialManager = fakeCredentialManager) }
+    ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
+      assertIsDisplayed()
+      logInButton {
+        assertIsDisplayed()
+        assertTrue(runCatching { performClick() }.isSuccess)
+      }
     }
   }
 

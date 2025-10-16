@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.authentification
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +52,12 @@ fun SignInScreen(
   val uiState by authViewModel.uiState.collectAsState()
 
   LaunchedEffect(uiState.user) { uiState.user?.let { onSignedIn() } }
+  LaunchedEffect(uiState.errMsg) {
+    if (uiState.errMsg != null) {
+      Toast.makeText(context, uiState.errMsg, Toast.LENGTH_SHORT).show()
+      authViewModel.clearErrMessage()
+    }
+  }
 
   Scaffold(modifier = Modifier.fillMaxSize().testTag(C.Tag.SIGN_IN_SCREEN)) { padding ->
     Column(

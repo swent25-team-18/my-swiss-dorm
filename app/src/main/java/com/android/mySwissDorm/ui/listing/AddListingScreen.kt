@@ -173,7 +173,7 @@ fun AddListingScreen(
                       Modifier.fillMaxWidth()
                           .background(Color(0xFFF0F0F0), RoundedCornerShape(10.dp)),
                   colors =
-                     OutlinedTextFieldDefaults.colors(
+                      OutlinedTextFieldDefaults.colors(
                           focusedBorderColor = Color(coralColor),
                           unfocusedBorderColor = Color.Transparent,
                           focusedLabelColor = Color(coralColor),

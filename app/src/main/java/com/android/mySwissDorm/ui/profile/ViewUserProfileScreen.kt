@@ -8,8 +8,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -182,7 +182,8 @@ fun ViewUserProfileScreen(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                               Icon(
                                   imageVector =
-                                      Icons.Rounded.Forum, // ← was Icons.Outlined.ChatBubbleOutline
+                                      Icons.Outlined
+                                          .Forum, // ← was Icons.Outlined.ChatBubbleOutline
                                   contentDescription = null,
                                   tint = Color.Black.copy(alpha = 0.85f))
                               Spacer(Modifier.width(12.dp))

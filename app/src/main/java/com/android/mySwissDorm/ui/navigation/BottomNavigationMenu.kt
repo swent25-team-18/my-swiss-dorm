@@ -1,8 +1,8 @@
 package com.android.mySwissDorm.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apartment
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import com.android.mySwissDorm.resources.C
 
 @Composable
 fun BottomNavigationMenu(
@@ -22,9 +23,9 @@ fun BottomNavigationMenu(
     tabs.forEach { screen ->
       val (label, icon) =
           when (screen) {
-            Screen.ReviewOverview -> Pair(screen.name, Icons.Filled.Home) // Main screen
-            Screen.ListingOverview -> Pair(screen.name, Icons.Filled.Apartment)
-            Screen.Inbox -> Pair(screen.name, Icons.Filled.Chat)
+            Screen.Homepage -> Pair(screen.name, Icons.Filled.Home) // Main screen
+            Screen.AddListing -> Pair(screen.name, Icons.Filled.Add)
+            Screen.Inbox -> Pair(screen.name, Icons.AutoMirrored.Filled.Chat)
             Screen.Settings -> Pair(screen.name, Icons.Filled.Settings)
             else -> Pair(screen.name, Icons.Filled.Home)
           }
@@ -42,7 +43,7 @@ fun BottomNavigationMenu(
                   selectedTextColor = Color(0xFFFF6666),
                   unselectedIconColor = Color(0xFFFF6666), // <-- red when NOT selected
                   unselectedTextColor = Color(0xFFFF6666)),
-          modifier = Modifier.testTag("bottom_nav_${screen.route}"))
+          modifier = Modifier.testTag(C.Tag.buttonNavBarTestTag(screen)))
     }
   }
 }

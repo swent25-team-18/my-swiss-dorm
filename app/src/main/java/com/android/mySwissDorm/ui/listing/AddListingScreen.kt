@@ -79,7 +79,7 @@ fun AddListingScreen(
         CenterAlignedTopAppBar(
             title = { Text("Add Listing") },
             navigationIcon = {
-              IconButton(onClick = { onBack }) {
+              IconButton(onClick = { onBack() }) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",

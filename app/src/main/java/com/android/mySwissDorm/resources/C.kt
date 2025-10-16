@@ -54,6 +54,18 @@ object C {
     const val EDIT_BTN = "viewListingEditBtn"
   }
 
+  object ViewUserProfileTags {
+    const val ROOT = "view_user_profile_root"
+    const val TITLE = "view_user_profile_title"
+    const val BACK_BTN = "view_user_profile_back"
+    const val AVATAR_BOX = "view_user_profile_avatar"
+    const val RESIDENCE_CHIP = "view_user_profile_residence_chip"
+    const val SEND_MESSAGE = "view_user_profile_send_message"
+    const val RETRY_BTN = "view_user_profile_retry"
+    const val ERROR_TEXT = "view_user_profile_error"
+    const val LOADING = "view_user_profile_loading"
+  }
+
   object BrowseCityTags {
     const val ROOT = "browseCityRoot"
     const val BACK_BUTTON = "browseCityBackButton"

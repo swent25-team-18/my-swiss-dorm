@@ -12,37 +12,67 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Represents the UI state of a single listing.
+ *
+ * @property title The title of the listing
+ * @property leftBullets A list of strings to be displayed as bullet points on the left side
+ * @property rightBullets A list of strings to be displayed as bullet points on the right side
+ * @property listingUid The unique identifier of the listing
+ */
 data class ListingCardUI(
     val title: String,
     val leftBullets: List<String>,
     val rightBullets: List<String>,
+    val listingUid: String,
 )
 
+/**
+ * Represents the state of listings being loaded, including loading status, list of items, and any
+ * error message.
+ *
+ * @property loading A boolean indicating if the listings are currently being loaded
+ * @property items A list of `ListingCardUI` items representing the loaded listings
+ * @property error An optional error message if loading failed
+ */
 data class ListingsState(
     val loading: Boolean = false,
     val items: List<ListingCardUI> = emptyList(),
     val error: String? = null
 )
 
+/**
+ * Represents the overall UI state for browsing previews and listings in a city.
+ *
+ * @property listings The state of the listings being displayed // Future enhancement: add reviews
+ *   state here as well
+ */
 data class BrowseCityUiState(
-    val cityName: String = "",
     val listings: ListingsState = ListingsState()
+    // will then add equivalent for reviews
 )
 
-class BrowseCityViewModel(private val repository: RentalListingRepository) : ViewModel() {
+/**
+ * ViewModel for browsing listings in a specific city.
+ *
+ * Responsible for managing the UI state, by fetching and providing rental listings via the
+ * [RentalListingRepository].
+ *
+ * @property listingsRepository The repository used to fetch and manage rental listings. // Future
+ *   enhancement: add reviews repository here as well
+ */
+class BrowseCityViewModel(private val listingsRepository: RentalListingRepository) : ViewModel() {
 
   private val _uiState = MutableStateFlow(BrowseCityUiState())
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()
 
   fun loadListings(cityName: String) {
-    _uiState.update {
-      it.copy(cityName = cityName, listings = it.listings.copy(loading = true, error = null))
-    }
+    _uiState.update { it.copy(listings = it.listings.copy(loading = true, error = null)) }
 
     viewModelScope.launch {
       try {
         // Fetch all and filter by residency.city value matching the given cityName string
-        val all = repository.getAllRentalListings()
+        val all = listingsRepository.getAllRentalListings()
         val filtered = all.filter { it.residency.city.value.equals(cityName, ignoreCase = true) }
         val mapped = filtered.map { it.toCardUI() }
 
@@ -70,5 +100,6 @@ private fun RentalListing.toCardUI(): ListingCardUI {
   return ListingCardUI(
       title = title,
       leftBullets = listOf(roomType.toString(), price, area),
-      rightBullets = listOf(start, resName))
+      rightBullets = listOf(start, resName),
+      listingUid = uid)
 }

@@ -23,29 +23,32 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.theme.Red0
 
-// Route-level composable that wires the ViewModel.
-// In production, pass a VM coming from Hilt (hiltViewModel()) or your DI.
-// Here we accept a factory so you can provide your real repo from the caller.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseCityScreen(
+    browseCityViewModel: BrowseCityViewModel = viewModel(),
     cityName: String,
     onGoBack: () -> Unit = {},
-    browseCityViewModel: BrowseCityViewModel = viewModel()
+    onSelectListing: (ListingCardUI) -> Unit = {}
 ) {
   LaunchedEffect(cityName) { browseCityViewModel.loadListings(cityName) }
 
-  val ui by browseCityViewModel.uiState.collectAsState()
-  BrowseCityScreen(cityName = cityName, listingsState = ui.listings, onGoBack = onGoBack)
+  val uiState by browseCityViewModel.uiState.collectAsState()
+  BrowseCityScreenUI(
+      cityName = cityName,
+      listingsState = uiState.listings,
+      onGoBack = onGoBack,
+      onSelectListing = onSelectListing)
 }
 
 // Pure UI (stateless) — easy to preview & test.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BrowseCityScreen(
+private fun BrowseCityScreenUI(
     cityName: String,
     listingsState: ListingsState,
-    onGoBack: () -> Unit = {},
+    onGoBack: () -> Unit,
+    onSelectListing: (ListingCardUI) -> Unit
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
 
@@ -119,7 +122,7 @@ fun BrowseCityScreen(
                       modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                       contentPadding = PaddingValues(vertical = 12.dp),
                       verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        items(listingsState.items) { item -> ListingCard(item) }
+                        items(listingsState.items) { item -> ListingCard(item, onSelectListing) }
                       }
                 }
               }
@@ -130,43 +133,46 @@ fun BrowseCityScreen(
 }
 
 @Composable
-private fun ListingCard(data: ListingCardUI) {
-  OutlinedCard(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-      // Image placeholder (left)
-      Box(
-          modifier =
-              Modifier.height(140.dp)
-                  .fillMaxWidth(0.35F)
-                  .clip(RoundedCornerShape(12.dp))
-                  .background(Color(0xFFEAEAEA))) {
+private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
+  OutlinedCard(
+      shape = RoundedCornerShape(16.dp),
+      modifier = Modifier.fillMaxWidth(),
+      onClick = { onClick(data) }) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+          // Image placeholder (left)
+          Box(
+              modifier =
+                  Modifier.height(140.dp)
+                      .fillMaxWidth(0.35F)
+                      .clip(RoundedCornerShape(12.dp))
+                      .background(Color(0xFFEAEAEA))) {
+                Text(
+                    "IMAGE",
+                    modifier = Modifier.align(Alignment.Center),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray)
+              }
+
+          Spacer(Modifier.width(12.dp))
+
+          Column(modifier = Modifier.weight(1f)) {
             Text(
-                "IMAGE",
-                modifier = Modifier.align(Alignment.Center),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray)
+                text = data.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth())
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+              BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
+              Spacer(Modifier.width(8.dp))
+              BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
+            }
           }
-
-      Spacer(Modifier.width(12.dp))
-
-      Column(modifier = Modifier.weight(1f)) {
-        Text(
-            text = data.title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth())
-
-        Spacer(Modifier.height(8.dp))
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-          BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
-          Spacer(Modifier.width(8.dp))
-          BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
         }
       }
-    }
-  }
 }
 
 @Composable
@@ -182,7 +188,6 @@ private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
 @Preview(showBackground = true, widthDp = 420)
 @Composable
 private fun BrowseCityScreen_Preview() {
-  // Preview the pure UI:
   val sampleUi =
       ListingsState(
           loading = false,
@@ -191,10 +196,14 @@ private fun BrowseCityScreen_Preview() {
                   ListingCardUI(
                       title = "Subletting my room",
                       leftBullets = listOf("Room in flatshare", "600.-/month", "19m²"),
-                      rightBullets = listOf("Starting 15/09/2025", "Vortex")),
+                      rightBullets = listOf("Starting 15/09/2025", "Vortex"),
+                      listingUid = "preview1"),
                   ListingCardUI(
                       title = "Bright studio near EPFL",
                       leftBullets = listOf("Studio", "1’150.-/month", "24m²"),
-                      rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"))))
-  BrowseCityScreen(cityName = "Lausanne", listingsState = sampleUi)
+                      rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
+                      listingUid = "preview2")),
+      )
+  BrowseCityScreenUI(
+      cityName = "Lausanne", listingsState = sampleUi, onGoBack = {}, onSelectListing = {})
 }

@@ -46,6 +46,6 @@ sealed class Screen(
   data object Profile : Screen(route = "profile", name = "Profile")
 
   companion object {
-    val topLevel: List<Screen> = listOf(AddListing, Inbox, Settings, Homepage)
+    val topLevel: List<Screen> = listOf(Homepage, AddListing, Inbox, Settings)
   }
 }

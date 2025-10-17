@@ -1,4 +1,4 @@
-name: Build APK Artifact
+name: Build APK
 
 on:
   push:
@@ -7,71 +7,53 @@ on:
   pull_request:
     types:
       - opened
+      - synchronize
+      - reopened
 
 jobs:
-  build-apk:
-    name: Build APK
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # First step : Checkout the repository on the runner
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      # Setup JDK
+      # Load google-services.json from the secrets
+      - name: Decode secrets
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+        run: |
+          echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
+          echo "$KEYSTORE_PROPERTIES" | base64 --decode > ./keystore.properties
+          echo "$KEYSTORE" | base64 --decode > ./keystore.jks
+
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: "temurin"
+          java-version: "17"
 
-      # Gradle cache to speed up the build
+      # Caching is a very useful part of a CI, as a workflow is executed in a clean environment every time,
+      # this means that one would need to re-download and re-process gradle files for every run. Which is very time consuming.
+      #
+      # To avoid that, we cache the the gradle folder to reuse it later.
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
 
-      # Decode google-services.json and local.properties from secrets (without echoing)
-      - name: Decode secrets securely
-        run: |
-          mkdir -p ./app
-          if [ -n "${{ secrets.GOOGLE_SERVICES }}" ]; then
-            base64 --decode <<< "${{ secrets.GOOGLE_SERVICES }}" > ./app/google-services.json
-          fi
-          if [ -n "${{ secrets.LOCAL_PROPERTIES }}" ]; then
-            base64 --decode <<< "${{ secrets.LOCAL_PROPERTIES }}" > ./local.properties
-          fi
-
-      # Decode debug keystore from secret (without printing)
-      - name: Decode debug keystore securely
-        run: |
-          base64 --decode <<< "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" > debug.keystore
-          chmod 600 debug.keystore
-
-      # Grant execute permission for gradlew
       - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
-
-      # Assemble signed debug APK using the shared debug keystore
-      - name: Assemble Debug APK (signed)
         run: |
-          ./gradlew build \
-            -Pandroid.injected.signing.store.file=debug.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.KS_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.KS_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KS_KEY_PASSWORD }}
+          chmod +x ./gradlew
 
-      # Verify signing and print certificate info (safe, does not reveal passwords)
-      - name: Verify APK signature
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y apksigner >/dev/null
-          apksigner verify --print-certs app/build/outputs/apk/debug/app-debug.apk
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2.0.10
 
-      # Upload signed APK artifact
-      - name: Upload Debug APK
+      - name: Build with Gradle
+        run: ./gradlew assembleRelease lint --parallel
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: app-release.apk
+          path: app/build/outputs/apk/release/app-release.apk

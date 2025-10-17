@@ -19,7 +19,9 @@ class NavigationActions(private val navController: NavHostController) {
     if (screen.isTopLevelDestination && current == screen.route) return
 
     navController.navigate(screen.route) {
-      if (screen.isTopLevelDestination) {
+      if (screen == Screen.SignIn) {
+        popUpTo(0) { inclusive = true }
+      } else if (screen.isTopLevelDestination) {
         // Top-level: single top, restore state, pop up to graph start
         launchSingleTop = true
         restoreState = true

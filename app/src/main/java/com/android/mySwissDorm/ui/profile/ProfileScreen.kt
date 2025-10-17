@@ -29,9 +29,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.model.residency.ResidencyName
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.Red0
 import com.android.mySwissDorm.ui.theme.White
@@ -136,12 +136,13 @@ private fun ProfileScreenContent(
                   modifier = Modifier.testTag(C.Tag.PROFILE_SCREEN_TITLE))
             },
             navigationIcon = {
-              IconButton(onClick = onBack, modifier = Modifier.testTag("profile_back_button")) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Go back",
-                    tint = Red0)
-              }
+              IconButton(
+                  onClick = onBack, modifier = Modifier.testTag(C.Tag.PROFILE_SCREEN_BACK_BUTTON)) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Go back",
+                        tint = Red0)
+                  }
             },
             actions = {
               // Toggle between view/edit (Edit icon ↔ Close icon)

@@ -2,6 +2,7 @@ package com.android.mySwissDorm.resources
 
 import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.model.university.UniversityName
+import com.android.mySwissDorm.ui.navigation.Screen
 
 // Like R, but C
 object C {
@@ -38,6 +39,13 @@ object C {
 
     fun residencyNameTestTag(residencyName: ResidencyName?): String {
       return "${residencyName?.hashCode() ?: "nullValResidencyName"}TestTag"
+    }
+
+    const val PROFILE_SCREEN_TITLE = "profile_title"
+    const val PROFILE_SCREEN_BACK_BUTTON = "profile_back_button"
+
+    fun buttonNavBarTestTag(screen: Screen): String {
+      return "bottom_nav_${screen.route}"
     }
   }
 

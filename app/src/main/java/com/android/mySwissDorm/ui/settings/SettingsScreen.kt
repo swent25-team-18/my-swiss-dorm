@@ -57,6 +57,7 @@ object SettingsTestTags {
 fun SettingsScreen(
     onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
+    onProfileClick: () -> Unit = {},
     vm: SettingsViewModel = viewModel()
 ) {
   val ui by vm.uiState.collectAsState()
@@ -78,7 +79,8 @@ fun SettingsScreen(
       onItemClick = {
         vm.onItemClick(it)
         onItemClick(it)
-      })
+      },
+      onProfileClick = onProfileClick)
 }
 
 private val previewUiState =
@@ -90,7 +92,8 @@ private val previewUiState =
 fun SettingsScreenContent(
     ui: SettingsUiState,
     onGoBack: () -> Unit = {},
-    onItemClick: (String) -> Unit = {}
+    onItemClick: (String) -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
@@ -155,7 +158,7 @@ fun SettingsScreenContent(
                         }
                       }
                       IconButton(
-                          onClick = { /* TODO: open profile */},
+                          onClick = onProfileClick,
                           modifier = Modifier.testTag(SettingsTestTags.ProfileButton)) {
                             Icon(
                                 imageVector = Icons.Filled.ChevronRight,

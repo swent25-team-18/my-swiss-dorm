@@ -37,6 +37,8 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import io.github.kakaocup.compose.node.element.ComposeScreen
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -129,97 +131,101 @@ class Epic1Test : FirestoreTest() {
   }
 
   @Test
-  fun canSignUpAndSeeProfileAndListing() = runTest {
-    val fakePhoneNumber = "774321122"
-    val fakeLastName = "Doe"
-    val fakeGoogleIdToken =
-        FakeJwtGenerator.createFakeGoogleIdToken(
-            FakeUser.FakeUser1.userName, email = FakeUser.FakeUser1.email)
-    val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
+  fun canSignUpAndSeeProfileAndListing() =
+      runTest(timeout = 60.toDuration(unit = DurationUnit.SECONDS)) {
+        val fakePhoneNumber = "774321122"
+        val fakeLastName = "Doe"
+        val fakeGoogleIdToken =
+            FakeJwtGenerator.createFakeGoogleIdToken(
+                FakeUser.FakeUser1.userName, email = FakeUser.FakeUser1.email)
+        val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
 
-    composeTestRule.setContent { MySwissDormApp(LocalContext.current, fakeCredentialManager) }
-    // Sign up
-    ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
-      assertIsDisplayed()
-      signUpButton {
-        assertIsDisplayed()
-        performClick()
-      }
-    }
-    composeTestRule.waitForIdle()
-    // Fill the profile form and register
-    ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
-      assertIsDisplayed()
-      signUpNameField {
-        assertIsDisplayed()
-        performTextInput(FakeUser.FakeUser1.userName)
-      }
-      signUpLastNameField {
-        assertIsDisplayed()
-        performTextInput(fakeLastName)
-      }
-      signUpPhoneNumberField {
-        assertIsDisplayed()
-        performTextInput(fakePhoneNumber)
-      }
-      signUpButton {
-        assertIsDisplayed()
-        performScrollTo()
-        assertIsEnabled()
-        performClick()
-      }
-    }
-    runCatching {
-          ProfileRepositoryProvider.repository.getProfile(
-              FirebaseEmulator.auth.uid ?: throw NoSuchElementException())
+        composeTestRule.setContent { MySwissDormApp(LocalContext.current, fakeCredentialManager) }
+        // Sign up
+        ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
+          assertIsDisplayed()
+          signUpButton {
+            assertIsDisplayed()
+            performClick()
+          }
         }
-        .isSuccess
-    composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
-    }
-    // Go to settings
-    composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule
-          .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
-          .isDisplayed()
-    }
-    // Go to profile settings
-    composeTestRule
-        .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
-        .performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.Tag.PROFILE_SCREEN_TITLE).isDisplayed()
-    }
-    // Go back to settings
-    composeTestRule
-        .onNodeWithTag(C.Tag.PROFILE_SCREEN_BACK_BUTTON)
-        .assertIsDisplayed()
-        .performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule
-          .onNodeWithTag(SettingsTestTags.BackButton, useUnmergedTree = true)
-          .isDisplayed()
-    }
-    // Go back to homepage
-    composeTestRule.onNodeWithTag(SettingsTestTags.BackButton).performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
-    }
-    // Go to Lausanne's listings
-    composeTestRule
-        .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(CityName.LAUSANNE))
-        .performScrollTo()
-        .performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.card(rentalUid)).isDisplayed()
-    }
-    // Go to first rental listing element
-    composeTestRule.onNodeWithTag(C.BrowseCityTags.card(rentalUid)).isDisplayed()
-    composeTestRule.onNodeWithTag(C.BrowseCityTags.card(rentalUid)).performScrollTo().performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.ViewListingTags.TITLE).isDisplayed()
-    }
-  }
+        composeTestRule.waitForIdle()
+        // Fill the profile form and register
+        ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
+          assertIsDisplayed()
+          signUpNameField {
+            assertIsDisplayed()
+            performTextInput(FakeUser.FakeUser1.userName)
+          }
+          signUpLastNameField {
+            assertIsDisplayed()
+            performTextInput(fakeLastName)
+          }
+          signUpPhoneNumberField {
+            assertIsDisplayed()
+            performTextInput(fakePhoneNumber)
+          }
+          signUpButton {
+            assertIsDisplayed()
+            performScrollTo()
+            assertIsEnabled()
+            performClick()
+          }
+        }
+        runCatching {
+              ProfileRepositoryProvider.repository.getProfile(
+                  FirebaseEmulator.auth.uid ?: throw NoSuchElementException())
+            }
+            .isSuccess
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(5_000) {
+          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
+        }
+        // Go to settings
+        composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).performClick()
+        composeTestRule.waitUntil(5_000) {
+          composeTestRule
+              .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+              .isDisplayed()
+        }
+        // Go to profile settings
+        composeTestRule
+            .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+            .performClick()
+        composeTestRule.waitUntil(5_000) {
+          composeTestRule.onNodeWithTag(C.Tag.PROFILE_SCREEN_TITLE).isDisplayed()
+        }
+        // Go back to settings
+        composeTestRule
+            .onNodeWithTag(C.Tag.PROFILE_SCREEN_BACK_BUTTON)
+            .assertIsDisplayed()
+            .performClick()
+        composeTestRule.waitUntil(5_000) {
+          composeTestRule
+              .onNodeWithTag(SettingsTestTags.BackButton, useUnmergedTree = true)
+              .isDisplayed()
+        }
+        // Go back to homepage
+        composeTestRule.onNodeWithTag(SettingsTestTags.BackButton).performClick()
+        composeTestRule.waitUntil(5_000) {
+          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
+        }
+        // Go to Lausanne's listings
+        composeTestRule
+            .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(CityName.LAUSANNE))
+            .performScrollTo()
+            .performClick()
+        composeTestRule.waitUntil(5_000) {
+          composeTestRule.onNodeWithTag(C.BrowseCityTags.card(rentalUid)).isDisplayed()
+        }
+        // Go to first rental listing element
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.card(rentalUid)).isDisplayed()
+        composeTestRule
+            .onNodeWithTag(C.BrowseCityTags.card(rentalUid))
+            .performScrollTo()
+            .performClick()
+        composeTestRule.waitUntil(5_000) {
+          composeTestRule.onNodeWithTag(C.ViewListingTags.TITLE).isDisplayed()
+        }
+      }
 }

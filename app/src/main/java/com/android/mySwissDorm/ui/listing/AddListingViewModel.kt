@@ -3,7 +3,6 @@ package com.android.mySwissDorm.ui.listing
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
@@ -54,7 +53,7 @@ class AddListingViewModel(
                       name = ResidencyName.VORTEX,
                       description = "",
                       location = Location(name = "Vortex", latitude = 46.5191, longitude = 6.5668),
-                      city = CityName.LAUSANNE,
+                      city = "Lausanne",
                       email = "",
                       phone = "",
                       website = URL("https://www.google.com")),

@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.model.residency
 
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -32,7 +31,7 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
             name = ResidencyName.VORTEX,
             description = "Description of Vortex",
             location = Location(name = "Vortex", latitude = 2.0, longitude = 2.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@vortex.ch",
             phone = "+41 00 000 00 00",
             website = URL("https://www.fmel.ch/maison/vortex"))
@@ -48,7 +47,7 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
             name = ResidencyName.VORTEX,
             description = "Description of Vortex",
             location = Location(name = "Vortex", latitude = 2.0, longitude = 2.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@vortex.ch",
             phone = "+41 00 000 00 00",
             website = URL("https://www.fmel.ch/maison/vortex"))
@@ -57,7 +56,7 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
             name = ResidencyName.ATRIUM,
             description = "Description of Atrium",
             location = Location(name = "Atrium", latitude = 2.0, longitude = 2.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@atrium.ch",
             phone = "+41 00 000 00 00",
             website = URL("https://www.fmel.ch/maison/atrium"))

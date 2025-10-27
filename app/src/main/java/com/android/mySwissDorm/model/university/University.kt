@@ -1,13 +1,12 @@
 package com.android.mySwissDorm.model.university
 
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import java.net.URL
 
 data class University(
     val name: UniversityName,
     val location: Location,
-    val city: CityName,
+    val city: String,
     val email: String,
     val phone: String,
     val websiteURL: URL,

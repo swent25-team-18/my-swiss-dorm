@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.*
@@ -61,11 +60,11 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             name = ResidencyName.VORTEX,
             description = "Vortex",
             location = Location("Vortex", 46.52, 6.57),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = null,
             phone = null,
             website = null)
-    val resZurich = resLaus.copy(city = CityName.ZURICH, name = ResidencyName.CUG)
+    val resZurich = resLaus.copy(city = "Zurich", name = ResidencyName.CUG)
 
     laus1 =
         RentalListing(

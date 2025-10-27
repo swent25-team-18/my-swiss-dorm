@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.model.university
 
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -31,7 +30,7 @@ class UniversitiesRepositoryFirestoreTest : FirestoreTest() {
         University(
             name = UniversityName.EPFL,
             location = Location(name = "EPFL", latitude = 1.0, longitude = 1.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@epfl.ch",
             phone = "+41 00 000 00 00",
             websiteURL = URL("https://www.epfl.ch/"))
@@ -46,7 +45,7 @@ class UniversitiesRepositoryFirestoreTest : FirestoreTest() {
         University(
             name = UniversityName.EPFL,
             location = Location(name = "EPFL", latitude = 1.0, longitude = 1.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@epfl.ch",
             phone = "+41 00 000 00 00",
             websiteURL = URL("https://www.epfl.ch/"))
@@ -54,7 +53,7 @@ class UniversitiesRepositoryFirestoreTest : FirestoreTest() {
         University(
             name = UniversityName.UNIL,
             location = Location(name = "UNIL", latitude = 1.0, longitude = 1.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@unil.ch",
             phone = "+41 00 000 00 00",
             websiteURL = URL("https://www.unil.ch/"))

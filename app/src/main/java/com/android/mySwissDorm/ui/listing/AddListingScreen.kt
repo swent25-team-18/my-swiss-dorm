@@ -19,7 +19,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RoomType
@@ -326,7 +325,7 @@ fun ResidencyDropdown(
                       name = type,
                       description = "",
                       location = Location(name = "", latitude = 0.0, longitude = 0.0),
-                      city = CityName.LAUSANNE,
+                      city = "Lausanne",
                       email = "",
                       phone = "",
                       website = null))

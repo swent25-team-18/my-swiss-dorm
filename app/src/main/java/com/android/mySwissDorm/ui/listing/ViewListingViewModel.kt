@@ -3,7 +3,6 @@ package com.android.mySwissDorm.ui.listing
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -41,7 +40,7 @@ private val defaultListing =
                 name = ResidencyName.PRIVATE,
                 description = "",
                 location = Location(name = "", latitude = 0.0, longitude = 0.0),
-                city = CityName.LAUSANNE,
+                city = "Lausanne",
                 email = null,
                 phone = null,
                 website = null))

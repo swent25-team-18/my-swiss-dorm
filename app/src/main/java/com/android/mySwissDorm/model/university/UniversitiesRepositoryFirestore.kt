@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.model.university
 
 import android.util.Log
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -38,7 +37,7 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
                     "name" to university.location.name,
                     "latitude" to university.location.latitude,
                     "longitude" to university.location.longitude),
-            "cityName" to university.city.name,
+            "cityName" to university.city,
             "email" to university.email,
             "phone" to university.phone,
             "websiteURL" to university.websiteURL.toString())
@@ -60,8 +59,7 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
                 latitude = it["latitude"] as? Double ?: return null,
                 longitude = it["longitude"] as? Double ?: return null)
           } ?: return null
-      val cityString = document.getString("cityName") ?: return null
-      val cityName = enumValues<CityName>().firstOrNull { it.name == cityString } ?: return null
+      val cityName = document.getString("cityName") ?: return null
       val email = document.getString("email") ?: return null
       val phone = document.getString("phone") ?: return null
       val websiteURLString = document.getString("websiteURL") ?: return null

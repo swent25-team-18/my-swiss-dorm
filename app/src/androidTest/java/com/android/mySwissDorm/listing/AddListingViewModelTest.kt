@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.listing
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -48,7 +47,7 @@ class AddListingViewModelTest : FirestoreTest() {
           name = ResidencyName.VORTEX,
           description = "desc",
           location = Location("Vortex", 46.5191, 6.5668),
-          city = CityName.LAUSANNE,
+          city = "Lausanne",
           email = "x@example.com",
           phone = "+4100000000",
           website = null)

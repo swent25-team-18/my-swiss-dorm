@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.utils
 
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
@@ -154,7 +153,7 @@ abstract class FirestoreTest : TestCase() {
           name = ResidencyName.VORTEX,
           description = "Student housing",
           location = Location(name = "EPFL Votex", latitude = 46.5197, longitude = 6.6323),
-          city = CityName.LAUSANNE,
+          city = "Lausanne",
           email = "info@example.com",
           phone = "+41220000000",
           website = null)

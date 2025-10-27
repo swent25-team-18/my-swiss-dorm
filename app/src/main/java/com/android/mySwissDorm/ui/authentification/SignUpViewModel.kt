@@ -14,7 +14,9 @@ import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.residency.ResidencyName
-import com.android.mySwissDorm.model.university.UniversityName
+import com.android.mySwissDorm.model.university.UniversitiesRepository
+import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
+import com.android.mySwissDorm.model.university.University
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,14 +32,18 @@ data class SignUpState(
     val phoneNumber: String = "",
     val isPhoneNumberErr: Boolean = false,
     val residencyName: ResidencyName? = null, // TODO need to be change when types will be updated
-    val universityName: UniversityName? = null, // TODO need to be change when types will be updated
+    val universityName: String? = null,
     val isLoading: Boolean = false,
     val errMsg: String? = null,
     val user: FirebaseUser? = null,
+    val universities: List<University> = listOf(),
 )
 
-class SignUpViewModel(private val repository: AuthRepository = AuthRepositoryProvider.repository) :
-    ViewModel() {
+class SignUpViewModel(
+    private val authRepository: AuthRepository = AuthRepositoryProvider.repository,
+    private val universitiesRepository: UniversitiesRepository =
+        UniversitiesRepositoryProvider.repository
+) : ViewModel() {
   private val _uiState = MutableStateFlow(SignUpState())
   val uiState: StateFlow<SignUpState> = _uiState.asStateFlow()
 
@@ -50,6 +56,16 @@ class SignUpViewModel(private val repository: AuthRepository = AuthRepositoryPro
           _uiState.value.lastName.isBlank() ||
           _uiState.value.phoneNumber.isBlank())
     }
+
+  init {
+    loadUniversities()
+  }
+
+  fun loadUniversities() {
+    viewModelScope.launch {
+      _uiState.update { it.copy(universities = universitiesRepository.getAllUniversities()) }
+    }
+  }
 
   fun updateName(name: String) {
     _uiState.update { it.copy(name = name, isNameErr = isNameError(name)) }
@@ -84,7 +100,7 @@ class SignUpViewModel(private val repository: AuthRepository = AuthRepositoryPro
     _uiState.update { it.copy(residencyName = residencyName) }
   }
 
-  fun updateUniversityName(universityName: UniversityName?) {
+  fun updateUniversityName(universityName: String?) {
     _uiState.update { it.copy(universityName = universityName) }
   }
 
@@ -98,7 +114,7 @@ class SignUpViewModel(private val repository: AuthRepository = AuthRepositoryPro
         val signInRequest = GoogleHelper.getSignInRequest(context)
         val credential = credentialManager.getCredential(context, signInRequest).credential
 
-        repository
+        authRepository
             .signInWithGoogle(credential)
             .fold(
                 { user ->

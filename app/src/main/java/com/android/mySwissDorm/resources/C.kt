@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.resources
 
 import com.android.mySwissDorm.model.residency.ResidencyName
-import com.android.mySwissDorm.model.university.UniversityName
 import com.android.mySwissDorm.ui.navigation.Screen
 
 // Like R, but C
@@ -33,8 +32,8 @@ object C {
     const val SIGN_UP_HELP_TEXT = "signUpHelpText"
     const val SIGN_UP_BACK_BUTTON = "signUpBackButton"
 
-    fun universityNameTestTag(universityName: UniversityName?): String {
-      return "${universityName?.hashCode() ?: "nullValUniversityName"}TestTag"
+    fun universityNameTestTag(universityName: String?): String {
+      return "${universityName ?: "nullValUniversityName"}TestTag"
     }
 
     fun residencyNameTestTag(residencyName: ResidencyName?): String {

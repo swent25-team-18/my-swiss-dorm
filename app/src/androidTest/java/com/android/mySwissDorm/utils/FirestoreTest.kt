@@ -9,7 +9,6 @@ import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.residency.ResidencyName
-import com.android.mySwissDorm.model.university.UniversityName
 import com.android.mySwissDorm.utils.FirebaseEmulator.auth
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
@@ -122,7 +121,7 @@ abstract class FirestoreTest : TestCase() {
                   lastName = "King",
                   email = FakeUser.FakeUser1.email,
                   phoneNumber = "+41001112233",
-                  universityName = UniversityName.EPFL,
+                  universityName = "EPFL",
                   location = Location("Somewhere", 0.0, 0.0),
                   residencyName =
                       ResidencyName.VORTEX, // TODO need to change when types are updated

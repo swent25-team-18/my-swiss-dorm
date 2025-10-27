@@ -13,7 +13,7 @@ import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
-import com.android.mySwissDorm.model.residency.ResidencyName
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.screen.SignUpScreen
@@ -266,7 +266,7 @@ class SignUpScreenTest : FirestoreTest() {
       }
     }
     step("Residency Dropdown menu display correctly all residencies") {
-      val residencies = ResidencyName.entries.toList()
+      val residencies = runBlocking { ResidenciesRepositoryProvider.repository.getAllResidencies() }
       ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
         signUpResidencyField.assertIsDisplayed()
         signUpResidencyDropDownBox {
@@ -278,7 +278,7 @@ class SignUpScreenTest : FirestoreTest() {
             .isDisplayed()
         residencies.forEach {
           composeTestRule
-              .onNodeWithTag(C.Tag.residencyNameTestTag(it), useUnmergedTree = true)
+              .onNodeWithTag(C.Tag.residencyNameTestTag(it.name), useUnmergedTree = true)
               .isDisplayed()
         }
         signUpResidencyDropDownBox.performClick()
@@ -313,7 +313,7 @@ class SignUpScreenTest : FirestoreTest() {
   fun dropDownMenuActionsWorkWell() = run {
     composeTestRule.setContent { SignUpScreen() }
     step("Residency Dropdown entries are well displayed after click") {
-      val residencies = ResidencyName.entries.toList()
+      val residencies = runBlocking { ResidenciesRepositoryProvider.repository.getAllResidencies() }
       ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
         signUpResidencyField.assertIsDisplayed()
         signUpResidencyDropDownBox {
@@ -326,7 +326,8 @@ class SignUpScreenTest : FirestoreTest() {
         dropDownMenuNode.isDisplayed()
         residencies.forEach {
           val residencyNode =
-              composeTestRule.onNodeWithTag(C.Tag.residencyNameTestTag(it), useUnmergedTree = true)
+              composeTestRule.onNodeWithTag(
+                  C.Tag.residencyNameTestTag(it.name), useUnmergedTree = true)
           residencyNode.isDisplayed()
           residencyNode.performScrollTo()
           residencyNode.performClick()

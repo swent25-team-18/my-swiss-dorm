@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.resources
 
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.ui.navigation.Screen
 
 // Like R, but C
@@ -36,8 +35,8 @@ object C {
       return "${universityName ?: "nullValUniversityName"}TestTag"
     }
 
-    fun residencyNameTestTag(residencyName: ResidencyName?): String {
-      return "${residencyName?.hashCode() ?: "nullValResidencyName"}TestTag"
+    fun residencyNameTestTag(residencyName: String?): String {
+      return "${residencyName ?: "nullValResidencyName"}TestTag"
     }
 
     const val PROFILE_SCREEN_TITLE = "profile_title"

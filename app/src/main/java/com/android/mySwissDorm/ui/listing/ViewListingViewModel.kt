@@ -12,7 +12,6 @@ import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -37,7 +36,7 @@ private val defaultListing =
         status = RentalStatus.POSTED,
         residency =
             Residency(
-                name = ResidencyName.PRIVATE,
+                name = "Private Accommodation",
                 description = "",
                 location = Location(name = "", latitude = 0.0, longitude = 0.0),
                 city = "Lausanne",

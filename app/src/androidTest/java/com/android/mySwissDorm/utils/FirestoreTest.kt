@@ -8,7 +8,6 @@ import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.utils.FirebaseEmulator.auth
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
@@ -123,9 +122,7 @@ abstract class FirestoreTest : TestCase() {
                   phoneNumber = "+41001112233",
                   universityName = "EPFL",
                   location = Location("Somewhere", 0.0, 0.0),
-                  residencyName =
-                      ResidencyName.VORTEX, // TODO need to change when types are updated
-              ),
+                  residencyName = "Vortex"),
           userSettings = UserSettings(),
           ownerId = "",
       )
@@ -141,7 +138,7 @@ abstract class FirestoreTest : TestCase() {
                   phoneNumber = "+41223334455",
                   universityName = null,
                   location = null,
-                  residencyName = null, // TODO need to change when types are updated
+                  residencyName = null,
               ),
           userSettings = UserSettings(),
           ownerId = "",
@@ -149,7 +146,7 @@ abstract class FirestoreTest : TestCase() {
 
   var resTest =
       Residency(
-          name = ResidencyName.VORTEX,
+          name = "Vortex",
           description = "Student housing",
           location = Location(name = "EPFL Votex", latitude = 46.5197, longitude = 6.6323),
           city = "Lausanne",

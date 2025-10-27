@@ -2,7 +2,6 @@ package com.android.mySwissDorm.model.profile
 
 import android.util.Log
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.get
@@ -84,16 +83,11 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
                       null
                     } else {
                       when (residency) {
-                        is String ->
-                            try {
-                              ResidencyName.valueOf(residency)
-                            } catch (_: IllegalArgumentException) {
-                              return null
-                            }
+                        is String -> residency
                         else -> return null
                       }
                     }
-                  }, // TODO change that when types are updated
+                  },
           )
         }
     return userInfo

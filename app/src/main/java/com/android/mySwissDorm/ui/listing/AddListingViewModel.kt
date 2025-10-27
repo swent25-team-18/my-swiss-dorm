@@ -9,8 +9,8 @@ import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
@@ -19,6 +19,7 @@ import kotlin.let
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AddListingUIState(
@@ -33,6 +34,7 @@ data class AddListingUIState(
     val mapLat: Double? = null,
     val mapLng: Double? = null,
     val errorMsg: String? = null,
+    val residencies: List<Residency> = emptyList(),
 ) {
   val isFormValid: Boolean
     get() {
@@ -50,7 +52,7 @@ class AddListingViewModel(
           AddListingUIState(
               residency =
                   Residency(
-                      name = ResidencyName.VORTEX,
+                      name = "Vortex",
                       description = "",
                       location = Location(name = "Vortex", latitude = 46.5191, longitude = 6.5668),
                       city = "Lausanne",
@@ -61,6 +63,14 @@ class AddListingViewModel(
               housingType = RoomType.STUDIO))
 
   val uiState: StateFlow<AddListingUIState> = _uiState.asStateFlow()
+
+  init {
+    viewModelScope.launch {
+      _uiState.update {
+        it.copy(residencies = ResidenciesRepositoryProvider.repository.getAllResidencies())
+      }
+    }
+  }
 
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {

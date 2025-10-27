@@ -6,7 +6,6 @@ import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -44,7 +43,7 @@ class AddListingViewModelTest : FirestoreTest() {
 
   private fun validResidency() =
       Residency(
-          name = ResidencyName.VORTEX,
+          name = "Vortex",
           description = "desc",
           location = Location("Vortex", 46.5191, 6.5668),
           city = "Lausanne",

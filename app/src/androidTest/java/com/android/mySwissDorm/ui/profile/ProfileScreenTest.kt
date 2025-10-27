@@ -18,7 +18,6 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -143,7 +142,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
     // RESIDENCE (dropdown): open and pick enum display
     compose.onNodeWithTag("field_residence").performClick()
-    val residencePick = ResidencyName.ATRIUM.toString() // "Atrium"
+    val residencePick = "Atrium"
     compose.onNodeWithText(residencePick, useUnmergedTree = true).performClick()
 
     // Save

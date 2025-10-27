@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.profile.Language
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.Red0
@@ -232,7 +231,7 @@ private fun ProfileScreenContent(
                   enabled = state.isEditing,
                   modifier = Modifier.fillMaxWidth(),
                   tag = "field_residence",
-                  options = remember { ResidencyName.values().toList() })
+                  options = remember { state.allResidencies })
 
               // Bottom action area: Save (edit mode) or Logout (view mode)
               if (state.isEditing) {

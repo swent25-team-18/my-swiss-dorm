@@ -21,8 +21,8 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
     }
   }
 
-  override suspend fun getResidency(residencyName: ResidencyName): Residency {
-    val doc = db.collection(RESIDENCIES_COLLECTION_PATH).document(residencyName.value).get().await()
+  override suspend fun getResidency(residencyName: String): Residency {
+    val doc = db.collection(RESIDENCIES_COLLECTION_PATH).document(residencyName).get().await()
     return documentToResidency(doc)
         ?: throw Exception("ResidenciesRepositoryFirestore: Residency not found")
   }
@@ -30,7 +30,7 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
   override suspend fun addResidency(residency: Residency) {
     val residencyData =
         mapOf(
-            "name" to residency.name.name,
+            "name" to residency.name,
             "description" to residency.description,
             "location" to
                 mapOf(
@@ -42,16 +42,12 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
             "email" to residency.email,
             "phone" to residency.phone,
             "website" to residency.website.toString())
-    db.collection(RESIDENCIES_COLLECTION_PATH)
-        .document(residency.name.value)
-        .set(residencyData)
-        .await()
+    db.collection(RESIDENCIES_COLLECTION_PATH).document(residency.name).set(residencyData).await()
   }
 
   private fun documentToResidency(document: DocumentSnapshot): Residency? {
     return try {
-      val nameString = document.getString("name") ?: return null
-      val name = enumValues<ResidencyName>().firstOrNull { it.name == nameString } ?: return null
+      val name = document.getString("name") ?: return null
       val description = document.getString("description") ?: return null
       val locationData = document.get("location") as? Map<*, *>
       val location =

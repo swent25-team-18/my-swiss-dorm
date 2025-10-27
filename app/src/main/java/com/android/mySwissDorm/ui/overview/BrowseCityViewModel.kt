@@ -99,7 +99,7 @@ private fun RentalListing.toCardUI(): ListingCardUI {
   val price = String.format(Locale.getDefault(), "%.0f.-/month", pricePerMonth)
   val area = "${areaInM2}m²"
   val start = "Starting ${formatDate(startDate)}"
-  val resName = residency.name.value
+  val resName = residency.name
 
   return ListingCardUI(
       title = title,

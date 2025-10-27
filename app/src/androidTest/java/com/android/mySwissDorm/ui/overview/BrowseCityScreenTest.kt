@@ -10,7 +10,6 @@ import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -57,14 +56,14 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
     val resLaus =
         Residency(
-            name = ResidencyName.VORTEX,
+            name = "Vortex",
             description = "Vortex",
             location = Location("Vortex", 46.52, 6.57),
             city = "Lausanne",
             email = null,
             phone = null,
             website = null)
-    val resZurich = resLaus.copy(city = "Zurich", name = ResidencyName.CUG)
+    val resZurich = resLaus.copy(city = "Zurich", name = "CUG")
 
     laus1 =
         RentalListing(

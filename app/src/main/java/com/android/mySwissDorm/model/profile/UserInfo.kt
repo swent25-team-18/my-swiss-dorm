@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.model.profile
 
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.residency.ResidencyName
 
 /** This data class represents the personal information related to the user. */
 data class UserInfo(
@@ -11,5 +10,5 @@ data class UserInfo(
     val phoneNumber: String,
     val universityName: String? = null,
     val location: Location? = null,
-    val residencyName: ResidencyName? = null,
+    val residencyName: String? = null,
 )

@@ -28,7 +28,7 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val residencyToAdd =
         Residency(
-            name = ResidencyName.VORTEX,
+            name = "Vortex",
             description = "Description of Vortex",
             location = Location(name = "Vortex", latitude = 2.0, longitude = 2.0),
             city = "Lausanne",
@@ -36,7 +36,7 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
             phone = "+41 00 000 00 00",
             website = URL("https://www.fmel.ch/maison/vortex"))
     repo.addResidency(residencyToAdd)
-    assertEquals(residencyToAdd, repo.getResidency(ResidencyName.VORTEX))
+    assertEquals(residencyToAdd, repo.getResidency("Vortex"))
   }
 
   @Test
@@ -44,7 +44,7 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val residency1 =
         Residency(
-            name = ResidencyName.VORTEX,
+            name = "Vortex",
             description = "Description of Vortex",
             location = Location(name = "Vortex", latitude = 2.0, longitude = 2.0),
             city = "Lausanne",
@@ -53,7 +53,7 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
             website = URL("https://www.fmel.ch/maison/vortex"))
     val residency2 =
         Residency(
-            name = ResidencyName.ATRIUM,
+            name = "Atrium",
             description = "Description of Atrium",
             location = Location(name = "Atrium", latitude = 2.0, longitude = 2.0),
             city = "Lausanne",
@@ -68,6 +68,6 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
   @Test
   fun getNonExistentResidencyFail() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    assertEquals(runCatching { repo.getResidency(ResidencyName.VORTEX) }.isFailure, true)
+    assertEquals(runCatching { repo.getResidency("Vortex") }.isFailure, true)
   }
 }

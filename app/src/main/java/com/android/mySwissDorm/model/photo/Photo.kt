@@ -6,7 +6,6 @@ import androidx.core.content.FileProvider
 import com.android.mySwissDorm.BuildConfig
 import java.io.File
 import java.util.Objects
-import java.util.UUID
 
 /** This class represent a photo in the application */
 data class Photo(val image: Uri, val uid: String) {
@@ -19,7 +18,7 @@ data class Photo(val image: Uri, val uid: String) {
      * @return an empty [Photo]
      */
     fun createNewPhotoOnCache(context: Context, uid: String): Photo {
-      val file = File.createTempFile("${UUID.randomUUID()}", ".jpg", context.externalCacheDir)
+      val file = File.createTempFile(uid, ".jpg", context.externalCacheDir)
       file.deleteOnExit()
       return Photo(
           image =

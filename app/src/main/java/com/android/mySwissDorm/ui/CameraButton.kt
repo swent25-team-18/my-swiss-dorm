@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.Button
@@ -14,15 +15,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import java.util.UUID
 
 /**
  * A button that open the camera and allow the user to take a photo. If the photo is successfully
  * taken, the `onImageTaken` is executed. Note that the resulted [Photo] is stored temporarily on
- * cache.
+ * cache, it should be deleted if not needed anymore.
  *
  * @param onSave called when an image is successfully taken. Not called if the process is cancelled
  *   by the user.
@@ -34,17 +37,17 @@ fun CameraButton(
     onSave: (Photo) -> Unit,
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
+    takePictureContract: ActivityResultContract<Uri, Boolean> =
+        ActivityResultContracts.TakePicture(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   var uriCaptured by remember { mutableStateOf<Uri>(Uri.EMPTY) }
   var photoCaptured by remember { mutableStateOf<Photo?>(null) }
 
   val cameraLauncher =
-      rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
+      rememberLauncherForActivityResult(takePictureContract) {
         if (it && photoCaptured != null && uriCaptured.path?.isNotEmpty() ?: false) {
-          onSave(photoCaptured ?: throw NoSuchElementException())
-        } else if (!it && photoCaptured != null) {
-          Photo.deletePhoto(photo = photoCaptured!!)
+          onSave(photoCaptured!!)
         }
       }
   Button(
@@ -54,7 +57,7 @@ fun CameraButton(
         photoCaptured = photo
         cameraLauncher.launch(input = photo.image)
       },
-      modifier = modifier) {
+      modifier = modifier.testTag(tag = C.CameraButtonTag.TAG)) {
         content()
       }
 }

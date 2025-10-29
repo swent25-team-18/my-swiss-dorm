@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.android.mySwissDorm.BuildConfig
 import java.io.File
-import java.util.NoSuchElementException
 import java.util.Objects
 import java.util.UUID
 
@@ -21,19 +20,12 @@ data class Photo(val image: Uri, val uid: String) {
      */
     fun createNewPhotoOnCache(context: Context, uid: String): Photo {
       val file = File.createTempFile("${UUID.randomUUID()}", ".jpg", context.externalCacheDir)
+      file.deleteOnExit()
       return Photo(
           image =
               FileProvider.getUriForFile(
                   Objects.requireNonNull(context), BuildConfig.APPLICATION_ID + ".provider", file),
           uid = uid)
-    }
-
-    fun deletePhoto(photo: Photo): Boolean {
-      return try {
-        File(photo.image.path ?: throw NoSuchElementException()).delete()
-      } catch (_: kotlin.NoSuchElementException) {
-        false
-      }
     }
   }
 }

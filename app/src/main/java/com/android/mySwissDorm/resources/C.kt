@@ -88,4 +88,8 @@ object C {
 
     fun card(listingUid: String) = "browseCityCard_$listingUid"
   }
+
+  object CameraButtonTag {
+    const val TAG = "cameraButtonTag"
+  }
 }

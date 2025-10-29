@@ -1,10 +1,8 @@
 package com.android.mySwissDorm.model.rental
 
 import android.util.Log
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import java.net.URL
@@ -91,14 +89,10 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
           (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
       val resMap = document.get("residency") as? Map<*, *> ?: return null
 
-      val resNameStr = resMap["name"] as? String ?: return null
-      val resName =
-          ResidencyName.entries.firstOrNull { it.name == resNameStr || it.value == resNameStr }
-              ?: return null
+      val resName = resMap["name"] as? String ?: return null
 
       val resDesc = resMap["description"] as? String ?: ""
-      val resCityStr = resMap["city"] as? String ?: return null
-      val resCity = CityName.entries.first { it.name == resCityStr || it.value == resCityStr }
+      val resCity = resMap["city"] as? String ?: return null
 
       val resEmail = resMap["email"] as? String
       val resPhone = resMap["phone"] as? String

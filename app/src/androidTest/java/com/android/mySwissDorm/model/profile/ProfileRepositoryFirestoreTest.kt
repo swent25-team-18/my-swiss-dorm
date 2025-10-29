@@ -178,7 +178,7 @@ class ProfileRepositoryFirestoreTest : FirestoreTest() {
     docRef.set(data).await()
     assertEquals(profile1, repo.getProfile(profile1.ownerId))
 
-    userInfoData["universityName"] = "JURA LIBRE"
+    userInfoData["universityName"] = 8
     docRef.set(data).await()
     assertEquals(runCatching { repo.getProfile(profile1.ownerId) }.isFailure, true)
     userInfoData["universityName"] = profile1.userInfo.universityName

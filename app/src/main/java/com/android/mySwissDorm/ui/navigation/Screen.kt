@@ -23,7 +23,7 @@ sealed class Screen(
   data object AddListing : Screen("addListing", "Add Listing")
 
   data class CityOverview(val city: City) :
-      Screen(route = "cityOverview/${city.name.value}", name = "City") {
+      Screen(route = "cityOverview/${city.name}", name = "City") {
     companion object {
       const val route = "cityOverview/{cityName}"
     }

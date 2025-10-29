@@ -26,12 +26,12 @@ class CitiesRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val cityToAdd =
         City(
-            name = CityName.LAUSANNE,
+            name = "Lausanne",
             description = "Description of Lausanne",
             location = Location("Lausanne", 1.0, 2.0),
             imageId = 0)
     repo.addCity(cityToAdd)
-    val returnedCity = repo.getCity(CityName.LAUSANNE)
+    val returnedCity = repo.getCity("Lausanne")
     assertEquals(cityToAdd, returnedCity)
   }
 
@@ -40,13 +40,13 @@ class CitiesRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val city1 =
         City(
-            name = CityName.LAUSANNE,
+            name = "Lausanne",
             description = "Description of Lausanne",
             location = Location("Lausanne", 1.0, 2.0),
             imageId = 0)
     val city2 =
         City(
-            name = CityName.GENEVA,
+            name = "Geneva",
             description = "Description of Geneva",
             location = Location("Geneva", 2.0, 1.0),
             imageId = 1)

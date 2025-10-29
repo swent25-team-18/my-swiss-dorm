@@ -50,8 +50,6 @@ import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
-import com.android.mySwissDorm.model.residency.ResidencyName
-import com.android.mySwissDorm.model.university.UniversityName
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
@@ -160,7 +158,7 @@ fun SignUpScreen(
                   modifier = Modifier.testTag(C.Tag.SIGN_UP_RESIDENCY_DROP_DOWN_BOX)) {
                     OutlinedTextField(
                         value =
-                            uiState.residencyName?.name
+                            uiState.residencyName
                                 ?: stringResource(R.string.sign_up_button_not_specified),
                         onValueChange = {},
                         readOnly = true,
@@ -188,15 +186,16 @@ fun SignUpScreen(
                                 signUpViewModel.updateResidencyName(null)
                                 residenciesExpanded = false
                               })
-                          ResidencyName.entries.forEach {
+                          uiState.residencies.forEach {
                             DropdownMenuItem(
                                 text = {
                                   Text(
-                                      text = it.value,
-                                      modifier = Modifier.testTag(C.Tag.residencyNameTestTag(it)))
+                                      text = it.name,
+                                      modifier =
+                                          Modifier.testTag(C.Tag.residencyNameTestTag(it.name)))
                                 },
                                 onClick = {
-                                  signUpViewModel.updateResidencyName(it)
+                                  signUpViewModel.updateResidencyName(it.name)
                                   residenciesExpanded = false
                                 })
                           }
@@ -210,7 +209,7 @@ fun SignUpScreen(
                   modifier = Modifier.testTag(C.Tag.SIGN_UP_UNIVERSITY_DROP_DOWN_BOX)) {
                     OutlinedTextField(
                         value =
-                            uiState.universityName?.name
+                            uiState.universityName
                                 ?: stringResource(R.string.sign_up_button_not_specified),
                         onValueChange = {},
                         readOnly = true,
@@ -239,15 +238,16 @@ fun SignUpScreen(
                                 universitiesExpanded = false
                               },
                           )
-                          UniversityName.entries.forEach {
+                          uiState.universities.forEach {
                             DropdownMenuItem(
                                 text = {
                                   Text(
-                                      text = it.value,
-                                      modifier = Modifier.testTag(C.Tag.universityNameTestTag(it)))
+                                      text = it.name,
+                                      modifier =
+                                          Modifier.testTag(C.Tag.universityNameTestTag(it.name)))
                                 },
                                 onClick = {
-                                  signUpViewModel.updateUniversityName(it)
+                                  signUpViewModel.updateUniversityName(it.name)
                                   universitiesExpanded = false
                                 })
                           }

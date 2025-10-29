@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.model.university
 
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -29,14 +28,14 @@ class UniversitiesRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val universityToAdd =
         University(
-            name = UniversityName.EPFL,
+            name = "EPFL",
             location = Location(name = "EPFL", latitude = 1.0, longitude = 1.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@epfl.ch",
             phone = "+41 00 000 00 00",
             websiteURL = URL("https://www.epfl.ch/"))
     repo.addUniversity(universityToAdd)
-    assertEquals(universityToAdd, repo.getUniversity(UniversityName.EPFL))
+    assertEquals(universityToAdd, repo.getUniversity("EPFL"))
   }
 
   @Test
@@ -44,17 +43,17 @@ class UniversitiesRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val university1 =
         University(
-            name = UniversityName.EPFL,
+            name = "EPFL",
             location = Location(name = "EPFL", latitude = 1.0, longitude = 1.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@epfl.ch",
             phone = "+41 00 000 00 00",
             websiteURL = URL("https://www.epfl.ch/"))
     val university2 =
         University(
-            name = UniversityName.UNIL,
+            name = "UNIL",
             location = Location(name = "UNIL", latitude = 1.0, longitude = 1.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@unil.ch",
             phone = "+41 00 000 00 00",
             websiteURL = URL("https://www.unil.ch/"))
@@ -66,6 +65,6 @@ class UniversitiesRepositoryFirestoreTest : FirestoreTest() {
   @Test
   fun getNonExistentUniversityFail() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    assertEquals(runCatching { repo.getUniversity(UniversityName.EPFL) }.isFailure, true)
+    assertEquals(runCatching { repo.getUniversity("EPFL") }.isFailure, true)
   }
 }

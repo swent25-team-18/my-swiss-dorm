@@ -6,12 +6,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -58,14 +56,14 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
     val resLaus =
         Residency(
-            name = ResidencyName.VORTEX,
+            name = "Vortex",
             description = "Vortex",
             location = Location("Vortex", 46.52, 6.57),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = null,
             phone = null,
             website = null)
-    val resZurich = resLaus.copy(city = CityName.ZURICH, name = ResidencyName.CUG)
+    val resZurich = resLaus.copy(city = "Zurich", name = "CUG")
 
     laus1 =
         RentalListing(
@@ -143,7 +141,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   @Test
   fun emptyState_showsNoListingsYet() = run {
     runTest { switchToUser(FakeUser.FakeUser1) }
-    compose.setContent { BrowseCityScreen(cityName = "Zurich") } // no data created for Zurich
+    compose.setContent { BrowseCityScreen(cityName = "Geneva") } // no data created for Geneva
     compose.waitForIdle()
 
     compose.onNodeWithTag(C.BrowseCityTags.EMPTY).assertIsDisplayed()

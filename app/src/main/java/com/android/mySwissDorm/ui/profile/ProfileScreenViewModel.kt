@@ -3,11 +3,14 @@ package com.android.mySwissDorm.ui.profile
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.residency.Residency
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -32,7 +35,8 @@ data class ProfileUiState(
     val residence: String = "",
     val isEditing: Boolean = false,
     val isSaving: Boolean = false,
-    val errorMsg: String? = null
+    val errorMsg: String? = null,
+    val allResidencies: List<Residency> = emptyList()
 )
 
 /**
@@ -58,6 +62,14 @@ class ProfileScreenViewModel(
   // Backing state; screen collects this as StateFlow
   private val _uiState = MutableStateFlow(ProfileUiState())
   val uiState: StateFlow<ProfileUiState> = _uiState
+
+  init {
+    viewModelScope.launch {
+      _uiState.update {
+        it.copy(allResidencies = ResidenciesRepositoryProvider.repository.getAllResidencies())
+      }
+    }
+  }
 
   /** Update first name in UI state and clear any transient error. */
   fun onFirstNameChange(value: String) {

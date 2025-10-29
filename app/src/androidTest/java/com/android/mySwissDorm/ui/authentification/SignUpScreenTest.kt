@@ -13,8 +13,8 @@ import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
-import com.android.mySwissDorm.model.residency.ResidencyName
-import com.android.mySwissDorm.model.university.UniversityName
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.screen.SignUpScreen
 import com.android.mySwissDorm.utils.FakeCredentialManager
@@ -25,6 +25,7 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import io.github.kakaocup.compose.node.element.ComposeScreen
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -265,7 +266,7 @@ class SignUpScreenTest : FirestoreTest() {
       }
     }
     step("Residency Dropdown menu display correctly all residencies") {
-      val residencies = ResidencyName.entries.toList()
+      val residencies = runBlocking { ResidenciesRepositoryProvider.repository.getAllResidencies() }
       ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
         signUpResidencyField.assertIsDisplayed()
         signUpResidencyDropDownBox {
@@ -277,7 +278,7 @@ class SignUpScreenTest : FirestoreTest() {
             .isDisplayed()
         residencies.forEach {
           composeTestRule
-              .onNodeWithTag(C.Tag.residencyNameTestTag(it), useUnmergedTree = true)
+              .onNodeWithTag(C.Tag.residencyNameTestTag(it.name), useUnmergedTree = true)
               .isDisplayed()
         }
         signUpResidencyDropDownBox.performClick()
@@ -287,7 +288,9 @@ class SignUpScreenTest : FirestoreTest() {
       }
     }
     step("University Dropdown menu display correctly all universities") {
-      val universities = UniversityName.entries.toList()
+      val universities = runBlocking {
+        UniversitiesRepositoryProvider.repository.getAllUniversities()
+      }
       ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
         signUpUniversityField.assertIsDisplayed()
         signUpUniversityDropDownBox {
@@ -299,7 +302,7 @@ class SignUpScreenTest : FirestoreTest() {
             .isDisplayed()
         universities.forEach {
           composeTestRule
-              .onNodeWithTag(C.Tag.universityNameTestTag(it), useUnmergedTree = true)
+              .onNodeWithTag(C.Tag.universityNameTestTag(it.name), useUnmergedTree = true)
               .isDisplayed()
         }
       }
@@ -310,7 +313,7 @@ class SignUpScreenTest : FirestoreTest() {
   fun dropDownMenuActionsWorkWell() = run {
     composeTestRule.setContent { SignUpScreen() }
     step("Residency Dropdown entries are well displayed after click") {
-      val residencies = ResidencyName.entries.toList()
+      val residencies = runBlocking { ResidenciesRepositoryProvider.repository.getAllResidencies() }
       ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
         signUpResidencyField.assertIsDisplayed()
         signUpResidencyDropDownBox {
@@ -323,7 +326,8 @@ class SignUpScreenTest : FirestoreTest() {
         dropDownMenuNode.isDisplayed()
         residencies.forEach {
           val residencyNode =
-              composeTestRule.onNodeWithTag(C.Tag.residencyNameTestTag(it), useUnmergedTree = true)
+              composeTestRule.onNodeWithTag(
+                  C.Tag.residencyNameTestTag(it.name), useUnmergedTree = true)
           residencyNode.isDisplayed()
           residencyNode.performScrollTo()
           residencyNode.performClick()
@@ -337,7 +341,9 @@ class SignUpScreenTest : FirestoreTest() {
       }
     }
     step("University Dropdown entries are displayed after click") {
-      val universities = UniversityName.entries.toList()
+      val universities = runBlocking {
+        UniversitiesRepositoryProvider.repository.getAllUniversities()
+      }
       ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
         signUpUniversityField.assertIsDisplayed()
         signUpUniversityDropDownBox {
@@ -350,7 +356,8 @@ class SignUpScreenTest : FirestoreTest() {
         dropDownMenuNode.isDisplayed()
         universities.forEach {
           val universityNode =
-              composeTestRule.onNodeWithTag(C.Tag.universityNameTestTag(it), useUnmergedTree = true)
+              composeTestRule.onNodeWithTag(
+                  C.Tag.universityNameTestTag(it.name), useUnmergedTree = true)
           universityNode.isDisplayed()
           universityNode.performScrollTo()
           universityNode.performClick()

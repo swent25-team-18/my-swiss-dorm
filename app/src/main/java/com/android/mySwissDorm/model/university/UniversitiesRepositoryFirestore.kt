@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.model.university
 
 import android.util.Log
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -22,9 +21,8 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
     }
   }
 
-  override suspend fun getUniversity(universityName: UniversityName): University {
-    val doc =
-        db.collection(UNIVERSITIES_COLLECTION_PATH).document(universityName.value).get().await()
+  override suspend fun getUniversity(universityName: String): University {
+    val doc = db.collection(UNIVERSITIES_COLLECTION_PATH).document(universityName).get().await()
     return documentToUniversity(doc)
         ?: throw Exception("UniversitiesRepositoryFirestore: University not found")
   }
@@ -32,26 +30,25 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
   override suspend fun addUniversity(university: University) {
     val universityData =
         mapOf(
-            "name" to university.name.name,
+            "name" to university.name,
             "location" to
                 mapOf(
                     "name" to university.location.name,
                     "latitude" to university.location.latitude,
                     "longitude" to university.location.longitude),
-            "cityName" to university.city.name,
+            "cityName" to university.city,
             "email" to university.email,
             "phone" to university.phone,
             "websiteURL" to university.websiteURL.toString())
     db.collection(UNIVERSITIES_COLLECTION_PATH)
-        .document(university.name.value)
+        .document(university.name)
         .set(universityData)
         .await()
   }
 
   private fun documentToUniversity(document: DocumentSnapshot): University? {
     return try {
-      val nameString = document.getString("name") ?: return null
-      val name = enumValues<UniversityName>().firstOrNull { it.name == nameString } ?: return null
+      val name = document.getString("name") ?: return null
       val locationData = document.get("location") as? Map<*, *>
       val location =
           locationData?.let {
@@ -60,8 +57,7 @@ class UniversitiesRepositoryFirestore(private val db: FirebaseFirestore) : Unive
                 latitude = it["latitude"] as? Double ?: return null,
                 longitude = it["longitude"] as? Double ?: return null)
           } ?: return null
-      val cityString = document.getString("cityName") ?: return null
-      val cityName = enumValues<CityName>().firstOrNull { it.name == cityString } ?: return null
+      val cityName = document.getString("cityName") ?: return null
       val email = document.getString("email") ?: return null
       val phone = document.getString("phone") ?: return null
       val websiteURLString = document.getString("websiteURL") ?: return null

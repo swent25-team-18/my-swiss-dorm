@@ -16,7 +16,7 @@ interface UniversitiesRepository {
    * @return The University item with the specified identifier.
    * @throws Exception if the University item is not found.
    */
-  suspend fun getUniversity(universityName: UniversityName): University
+  suspend fun getUniversity(universityName: String): University
 
   suspend fun addUniversity(university: University)
 }

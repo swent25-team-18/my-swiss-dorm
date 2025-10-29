@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.model.residency
 
 import android.util.Log
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -22,8 +21,8 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
     }
   }
 
-  override suspend fun getResidency(residencyName: ResidencyName): Residency {
-    val doc = db.collection(RESIDENCIES_COLLECTION_PATH).document(residencyName.value).get().await()
+  override suspend fun getResidency(residencyName: String): Residency {
+    val doc = db.collection(RESIDENCIES_COLLECTION_PATH).document(residencyName).get().await()
     return documentToResidency(doc)
         ?: throw Exception("ResidenciesRepositoryFirestore: Residency not found")
   }
@@ -31,7 +30,7 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
   override suspend fun addResidency(residency: Residency) {
     val residencyData =
         mapOf(
-            "name" to residency.name.name,
+            "name" to residency.name,
             "description" to residency.description,
             "location" to
                 mapOf(
@@ -39,20 +38,16 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
                     "latitude" to residency.location.latitude,
                     "longitude" to residency.location.longitude,
                 ),
-            "cityName" to residency.city.name,
+            "cityName" to residency.city,
             "email" to residency.email,
             "phone" to residency.phone,
             "website" to residency.website.toString())
-    db.collection(RESIDENCIES_COLLECTION_PATH)
-        .document(residency.name.value)
-        .set(residencyData)
-        .await()
+    db.collection(RESIDENCIES_COLLECTION_PATH).document(residency.name).set(residencyData).await()
   }
 
   private fun documentToResidency(document: DocumentSnapshot): Residency? {
     return try {
-      val nameString = document.getString("name") ?: return null
-      val name = enumValues<ResidencyName>().firstOrNull { it.name == nameString } ?: return null
+      val name = document.getString("name") ?: return null
       val description = document.getString("description") ?: return null
       val locationData = document.get("location") as? Map<*, *>
       val location =
@@ -62,8 +57,7 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
                 latitude = it["latitude"] as? Double ?: return null,
                 longitude = it["longitude"] as? Double ?: return null)
           } ?: return null
-      val cityString = document.getString("cityName") ?: return null
-      val cityName = enumValues<CityName>().firstOrNull { it.name == cityString } ?: return null
+      val cityName = document.getString("cityName") ?: return null
       val email = document.getString("email")
       val phone = document.getString("phone")
       val websiteString = document.getString("website")

@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.city.City
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
@@ -55,12 +54,11 @@ object HomePageScreenTestTags {
   const val SEARCH_BAR_TEXT_FIELD = "searchBarTextField"
   const val CITIES_LIST = "citiesList"
 
-  fun getTestTagForCityCard(cityName: CityName): String = "cityCard${cityName.name}"
+  fun getTestTagForCityCard(cityName: String): String = "cityCard${cityName}"
 
-  fun getTestTagForCityCardTitle(cityName: CityName): String = "cityCardTitle${cityName.name}"
+  fun getTestTagForCityCardTitle(cityName: String): String = "cityCardTitle${cityName}"
 
-  fun getTestTagForCityCardDescription(cityName: CityName): String =
-      "cityCardDescription${cityName.name}"
+  fun getTestTagForCityCardDescription(cityName: String): String = "cityCardDescription${cityName}"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,7 +123,7 @@ fun HomePageScreen(
               state = lazyState) {
                 items(uiState.cities.size) { index ->
                   val city = uiState.cities[index]
-                  if (city.name.value.contains(inputText, ignoreCase = true) ||
+                  if (city.name.contains(inputText, ignoreCase = true) ||
                       city.description.contains(inputText, ignoreCase = true)) {
                     CityCard(city = city, onClick = { onSelectCity(city) })
                     Spacer(modifier = Modifier.height(16.dp))
@@ -149,14 +147,14 @@ fun CityCard(city: City, onClick: () -> Unit) {
     Box {
       Image(
           painter = painterResource(city.imageId),
-          contentDescription = city.name.name,
+          contentDescription = city.name,
           contentScale = ContentScale.Crop,
           modifier = Modifier.fillMaxWidth().height(180.dp))
       Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(8.dp)) {
         Text(
             modifier =
                 Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardTitle(city.name)),
-            text = city.name.value,
+            text = city.name,
             color = Color.Black,
             fontWeight = FontWeight.Black,
             fontSize = 20.sp)

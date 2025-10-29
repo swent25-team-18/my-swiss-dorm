@@ -16,7 +16,7 @@ interface ResidenciesRepository {
    * @return The Residency item with the specified identifier.
    * @throws Exception if the Residency item is not found.
    */
-  suspend fun getResidency(residencyName: ResidencyName): Residency
+  suspend fun getResidency(residencyName: String): Residency
 
   suspend fun addResidency(residency: Residency)
 }

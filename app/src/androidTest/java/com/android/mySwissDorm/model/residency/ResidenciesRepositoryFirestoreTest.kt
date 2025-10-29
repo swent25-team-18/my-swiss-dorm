@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.model.residency
 
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -29,15 +28,15 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val residencyToAdd =
         Residency(
-            name = ResidencyName.VORTEX,
+            name = "Vortex",
             description = "Description of Vortex",
             location = Location(name = "Vortex", latitude = 2.0, longitude = 2.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@vortex.ch",
             phone = "+41 00 000 00 00",
             website = URL("https://www.fmel.ch/maison/vortex"))
     repo.addResidency(residencyToAdd)
-    assertEquals(residencyToAdd, repo.getResidency(ResidencyName.VORTEX))
+    assertEquals(residencyToAdd, repo.getResidency("Vortex"))
   }
 
   @Test
@@ -45,19 +44,19 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val residency1 =
         Residency(
-            name = ResidencyName.VORTEX,
+            name = "Vortex",
             description = "Description of Vortex",
             location = Location(name = "Vortex", latitude = 2.0, longitude = 2.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@vortex.ch",
             phone = "+41 00 000 00 00",
             website = URL("https://www.fmel.ch/maison/vortex"))
     val residency2 =
         Residency(
-            name = ResidencyName.ATRIUM,
+            name = "Atrium",
             description = "Description of Atrium",
             location = Location(name = "Atrium", latitude = 2.0, longitude = 2.0),
-            city = CityName.LAUSANNE,
+            city = "Lausanne",
             email = "email@atrium.ch",
             phone = "+41 00 000 00 00",
             website = URL("https://www.fmel.ch/maison/atrium"))
@@ -69,6 +68,6 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
   @Test
   fun getNonExistentResidencyFail() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    assertEquals(runCatching { repo.getResidency(ResidencyName.VORTEX) }.isFailure, true)
+    assertEquals(runCatching { repo.getResidency("Vortex") }.isFailure, true)
   }
 }

@@ -16,7 +16,7 @@ interface CitiesRepository {
    * @return The City item with the specified identifier.
    * @throws Exception if the City item is not found.
    */
-  suspend fun getCity(cityName: CityName): City
+  suspend fun getCity(cityName: String): City
 
   /**
    * Adds a new City item to the repository (primarily for test purposes).

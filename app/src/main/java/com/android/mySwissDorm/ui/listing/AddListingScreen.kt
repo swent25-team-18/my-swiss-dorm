@@ -19,12 +19,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.model.city.CityName
-import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.residency.ResidencyName
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
@@ -114,7 +111,8 @@ fun AddListingScreen(
               ResidencyDropdown(
                   selected = listingUIState.residency.name,
                   onSelected = { addListingViewModel.setResidency(it) },
-                  accentColor = accentColor)
+                  accentColor = accentColor,
+                  residencies = listingUIState.residencies)
 
               HousingTypeDropdown(
                   selected = listingUIState.housingType,
@@ -293,9 +291,10 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResidencyDropdown(
-    selected: ResidencyName?,
+    selected: String?,
     onSelected: (Residency) -> Unit,
-    accentColor: Color
+    accentColor: Color,
+    residencies: List<Residency>,
 ) {
   var expanded by remember { mutableStateOf(false) }
   val label = selected?.toString() ?: "Select residency"
@@ -317,19 +316,11 @@ fun ResidencyDropdown(
         modifier = Modifier.menuAnchor().fillMaxWidth(),
     )
     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-      ResidencyName.entries.forEach { type ->
+      residencies.forEach { residency ->
         DropdownMenuItem(
-            text = { Text(type.toString()) },
+            text = { Text(residency.name) },
             onClick = {
-              onSelected(
-                  Residency(
-                      name = type,
-                      description = "",
-                      location = Location(name = "", latitude = 0.0, longitude = 0.0),
-                      city = CityName.LAUSANNE,
-                      email = "",
-                      phone = "",
-                      website = null))
+              onSelected(residency)
               expanded = false
             })
       }

@@ -15,7 +15,6 @@ import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.city.City
-import com.android.mySwissDorm.model.city.CityName
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -63,26 +62,26 @@ class Epic1Test : FirestoreTest() {
 
     val cityLausanne =
         City(
-            name = CityName.LAUSANNE,
+            name = "Lausanne",
             description =
                 "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.",
             location = Location(name = "Lausanne", latitude = 46.5197, longitude = 6.6323),
             imageId = R.drawable.lausanne)
     val cityGeneva =
         City(
-            name = CityName.GENEVA,
+            name = "Geneva",
             description = "Geneva is a global city, hosting numerous international organizations.",
             location = Location(name = "Geneva", latitude = 46.2044, longitude = 6.1432),
             imageId = R.drawable.geneve)
     val cityZurich =
         City(
-            name = CityName.ZURICH,
+            name = "Zurich",
             description = "Zurich is the largest city in Switzerland and a major financial hub.",
             location = Location(name = "Zürich", latitude = 47.3769, longitude = 8.5417),
             imageId = R.drawable.zurich)
     val cityFribourg =
         City(
-            name = CityName.FRIBOURG,
+            name = "Fribourg",
             description = "Fribourg is a bilingual city famous for its medieval architecture.",
             location = Location(name = "Fribourg", latitude = 46.8065, longitude = 7.16197),
             imageId = R.drawable.fribourg)
@@ -212,7 +211,7 @@ class Epic1Test : FirestoreTest() {
         }
         // Go to Lausanne's listings
         composeTestRule
-            .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(CityName.LAUSANNE))
+            .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
             .performScrollTo()
             .performClick()
         composeTestRule.waitUntil(5_000) {

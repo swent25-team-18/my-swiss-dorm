@@ -20,15 +20,15 @@ class CitiesRepositoryFirestore(private val db: FirebaseFirestore) : CitiesRepos
     }
   }
 
-  override suspend fun getCity(cityName: CityName): City {
-    val doc = db.collection(CITIES_COLLECTION_PATH).document(cityName.value).get().await()
+  override suspend fun getCity(cityName: String): City {
+    val doc = db.collection(CITIES_COLLECTION_PATH).document(cityName).get().await()
     return documentToCity(doc) ?: throw Exception("CitiesRepositoryFirestore: City not found")
   }
 
   override suspend fun addCity(city: City) {
     val cityData =
         mapOf(
-            "name" to city.name.name,
+            "name" to city.name,
             "description" to city.description,
             "location" to
                 mapOf(
@@ -36,13 +36,12 @@ class CitiesRepositoryFirestore(private val db: FirebaseFirestore) : CitiesRepos
                     "latitude" to city.location.latitude,
                     "longitude" to city.location.longitude),
             "imageId" to city.imageId)
-    db.collection(CITIES_COLLECTION_PATH).document(city.name.value).set(cityData).await()
+    db.collection(CITIES_COLLECTION_PATH).document(city.name).set(cityData).await()
   }
 
   private fun documentToCity(document: DocumentSnapshot): City? {
     return try {
-      val nameString = document.getString("name") ?: return null
-      val name = enumValues<CityName>().firstOrNull { it.name == nameString } ?: return null
+      val name = document.getString("name") ?: return null
       val description = document.getString("description") ?: return null
       val locationData = document.get("location") as? Map<*, *>
       val location =

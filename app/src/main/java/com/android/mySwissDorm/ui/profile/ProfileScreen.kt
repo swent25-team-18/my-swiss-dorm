@@ -231,7 +231,7 @@ private fun ProfileScreenContent(
                   enabled = state.isEditing,
                   modifier = Modifier.fillMaxWidth(),
                   tag = "field_residence",
-                  options = remember { state.allResidencies })
+                  options = state.allResidencies.map { it.name })
 
               // Bottom action area: Save (edit mode) or Logout (view mode)
               if (state.isEditing) {

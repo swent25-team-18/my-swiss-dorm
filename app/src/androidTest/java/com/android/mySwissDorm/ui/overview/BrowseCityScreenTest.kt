@@ -141,7 +141,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   @Test
   fun emptyState_showsNoListingsYet() = run {
     runTest { switchToUser(FakeUser.FakeUser1) }
-    compose.setContent { BrowseCityScreen(cityName = "Zurich") } // no data created for Zurich
+    compose.setContent { BrowseCityScreen(cityName = "Geneva") } // no data created for Geneva
     compose.waitForIdle()
 
     compose.onNodeWithTag(C.BrowseCityTags.EMPTY).assertIsDisplayed()

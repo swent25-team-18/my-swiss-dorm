@@ -18,9 +18,13 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import java.net.URL
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -106,7 +110,21 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun editToggle_enablesFields_save_writes_to_firestore() = runTest {
+    val repo = ResidenciesRepositoryProvider.repository
+    repo.addResidency(
+        Residency(
+            name = "Atrium",
+            description = "",
+            location = Location("", 0.0, 0.0),
+            city = "",
+            email = null,
+            phone = null,
+            website = URL("https://www.google.com")))
+    compose.waitForIdle()
+    ResidenciesRepositoryProvider.repository = repo
+    compose.waitForIdle()
     compose.setContent { ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}) }
+    compose.waitForIdle()
 
     // Enter edit mode
     compose.onNodeWithTag("profile_edit_toggle").performClick()
@@ -147,6 +165,8 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
     // Save
     compose.onNodeWithTag("profile_save_button").performClick()
+
+    compose.waitForIdle()
 
     // After save, back to view mode (Logout visible)
     compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_logout_button"))

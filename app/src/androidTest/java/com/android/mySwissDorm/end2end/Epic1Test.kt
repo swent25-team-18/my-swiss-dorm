@@ -199,13 +199,9 @@ class Epic1Test : FirestoreTest() {
             .onNodeWithTag(C.Tag.PROFILE_SCREEN_BACK_BUTTON)
             .assertIsDisplayed()
             .performClick()
-        composeTestRule.waitUntil(5_000) {
-          composeTestRule
-              .onNodeWithTag(SettingsTestTags.BackButton, useUnmergedTree = true)
-              .isDisplayed()
-        }
+
         // Go back to homepage
-        composeTestRule.onNodeWithTag(SettingsTestTags.BackButton).performClick()
+        composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).performClick()
         composeTestRule.waitUntil(5_000) {
           composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
         }

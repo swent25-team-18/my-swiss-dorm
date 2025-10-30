@@ -4,7 +4,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Rule
 import org.junit.Test
@@ -63,20 +62,6 @@ class SettingsScreenTest {
     composeTestRule
         .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
         .assertExists()
-  }
-
-  @Test
-  fun backButton_triggersOnGoBackCallback() {
-    val onGoBackCalled = AtomicBoolean(false)
-    composeTestRule.setContent {
-      MySwissDormAppTheme { SettingsScreen(onGoBack = { onGoBackCalled.set(true) }) }
-    }
-    composeTestRule.waitForIdle()
-
-    composeTestRule
-        .onNodeWithTag(SettingsTestTags.BackButton, useUnmergedTree = true)
-        .performClick()
-    assert(onGoBackCalled.get()) { "onGoBack callback was not called." }
   }
 
   @Test

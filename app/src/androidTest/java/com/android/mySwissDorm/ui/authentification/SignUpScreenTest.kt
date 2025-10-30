@@ -480,7 +480,7 @@ class SignUpScreenTest : FirestoreTest() {
       signUpButton.performClick()
     }
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(5_000) { connected.value }
+    composeTestRule.waitUntil(10_000) { connected.value }
     connected.value = false
 
     ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
@@ -492,7 +492,7 @@ class SignUpScreenTest : FirestoreTest() {
       signUpButton.performClick()
     }
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(5_000) { connected.value }
+    composeTestRule.waitUntil(10_000) { connected.value }
     val userId = FirebaseEmulator.auth.uid ?: throw NoSuchElementException()
     val expectedProfile =
         Profile(

@@ -39,9 +39,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @Before
   override fun setUp() {
-    super.setUp()
-
     runTest {
+      super.setUp()
       // two users + profiles
       switchToUser(FakeUser.FakeUser1)
       ownerUid = FirebaseEmulator.auth.currentUser!!.uid
@@ -102,8 +101,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   // ——————————————— Tests ———————————————
 
   @Test
-  fun loadsFromFirestore_filtersByCity_displaysOnlyLausanne() = run {
-    runTest { switchToUser(FakeUser.FakeUser1) }
+  fun loadsFromFirestore_filtersByCity_displaysOnlyLausanne() = runTest {
+    switchToUser(FakeUser.FakeUser1)
 
     compose.setContent { BrowseCityScreen(cityName = "Lausanne", onSelectListing = {}) }
     compose.waitForIdle()
@@ -115,9 +114,9 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun clickingCard_callsOnSelectListing_withCorrectUid() = run {
+  fun clickingCard_callsOnSelectListing_withCorrectUid() = runTest {
     val clicked = mutableStateOf<ListingCardUI?>(null)
-    runTest { switchToUser(FakeUser.FakeUser1) }
+    switchToUser(FakeUser.FakeUser1)
 
     compose.setContent {
       BrowseCityScreen(cityName = "Lausanne", onSelectListing = { clicked.value = it })
@@ -129,8 +128,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun switchingToReviews_showsPlaceholder() = run {
-    runTest { switchToUser(FakeUser.FakeUser1) }
+  fun switchingToReviews_showsPlaceholder() = runTest {
+    switchToUser(FakeUser.FakeUser1)
     compose.setContent { BrowseCityScreen(cityName = "Lausanne") }
     compose.waitForIdle()
 
@@ -139,17 +138,29 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun emptyState_showsNoListingsYet() = run {
-    runTest { switchToUser(FakeUser.FakeUser1) }
-    compose.setContent { BrowseCityScreen(cityName = "Geneva") } // no data created for Geneva
-    compose.waitForIdle()
+  fun emptyState_showsNoListingsYet() = runTest {
+    switchToUser(FakeUser.FakeUser1)
 
-    compose.onNodeWithTag(C.BrowseCityTags.EMPTY).assertIsDisplayed()
-    compose.onNodeWithText("No listings yet.").assertIsDisplayed()
+    compose.setContent { BrowseCityScreen(cityName = "Geneva") } // no Geneva data
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.ROOT, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.EMPTY, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.onNodeWithTag(C.BrowseCityTags.EMPTY, useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("No listings yet.", useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
-  fun topBar_updatesWhenCityChanges() = run {
+  fun topBar_updatesWhenCityChanges() = runTest {
     var city by mutableStateOf("Lausanne")
 
     compose.setContent { BrowseCityScreen(cityName = city) }
@@ -167,7 +178,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun errorState_displaysError() = run {
+  fun errorState_displaysError() = runTest {
     class ThrowingRepo : RentalListingRepository {
       override fun getNewUid(): String = "x"
 
@@ -203,7 +214,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun backButton_invokesCallback() {
+  fun backButton_invokesCallback() = runTest {
     var back = false
     compose.setContent { BrowseCityScreen(cityName = "Lausanne", onGoBack = { back = true }) }
     compose.onNodeWithTag(C.BrowseCityTags.BACK_BUTTON).performClick()

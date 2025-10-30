@@ -46,10 +46,6 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
           areaInM2 = 32,
           imageUrls = emptyList())
 
-  val editedReview = review1.copy(title = "Modified Title", grade = 3.0)
-
-  val allReviews = listOf(review1, review2)
-
   @Before
   override fun setUp() {
     super.setUp()
@@ -71,13 +67,29 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   @Test
   fun canAddAndGetReviewFromRepository() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    repo.addReview(review1)
-    assertEquals(review1, repo.getReview(review1.uid))
+    val reviewToAdd =
+        review1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.addReview(reviewToAdd)
+    assertEquals(reviewToAdd, repo.getReview(reviewToAdd.uid))
   }
 
   @Test
   fun getAllReviewsWorks() = runTest {
     switchToUser(FakeUser.FakeUser1)
+    val firstReview =
+        review1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    val secondReview =
+        review1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    val allReviews = listOf(firstReview, secondReview)
     allReviews.forEach { repo.addReview(it) }
     assertEquals(allReviews.toSet(), repo.getAllReviews().toSet())
   }
@@ -85,24 +97,51 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   @Test
   fun editReviewWorks() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    repo.addReview(review1)
-    assertEquals(true, runCatching { repo.editReview(review1.uid, editedReview) }.isSuccess)
-    assertEquals(editedReview, repo.getReview(review1.uid))
+    val review =
+        review1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    val editedReview =
+        review.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"),
+            title = "Modified Title",
+            grade = 3.0)
+    repo.addReview(review)
+    assertEquals(true, runCatching { repo.editReview(review.uid, editedReview) }.isSuccess)
+    assertEquals(editedReview, repo.getReview(review.uid))
   }
 
   @Test
   fun editReviewButDifferentUidFails() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    repo.addReview(review1)
-    assertEquals(true, runCatching { repo.editReview(review1.uid, review2) }.isFailure)
+    val firstReview =
+        review1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    val secondReview =
+        review2.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.addReview(firstReview)
+    assertEquals(true, runCatching { repo.editReview(firstReview.uid, secondReview) }.isFailure)
   }
 
   @Test
   fun deleteReviewWorks() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    repo.addReview(review1)
-    assertEquals(true, runCatching { repo.getReview(review1.uid) }.isSuccess)
-    repo.deleteReview(review1.uid)
-    assertEquals(true, runCatching { repo.getReview(review1.uid) }.isFailure)
+    val review =
+        review1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.addReview(review)
+    assertEquals(true, runCatching { repo.getReview(review.uid) }.isSuccess)
+    repo.deleteReview(review.uid)
+    assertEquals(true, runCatching { repo.getReview(review.uid) }.isFailure)
   }
 }

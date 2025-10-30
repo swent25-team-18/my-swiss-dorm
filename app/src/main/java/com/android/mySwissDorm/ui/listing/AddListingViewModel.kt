@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.listing
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.Location
@@ -80,43 +79,6 @@ class AddListingViewModel(
   /** Sets an error message in the UI state. */
   private fun setErrorMsg(errorMsg: String) {
     _uiState.value = _uiState.value.copy(errorMsg = errorMsg)
-  }
-
-  // Validation logic
-  private fun addRentalListingToRepository(rentalListing: RentalListing) {
-    viewModelScope.launch {
-      try {
-        repository.addRentalListing(rentalListing)
-      } catch (e: Exception) {
-        Log.e("AddToDoViewModel", "Error adding ToDo", e)
-        setErrorMsg("Failed to add rental listing: ${e.message}")
-      }
-    }
-  }
-
-  fun addRentalListingState(): Boolean {
-    val state = _uiState.value
-    if (!state.isFormValid) {
-      setErrorMsg("At least one field is not valid")
-      return false
-    }
-    val uid = Firebase.auth.currentUser?.uid ?: "User not logged in"
-    addRentalListingToRepository(
-        RentalListing(
-            uid = repository.getNewUid(),
-            ownerId = uid,
-            postedAt = Timestamp.now(),
-            residency = state.residency,
-            title = state.title,
-            roomType = state.housingType,
-            pricePerMonth = state.price.toDouble(),
-            areaInM2 = state.sizeSqm.toInt(),
-            startDate = state.startDate,
-            description = state.description,
-            imageUrls = emptyList(), // Image upload not implemented yet
-            status = RentalStatus.POSTED))
-    clearErrorMsg()
-    return true
   }
 
   fun setTitle(title: String) {

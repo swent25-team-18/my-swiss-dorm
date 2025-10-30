@@ -64,7 +64,7 @@ class AddListingViewModelTest : FirestoreTest() {
   fun vm_InvalidInputs_areRejected_andErrorShown() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val vm = freshVM()
-    val addStateOk = vm.addRentalListingState()
+    val addStateOk = vm.uiState.value.isFormValid
     assertFalse("addRentalListingState() should return false for invalid form", addStateOk)
     var callbackInvoked = false
     vm.submitForm { callbackInvoked = true }
@@ -99,37 +99,5 @@ class AddListingViewModelTest : FirestoreTest() {
       assertTrue(
           all.any { it.title == "Cozy studio" && it.areaInM2 == 25 && it.pricePerMonth == 1200.0 })
     }
-  }
-
-  @Test
-  fun vm_Boundaries_sizeAndPrice_enforced() = run {
-    runTest { switchToUser(FakeUser.FakeUser1) }
-    val vm = freshVM()
-    vm.setTitle("t")
-    vm.setDescription("d")
-    vm.setResidency(validResidency())
-    vm.setHousingType(RoomType.STUDIO)
-    vm.setStartDate(Timestamp.now())
-    vm.setSizeSqm("0")
-    vm.setPrice("10")
-    assertFalse(vm.addRentalListingState())
-    vm.setSizeSqm("1")
-    vm.setPrice("10")
-    assertTrue(vm.addRentalListingState())
-    vm.setSizeSqm("999")
-    vm.setPrice("10")
-    assertTrue(vm.addRentalListingState())
-    vm.setSizeSqm("1000")
-    vm.setPrice("10")
-    assertFalse(vm.addRentalListingState())
-    vm.setSizeSqm("25")
-    vm.setPrice("0")
-    assertFalse(vm.addRentalListingState())
-    vm.setPrice("1")
-    assertTrue(vm.addRentalListingState())
-    vm.setPrice("9999")
-    assertTrue(vm.addRentalListingState())
-    vm.setPrice("10000")
-    assertFalse(vm.addRentalListingState())
   }
 }

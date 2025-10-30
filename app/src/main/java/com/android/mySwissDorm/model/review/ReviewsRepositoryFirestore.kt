@@ -53,9 +53,9 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
           RoomType.entries.firstOrNull { it.name == roomTypeString || it.value == roomTypeString }
               ?: return null // will take the value if its in the num otherwise null for safety
       val pricePerMonth = document.getDouble("pricePerMonth") ?: return null
-      val areaInM2 = document.get("areaInM2") as? Int ?: return null
+      val areaInM2 = (document.getDouble("areaInM2") ?: return null).toInt()
       val imageUrls =
-          (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+          (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: return null
 
       return Review(
           uid = uid,

@@ -12,6 +12,14 @@ interface ReviewsRepository {
   suspend fun getAllReviews(): List<Review>
 
   /**
+   * Retrieves all Review created by a specific user from the repository.
+   *
+   * @param userId The unique identifier of the user whose review to retrieve.
+   * @return A list of all Reviews created by the specified user.
+   */
+  suspend fun getAllReviewsByUser(userId: String): List<Review>
+
+  /**
    * Retrieves a specific Review by its unique identifier.
    *
    * @param reviewId The unique identifier of the review item to retrieve.

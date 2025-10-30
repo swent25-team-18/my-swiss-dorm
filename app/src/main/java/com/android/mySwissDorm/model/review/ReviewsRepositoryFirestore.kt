@@ -9,12 +9,24 @@ import kotlinx.coroutines.tasks.await
 const val REVIEWS_COLLECTION_PATH = "reviews"
 
 class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRepository {
+
+  private val ownerAttributeName = "ownerId"
+
   override fun getNewUid(): String {
     return db.collection(REVIEWS_COLLECTION_PATH).document().id
   }
 
   override suspend fun getAllReviews(): List<Review> {
     val snapshot = db.collection(REVIEWS_COLLECTION_PATH).get().await()
+    return snapshot.mapNotNull { documentToReview(it) }
+  }
+
+  override suspend fun getAllReviewsByUser(userId: String): List<Review> {
+    val snapshot =
+        db.collection(REVIEWS_COLLECTION_PATH)
+            .whereEqualTo(ownerAttributeName, userId)
+            .get()
+            .await()
     return snapshot.mapNotNull { documentToReview(it) }
   }
 

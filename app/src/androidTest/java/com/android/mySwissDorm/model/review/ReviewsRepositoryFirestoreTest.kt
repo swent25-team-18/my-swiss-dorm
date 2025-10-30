@@ -21,7 +21,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   val review1 =
       Review(
           uid = repo.getNewUid(),
-          ownerId = "ownerId",
+          ownerId = "",
           postedAt = Timestamp.now(),
           title = "First Title",
           reviewText = "My first review",
@@ -35,7 +35,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   val review2 =
       Review(
           uid = repo.getNewUid(),
-          ownerId = "ownerId2",
+          ownerId = "",
           postedAt = Timestamp.now(),
           title = "Second Title",
           reviewText = "My second review",
@@ -44,6 +44,20 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
           roomType = RoomType.APARTMENT,
           pricePerMonth = 500.0,
           areaInM2 = 32,
+          imageUrls = emptyList())
+
+  val review3 =
+      Review(
+          uid = repo.getNewUid(),
+          ownerId = "",
+          postedAt = Timestamp.now(),
+          title = "Third Title",
+          reviewText = "My third review",
+          grade = 2.0,
+          residencyName = "Vortex",
+          roomType = RoomType.COLOCATION,
+          pricePerMonth = 100.0,
+          areaInM2 = 16,
           imageUrls = emptyList())
 
   @Before
@@ -92,6 +106,27 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     val allReviews = listOf(firstReview, secondReview)
     allReviews.forEach { repo.addReview(it) }
     assertEquals(allReviews.toSet(), repo.getAllReviews().toSet())
+  }
+
+  @Test
+  fun getAllReviewsByUserWorks() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val firstUserId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val firstReview = review1.copy(ownerId = firstUserId)
+    val secondReview = review2.copy(ownerId = firstUserId)
+    repo.addReview(firstReview)
+    repo.addReview(secondReview)
+
+    switchToUser(FakeUser.FakeUser2)
+    val secondUserId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val thirdReview = review3.copy(ownerId = secondUserId)
+    repo.addReview(thirdReview)
+
+    switchToUser(FakeUser.FakeUser1)
+    assertEquals(
+        listOf(firstReview, secondReview).toSet(), repo.getAllReviewsByUser(firstUserId).toSet())
   }
 
   @Test

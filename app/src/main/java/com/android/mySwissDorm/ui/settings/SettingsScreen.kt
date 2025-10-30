@@ -305,6 +305,20 @@ fun SettingsScreenContent(
                                 }
                           }
                         }
+
+                        // ---- Accessibility ---------------------------------------------------
+                        SectionLabel("Accessibility")
+                        CardBlock {
+                          SettingSwitchRow(
+                              label = "Night Shift",
+                              checked = notificationsMessages,
+                              onCheckedChange = { notificationsMessages = it })
+                          SoftDivider()
+                          SettingSwitchRow(
+                              label = "Anonymous",
+                              checked = notificationsListings,
+                              onCheckedChange = { notificationsListings = it })
+                        }
                       }
                     }
 

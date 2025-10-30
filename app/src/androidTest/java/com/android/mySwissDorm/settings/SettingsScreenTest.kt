@@ -138,13 +138,42 @@ class SettingsScreenTest {
     composeTestRule
         .onNodeWithTag(SettingsTestTags.DeleteAccountButton, useUnmergedTree = true)
         .assertIsDisplayed()
-    // Some emulators are picky; if tap fails, try click + press:
-    composeTestRule
-        .onNodeWithTag(SettingsTestTags.DeleteAccountButton, useUnmergedTree = true)
         .performClick()
 
     composeTestRule.onNodeWithText("Delete account?").assertExists()
     composeTestRule.onNodeWithText("Cancel").performClick()
     composeTestRule.onNodeWithText("Delete account?").assertDoesNotExist()
+  }
+
+  // ---------- NEW: Accessibility section ----------
+
+  @Test
+  fun accessibilitySwitches_toggleStateCorrectly() {
+    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    composeTestRule.waitForIdle()
+
+    val scrollTag = SettingsTestTags.SettingsScroll
+    val nightShiftTag = SettingsTestTags.switch("Night Shift")
+    val anonymousTag = SettingsTestTags.switch("Anonymous")
+
+    // Night Shift starts On (reuses notificationsMessages = true)
+    composeTestRule.scrollUntilDisplayed(scrollTag, nightShiftTag)
+    composeTestRule
+        .onNodeWithTag(nightShiftTag, useUnmergedTree = true)
+        .assert(hasStateDescription("On"))
+        .performClick()
+    composeTestRule
+        .onNodeWithTag(nightShiftTag, useUnmergedTree = true)
+        .assert(hasStateDescription("Off"))
+
+    // Anonymous starts Off (reuses notificationsListings = false)
+    composeTestRule.scrollUntilDisplayed(scrollTag, anonymousTag)
+    composeTestRule
+        .onNodeWithTag(anonymousTag, useUnmergedTree = true)
+        .assert(hasStateDescription("Off"))
+        .performClick()
+    composeTestRule
+        .onNodeWithTag(anonymousTag, useUnmergedTree = true)
+        .assert(hasStateDescription("On"))
   }
 }

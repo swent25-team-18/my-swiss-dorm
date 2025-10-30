@@ -4,9 +4,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.*
@@ -45,9 +47,9 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
   @Before
   override fun setUp() {
-    super.setUp()
     // Prepare two users in the emulator and capture their UIDs
     runTest {
+      super.setUp()
       switchToUser(FakeUser.FakeUser1)
       ownerUid = FirebaseEmulator.auth.currentUser!!.uid
       profileRepo.createProfile(profile1.copy(ownerId = ownerUid))
@@ -58,20 +60,18 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
       // back to owner for the rest of set up
       switchToUser(FakeUser.FakeUser1)
-    }
 
-    // Write minimal but valid profiles with the real repo
-    runTest {}
+      // Create two listings via the real repo (one per user)
+      ownerListing = rentalListing1.copy(ownerId = ownerUid)
+      otherListing = rentalListing2.copy(ownerId = otherUid)
 
-    // Create two listings via the real repo (one per user)
-    ownerListing = rentalListing1.copy(ownerId = ownerUid)
-    otherListing = rentalListing2.copy(ownerId = otherUid)
-
-    runTest {
       switchToUser(FakeUser.FakeUser1)
       listingsRepo.addRentalListing(ownerListing)
       switchToUser(FakeUser.FakeUser2)
       listingsRepo.addRentalListing(otherListing)
+
+      // Default to owner user for tests; individual tests can switch as needed
+      switchToUser(FakeUser.FakeUser1)
     }
   }
 
@@ -80,24 +80,41 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     super.tearDown()
   }
 
+  /** Wait until the screen root exists (first composition done). */
+  private fun waitForScreenRoot() {
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.ViewListingTags.ROOT, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+  }
+
+  /** Scroll inside the list/root to reveal a child with [childTag]. */
+  private fun scrollListTo(childTag: String) {
+    compose.onNodeWithTag(C.ViewListingTags.ROOT).performScrollToNode(hasTestTag(childTag))
+  }
+
   // -------------------- TESTS --------------------
 
   @Test
-  fun nonOwner_showsContactAndApply_enablesAfterTyping() = run {
-    // Log in as owner but open OTHER user's listing -> non-owner branch
-    runTest { switchToUser(FakeUser.FakeUser1) }
-
+  fun nonOwner_showsContactAndApply_enablesAfterTyping() = runTest {
     compose.setContent {
       val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
-    compose.waitForIdle()
+    waitForScreenRoot()
 
     compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).performScrollTo().assertIsDisplayed()
+
+    scrollListTo(C.ViewListingTags.CONTACT_FIELD)
+    compose
+        .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD, useUnmergedTree = true)
+        .assertIsDisplayed()
 
     // Apply disabled until user types
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).performScrollTo().assertIsNotEnabled()
+    scrollListTo(C.ViewListingTags.APPLY_BTN)
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN, useUnmergedTree = true).assertIsNotEnabled()
     compose
         .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD)
         .performTextInput("Hello! I'm interested.")
@@ -105,37 +122,38 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun owner_showsOnlyEdit() = run {
-    // Log in as owner and open his own listing -> owner branch
-    runTest { switchToUser(FakeUser.FakeUser1) }
-
+  fun owner_showsOnlyEdit() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
-      val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
     }
-    compose.waitForIdle()
-
+    waitForScreenRoot()
     compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN).performScrollTo().assertIsDisplayed()
+
+    compose.waitUntil(5_000) { vm.uiState.value.isOwner }
+
+    scrollListTo(C.ViewListingTags.EDIT_BTN)
+    compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN, useUnmergedTree = true).assertIsDisplayed()
+
     compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
     compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).assertDoesNotExist()
   }
 
   @Test
-  fun canScrollToBottomButton() = run {
-    runTest { switchToUser(FakeUser.FakeUser1) }
-
+  fun canScrollToBottomButton() = runTest {
     compose.setContent {
       val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
-    compose.waitForIdle()
+    waitForScreenRoot()
 
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).performScrollTo().assertIsDisplayed()
+    scrollListTo(C.ViewListingTags.APPLY_BTN)
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN, useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
-  fun repositoryError_callsOnGoBack() = run {
+  fun repositoryError_callsOnGoBack() = runTest {
     var navigatedBack = false
 
     compose.setContent {
@@ -151,47 +169,61 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun applyButton_disabledWhenWhitespaceOnly() = run {
-    runTest { switchToUser(FakeUser.FakeUser1) }
-
+  fun applyButton_disabledWhenWhitespaceOnly() = runTest {
     compose.setContent {
       val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
-    compose.waitForIdle()
+    waitForScreenRoot()
 
-    compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).performScrollTo().performTextInput("   ")
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertIsNotEnabled()
+    scrollListTo(C.ViewListingTags.CONTACT_FIELD)
+    compose
+        .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD, useUnmergedTree = true)
+        .performTextInput("   ")
+
+    scrollListTo(C.ViewListingTags.APPLY_BTN)
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN, useUnmergedTree = true).assertIsNotEnabled()
   }
 
   @Test
-  fun viewModel_setContactMessage_updatesState() = run {
-    runTest { switchToUser(FakeUser.FakeUser1) }
+  fun viewModel_setContactMessage_updatesState() = runTest {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
 
     compose.setContent {
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
+    waitForScreenRoot()
 
     compose.runOnIdle { vm.setContactMessage("Testing message") }
-    compose.waitForIdle()
+    compose.waitUntil(3_000) {
+      // Ensure field exists and contains the text
+      compose
+          .onAllNodesWithTag(C.ViewListingTags.CONTACT_FIELD, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
+    scrollListTo(C.ViewListingTags.CONTACT_FIELD)
     compose
-        .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD)
-        .performScrollTo()
+        .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextContains("Testing message", substring = true)
   }
 
   @Test
-  fun postedBy_displaysYouWhenOwner() = run {
-    runTest { switchToUser(FakeUser.FakeUser1) }
+  fun postedBy_displaysYouWhenOwner() = runTest {
+    switchToUser(FakeUser.FakeUser1)
 
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
-      val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
     }
-    compose.waitForIdle()
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == ownerListing.uid && s.isOwner && s.fullNameOfPoster.isNotBlank()
+    }
 
     compose
         .onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true)

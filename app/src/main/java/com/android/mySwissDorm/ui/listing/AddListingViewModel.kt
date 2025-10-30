@@ -100,11 +100,6 @@ class AddListingViewModel(
     }
   }
 
-  //    fun getResidencies(): List<Residency> {
-  //        var residencyList = listOf<Residency>()
-  //        viewModelScope.launch { residencyList = getResidencies() }
-  //        return residencyList
-  //    }
   init {
     loadResidencies()
   }

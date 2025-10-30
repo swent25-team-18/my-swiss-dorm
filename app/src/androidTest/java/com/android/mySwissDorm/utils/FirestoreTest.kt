@@ -14,7 +14,6 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import java.lang.NullPointerException
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 
@@ -105,7 +104,6 @@ abstract class FirestoreTest : TestCase() {
 
   @After
   open fun tearDown() {
-    runTest { clearTestCollection() }
     FirebaseEmulator.clearFirestoreEmulator()
     auth.signOut()
     FirebaseEmulator.clearAuthEmulator()

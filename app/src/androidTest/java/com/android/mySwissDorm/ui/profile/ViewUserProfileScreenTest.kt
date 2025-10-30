@@ -38,8 +38,8 @@ class ViewUserProfileScreenTest : FirestoreTest() {
 
   @Before
   override fun setUp() {
-    super.setUp()
     runTest {
+      super.setUp()
       switchToUser(FakeUser.FakeUser1)
       ownerUid = FirebaseEmulator.auth.currentUser!!.uid
       // profile1 fixture comes from FirestoreTest
@@ -48,7 +48,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun elements_areDisplayed_and_scrollable_sections_work() {
+  fun elements_areDisplayed_and_scrollable_sections_work() = runTest {
     // Use previewUi to bypass the real ViewModel + async loading
     compose.setContent {
       ViewUserProfileScreen(
@@ -85,13 +85,10 @@ class ViewUserProfileScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun repositoryError_showsError_andRetryReloadsAfterProfileAppears() = run {
+  fun repositoryError_showsError_andRetryReloadsAfterProfileAppears() = runTest {
     // Use a real user as the "missing" id (FakeUser2)
-    lateinit var missingId: String
-    runTest {
-      switchToUser(FakeUser.FakeUser2)
-      missingId = FirebaseEmulator.auth.currentUser!!.uid
-    }
+    switchToUser(FakeUser.FakeUser2)
+    val missingId = FirebaseEmulator.auth.currentUser!!.uid
 
     compose.setContent {
       val vm = ViewProfileScreenViewModel(profileRepo)
@@ -113,10 +110,8 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     compose.onNodeWithTag(T.RETRY_BTN).assertIsDisplayed()
 
     // Now create that profile WHILE SIGNED IN AS THE SAME USER
-    runTest {
-      switchToUser(FakeUser.FakeUser2)
-      profileRepo.createProfile(profile1.copy(ownerId = missingId))
-    }
+    switchToUser(FakeUser.FakeUser2)
+    profileRepo.createProfile(profile1.copy(ownerId = missingId))
 
     // Retry should now load successfully
     compose.onNodeWithTag(T.RETRY_BTN).performClick()
@@ -128,7 +123,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun backButton_invokesCallback() = run {
+  fun backButton_invokesCallback() = runTest {
     var back = false
 
     compose.setContent {
@@ -145,7 +140,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun previewUi_renders_withoutLoading_andDoesNotSend() = run {
+  fun previewUi_renders_withoutLoading_andDoesNotSend() = runTest {
     var send = false
 
     compose.setContent {
@@ -201,7 +196,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun retry_withoutFix_keepsError() = run {
+  fun retry_withoutFix_keepsError() = runTest {
     val missingId = "missing-" + java.util.UUID.randomUUID().toString()
 
     compose.setContent {

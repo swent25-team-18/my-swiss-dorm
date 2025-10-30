@@ -79,7 +79,7 @@ class CameraButtonTest {
   fun testClickedTakePictureFail() {
     val notClicked = mutableStateOf(true)
     composeTestRule.setContent {
-      CameraButton(
+      DefaultCameraButton(
           onSave = { notClicked.value = false },
           takePictureContract = FakeTakePictureContract.failure())
     }

@@ -45,9 +45,8 @@ import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.city.City
-import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
+import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
-import com.android.mySwissDorm.ui.navigation.Screen
 
 object HomePageScreenTestTags {
   const val SEARCH_BAR = "searchBar"
@@ -77,61 +76,57 @@ fun HomePageScreen(
     uiState.errorMsg?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
   }
 
-  Scaffold(
-      bottomBar = {
-        BottomNavigationMenu(
-            selectedScreen = Screen.Homepage, onTabSelected = { navigationActions?.navigateTo(it) })
-      }) { paddingValues ->
-        var inputText by remember { mutableStateOf("") }
-        Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-          Box(
-              modifier =
-                  Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR)
-                      .fillMaxWidth()
-                      .wrapContentHeight(),
-              contentAlignment = Alignment.Center) {
-                TextField(
-                    modifier =
-                        Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp, horizontal = 32.dp)
-                            .border(2.dp, Color.Black, RoundedCornerShape(20.dp)),
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    placeholder = { Text("Browse", fontSize = 18.sp) },
-                    leadingIcon = {
-                      Icon(
-                          Icons.Default.Search,
-                          modifier = Modifier.size(30.dp),
-                          contentDescription = "Search",
-                          tint = com.android.mySwissDorm.ui.theme.PalePink)
-                    },
-                    singleLine = true,
-                    colors =
-                        TextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent))
+  Scaffold(bottomBar = { BottomBarFromNav(navigationActions) }) { paddingValues ->
+    var inputText by remember { mutableStateOf("") }
+    Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+      Box(
+          modifier =
+              Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR)
+                  .fillMaxWidth()
+                  .wrapContentHeight(),
+          contentAlignment = Alignment.Center) {
+            TextField(
+                modifier =
+                    Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp, horizontal = 32.dp)
+                        .border(2.dp, Color.Black, RoundedCornerShape(20.dp)),
+                value = inputText,
+                onValueChange = { inputText = it },
+                placeholder = { Text("Browse", fontSize = 18.sp) },
+                leadingIcon = {
+                  Icon(
+                      Icons.Default.Search,
+                      modifier = Modifier.size(30.dp),
+                      contentDescription = "Search",
+                      tint = com.android.mySwissDorm.ui.theme.PalePink)
+                },
+                singleLine = true,
+                colors =
+                    TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent))
+          }
+      LazyColumn(
+          modifier =
+              Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
+                  .fillMaxWidth()
+                  .padding(horizontal = 32.dp)
+                  .padding(top = 10.dp),
+          state = lazyState) {
+            items(uiState.cities.size) { index ->
+              val city = uiState.cities[index]
+              if (city.name.contains(inputText, ignoreCase = true) ||
+                  city.description.contains(inputText, ignoreCase = true)) {
+                CityCard(city = city, onClick = { onSelectCity(city) })
+                Spacer(modifier = Modifier.height(16.dp))
               }
-          LazyColumn(
-              modifier =
-                  Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
-                      .fillMaxWidth()
-                      .padding(horizontal = 32.dp)
-                      .padding(top = 10.dp),
-              state = lazyState) {
-                items(uiState.cities.size) { index ->
-                  val city = uiState.cities[index]
-                  if (city.name.contains(inputText, ignoreCase = true) ||
-                      city.description.contains(inputText, ignoreCase = true)) {
-                    CityCard(city = city, onClick = { onSelectCity(city) })
-                    Spacer(modifier = Modifier.height(16.dp))
-                  }
-                }
-              }
-        }
-      }
+            }
+          }
+    }
+  }
 }
 
 @Composable

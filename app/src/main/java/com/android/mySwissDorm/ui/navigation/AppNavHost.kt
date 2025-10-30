@@ -69,13 +69,14 @@ fun AppNavHost(
       Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
       navActions.navigateTo(Screen.Homepage)
     }
+
     composable(Screen.Settings.route) { navBackStackEntry ->
       SettingsScreen(
-          onGoBack = { navActions.goBack() },
           onItemClick = {
             Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
           },
-          onProfileClick = { navActions.navigateTo(Screen.Profile) })
+          onProfileClick = { navActions.navigateTo(Screen.Profile) },
+          navigationActions = navActions)
     }
 
     // --- Secondary destinations ---
@@ -96,7 +97,8 @@ fun AppNavHost(
             onGoBack = { navActions.goBack() },
             onSelectListing = {
               navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
-            })
+            },
+            navigationActions = navActions)
       }
           ?: run {
             Log.e("BrowseCityScreen", "city name is null")

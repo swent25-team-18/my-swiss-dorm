@@ -1,4 +1,4 @@
-package com.android.mySwissDorm.listing
+package com.android.mySwissDorm.ui.listing
 
 import AddListingScreen
 import androidx.activity.ComponentActivity

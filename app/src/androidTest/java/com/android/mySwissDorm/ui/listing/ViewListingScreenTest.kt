@@ -123,13 +123,15 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun owner_showsOnlyEdit() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
-      val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
     }
     waitForScreenRoot()
-
     compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
+
+    compose.waitUntil(5_000) { vm.uiState.value.isOwner }
 
     scrollListTo(C.ViewListingTags.EDIT_BTN)
     compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN, useUnmergedTree = true).assertIsDisplayed()
@@ -210,11 +212,18 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun postedBy_displaysYouWhenOwner() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
-      val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
     }
     waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == ownerListing.uid && s.isOwner && s.fullNameOfPoster.isNotBlank()
+    }
 
     compose
         .onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true)

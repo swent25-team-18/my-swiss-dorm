@@ -66,9 +66,7 @@ class AddListingScreenTest : FirestoreTest() {
     confirmBtn.assertIsNotEnabled()
 
     // Fill fields with VALID values respecting new validators (size requires one decimal).
-    composeRule
-        .onNode(hasText("Listing title") and hasSetTextAction())
-        .performTextInput("Cozy studio")
+    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("Cozy studio")
     composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("25.0")
     composeRule
         .onNode(hasText("Price (CHF / month)") and hasSetTextAction())
@@ -95,14 +93,14 @@ class AddListingScreenTest : FirestoreTest() {
 
     val confirmBtn = composeRule.onNodeWithText("Confirm listing").assertExists()
 
-    composeRule.onNode(hasText("Listing title") and hasSetTextAction()).performTextInput("X")
+    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("X")
     composeRule.onNode(hasText("Description") and hasSetTextAction()).performTextInput("Y")
 
     // Entering 1000 (no decimal) is invalid per validateFinal (must have exactly one decimal)
     composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("1000")
 
     // Price is fine but we keep it blank to ensure the button remains disabled
-    // (even with price filled, size error must still block submit)
+    // (even with price filled size error must still block submit)
     confirmBtn.assertIsNotEnabled()
 
     runTest { assertEquals(0, getRentalListingCount()) }
@@ -117,7 +115,7 @@ class AddListingScreenTest : FirestoreTest() {
     val priceNode = composeRule.onNode(hasText("Price (CHF / month)") and hasSetTextAction())
     priceNode.performTextInput("00a12b3!")
     // Enter minimal other fields so the button remains disabled (size missing decimal)
-    composeRule.onNode(hasText("Listing title") and hasSetTextAction()).performTextInput("A")
+    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("A")
     composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("10")
 
     // Still disabled because size invalid (no decimal) and description empty

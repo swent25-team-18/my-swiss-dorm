@@ -266,6 +266,7 @@ object InputSanitizers {
 
   private fun normalizeDecimalTyping(raw: String): String {
     if (raw.isEmpty()) return ""
+
     val filtered =
         buildString(raw.length) {
           var dotSeen = false
@@ -283,15 +284,23 @@ object InputSanitizers {
 
     val dotIdx = filtered.indexOf('.')
     if (dotIdx == -1) {
-      val intPart = filtered.dropWhile { it == '0' }
-      return intPart
+      // Integer-typing path: drop leading zeros, bound to 4 digits, clamp to 1000
+      val intPartRaw = filtered.dropWhile { it == '0' }
+      val bounded = intPartRaw.take(4).ifEmpty { "0" }
+      val asInt = bounded.toIntOrNull()
+      return when {
+        asInt == null -> bounded
+        asInt > 1000 -> "1000"
+        else -> bounded
+      }
     }
 
+    // Decimal-typing path: keep one digit after '.', bound int part, clamp to 1000.0
     val intPart = filtered.substring(0, dotIdx).dropWhile { it == '0' }
     val fracPart = filtered.substring(dotIdx + 1)
     val boundedInt = intPart.take(4) // up to 1000
     val oneDigitFrac = fracPart.take(1)
-    val composed = (if (boundedInt.isEmpty()) "0" else boundedInt) + "." + oneDigitFrac
+    val composed = (boundedInt.ifEmpty { "0" }) + "." + oneDigitFrac
 
     val asDouble = composed.toDoubleOrNull()
     return when {
@@ -327,7 +336,7 @@ object InputSanitizers {
     val digits = raw.filter(Char::isDigit)
     if (digits.isEmpty()) return ""
     val noLeading = digits.dropWhile { it == '0' }
-    val trimmed = if (noLeading.isEmpty()) "" else noLeading
+    val trimmed = noLeading.ifEmpty { "" }
     val cut = trimmed.take(5) // up to 10000
     val num = cut.toIntOrNull() ?: return ""
     return min(num, PRICE_MAX).toString()

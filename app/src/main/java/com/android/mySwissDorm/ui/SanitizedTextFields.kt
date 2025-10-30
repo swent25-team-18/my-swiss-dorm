@@ -248,7 +248,7 @@ fun TitleField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Listing title",
+    label: String = "Title",
     externalErrorKey: String? = null,
 ) =
     SanitizedOutlinedTextField(
@@ -257,7 +257,7 @@ fun TitleField(
         FieldType.Title,
         modifier,
         label = label,
-        placeholder = "Sunny room near EPFL",
+        placeholder = "Think of a nice title!",
         externalErrorKey = externalErrorKey,
         singleLine = true,
         imeAction = ImeAction.Next)

@@ -14,7 +14,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
@@ -36,6 +35,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
+import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.*
 
 /** Centralized test tags for the Settings screen. */
@@ -55,10 +56,10 @@ object SettingsTestTags {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
-    vm: SettingsViewModel = viewModel()
+    vm: SettingsViewModel = viewModel(),
+    navigationActions: NavigationActions? = null
 ) {
   val ui by vm.uiState.collectAsState()
 
@@ -75,12 +76,12 @@ fun SettingsScreen(
 
   SettingsScreenContent(
       ui = ui,
-      onGoBack = onGoBack,
       onItemClick = {
         vm.onItemClick(it)
         onItemClick(it)
       },
-      onProfileClick = onProfileClick)
+      onProfileClick = onProfileClick,
+      navigationActions = navigationActions)
 }
 
 private val previewUiState =
@@ -91,9 +92,9 @@ private val previewUiState =
 @Composable
 fun SettingsScreenContent(
     ui: SettingsUiState,
-    onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    navigationActions: NavigationActions? = null
 ) {
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
@@ -105,18 +106,10 @@ fun SettingsScreenContent(
 
   Scaffold(
       containerColor = White,
+      bottomBar = { BottomBarFromNav(navigationActions) },
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("Settings") },
-            navigationIcon = {
-              IconButton(
-                  onClick = onGoBack, modifier = Modifier.testTag(SettingsTestTags.BackButton)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Red0)
-                  }
-            },
             colors =
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = White, titleContentColor = Color.Black))

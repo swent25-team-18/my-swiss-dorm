@@ -1,4 +1,4 @@
-package com.android.mySwissDorm.homepage
+package com.android.mySwissDorm.ui.homepage
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -14,9 +14,6 @@ import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.ui.homepage.HomePageScreen
-import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
-import com.android.mySwissDorm.ui.homepage.HomePageViewModel
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest

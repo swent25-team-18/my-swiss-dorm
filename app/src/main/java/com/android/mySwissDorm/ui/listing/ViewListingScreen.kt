@@ -27,7 +27,6 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Red0
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +51,6 @@ fun ViewListingScreen(
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {
       onGoBack()
-      delay(500)
       Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
       viewListingViewModel.clearErrorMsg()
     }

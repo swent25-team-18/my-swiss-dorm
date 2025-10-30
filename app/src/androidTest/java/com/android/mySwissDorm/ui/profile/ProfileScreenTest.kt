@@ -51,8 +51,8 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   @Before
   override fun setUp() {
-    super.setUp()
     runTest {
+      super.setUp()
       // Sign in a fake user on the emulator and seed their profile doc
       switchToUser(FakeUser.FakeUser1)
       uid = FirebaseEmulator.auth.currentUser!!.uid

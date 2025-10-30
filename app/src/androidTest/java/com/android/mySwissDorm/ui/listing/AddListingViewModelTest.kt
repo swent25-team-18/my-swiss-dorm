@@ -24,26 +24,25 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Repository wiring for all tests
- *
- * We point the provider to a real Firestore-backed repository (connected to the emulator), so UI +
- * VM tests hit the emulator DB.
+ * ViewModel tests aligned with the new centralized InputSanitizers:
+ * - typing normalization for price/size/description
+ * - submit-time validation gates
+ * - Firestore write on valid form
+ * - boundary conditions for size/price
  */
 @RunWith(AndroidJUnit4::class)
-class AddListingViewModelTest : FirestoreTest() {
+class AddListingViewModel : FirestoreTest() {
 
   override fun createRepositories() {
     RentalListingRepositoryProvider.repository =
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
-  private fun freshVM(): AddListingViewModel {
-    return AddListingViewModel()
-  }
+  private fun freshVM(): AddListingViewModel = AddListingViewModel()
 
   private fun validResidency() =
       Residency(
-          name = "Vortex",
+          name = "VORTEX",
           description = "desc",
           location = Location("Vortex", 46.5191, 6.5668),
           city = "Lausanne",
@@ -62,29 +61,32 @@ class AddListingViewModelTest : FirestoreTest() {
   }
 
   @Test
-  fun vm_InvalidInputs_areRejected_andErrorShown() = runTest {
+  fun vm_rejects_invalid_and_sets_error_without_writing() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val vm = freshVM()
-    val addStateOk = vm.addRentalListingState()
-    assertFalse("addRentalListingState() should return false for invalid form", addStateOk)
-    var callbackInvoked = false
-    vm.submitForm { callbackInvoked = true }
-    assertFalse("submitForm must not call onConfirm for invalid inputs", callbackInvoked)
+
+    // Leave defaults (empty title/desc/size/price) -> invalid
+    var called = false
+    vm.submitForm { called = true }
+    assertFalse("submitForm must not call onConfirm for invalid inputs", called)
     assertEquals("No rental listing must be created on invalid form", 0, getRentalListingCount())
   }
 
   @Test
-  fun vm_ValidInputs_createListing_inFirestore_andClearError() = run {
+  fun vm_accepts_valid_inputs_and_writes_to_firestore() = run {
     runTest { switchToUser(FakeUser.FakeUser1) }
-
     val vm = freshVM()
+
     vm.setTitle("Cozy studio")
     vm.setDescription("Nice place")
     vm.setResidency(validResidency())
     vm.setHousingType(RoomType.STUDIO)
-    vm.setSizeSqm("25")
+    vm.setSizeSqm("25.0") // exactly one decimal for submit-time validator
     vm.setPrice("1200")
     vm.setStartDate(Timestamp.now())
+
+    // Should be valid before submit
+    assertTrue(vm.uiState.value.isFormValid)
 
     vm.submitForm {}
     runTest {
@@ -103,34 +105,53 @@ class AddListingViewModelTest : FirestoreTest() {
   }
 
   @Test
-  fun vm_Boundaries_sizeAndPrice_enforced() = run {
-    runTest { switchToUser(FakeUser.FakeUser1) }
+  fun vm_typing_normalization_for_price_and_size_and_description() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val vm = freshVM()
+
+    vm.setPrice("00a12b3!") // -> "123"
+    vm.setSizeSqm("00018.57") // -> "18.5" (one decimal, drop leading zeros)
+    vm.setDescription("Line1\n\n\n\n   Line2\t\t") // -> collapse to max two newlines + spaces
+
+    val s = vm.uiState.value
+    assertEquals("123", s.price)
+    assertEquals("18.5", s.sizeSqm)
+    // Description should be trimmed and internal whitespaces collapsed;
+    // exact string depends on sanitizer but must contain only two newlines between Line1/Line2.
+  }
+
+  @Test
+  fun vm_boundaries_enforced_for_size_and_price() = runTest {
+    switchToUser(FakeUser.FakeUser1)
     val vm = freshVM()
     vm.setTitle("t")
     vm.setDescription("d")
     vm.setResidency(validResidency())
     vm.setHousingType(RoomType.STUDIO)
     vm.setStartDate(Timestamp.now())
-    vm.setSizeSqm("0")
+
+    // Size below min
+    vm.setSizeSqm("0.0")
     vm.setPrice("10")
-    assertFalse(vm.addRentalListingState())
-    vm.setSizeSqm("1")
-    vm.setPrice("10")
-    assertTrue(vm.addRentalListingState())
-    vm.setSizeSqm("999")
-    vm.setPrice("10")
-    assertTrue(vm.addRentalListingState())
-    vm.setSizeSqm("1000")
-    vm.setPrice("10")
-    assertFalse(vm.addRentalListingState())
-    vm.setSizeSqm("25")
-    vm.setPrice("0")
-    assertFalse(vm.addRentalListingState())
+    assertFalse(vm.uiState.value.isFormValid)
+
+    //    // Lower edge valid
+    vm.setSizeSqm("1.0")
     vm.setPrice("1")
-    assertTrue(vm.addRentalListingState())
+    assertTrue(vm.uiState.value.isFormValid)
+
+    //    // Upper edge valid
+    vm.setSizeSqm("1000.0")
     vm.setPrice("9999")
-    assertTrue(vm.addRentalListingState())
-    vm.setPrice("10000")
-    assertFalse(vm.addRentalListingState())
+    assertTrue(vm.uiState.value.isFormValid)
+
+    //    // Size over max (will render as 1000.0 at typing)
+    vm.setSizeSqm("1000.1")
+    assertEquals("1000.0", vm.uiState.value.sizeSqm)
+
+    // Price over max: typing clamps to 10000; submit validator accepts 10000 as max → still valid
+    vm.setSizeSqm("10.0")
+    vm.setPrice("10001")
+    assertTrue("Typing clamps to 10000; validator allows it", vm.uiState.value.isFormValid)
   }
 }

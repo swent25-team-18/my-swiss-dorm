@@ -11,11 +11,9 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.mySwissDorm.model.profile.Profile
-import com.android.mySwissDorm.model.profile.ProfileRepository
-import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,35 +34,34 @@ data class SettingsUiState(
 
 class SettingsViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val profileRepo: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) : ViewModel() {
 
   private val _uiState =
       MutableStateFlow(
           SettingsUiState(
-              // initially empty, filled after refresh()
               userName = "",
               email = auth.currentUser?.email.orEmpty(),
               topItems =
                   listOf(
                       SettingItem(Icons.AutoMirrored.Filled.List, "Lists"),
                       SettingItem(Icons.Filled.HelpOutline, "Broadcast messages"),
-                      SettingItem(Icons.Filled.Devices, "Connected devices"),
-                  ),
+                      SettingItem(Icons.Filled.Devices, "Connected devices")),
               accountItems =
                   listOf(
                       SettingItem(Icons.Filled.Lock, "Privacy"),
                       SettingItem(Icons.Filled.ChatBubble, "Chats"),
                       SettingItem(Icons.Filled.Notifications, "Notifications"),
-                      SettingItem(Icons.Filled.Storage, "Storage & data"),
-                  )))
+                      SettingItem(Icons.Filled.Storage, "Storage & data")),
+          ))
+
   val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
   init {
     refresh()
   }
 
-  /** Loads latest name & email from FirebaseAuth / Firestore profile. */
+  /** Fetch display name from Firestore + email from Auth (like Profile). */
   fun refresh() =
       viewModelScope.launch {
         try {
@@ -73,31 +70,18 @@ class SettingsViewModel(
 
           val uid = user?.uid
           if (uid != null) {
-            runCatching { profileRepo.getProfile(uid) }
-                .onSuccess { profile: Profile ->
-                  val first = profile.userInfo.name.trim()
-                  val last = profile.userInfo.lastName.trim()
-                  val displayName =
-                      listOf(first, last)
-                          .filter { it.isNotEmpty() }
-                          .joinToString(" ")
-                          .ifBlank { "User" }
-
-                  val emailFromProfile = profile.userInfo.email
-
+            runCatching { db.collection("profiles").document(uid).get().await().data }
+                .onSuccess { data ->
+                  val first = (data?.get("firstName") as? String).orEmpty().trim()
+                  val last = (data?.get("lastName") as? String).orEmpty().trim()
+                  val name = listOf(first, last).filter { it.isNotEmpty() }.joinToString(" ")
                   next =
                       next.copy(
-                          userName = displayName,
-                          email =
-                              if (emailFromProfile.isNotBlank()) emailFromProfile else next.email)
+                          userName = if (name.isNotEmpty()) name else (user.displayName ?: "User"))
                 }
-                .onFailure {
-                  // fallback to FirebaseAuth displayName if Firestore fails
-                  val authName = user?.displayName.orEmpty()
-                  next = next.copy(userName = if (authName.isNotBlank()) authName else "User")
-                }
+                .onFailure { next = next.copy(userName = user?.displayName ?: "User") }
           } else {
-            next = next.copy(userName = user?.displayName ?: "User")
+            next = next.copy(userName = "User", email = "")
           }
 
           _uiState.value = next
@@ -112,11 +96,11 @@ class SettingsViewModel(
     _uiState.value = _uiState.value.copy(errorMsg = null)
   }
 
-  fun onItemClick(title: String) {
-    // Navigation handler placeholder
+  fun onItemClick(@Suppress("UNUSED_PARAMETER") title: String) {
+    // no-op, parity with Profile
   }
 
-  /** Deletes both Firestore profile and Auth user. */
+  /** Deletes Firestore profile doc + Auth user (mirrors Profile's style). */
   fun deleteAccount(onDone: (ok: Boolean, msg: String?) -> Unit) {
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isDeleting = true, errorMsg = null)
@@ -130,10 +114,8 @@ class SettingsViewModel(
           return@launch
         }
 
-        // Delete Firestore profile doc (ignore failure)
-        runCatching { profileRepo.deleteProfile(uid) }
+        runCatching { db.collection("profiles").document(uid).delete().await() }
 
-        // Delete FirebaseAuth account
         try {
           user.delete().await()
           _uiState.value = _uiState.value.copy(isDeleting = false)

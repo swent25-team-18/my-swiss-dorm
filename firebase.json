@@ -1,6 +1,9 @@
 {
   "firestore": {
-    "rules": "firebase/firestore/firestore.rules"
+    "database": "(default)",
+    "location": "eur3",
+    "rules": "firebase/firestore/firestore.rules",
+    "indexes": "firestore.indexes.json"
   },
   "emulators": {
     "auth": {

@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.settings
 
-import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
+import org.mockito.Mockito.RETURNS_DEEP_STUBS
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 
@@ -49,7 +49,7 @@ class SettingsViewModelTest {
       displayName: String? = null,
       uid: String? = null
   ): FirebaseAuth {
-    val user = mock(FirebaseUser::class.java)
+    val user = mock(FirebaseUser::class.java, RETURNS_DEEP_STUBS)
     `when`(user.email).thenReturn(email)
     `when`(user.displayName).thenReturn(displayName)
     `when`(user.uid).thenReturn(uid)
@@ -59,48 +59,10 @@ class SettingsViewModelTest {
     return auth
   }
 
-  //  @Test
-  //  fun refresh_populatesFromProfile_whenAvailable() = runBlockingTest {
-  //    val auth = mockAuth(email = "auth@mail.com", displayName = "Auth Name", uid = "uid123")
-  //
-  //    val repo = mock(ProfileRepository::class.java)
-  //    val profile = mock(Profile::class.java, RETURNS_DEEP_STUBS)
-  //    `when`(profile.userInfo.name).thenReturn("Jane")
-  //    `when`(profile.userInfo.lastName).thenReturn("Doe")
-  //    `when`(profile.userInfo.email).thenReturn("profile@mail.com")
-  //    `when`(repo.getProfile("uid123")).thenReturn(profile)
-  //
-  //    val vm = SettingsViewModel(auth = auth, profileRepo = repo)
-  //    vm.refresh()
-  //    advanceUntilIdle()
-  //
-  //    val ui = vm.uiState.value
-  //    assertEquals("Jane Doe", ui.userName)
-  //    assertEquals("profile@mail.com", ui.email)
-  //    assertNull(ui.errorMsg)
-  //  }
-
-  @Test
-  fun refresh_fallsBackToAuthDisplayName_whenRepoFails() = runBlockingTest {
-    val auth = mockAuth(email = "auth@mail.com", displayName = "Auth Name", uid = "uid123")
-    val repo = mock(ProfileRepository::class.java)
-    `when`(repo.getProfile("uid123")).thenThrow(RuntimeException("boom"))
-
-    val vm = SettingsViewModel(auth = auth, profileRepo = repo)
-    vm.refresh()
-    advanceUntilIdle()
-
-    val ui = vm.uiState.value
-    assertEquals("Auth Name", ui.userName)
-    assertEquals("auth@mail.com", ui.email)
-  }
-
   @Test
   fun refresh_withNoUser_setsNameToUser() = runBlockingTest {
     val auth = mockAuth(email = null, displayName = null, uid = null)
-    val repo = mock(ProfileRepository::class.java)
-
-    val vm = SettingsViewModel(auth = auth, profileRepo = repo)
+    val vm = SettingsViewModel(auth = auth)
     vm.refresh()
     advanceUntilIdle()
 
@@ -112,13 +74,10 @@ class SettingsViewModelTest {
   @Test
   fun clearError_nullsErrorMessage() = runBlockingTest {
     val auth = mockAuth(email = "auth@mail.com", displayName = "Auth Name", uid = "uid123")
-    val repo = mock(ProfileRepository::class.java)
-
-    val vm = SettingsViewModel(auth = auth, profileRepo = repo)
-    `when`(repo.getProfile("uid123")).thenThrow(RuntimeException("fail"))
+    val vm = SettingsViewModel(auth = auth)
+    // simulate an error
     vm.refresh()
     advanceUntilIdle()
-
     vm.clearError()
     val ui = vm.uiState.value
     assertNull(ui.errorMsg)
@@ -127,8 +86,7 @@ class SettingsViewModelTest {
   @Test
   fun deleteAccount_whenNoUser_emitsErrorAndKeepsNotDeleting() = runBlockingTest {
     val auth = mockAuth(uid = null)
-    val repo = mock(ProfileRepository::class.java)
-    val vm = SettingsViewModel(auth = auth, profileRepo = repo)
+    val vm = SettingsViewModel(auth = auth)
 
     var ok: Boolean? = null
     var msg: String? = null

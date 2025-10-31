@@ -30,7 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.Red0
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
 
@@ -88,7 +90,8 @@ fun ViewListingScreen(
                   fontSize = 28.sp,
                   fontWeight = FontWeight.SemiBold,
                   lineHeight = 32.sp,
-                  modifier = Modifier.testTag(C.ViewListingTags.TITLE))
+                  modifier = Modifier.testTag(C.ViewListingTags.TITLE),
+                  color = TextColor)
 
               // tag we'll look for
               val tagProfile = "PROFILE_ID"
@@ -100,7 +103,7 @@ fun ViewListingScreen(
                 // pushStringAnnotation to "tag" this part of the string
                 pushStringAnnotation(tag = tagProfile, annotation = listing.ownerId)
                 // apply the style to the name
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Red0)) {
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
                   append(fullNameOfPoster)
                   if (isOwner) append(" (You)")
                 }
@@ -206,7 +209,7 @@ fun ViewListingScreen(
                       shape = RoundedCornerShape(16.dp),
                       colors =
                           ButtonDefaults.buttonColors(
-                              containerColor = Red0,
+                              containerColor = MainColor,
                               disabledContainerColor = Color(0xFFEBD0CE),
                               disabledContentColor = Color(0xFFFFFFFF))) {
                         Text(
@@ -227,7 +230,7 @@ private fun SectionCard(
 ) {
   Surface(
       modifier = modifier.fillMaxWidth(),
-      color = Color(0xFFF0F0F0),
+      color = TextBoxColor,
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 0.dp) {
         Column(
@@ -241,7 +244,7 @@ private fun SectionCard(
 private fun BulletRow(text: String) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
     Text("•", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
-    Text(text, style = MaterialTheme.typography.bodyLarge)
+    Text(text, style = MaterialTheme.typography.bodyLarge, color = TextColor)
   }
 }
 
@@ -253,9 +256,9 @@ private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
               .fillMaxWidth()
               .height(height)
               .clip(RoundedCornerShape(16.dp))
-              .background(Color(0xFFF0F0F0)),
+              .background(TextBoxColor),
       contentAlignment = Alignment.Center) {
-        Text(text, style = MaterialTheme.typography.titleMedium)
+        Text(text, style = MaterialTheme.typography.titleMedium, color = TextColor)
       }
 }
 

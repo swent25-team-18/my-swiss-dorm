@@ -29,7 +29,8 @@ import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.PalePink
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.Typography
 
 /**
@@ -68,7 +69,7 @@ fun SignInScreen(
           Text(
               text = stringResource(R.string.app_name),
               style = Typography.titleLarge,
-              color = PalePink,
+              color = MainColor,
               modifier = Modifier.testTag(C.Tag.SIGN_IN_APP_LOGO))
           Spacer(modifier = Modifier.height(16.dp))
           Button(
@@ -80,10 +81,10 @@ fun SignInScreen(
               shape = RoundedCornerShape(4.dp),
               colors =
                   ButtonColors(
-                      containerColor = PalePink,
+                      containerColor = MainColor,
                       contentColor = Color.White,
-                      disabledContainerColor = Color.Transparent,
-                      disabledContentColor = Color.Transparent),
+                      disabledContainerColor = BackGroundColor,
+                      disabledContentColor = BackGroundColor),
               modifier = Modifier.testTag(C.Tag.SIGN_IN_LOG_IN_BUTTON)) {
                 Text(text = stringResource(R.string.login_in_text))
               }

@@ -74,9 +74,9 @@ fun SanitizedOutlinedTextField(
   val textFieldColors =
       OutlinedTextFieldDefaults.colors(
           focusedBorderColor = MainColor,
-          unfocusedBorderColor = LightGray,
+          unfocusedBorderColor = Gray,
           focusedLabelColor = MainColor,
-          unfocusedLabelColor = LightGray)
+          unfocusedLabelColor = Gray)
 
   var hasBlurred by remember { mutableStateOf(false) }
   var selection by remember { mutableStateOf(TextRange(value.length)) }

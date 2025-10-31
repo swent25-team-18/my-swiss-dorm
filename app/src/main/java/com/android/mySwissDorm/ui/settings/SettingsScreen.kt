@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -58,7 +59,9 @@ fun SettingsScreen(
     onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
-    vm: SettingsViewModel = viewModel()
+    vm: SettingsViewModel = viewModel(),
+    isAdmin: Boolean = false,
+    onAdminClick: () -> Unit = {}
 ) {
   val ui by vm.uiState.collectAsState()
 
@@ -80,6 +83,8 @@ fun SettingsScreen(
         vm.onItemClick(it)
         onItemClick(it)
       },
+      isAdmin = isAdmin,
+      onAdminClick = onAdminClick,
       onProfileClick = onProfileClick)
 }
 
@@ -93,7 +98,9 @@ fun SettingsScreenContent(
     ui: SettingsUiState,
     onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    isAdmin :Boolean= false,
+    onAdminClick : () -> Unit = {}
 ) {
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
@@ -269,8 +276,27 @@ fun SettingsScreenContent(
                       }
                 }
               }
+            if (isAdmin) {
+            SectionLabel("Admin")
+            CardBlock {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                        .clickable(onClick = onAdminClick),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Admin page", style = MaterialTheme.typography.bodyMedium,color = Color.Black,)
+                    Icon(imageVector = Icons.Filled.ChevronRight, contentDescription = "Open admin page")
+                }
             }
-      }
+        }
+            }
+
+
+  }
+
 }
 
 // ---------- Helpers ----------

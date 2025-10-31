@@ -2,7 +2,6 @@ package com.android.mySwissDorm.ui.navigation
 
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-
 class NavigationActions(private val navController: NavHostController) {
 
   fun navController(): NavHostController = navController

@@ -85,7 +85,14 @@ fun AppNavHost(
       AddListingScreen(
           onOpenMap = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
           onBack = { navActions.goBack() },
-          onConfirm = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() })
+          onConfirm = { created ->
+            navController.navigate(Screen.ListingOverview(created.uid).route) {
+              // Remove AddListing so back from overview goes to whatever was before it (Homepage
+              // here)
+              popUpTo(Screen.AddListing.route) { inclusive = true }
+              launchSingleTop = true
+            }
+          })
     }
 
     composable(Screen.CityOverview.route) { navBackStackEntry ->

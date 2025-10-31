@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.listing
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
@@ -15,9 +16,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -35,7 +41,8 @@ fun ViewListingScreen(
     listingUid: String,
     onGoBack: () -> Unit = {},
     onApply: () -> Unit = {},
-    onEdit: () -> Unit = {}
+    onEdit: () -> Unit = {},
+    onViewProfile: (ownerId: String) -> Unit = {}
 ) {
   LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid) }
 
@@ -83,17 +90,51 @@ fun ViewListingScreen(
                   lineHeight = 32.sp,
                   modifier = Modifier.testTag(C.ViewListingTags.TITLE))
 
+              // tag we'll look for
+              val tagProfile = "PROFILE_ID"
+
+              // build the AnnotatedString tagging the name
+              val annotatedPostedByString = buildAnnotatedString {
+                append("Posted by ")
+
+                // pushStringAnnotation to "tag" this part of the string
+                pushStringAnnotation(tag = tagProfile, annotation = listing.ownerId)
+                // apply the style to the name
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Red0)) {
+                  append(fullNameOfPoster)
+                  if (isOwner) append(" (You)")
+                }
+                // stop tagging
+                pop()
+
+                append(" ${formatRelative(listing.postedAt)}")
+              }
+
+              // remember the TextLayoutResult
+              var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+
               Text(
-                  text =
-                      buildString {
-                        append("Posted by $fullNameOfPoster")
-                        if (isOwner) append(" (You)")
-                        append(" ${formatRelative(listing.postedAt)}")
-                      },
+                  text = annotatedPostedByString,
                   style =
                       MaterialTheme.typography.bodyMedium.copy(
                           color = MaterialTheme.colorScheme.onSurfaceVariant),
-                  modifier = Modifier.testTag(C.ViewListingTags.POSTED_BY))
+                  onTextLayout = { textLayoutResult = it },
+                  modifier =
+                      Modifier.testTag(C.ViewListingTags.POSTED_BY).pointerInput(Unit) {
+                        detectTapGestures { pos ->
+                          val l = textLayoutResult ?: return@detectTapGestures
+                          val offset = l.getOffsetForPosition(pos)
+
+                          // find any annotations at that exact offset
+                          annotatedPostedByString
+                              .getStringAnnotations(start = offset, end = offset)
+                              .firstOrNull { it.tag == tagProfile } // Check if it's our tag
+                              ?.let { annotation ->
+                                // trigger the callback with the stored ownerId
+                                onViewProfile(annotation.item)
+                              }
+                        }
+                      })
 
               // Bullet section
               SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {

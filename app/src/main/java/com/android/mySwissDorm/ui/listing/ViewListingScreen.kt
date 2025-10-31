@@ -103,7 +103,7 @@ fun ViewListingScreen(
                 // pushStringAnnotation to "tag" this part of the string
                 pushStringAnnotation(tag = tagProfile, annotation = listing.ownerId)
                 // apply the style to the name
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Red0)) {
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
                   append(fullNameOfPoster)
                   if (isOwner) append(" (You)")
                 }

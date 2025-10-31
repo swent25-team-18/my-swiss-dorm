@@ -6,6 +6,7 @@ val Red0 = Color(0xFFFF6666)
 val White = Color(0xFFFFFFFF)
 val LightGray = Color.Gray
 val LightGray0 = Color(0xFFB0BEC5)
+val Gray = Color(0xFF888888)
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

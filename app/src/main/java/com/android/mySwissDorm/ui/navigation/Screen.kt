@@ -45,6 +45,13 @@ sealed class Screen(
     }
   }
 
+  data class ViewUserProfile(val userId: String) :
+      Screen(route = "viewProfile/${userId}", name = "View Profile") {
+    companion object {
+      const val route = "viewProfile/{userId}"
+    }
+  }
+
   data object Profile : Screen(route = "profile", name = "Profile")
 
   companion object {

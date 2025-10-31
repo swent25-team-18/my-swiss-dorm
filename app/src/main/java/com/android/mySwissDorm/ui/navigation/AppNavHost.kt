@@ -77,22 +77,18 @@ fun AppNavHost(
       navActions.navigateTo(Screen.Homepage)
     }
     composable(Screen.Settings.route) {
-        val adminRepo= remember { AdminRepository() }
-        var isAdmin by remember { mutableStateOf(false) }
+      val adminRepo = remember { AdminRepository() }
+      var isAdmin by remember { mutableStateOf(false) }
 
-        LaunchedEffect(Unit) {
-            isAdmin = adminRepo.isCurrentUserAdmin()
-        }
+      LaunchedEffect(Unit) { isAdmin = adminRepo.isCurrentUserAdmin() }
       SettingsScreen(
           onGoBack = { navActions.goBack() },
           onItemClick = {
             Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
           },
           onProfileClick = { navActions.navigateTo(Screen.Profile) },
-          onAdminClick = { navActions.navigateTo(Screen.Admin)},
-          isAdmin = isAdmin
-
-          )
+          onAdminClick = { navActions.navigateTo(Screen.Admin) },
+          isAdmin = isAdmin)
     }
 
     // --- Secondary destinations ---
@@ -137,12 +133,9 @@ fun AppNavHost(
     composable(Screen.EditListing.route) {
       Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
     }
-      composable(Screen.Admin.route) {
-          AdminPageScreen (
-              canAccess = true,
-              onBack = { navActions.goBack() }
-          )
-      }
+    composable(Screen.Admin.route) {
+      AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })
+    }
     composable(Screen.Profile.route) {
       ProfileScreen(
           onBack = { navActions.goBack() },

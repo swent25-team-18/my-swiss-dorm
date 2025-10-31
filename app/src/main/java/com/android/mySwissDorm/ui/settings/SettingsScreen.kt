@@ -99,8 +99,8 @@ fun SettingsScreenContent(
     onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
-    isAdmin :Boolean= false,
-    onAdminClick : () -> Unit = {}
+    isAdmin: Boolean = false,
+    onAdminClick: () -> Unit = {}
 ) {
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
@@ -276,27 +276,29 @@ fun SettingsScreenContent(
                       }
                 }
               }
-            if (isAdmin) {
-            SectionLabel("Admin")
-            CardBlock {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                        .clickable(onClick = onAdminClick),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Admin page", style = MaterialTheme.typography.bodyMedium,color = Color.Black,)
-                    Icon(imageVector = Icons.Filled.ChevronRight, contentDescription = "Open admin page")
+              if (isAdmin) {
+                SectionLabel("Admin")
+                CardBlock {
+                  Row(
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .padding(horizontal = 16.dp, vertical = 10.dp)
+                              .clickable(onClick = onAdminClick),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(
+                            "Admin page",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black,
+                        )
+                        Icon(
+                            imageVector = Icons.Filled.ChevronRight,
+                            contentDescription = "Open admin page")
+                      }
                 }
+              }
             }
-        }
-            }
-
-
-  }
-
+      }
 }
 
 // ---------- Helpers ----------

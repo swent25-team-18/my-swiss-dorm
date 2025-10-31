@@ -21,6 +21,7 @@ sealed class Screen(
 
   // Secondary (non-bottom-bar) destinations
   data object AddListing : Screen("addListing", "Add Listing")
+
   data object Admin : Screen("admin", "Admin")
 
   data class CityOverview(val city: City) :

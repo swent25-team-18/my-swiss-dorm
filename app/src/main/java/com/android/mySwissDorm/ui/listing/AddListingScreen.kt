@@ -24,6 +24,8 @@ import com.android.mySwissDorm.ui.ResidencyDropdown
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.TextBoxColor
 
 @OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
 
@@ -32,7 +34,6 @@ import com.android.mySwissDorm.ui.listing.AddListingViewModel
 fun AddListingScreen(
     addListingViewModel: AddListingViewModel = viewModel(),
     modifier: Modifier = Modifier,
-    accentColor: Color = Color(0xFFFF0004),
     onOpenMap: () -> Unit,
     onConfirm: (RentalListing) -> Unit,
     onBack: () -> Unit
@@ -49,7 +50,7 @@ fun AddListingScreen(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = accentColor)
+                    tint = MainColor)
               }
             })
       },
@@ -60,7 +61,7 @@ fun AddListingScreen(
             Button(
                 onClick = { addListingViewModel.submitForm(onConfirm) },
                 enabled = ui.isFormValid,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(coralColor)),
+                colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(16.dp)) {
                   Text("Confirm listing", color = Color.White)
@@ -101,12 +102,12 @@ fun AddListingScreen(
                   selected = ui.residency.name,
                   onSelected = { addListingViewModel.setResidency(it) },
                   residencies = ui.residencies,
-                  accentColor = accentColor)
+                  accentColor = MainColor)
 
               HousingTypeDropdown(
                   selected = ui.housingType,
                   onSelected = { addListingViewModel.setHousingType(it) },
-                  accentColor = accentColor)
+                  accentColor = MainColor)
 
               // Inline validations -> map to external error keys for uniform error text
               val sizeErrKey =
@@ -165,12 +166,12 @@ fun AddListingScreen(
                         onClick = { /* TODO: implement image selection */},
                         colors =
                             ButtonColors(
-                                containerColor = Color(0xFFF0F0F0),
-                                contentColor = Color(coralColor),
-                                disabledContentColor = Color(coralColor),
-                                disabledContainerColor = Color.Gray),
+                                containerColor = TextBoxColor,
+                                contentColor = MainColor,
+                                disabledContentColor = TextBoxColor,
+                                disabledContainerColor = TextBoxColor),
                         shape = RoundedCornerShape(14.dp)) {
-                          Icon(Icons.Default.AddAPhoto, null, tint = Color(coralColor))
+                          Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
                           Spacer(Modifier.width(8.dp))
                           Text("Add pictures")
                         }

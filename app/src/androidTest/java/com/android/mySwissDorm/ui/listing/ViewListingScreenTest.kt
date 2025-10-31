@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -20,6 +21,7 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -229,5 +231,63 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
         .onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextContains("(You)", substring = true)
+  }
+
+  @Test
+  fun clickingPosterName_callsOnViewProfile_forOwner() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    var navigatedToId: String? = null
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(
+          viewListingViewModel = vm,
+          listingUid = ownerListing.uid,
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == ownerListing.uid && s.isOwner && s.fullNameOfPoster.isNotBlank()
+    }
+
+    // Scroll to and click the "Posted by ..." text
+    scrollListTo(C.ViewListingTags.POSTED_BY)
+    compose
+        .onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    assertEquals(ownerUid, navigatedToId)
+  }
+
+  @Test
+  fun clickingPosterName_callsOnViewProfile_forNonOwner() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    var navigatedToId: String? = null
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(
+          viewListingViewModel = vm,
+          listingUid = otherListing.uid, // viewing User2 listing
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid && !s.isOwner && s.fullNameOfPoster.isNotBlank()
+    }
+
+    // Scroll to and click the "Posted by ..." text
+    scrollListTo(C.ViewListingTags.POSTED_BY)
+    compose
+        .onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    assertEquals(otherUid, navigatedToId)
   }
 }

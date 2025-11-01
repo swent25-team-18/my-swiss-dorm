@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo // <-- ADDED THIS IMPORT
 import androidx.compose.ui.test.performTextInput
 import androidx.navigation.compose.rememberNavController
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
@@ -83,7 +84,7 @@ class AdminPageScreenTest : FirestoreTest() {
     setContent(canAccess = true)
     composeTestRule.onNodeWithText("Admin Page").assertIsDisplayed()
     composeTestRule.onNodeWithText("City").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Name").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Name").performScrollTo().assertIsDisplayed()
   }
 
   @Test
@@ -91,33 +92,36 @@ class AdminPageScreenTest : FirestoreTest() {
     setContent()
 
     // Default that i chose is City
-    composeTestRule.onNodeWithText("Image ID").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Image ID").performScrollTo().assertIsDisplayed()
 
     // Switch to Residency
     composeTestRule.onNodeWithTag("Chip_Residency").performClick()
+    composeTestRule.waitForIdle() // <-- Wait for UI to recompose
     composeTestRule.onNodeWithText("Image ID").assertDoesNotExist()
-    composeTestRule.onNodeWithText("Email (optional)").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Email (optional)").performScrollTo().assertIsDisplayed()
 
     // Switch to University
     composeTestRule.onNodeWithTag("Chip_University").performClick()
+    composeTestRule.waitForIdle() // <-- Wait for UI to recompose
     composeTestRule.onNodeWithText("Email (optional)").assertDoesNotExist()
-    composeTestRule.onNodeWithText("Email").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Website URL").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Email").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Website URL").performScrollTo().assertIsDisplayed()
 
     // Switch back to City
     composeTestRule.onNodeWithTag("Chip_City").performClick()
-    composeTestRule.onNodeWithText("Image ID").assertIsDisplayed()
+    composeTestRule.waitForIdle() // <-- Wait for UI to recompose
+    composeTestRule.onNodeWithText("Image ID").performScrollTo().assertIsDisplayed()
   }
 
   @Test
   fun inputFields_updateViewModelState() {
     setContent()
-    composeTestRule.onNodeWithText("Name").performTextInput("Test City")
-    composeTestRule.onNodeWithText("Latitude").performTextInput("46.5")
-    composeTestRule.onNodeWithText("Longitude").performTextInput("6.6")
-    composeTestRule.onNodeWithText("Location Name").performTextInput("Lausanne")
-    composeTestRule.onNodeWithText("Description").performTextInput("A nice city")
-    composeTestRule.onNodeWithText("Image ID").performTextInput("123")
+    composeTestRule.onNodeWithText("Name").performScrollTo().performTextInput("Test City")
+    composeTestRule.onNodeWithText("Latitude").performScrollTo().performTextInput("46.5")
+    composeTestRule.onNodeWithText("Longitude").performScrollTo().performTextInput("6.6")
+    composeTestRule.onNodeWithText("Location Name").performScrollTo().performTextInput("Lausanne")
+    composeTestRule.onNodeWithText("Description").performScrollTo().performTextInput("A nice city")
+    composeTestRule.onNodeWithText("Image ID").performScrollTo().performTextInput("123")
     // AI helped with runOnIdle
     runBlocking { delay(250) }
     composeTestRule.runOnIdle {
@@ -135,8 +139,10 @@ class AdminPageScreenTest : FirestoreTest() {
     setContent()
     composeTestRule.onNodeWithText("Save").performClick()
     composeTestRule.onNodeWithText("Name is required.").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Name").performTextInput("Incomplete")
-    composeTestRule.onNodeWithText("Latitude").performTextInput("1.0")
+
+    composeTestRule.onNodeWithText("Name").performScrollTo().performTextInput("Incomplete")
+    composeTestRule.onNodeWithText("Latitude").performScrollTo().performTextInput("1.0")
+
     composeTestRule.onNodeWithText("Save").performClick()
     composeTestRule
         .onNodeWithText("Location (name, longitude, latitude) is required.")

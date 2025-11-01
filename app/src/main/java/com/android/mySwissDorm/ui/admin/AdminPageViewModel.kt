@@ -50,6 +50,7 @@ class AdminPageViewModel(
   var uiState by mutableStateOf(UiState())
     private set
 
+  // Handlers for all necessary form field changes
   fun onTypeChange(t: EntityType) {
     uiState = uiState.copy(selected = t, message = null)
   }
@@ -135,11 +136,13 @@ class AdminPageViewModel(
       uiState = uiState.copy(message = error)
       return
     }
+    // Parse location after validation and make sure to not return a null value with "!!"
     val location = parseLocation()!!
 
     viewModelScope.launch {
       uiState = uiState.copy(isSubmitting = true, message = null)
       try {
+        // Submit based on selected entity type
         when (uiState.selected) {
           EntityType.CITY -> {
             val city =

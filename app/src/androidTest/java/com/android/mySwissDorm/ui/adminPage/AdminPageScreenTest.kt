@@ -88,7 +88,7 @@ class AdminPageScreenTest : FirestoreTest() {
 
     // Default that i chose is City
     composeTestRule.onNodeWithText("Image ID").performScrollTo().assertIsDisplayed()
-
+    runBlocking { delay(250) }
     // Switch to Residency
     composeTestRule.onNodeWithTag("Chip_Residency").performClick()
     composeTestRule.onNodeWithText("Image ID").assertDoesNotExist()

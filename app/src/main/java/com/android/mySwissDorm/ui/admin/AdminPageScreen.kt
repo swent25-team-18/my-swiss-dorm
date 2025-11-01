@@ -48,6 +48,8 @@ fun AdminPageScreen(
     accentColor: Color = Color(0xFFFF0004)
 ) {
   if (!canAccess) {
+    // This won't show since only admins can view the admin page in settings but it's here for extra
+    // security
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Admins only.") }
     return
   }
@@ -104,7 +106,6 @@ fun AdminPageScreen(
                 .padding(horizontal = 16.dp, vertical = 10.dp)
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-              // Entity selector (AssistChips are already M3, so this is good)
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 EntityChip("City", ui.selected == AdminPageViewModel.EntityType.CITY) {
                   vm.onTypeChange(AdminPageViewModel.EntityType.CITY)
@@ -144,6 +145,7 @@ fun AdminPageScreen(
 
               // Entity-specific fields
               when (ui.selected) {
+                // City fields
                 AdminPageViewModel.EntityType.CITY -> {
                   OutlinedTextField(
                       value = ui.description,
@@ -157,6 +159,7 @@ fun AdminPageScreen(
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth())
                 }
+                // Residency fields
                 AdminPageViewModel.EntityType.RESIDENCY -> {
                   OutlinedTextField(
                       value = ui.description,
@@ -188,6 +191,7 @@ fun AdminPageScreen(
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth())
                 }
+                // University fields
                 AdminPageViewModel.EntityType.UNIVERSITY -> {
                   OutlinedTextField(
                       value = ui.city,
@@ -223,6 +227,7 @@ fun AdminPageScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EntityChip(text: String, selected: Boolean, onClick: () -> Unit) {
+  // This helper was implemented using AI
   AssistChip(
       onClick = onClick,
       label = { Text(text) },

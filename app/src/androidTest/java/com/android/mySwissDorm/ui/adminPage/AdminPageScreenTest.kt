@@ -19,13 +19,10 @@ import com.android.mySwissDorm.ui.admin.AdminPageViewModel
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -50,7 +47,6 @@ class AdminPageScreenTest : FirestoreTest() {
   @Before
   override fun setUp() {
     super.setUp()
-    Dispatchers.setMain(Dispatchers.Unconfined)
     viewModel =
         AdminPageViewModel(
             CitiesRepositoryProvider.repository,
@@ -61,7 +57,6 @@ class AdminPageScreenTest : FirestoreTest() {
   @After
   override fun tearDown() {
     super.tearDown()
-    Dispatchers.resetMain()
   }
 
   private fun setContent(canAccess: Boolean = true) {
@@ -96,20 +91,17 @@ class AdminPageScreenTest : FirestoreTest() {
 
     // Switch to Residency
     composeTestRule.onNodeWithTag("Chip_Residency").performClick()
-    composeTestRule.waitForIdle() // <-- Wait for UI to recompose
     composeTestRule.onNodeWithText("Image ID").assertDoesNotExist()
     composeTestRule.onNodeWithText("Email (optional)").performScrollTo().assertIsDisplayed()
 
     // Switch to University
     composeTestRule.onNodeWithTag("Chip_University").performClick()
-    composeTestRule.waitForIdle() // <-- Wait for UI to recompose
     composeTestRule.onNodeWithText("Email (optional)").assertDoesNotExist()
     composeTestRule.onNodeWithText("Email").performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithText("Website URL").performScrollTo().assertIsDisplayed()
 
     // Switch back to City
     composeTestRule.onNodeWithTag("Chip_City").performClick()
-    composeTestRule.waitForIdle() // <-- Wait for UI to recompose
     composeTestRule.onNodeWithText("Image ID").performScrollTo().assertIsDisplayed()
   }
 
@@ -122,9 +114,8 @@ class AdminPageScreenTest : FirestoreTest() {
     composeTestRule.onNodeWithText("Location Name").performScrollTo().performTextInput("Lausanne")
     composeTestRule.onNodeWithText("Description").performScrollTo().performTextInput("A nice city")
     composeTestRule.onNodeWithText("Image ID").performScrollTo().performTextInput("123")
-    // AI helped with runOnIdle
     runBlocking { delay(250) }
-    composeTestRule.runOnIdle {
+    runTest {
       assert(viewModel.uiState.name == "Test City")
       assert(viewModel.uiState.latitude == "46.5")
       assert(viewModel.uiState.longitude == "6.6")

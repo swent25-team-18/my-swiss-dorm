@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -229,5 +230,5 @@ private fun EntityChip(text: String, selected: Boolean, onClick: () -> Unit) {
           if (selected) {
             { Icon(Icons.Default.Check, contentDescription = null) }
           } else null,
-      modifier = Modifier)
+       modifier = Modifier.testTag("Chip_$text"))
 }

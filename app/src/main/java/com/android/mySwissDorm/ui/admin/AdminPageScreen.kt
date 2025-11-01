@@ -230,5 +230,5 @@ private fun EntityChip(text: String, selected: Boolean, onClick: () -> Unit) {
           if (selected) {
             { Icon(Icons.Default.Check, contentDescription = null) }
           } else null,
-       modifier = Modifier.testTag("Chip_$text"))
+      modifier = Modifier.testTag("Chip_$text"))
 }

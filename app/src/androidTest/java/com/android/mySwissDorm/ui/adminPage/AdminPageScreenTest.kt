@@ -88,20 +88,29 @@ class AdminPageScreenTest : FirestoreTest() {
 
     // Default that i chose is City
     composeTestRule.onNodeWithText("Image ID").performScrollTo().assertIsDisplayed()
-    runBlocking { delay(250) }
     // Switch to Residency
     composeTestRule.onNodeWithTag("Chip_Residency").performClick()
+    // Wait until state is updated to make sure i'm in the correct state
+    composeTestRule.waitUntil(5_000) {
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.RESIDENCY
+    }
     composeTestRule.onNodeWithText("Image ID").assertDoesNotExist()
     composeTestRule.onNodeWithText("Email (optional)").performScrollTo().assertIsDisplayed()
 
     // Switch to University
     composeTestRule.onNodeWithTag("Chip_University").performClick()
+    composeTestRule.waitUntil(5_000) {
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.CITY
+    }
     composeTestRule.onNodeWithText("Email (optional)").assertDoesNotExist()
     composeTestRule.onNodeWithText("Email").performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithText("Website URL").performScrollTo().assertIsDisplayed()
 
     // Switch back to City
     composeTestRule.onNodeWithTag("Chip_City").performClick()
+    composeTestRule.waitUntil(5_000) {
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.CITY
+    }
     composeTestRule.onNodeWithText("Image ID").performScrollTo().assertIsDisplayed()
   }
 

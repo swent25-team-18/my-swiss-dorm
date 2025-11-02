@@ -100,7 +100,7 @@ class AdminPageScreenTest : FirestoreTest() {
     // Switch to University
     composeTestRule.onNodeWithTag("Chip_University").performClick()
     composeTestRule.waitUntil(5_000) {
-      viewModel.uiState.selected == AdminPageViewModel.EntityType.CITY
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.UNIVERSITY
     }
     composeTestRule.onNodeWithText("Email (optional)").assertDoesNotExist()
     composeTestRule.onNodeWithText("Email").performScrollTo().assertIsDisplayed()

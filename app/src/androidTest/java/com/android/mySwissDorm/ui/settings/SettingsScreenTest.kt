@@ -4,6 +4,12 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
+import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -16,9 +22,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Instrumented UI tests for SettingsScreen that:
- * - seed Firestore on the emulator (same pattern as ProfileScreenFirestoreTest)
- * - interact with the UI: switches, buttons, dialog, collapsing section, etc.
+ * UI tests for SettingsScreen. We pass an explicit SettingsViewModel built on the emulators to
+ * avoid viewModel() constructing without a factory.
  */
 @RunWith(AndroidJUnit4::class)
 class SettingsScreenTest : FirestoreTest() {
@@ -26,31 +31,53 @@ class SettingsScreenTest : FirestoreTest() {
   @get:Rule val compose = createComposeRule()
   private lateinit var uid: String
 
+  /** VM backed by emulator singletons. */
+  private fun makeVm(): SettingsViewModel {
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+  }
+
+  /** Set content with our explicit VM. */
+  private fun setContentWithVm() {
+    val vm = makeVm()
+    compose.setContent { MySwissDormAppTheme { SettingsScreen(vm = vm) } }
+  }
+
   override fun createRepositories() {
-    /* none required */
+    /* none */
   }
 
   @Before
   override fun setUp() = runTest {
     super.setUp()
-    // Sign in a fake user and seed their profile doc in Firestore emulator
+
+    // Sign in a fake user via FirestoreTest helper (per PR review)
     switchToUser(FakeUser.FakeUser1)
     uid = FirebaseEmulator.auth.currentUser!!.uid
 
+    // Seed a full Profile document using the schema the repo expects.
+    val seededProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Mansour",
+                    lastName = "Kanaan",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "+41001112233",
+                    universityName = "EPFL",
+                    location = Location("Somewhere", 0.0, 0.0),
+                    residencyName = "Vortex, Coloc"),
+            userSettings = UserSettings(),
+            ownerId = uid)
+
     FirebaseEmulator.firestore
-        .collection("profiles")
+        .collection(PROFILE_COLLECTION_PATH)
         .document(uid)
-        .set(
-            mapOf(
-                "ownerId" to uid,
-                "firstName" to "Mansour",
-                "lastName" to "Kanaan",
-                "language" to "English",
-                "residence" to "Vortex, Coloc"))
+        .set(seededProfile)
         .await()
   }
 
-  // ---------- helpers ----------
+  // ---------- small helpers ----------
 
   private fun ComposeTestRule.waitUntilTagExists(tag: String, timeoutMs: Long = 30_000) {
     waitUntil(timeoutMs) {
@@ -77,7 +104,6 @@ class SettingsScreenTest : FirestoreTest() {
   ) {
     val scrollNode = onNodeWithTag(scrollTag, useUnmergedTree = true)
     repeat(maxSwipes) {
-      // If it exists and is displayed, we're done.
       val nodes = onAllNodesWithTag(targetTag, useUnmergedTree = true).fetchSemanticsNodes()
       if (nodes.isNotEmpty()) {
         try {
@@ -90,7 +116,6 @@ class SettingsScreenTest : FirestoreTest() {
       scrollNode.performTouchInput { swipeUp() }
       waitForIdle()
     }
-    // Final assert (will throw with a clear error if still not visible)
     onNodeWithTag(targetTag, useUnmergedTree = true).assertIsDisplayed()
   }
 
@@ -121,14 +146,10 @@ class SettingsScreenTest : FirestoreTest() {
   /** Verifies Firestore-seeded display name is shown, plus base header elements. */
   @Test
   fun settings_showsSeededFirestoreNameAndEmail() {
-    compose.setContent { MySwissDormAppTheme { SettingsScreen() } }
-
-    compose.waitUntil(timeoutMillis = 5_000) {
-      compose
-          .onAllNodesWithText("Settings", useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
+    setContentWithVm()
+    // Wait for the ViewModel refresh to pull profile + compose to settle
+    compose.waitUntilTextExists("Settings")
+    compose.waitUntilTextExists("Mansour Kanaan")
 
     compose.onNodeWithText("Settings", useUnmergedTree = true).assertIsDisplayed()
     compose.onNodeWithText("View profile", useUnmergedTree = true).assertIsDisplayed()
@@ -137,7 +158,7 @@ class SettingsScreenTest : FirestoreTest() {
 
   @Test
   fun settingsScreen_showsProfileRowAndButton() {
-    compose.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    setContentWithVm()
     compose.waitForIdle()
 
     compose.onNodeWithText("Settings", useUnmergedTree = true).assertIsDisplayed()
@@ -151,7 +172,7 @@ class SettingsScreenTest : FirestoreTest() {
 
   @Test
   fun bottomBar_notRenderedInTests_whenNoNavigationActions() {
-    compose.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    setContentWithVm()
     compose.waitForIdle()
     compose
         .onAllNodesWithTag(SettingsTestTags.BottomBar, useUnmergedTree = true)
@@ -160,7 +181,7 @@ class SettingsScreenTest : FirestoreTest() {
 
   @Test
   fun notificationSwitches_toggleStateCorrectly() {
-    compose.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    setContentWithVm()
     compose.waitForIdle()
 
     val messagesTag = SettingsTestTags.switch("Show notifications for messages")
@@ -181,7 +202,7 @@ class SettingsScreenTest : FirestoreTest() {
 
   @Test
   fun blockedContacts_expandsAndCollapsesOnClick() {
-    compose.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    setContentWithVm()
     compose.waitForIdle()
 
     val scrollTag = SettingsTestTags.SettingsScroll
@@ -205,18 +226,17 @@ class SettingsScreenTest : FirestoreTest() {
 
   @Test
   fun emailField_isDisabledAndReadOnly() {
-    compose.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    setContentWithVm()
     compose.waitForIdle()
     compose.onNodeWithTag(SettingsTestTags.EmailField, useUnmergedTree = true).assertIsNotEnabled()
   }
 
   @Test
   fun deleteAccountButton_opensAndClosesConfirmDialog() {
-    compose.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    setContentWithVm()
     compose.waitForIdle()
 
     val scrollTag = SettingsTestTags.SettingsScroll
-    // Make sure we've actually scrolled to the bottom area first
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
     compose.scrollUntilDisplayed(scrollTag, SettingsTestTags.DeleteAccountButton)
     compose.waitUntilTagExists(SettingsTestTags.DeleteAccountButton)
@@ -233,25 +253,22 @@ class SettingsScreenTest : FirestoreTest() {
 
   @Test
   fun accessibilitySwitches_toggleStateCorrectly() {
-    compose.setContent { MySwissDormAppTheme { SettingsScreen() } }
+    setContentWithVm()
     compose.waitForIdle()
 
     val scrollTag = SettingsTestTags.SettingsScroll
     val nightShiftTag = SettingsTestTags.switch("Night Shift")
     val anonymousTag = SettingsTestTags.switch("Anonymous")
 
-    // Ensure we scrolled into that section first on small devices
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
     compose.waitUntilTagExists(nightShiftTag)
 
-    // Night Shift starts On (reuses notificationsMessages = true)
     compose
         .onNodeWithTag(nightShiftTag, useUnmergedTree = true)
         .assert(hasStateDescription("On"))
         .performClick()
     compose.onNodeWithTag(nightShiftTag, useUnmergedTree = true).assert(hasStateDescription("Off"))
 
-    // Anonymous starts Off (reuses notificationsListings = false)
     compose.scrollUntilDisplayed(scrollTag, anonymousTag)
     compose
         .onNodeWithTag(anonymousTag, useUnmergedTree = true)

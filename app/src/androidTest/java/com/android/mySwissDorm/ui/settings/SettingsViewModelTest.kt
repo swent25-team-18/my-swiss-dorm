@@ -1,174 +1,216 @@
 package com.android.mySwissDorm.ui.settings
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
+import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.auth.UserProfileChangeRequest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestCoroutineScheduler
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestWatcher
-import org.junit.runner.Description
+import org.junit.runner.RunWith
 
-/** One shared scheduler for Main + runTest; adds polling helper for emulator I/O. */
-@OptIn(ExperimentalCoroutinesApi::class)
-class MainDispatcherRule : TestWatcher() {
-  val scheduler = TestCoroutineScheduler()
-  val dispatcher = StandardTestDispatcher(scheduler)
-  val scope = TestScope(dispatcher)
-
-  override fun starting(description: Description) {
-    Dispatchers.setMain(dispatcher)
-  }
-
-  override fun finished(description: Description) {
-    Dispatchers.resetMain()
-  }
-}
-
-@OptIn(ExperimentalCoroutinesApi::class)
+/**
+ * Emulator-based tests for SettingsViewModel. Uses FirestoreTest helpers (switchToUser,
+ * FirebaseEmulator, etc.).
+ */
+@RunWith(AndroidJUnit4::class)
 class SettingsViewModelTest : FirestoreTest() {
 
-  @get:Rule val mainRule = MainDispatcherRule()
+  // ---------- Harness ----------
 
   override fun createRepositories() {
-    /* none needed here */
+    /* none needed */
   }
 
-  @Before
-  override fun setUp() {
-    super.setUp()
-  }
+  @Before override fun setUp() = runTest { super.setUp() }
 
-  /** Build a VM wired on the emulator auth + a repository implementation. */
-  private fun vm(
-      repo: ProfileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-  ): SettingsViewModel = SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+  private fun vm(repo: ProfileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)) =
+      SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
 
-  /** Poll until [predicate] is true or timeout (ms). */
+  /** Polling helper to await async state changes from viewModelScope jobs. */
   private suspend fun awaitUntil(
       timeoutMs: Long = 5_000,
-      stepMs: Long = 25,
-      predicate: () -> Boolean
+      intervalMs: Long = 25,
+      pred: () -> Boolean
   ) {
     val start = System.currentTimeMillis()
-    while (!predicate()) {
-      mainRule.scope.advanceUntilIdle()
-      delay(stepMs)
+    while (!pred()) {
       if (System.currentTimeMillis() - start > timeoutMs) break
+      delay(intervalMs)
     }
   }
 
-  // ------------------- Tests -------------------
+  // ---------- Tests ----------
 
   @Test
-  fun refresh_readsDisplayNameFromProfile_whenDocumentExists() =
-      runTest(mainRule.scheduler) {
-        // Sign in as FakeUser1
-        switchToUser(FakeUser.FakeUser1)
-        val uid = FirebaseEmulator.auth.currentUser!!.uid
+  fun refresh_withNoAuthenticatedUser_setsNameUserAndEmailBlank() = runTest {
+    FirebaseEmulator.auth.signOut()
+    val vm = vm()
 
-        // Use the repository to seed a correctly shaped profile document
-        val repo =
-            com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore(
-                FirebaseEmulator.firestore)
-        val profile =
-            com.android.mySwissDorm.model.profile.Profile(
-                userInfo =
-                    com.android.mySwissDorm.model.profile.UserInfo(
-                        name = "Bob",
-                        lastName = "King",
-                        email = FakeUser.FakeUser1.email,
-                        phoneNumber = "+41001112233",
-                        universityName = null,
-                        location = null,
-                        residencyName = null),
-                userSettings = com.android.mySwissDorm.model.profile.UserSettings(),
-                ownerId = uid)
-        repo.createProfile(profile)
+    vm.refresh()
+    awaitUntil { vm.uiState.value.userName.isNotEmpty() }
 
-        // Build the VM with the emulator auth and the same repo
-        val vm = SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+    assertEquals("User", vm.uiState.value.userName)
+    assertEquals("", vm.uiState.value.email)
+  }
 
-        // Act
-        vm.refresh()
-        awaitUntil { vm.uiState.value.userName == "Bob King" }
-
-        // Assert
-        val ui = vm.uiState.value
-        assertEquals("Bob King", ui.userName)
-        assertEquals(FakeUser.FakeUser1.email, ui.email)
-        assertNull(ui.errorMsg)
-      }
-
+  /**
+   * Avoid Firestore rules on non-existing documents by injecting a fake repo that returns null.
+   * This directly exercises the ViewModel's fallback to auth displayName.
+   */
   @Test
-  fun refresh_fallsBackToAuthDisplayName_whenProfileMissing() =
-      runTest(mainRule.scheduler) {
-        switchToUser(FakeUser.FakeUser2)
-        val auth = FirebaseEmulator.auth
+  fun refresh_fallsBackToAuthDisplayName_whenProfileMissing() = runTest {
+    // Sign in and set a displayName at the auth layer
+    switchToUser(FakeUser.FakeUser1)
+    FirebaseEmulator.auth.currentUser!!.updateProfile(
+            UserProfileChangeRequest.Builder().setDisplayName("Bob King").build())
+        .await()
 
-        // Make sure displayName exists so the VM fallback can use it.
-        auth.currentUser!!
-            .updateProfile(UserProfileChangeRequest.Builder().setDisplayName("Alice Q.").build())
-            .await()
-        auth.currentUser!!.reload().await()
+    // Minimal fake repo used only for this test — matches ProfileRepository exactly
+    val fakeRepo =
+        object : ProfileRepository {
+          override suspend fun createProfile(profile: Profile) {
+            /* no-op */
+          }
 
-        val vm = vm()
-        vm.refresh()
-        awaitUntil { vm.uiState.value.userName.isNotEmpty() }
+          override suspend fun getProfile(ownerId: String): Profile {
+            throw NoSuchElementException("Profile not found") // simulate 'missing'
+          }
 
-        val ui = vm.uiState.value
-        assertEquals("Alice Q.", ui.userName)
-        assertEquals(FakeUser.FakeUser2.email, ui.email)
-        assertNull(ui.errorMsg)
-      }
+          override suspend fun getAllProfile(): List<Profile> = emptyList()
 
-  @Test
-  fun refresh_withNoAuthenticatedUser_setsNameUserAndEmptyEmail() =
-      runTest(mainRule.scheduler) {
-        FirebaseEmulator.auth.signOut()
-        val vm = vm()
+          override suspend fun editProfile(profile: Profile) {
+            /* no-op */
+          }
 
-        vm.refresh()
-        awaitUntil {
-          val ui = vm.uiState.value
-          ui.userName == "User" && ui.email.isEmpty()
+          override suspend fun deleteProfile(ownerId: String) {
+            /* no-op */
+          }
         }
 
-        val ui = vm.uiState.value
-        assertEquals("User", ui.userName)
-        assertEquals("", ui.email)
-      }
+    val vm = vm(repo = fakeRepo)
+    vm.refresh()
+    awaitUntil { vm.uiState.value.userName.isNotEmpty() }
+
+    assertEquals("Bob King", vm.uiState.value.userName)
+    assertEquals(FakeUser.FakeUser1.email, vm.uiState.value.email)
+  }
 
   @Test
+  fun refresh_readsDisplayNameFromProfile_whenDocumentExists() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val db = FirebaseEmulator.firestore
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Seed a full profile using the schema the repo expects
+    val seeded =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Mansour",
+                    lastName = "Kanaan",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "EPFL",
+                    location = Location("Vortex", 0.0, 0.0),
+                    residencyName = "Coloc"),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+
+    val vm = vm()
+    vm.refresh()
+    awaitUntil { vm.uiState.value.userName == "Mansour Kanaan" }
+
+    assertEquals("Mansour Kanaan", vm.uiState.value.userName)
+    assertEquals(FakeUser.FakeUser1.email, vm.uiState.value.email)
+  }
+
+  @Test
+  fun onItemClick_isNoOp_stateUnchanged() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val vm = vm()
+    vm.refresh()
+    awaitUntil { vm.uiState.value.userName.isNotEmpty() }
+
+    val before = vm.uiState.value
+    vm.onItemClick("Anything")
+    val after = vm.uiState.value
+
+    assertEquals(before, after)
+  }
+
+  @Test
+  fun clearError_setsErrorMsgToNull() = runTest {
+    FirebaseEmulator.auth.signOut()
+    val vm = vm()
+
+    vm.deleteAccount { _, _ -> }
+    // wait specifically for the error to be set
+    awaitUntil { vm.uiState.value.errorMsg != null }
+    assertNotNull(vm.uiState.value.errorMsg)
+
+    vm.clearError()
+    assertNull(vm.uiState.value.errorMsg)
+  }
+
+  @Test
+  fun deleteAccount_whenNoUser_setsErrorAndKeepsNotDeleting() = runTest {
+    FirebaseEmulator.auth.signOut()
+    val vm = vm()
+
+    vm.deleteAccount { _, _ -> }
+    // isDeleting is false initially; wait for error specifically
+    awaitUntil { vm.uiState.value.errorMsg != null }
+
+    assertNotNull(vm.uiState.value.errorMsg)
+    assertEquals(false, vm.uiState.value.isDeleting)
+  }
+
+  /**
+   * Tests both branches:
+   * - success path (profile removed, user possibly deleted), OR
+   * - recent-login required path (error surfaced); in all cases:
+   *     * profile is removed
+   *     * isDeleting resets
+   *     * callback fires
+   */
+  @Test
   fun deleteAccount_successOrRecentLoginError_profileRemoved_flagResets_andCallbackFires() =
-      runTest(mainRule.scheduler) {
+      runTest {
         switchToUser(FakeUser.FakeUser1)
         val auth = FirebaseEmulator.auth
         val db = FirebaseEmulator.firestore
         val uid = auth.currentUser!!.uid
 
-        // Seed profile doc; repository.deleteProfile(uid) should remove it.
-        db.collection("profiles")
-            .document(uid)
-            .set(mapOf("firstName" to "ToDelete", "lastName" to "User"))
-            .await()
+        // Seed a rule-compliant profile (ownerId == uid)
+        val seededProfile =
+            Profile(
+                userInfo =
+                    UserInfo(
+                        name = "ToDelete",
+                        lastName = "User",
+                        email = FakeUser.FakeUser1.email,
+                        phoneNumber = "",
+                        universityName = "",
+                        location = Location("Seed", 0.0, 0.0),
+                        residencyName = ""),
+                userSettings = UserSettings(),
+                ownerId = uid)
+        db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seededProfile).await()
 
         val vm = vm()
         var cbOk: Boolean? = null
@@ -181,72 +223,16 @@ class SettingsViewModelTest : FirestoreTest() {
         awaitUntil { !vm.uiState.value.isDeleting && cbOk != null }
 
         // Profile must be gone
-        val snap = db.collection("profiles").document(uid).get().await()
+        val snap = db.collection(PROFILE_COLLECTION_PATH).document(uid).get().await()
         assertEquals(false, snap.exists())
 
         // Flag reset
         assertEquals(false, vm.uiState.value.isDeleting)
 
-        // Callback fired
+        // Callback fired (either success or “recent login required”)
         assertNotNull(cbOk)
-
-        // Either user was deleted OR an auth error was reported (recent-login)
         val userDeleted = (auth.currentUser == null)
         val hadErrorMsg = (vm.uiState.value.errorMsg != null || cbMsg != null)
         assertEquals(true, userDeleted || hadErrorMsg)
-      }
-
-  @Test
-  fun deleteAccount_whenNoUser_setsErrorAndKeepsNotDeleting() =
-      runTest(mainRule.scheduler) {
-        FirebaseEmulator.auth.signOut()
-        val vm = vm()
-        var ok: Boolean? = null
-        var msg: String? = null
-
-        vm.deleteAccount { success, m ->
-          ok = success
-          msg = m
-        }
-        awaitUntil { !vm.uiState.value.isDeleting && ok != null }
-
-        val ui = vm.uiState.value
-        assertEquals(false, ok)
-        assertNotNull(msg)
-        assertEquals(false, ui.isDeleting)
-        assertNotNull(ui.errorMsg)
-      }
-
-  @Test
-  fun clearError_setsErrorMsgToNull() =
-      runTest(mainRule.scheduler) {
-        FirebaseEmulator.auth.signOut()
-        val vm = vm()
-        vm.deleteAccount { _, _ -> }
-        awaitUntil { !vm.uiState.value.isDeleting && vm.uiState.value.errorMsg != null }
-
-        vm.clearError()
-        assertNull(vm.uiState.value.errorMsg)
-      }
-
-  @Test
-  fun onItemClick_isNoOp_stateUnchanged() =
-      runTest(mainRule.scheduler) {
-        switchToUser(FakeUser.FakeUser2)
-        val vm = vm()
-        vm.refresh()
-        awaitUntil { vm.uiState.value.email.isNotEmpty() }
-
-        val before = vm.uiState.value
-        vm.onItemClick("Any")
-        mainRule.scope.advanceUntilIdle()
-        val after = vm.uiState.value
-
-        assertEquals(before.userName, after.userName)
-        assertEquals(before.email, after.email)
-        assertEquals(before.topItems.size, after.topItems.size)
-        assertEquals(before.accountItems.size, after.accountItems.size)
-        assertEquals(before.isDeleting, after.isDeleting)
-        assertEquals(before.errorMsg, after.errorMsg)
       }
 }

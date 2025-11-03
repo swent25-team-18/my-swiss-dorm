@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
@@ -35,8 +36,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
-import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.*
 
 /** Centralized test tags for the Settings screen. */
@@ -56,10 +55,10 @@ object SettingsTestTags {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
-    vm: SettingsViewModel = viewModel(),
-    navigationActions: NavigationActions? = null
+    vm: SettingsViewModel = viewModel()
 ) {
   val ui by vm.uiState.collectAsState()
 
@@ -76,12 +75,12 @@ fun SettingsScreen(
 
   SettingsScreenContent(
       ui = ui,
+      onGoBack = onGoBack,
       onItemClick = {
         vm.onItemClick(it)
         onItemClick(it)
       },
-      onProfileClick = onProfileClick,
-      navigationActions = navigationActions)
+      onProfileClick = onProfileClick)
 }
 
 private val previewUiState =
@@ -92,9 +91,9 @@ private val previewUiState =
 @Composable
 fun SettingsScreenContent(
     ui: SettingsUiState,
+    onGoBack: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
-    onProfileClick: () -> Unit = {},
-    navigationActions: NavigationActions? = null
+    onProfileClick: () -> Unit = {}
 ) {
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
@@ -105,20 +104,25 @@ fun SettingsScreenContent(
   val focusManager = LocalFocusManager.current
 
   Scaffold(
-      containerColor = White,
-      bottomBar = { BottomBarFromNav(navigationActions) },
+      containerColor = BackGroundColor,
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("Settings") },
-            colors =
-                TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = White, titleContentColor = Color.Black))
+            navigationIcon = {
+              IconButton(
+                  onClick = onGoBack, modifier = Modifier.testTag(SettingsTestTags.BackButton)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MainColor)
+                  }
+            })
       }) { inner ->
         Column(
             modifier =
                 Modifier.padding(inner)
                     .fillMaxSize()
-                    .background(White)
+                    .background(BackGroundColor)
                     .verticalScroll(rememberScrollState())
                     .testTag(SettingsTestTags.SettingsScroll)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -139,11 +143,14 @@ fun SettingsScreenContent(
                                     .clip(CircleShape)
                                     .background(PalePink.copy(alpha = 0.16f)),
                             contentAlignment = Alignment.Center) {
-                              Text(initial, fontWeight = FontWeight.Bold, color = Red0)
+                              Text(initial, fontWeight = FontWeight.Bold, color = MainColor)
                             }
                         Spacer(Modifier.width(12.dp))
                         Column {
-                          Text(ui.userName, style = MaterialTheme.typography.titleMedium)
+                          Text(
+                              ui.userName,
+                              style = MaterialTheme.typography.titleMedium,
+                              color = TextColor)
                           Text(
                               "View profile",
                               style = MaterialTheme.typography.bodySmall,
@@ -155,7 +162,8 @@ fun SettingsScreenContent(
                           modifier = Modifier.testTag(SettingsTestTags.ProfileButton)) {
                             Icon(
                                 imageVector = Icons.Filled.ChevronRight,
-                                contentDescription = "Open profile")
+                                contentDescription = "Open profile",
+                                tint = MainColor)
                           }
                     }
               }
@@ -192,7 +200,8 @@ fun SettingsScreenContent(
                 Button(
                     onClick = { onItemClick("Delete my account") },
                     colors =
-                        ButtonDefaults.buttonColors(containerColor = Red0, contentColor = White),
+                        ButtonDefaults.buttonColors(
+                            containerColor = MainColor, contentColor = White),
                     shape = MaterialTheme.shapes.medium,
                     modifier =
                         Modifier.fillMaxWidth()
@@ -219,7 +228,8 @@ fun SettingsScreenContent(
                     horizontalArrangement = Arrangement.SpaceBetween) {
                       Text(
                           "Blocked contacts (${blockedContacts.size})",
-                          style = MaterialTheme.typography.bodyLarge)
+                          style = MaterialTheme.typography.bodyLarge,
+                          color = TextColor)
                       val rotation by
                           animateFloatAsState(
                               targetValue = if (blockedExpanded) 90f else 0f,
@@ -231,7 +241,8 @@ fun SettingsScreenContent(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription =
                                     if (blockedExpanded) "Hide blocked" else "Show blocked",
-                                modifier = Modifier.rotate(rotation))
+                                modifier = Modifier.rotate(rotation),
+                                tint = MainColor)
                           }
                     }
 
@@ -242,9 +253,9 @@ fun SettingsScreenContent(
 
                 if (blockedExpanded) {
                   Surface(
-                      color = White,
+                      color = BackGroundColor,
                       shape = MaterialTheme.shapes.medium,
-                      border = BorderStroke(1.dp, LightGray0),
+                      border = BorderStroke(1.dp, LightGray),
                       modifier =
                           Modifier.fillMaxWidth()
                               .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -256,7 +267,7 @@ fun SettingsScreenContent(
                                 text = name,
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(vertical = 4.dp),
-                                color = Color.Black)
+                                color = TextColor)
                           }
                         }
                       }
@@ -271,9 +282,9 @@ fun SettingsScreenContent(
 @Composable
 private fun CardBlock(content: @Composable ColumnScope.() -> Unit) {
   Surface(
-      color = White,
+      color = BackGroundColor,
       shape = MaterialTheme.shapes.large,
-      border = BorderStroke(1.dp, LightGray0),
+      border = BorderStroke(1.dp, LightGray),
       shadowElevation = 0.dp,
       tonalElevation = 0.dp,
       modifier = Modifier.fillMaxWidth()) {
@@ -286,13 +297,13 @@ private fun SectionLabel(text: String) {
   Text(
       text = text,
       style = MaterialTheme.typography.titleMedium,
-      color = Color.Black,
+      color = TextColor,
       modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
 }
 
 @Composable
 private fun SoftDivider() {
-  HorizontalDivider(thickness = 1.dp, color = LightGray0.copy(alpha = 0.25f))
+  HorizontalDivider(thickness = 1.dp, color = LightGray.copy(alpha = 0.25f))
 }
 
 @Composable
@@ -301,7 +312,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
       modifier = Modifier.fillMaxWidth().padding(horizontal = 0.dp, vertical = 4.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyLarge, color = Color.Black)
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = TextColor)
         Switch(
             modifier =
                 Modifier.testTag(SettingsTestTags.switch(label)).semantics(
@@ -314,9 +325,9 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
             colors =
                 SwitchDefaults.colors(
                     checkedThumbColor = White,
-                    checkedTrackColor = Red0,
-                    uncheckedThumbColor = LightGray0,
-                    uncheckedTrackColor = LightGray0.copy(alpha = 0.5f)))
+                    checkedTrackColor = MainColor,
+                    uncheckedThumbColor = LightGray,
+                    uncheckedTrackColor = LightGray.copy(alpha = 0.5f)))
       }
 }
 

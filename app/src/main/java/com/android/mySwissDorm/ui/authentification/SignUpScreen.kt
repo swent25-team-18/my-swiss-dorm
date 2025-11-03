@@ -51,9 +51,10 @@ import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.LightGray
+import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import com.android.mySwissDorm.ui.theme.Red0
+import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,7 +76,10 @@ fun SignUpScreen(
             title = {},
             navigationIcon = {
               IconButton(onClick = onBack, modifier = Modifier.testTag(C.Tag.SIGN_UP_BACK_BUTTON)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Red0)
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null,
+                    tint = MainColor)
               }
             })
       },
@@ -89,12 +93,13 @@ fun SignUpScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               val outlinedTextModifier =
-                  Modifier.background(LightGray, RoundedCornerShape(10.dp)).fillMaxWidth()
+                  Modifier.background(TextBoxColor, RoundedCornerShape(10.dp)).fillMaxWidth()
               val textFieldColors =
                   OutlinedTextFieldDefaults.colors(
-                      focusedBorderColor = Red0,
-                      unfocusedBorderColor = Color.Transparent,
-                      focusedLabelColor = Red0,
+                      focusedBorderColor = MainColor,
+                      unfocusedBorderColor = TextBoxColor,
+                      focusedLabelColor = MainColor,
+                      cursorColor = TextColor,
                       unfocusedLabelColor = Color.Gray)
 
               Spacer(modifier = Modifier.size(16.dp))
@@ -259,7 +264,7 @@ fun SignUpScreen(
                     signUpViewModel.signUp(context = context, credentialManager = credentialManager)
                   },
                   enabled = signUpViewModel.isFormValid,
-                  colors = ButtonDefaults.buttonColors(containerColor = Red0),
+                  colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                   modifier = Modifier.fillMaxWidth().height(52.dp).testTag(C.Tag.SIGN_UP_BUTTON),
                   shape = RoundedCornerShape(16.dp)) {
                     Text(text = stringResource(R.string.sign_up_button_text), color = Color.White)

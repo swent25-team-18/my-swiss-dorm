@@ -26,7 +26,7 @@ fun ProfileContributionsScreen(
     onContributionClick: (Contribution) -> Unit
 ) {
   Scaffold(
-      containerColor = White,
+      containerColor = BackGroundColor,
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("My contributions") },
@@ -35,12 +35,12 @@ fun ProfileContributionsScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Red0)
+                    tint = MainColor)
               }
             },
             colors =
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = White, titleContentColor = Color.Black))
+                    containerColor = BackGroundColor, titleContentColor = TextColor))
       }) { inner ->
         LazyColumn( ////
             modifier = Modifier.padding(inner).fillMaxSize().background(White),
@@ -53,14 +53,14 @@ fun ProfileContributionsScreen(
                           onContributionClick(c)
                         },
                     shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(containerColor = White),
+                    colors = CardDefaults.cardColors(containerColor = BackGroundColor),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    border = BorderStroke(1.dp, LightGray0)) {
+                    border = BorderStroke(1.dp, LightGray)) {
                       Column(Modifier.padding(16.dp)) {
                         Text(
                             text = c.title,
                             style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
-                            color = Color.Black)
+                            color = TextColor)
                         Spacer(Modifier.height(6.dp))
                         Text(
                             text = c.description,
@@ -70,10 +70,10 @@ fun ProfileContributionsScreen(
                         OutlinedButton(
                             onClick = { onContributionClick(c) },
                             modifier = Modifier.testTag("btn_contrib_details_$index"),
-                            border = BorderStroke(1.dp, Red0),
+                            border = BorderStroke(1.dp, MainColor),
                             colors =
                                 ButtonDefaults.outlinedButtonColors(
-                                    containerColor = Color.Transparent, contentColor = Red0),
+                                    containerColor = BackGroundColor, contentColor = MainColor),
                             shape = MaterialTheme.shapes.medium) {
                               Text("View details")
                             }

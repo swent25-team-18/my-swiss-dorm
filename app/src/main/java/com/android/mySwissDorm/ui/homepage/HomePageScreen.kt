@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -45,8 +44,13 @@ import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.city.City
-import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
+import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
 import com.android.mySwissDorm.ui.navigation.NavigationActions
+import com.android.mySwissDorm.ui.navigation.Screen
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.TextColor
+import org.w3c.dom.Text
 
 object HomePageScreenTestTags {
   const val SEARCH_BAR = "searchBar"
@@ -76,57 +80,61 @@ fun HomePageScreen(
     uiState.errorMsg?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
   }
 
-  Scaffold(bottomBar = { BottomBarFromNav(navigationActions) }) { paddingValues ->
-    var inputText by remember { mutableStateOf("") }
-    Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-      Box(
-          modifier =
-              Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR)
-                  .fillMaxWidth()
-                  .wrapContentHeight(),
-          contentAlignment = Alignment.Center) {
-            TextField(
-                modifier =
-                    Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp, horizontal = 32.dp)
-                        .border(2.dp, Color.Black, RoundedCornerShape(20.dp)),
-                value = inputText,
-                onValueChange = { inputText = it },
-                placeholder = { Text("Browse", fontSize = 18.sp) },
-                leadingIcon = {
-                  Icon(
-                      Icons.Default.Search,
-                      modifier = Modifier.size(30.dp),
-                      contentDescription = "Search",
-                      tint = com.android.mySwissDorm.ui.theme.PalePink)
-                },
-                singleLine = true,
-                colors =
-                    TextFieldDefaults.colors(
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent))
-          }
-      LazyColumn(
-          modifier =
-              Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
-                  .fillMaxWidth()
-                  .padding(horizontal = 32.dp)
-                  .padding(top = 10.dp),
-          state = lazyState) {
-            items(uiState.cities.size) { index ->
-              val city = uiState.cities[index]
-              if (city.name.contains(inputText, ignoreCase = true) ||
-                  city.description.contains(inputText, ignoreCase = true)) {
-                CityCard(city = city, onClick = { onSelectCity(city) })
-                Spacer(modifier = Modifier.height(16.dp))
+  Scaffold(
+      bottomBar = {
+        BottomNavigationMenu(
+            selectedScreen = Screen.Homepage, onTabSelected = { navigationActions?.navigateTo(it) })
+      }) { paddingValues ->
+        var inputText by remember { mutableStateOf("") }
+        Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+          Box(
+              modifier =
+                  Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR)
+                      .fillMaxWidth()
+                      .wrapContentHeight(),
+              contentAlignment = Alignment.Center) {
+                TextField(
+                    modifier =
+                        Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp, horizontal = 32.dp)
+                            .border(2.dp, TextColor, RoundedCornerShape(20.dp)),
+                    value = inputText,
+                    onValueChange = { inputText = it },
+                    placeholder = { Text("Browse", fontSize = 18.sp) },
+                    leadingIcon = {
+                      Icon(
+                          Icons.Default.Search,
+                          modifier = Modifier.size(30.dp),
+                          contentDescription = "Search",
+                          tint = MainColor)
+                    },
+                    singleLine = true,
+                    colors =
+                        TextFieldDefaults.colors(
+                            unfocusedContainerColor = BackGroundColor,
+                            focusedContainerColor = BackGroundColor,
+                            unfocusedIndicatorColor = BackGroundColor,
+                            focusedIndicatorColor = BackGroundColor))
               }
-            }
-          }
-    }
-  }
+          LazyColumn(
+              modifier =
+                  Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
+                      .fillMaxWidth()
+                      .padding(horizontal = 32.dp)
+                      .padding(top = 10.dp),
+              state = lazyState) {
+                items(uiState.cities.size) { index ->
+                  val city = uiState.cities[index]
+                  if (city.name.contains(inputText, ignoreCase = true) ||
+                      city.description.contains(inputText, ignoreCase = true)) {
+                    CityCard(city = city, onClick = { onSelectCity(city) })
+                    Spacer(modifier = Modifier.height(16.dp))
+                  }
+                }
+              }
+        }
+      }
 }
 
 @Composable
@@ -136,7 +144,7 @@ fun CityCard(city: City, onClick: () -> Unit) {
           Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCard(city.name))
               .fillMaxWidth()
               .padding(vertical = 6.dp)
-              .border(2.dp, Color.Black, RoundedCornerShape(10.dp))
+              .border(2.dp, TextColor, RoundedCornerShape(10.dp))
               .clickable { onClick() },
   ) {
     Box {
@@ -150,7 +158,7 @@ fun CityCard(city: City, onClick: () -> Unit) {
             modifier =
                 Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardTitle(city.name)),
             text = city.name,
-            color = Color.Black,
+            color = TextColor,
             fontWeight = FontWeight.Black,
             fontSize = 20.sp)
         Spacer(modifier = Modifier.height(8.dp))
@@ -159,7 +167,7 @@ fun CityCard(city: City, onClick: () -> Unit) {
                 Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardDescription(city.name))
                     .fillMaxWidth(0.9f),
             text = city.description,
-            color = Color.Black,
+            color = TextColor,
             fontSize = 12.sp)
       }
     }

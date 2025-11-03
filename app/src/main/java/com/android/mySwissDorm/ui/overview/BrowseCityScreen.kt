@@ -23,10 +23,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
-import com.android.mySwissDorm.ui.navigation.NavigationActions
-import com.android.mySwissDorm.ui.navigation.Screen
-import com.android.mySwissDorm.ui.theme.Red0
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.TextColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,8 +34,7 @@ fun BrowseCityScreen(
     browseCityViewModel: BrowseCityViewModel = viewModel(),
     cityName: String,
     onGoBack: () -> Unit = {},
-    onSelectListing: (ListingCardUI) -> Unit = {},
-    navigationActions: NavigationActions? = null
+    onSelectListing: (ListingCardUI) -> Unit = {}
 ) {
   LaunchedEffect(cityName) { browseCityViewModel.loadListings(cityName) }
 
@@ -44,8 +43,7 @@ fun BrowseCityScreen(
       cityName = cityName,
       listingsState = uiState.listings,
       onGoBack = onGoBack,
-      onSelectListing = onSelectListing,
-      navigationActions = navigationActions)
+      onSelectListing = onSelectListing)
 }
 
 // Pure UI (stateless) — easy to preview & test.
@@ -55,16 +53,11 @@ private fun BrowseCityScreenUI(
     cityName: String,
     listingsState: ListingsState,
     onGoBack: () -> Unit,
-    onSelectListing: (ListingCardUI) -> Unit,
-    navigationActions: NavigationActions? = null
+    onSelectListing: (ListingCardUI) -> Unit
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
 
   Scaffold(
-      bottomBar = {
-        BottomNavigationMenu(
-            selectedScreen = Screen.Homepage, onTabSelected = { navigationActions?.navigateTo(it) })
-      },
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text(cityName) },
@@ -74,34 +67,34 @@ private fun BrowseCityScreenUI(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Red0)
+                        tint = MainColor)
                   }
             })
       }) { pd ->
         Column(modifier = Modifier.padding(pd).fillMaxSize().testTag(C.BrowseCityTags.ROOT)) {
           TabRow(
               selectedTabIndex = selectedTab,
-              containerColor = Color.Transparent,
-              contentColor = Color.Black,
-              divider = { HorizontalDivider(thickness = 1.dp, color = Color.Black) },
+              containerColor = BackGroundColor,
+              contentColor = TextColor,
+              divider = { HorizontalDivider(thickness = 1.dp, color = TextColor) },
               indicator = { positions ->
                 TabRowDefaults.SecondaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(positions[selectedTab]),
                     height = 2.dp,
-                    color = Red0)
+                    color = MainColor)
               }) {
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    selectedContentColor = Color.Black,
-                    unselectedContentColor = Color.Black,
+                    selectedContentColor = TextColor,
+                    unselectedContentColor = TextColor,
                     text = { Text("Reviews") },
                     modifier = Modifier.testTag(C.BrowseCityTags.TAB_REVIEWS))
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    selectedContentColor = Color.Black,
-                    unselectedContentColor = Color.Black,
+                    selectedContentColor = TextColor,
+                    unselectedContentColor = TextColor,
                     text = { Text("Listings") },
                     modifier = Modifier.testTag(C.BrowseCityTags.TAB_LISTINGS))
               }
@@ -182,6 +175,7 @@ private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
+                color = TextColor,
                 modifier = Modifier.fillMaxWidth())
 
             Spacer(Modifier.height(8.dp))
@@ -200,7 +194,7 @@ private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
 private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
   Column(modifier) {
     items.forEach {
-      Text("• $it", style = MaterialTheme.typography.bodyMedium)
+      Text("• $it", style = MaterialTheme.typography.bodyMedium, color = TextColor)
       Spacer(Modifier.height(6.dp))
     }
   }
@@ -209,6 +203,7 @@ private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
 @Preview(showBackground = true, widthDp = 420)
 @Composable
 private fun BrowseCityScreen_Preview() {
+
   val sampleUi =
       ListingsState(
           loading = false,
@@ -225,6 +220,8 @@ private fun BrowseCityScreen_Preview() {
                       rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
                       listingUid = "preview2")),
       )
-  BrowseCityScreenUI(
-      cityName = "Lausanne", listingsState = sampleUi, onGoBack = {}, onSelectListing = {})
+  MySwissDormAppTheme {
+    BrowseCityScreenUI(
+        cityName = "Lausanne", listingsState = sampleUi, onGoBack = {}, onSelectListing = {})
+  }
 }

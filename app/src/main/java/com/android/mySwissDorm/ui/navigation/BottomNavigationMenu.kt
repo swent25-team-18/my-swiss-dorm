@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.MainColor
 
 @Composable
 fun BottomNavigationMenu(
@@ -37,11 +38,11 @@ fun BottomNavigationMenu(
           alwaysShowLabel = true,
           colors =
               NavigationBarItemDefaults.colors(
-                  indicatorColor = Color(0xFFFF6666), // <-- your highlight color
+                  indicatorColor = MainColor, // <-- your highlight color
                   selectedIconColor = Color.White, // good contrast on red
-                  selectedTextColor = Color(0xFFFF6666),
-                  unselectedIconColor = Color(0xFFFF6666), // <-- red when NOT selected
-                  unselectedTextColor = Color(0xFFFF6666)),
+                  selectedTextColor = MainColor,
+                  unselectedIconColor = MainColor, // <-- red when NOT selected
+                  unselectedTextColor = MainColor),
           modifier = Modifier.testTag(C.Tag.buttonNavBarTestTag(screen)))
     }
   }

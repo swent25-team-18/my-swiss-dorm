@@ -15,5 +15,12 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if request.time < timestamp.date(2025, 11, 11);
     }
+    match /reviews/{reviewId} {
+        allow create: if request.auth != null
+                      && request.resource.data.ownerId == request.auth.uid;
+        allow write: if request.auth.uid == resource.data.ownerId;
+        allow update, delete: if request.auth.uid == resource.data.ownerId;
+        allow read: if true;
+    }
   }
 }

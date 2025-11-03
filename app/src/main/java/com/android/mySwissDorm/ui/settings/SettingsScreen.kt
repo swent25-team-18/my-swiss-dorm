@@ -39,11 +39,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
-import com.android.mySwissDorm.ui.theme.LightGray0
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import com.android.mySwissDorm.ui.theme.PalePink
-import com.android.mySwissDorm.ui.theme.Red0
-import com.android.mySwissDorm.ui.theme.White
+import com.android.mySwissDorm.ui.theme.*
+
 
 /** Centralized test tags for the Settings screen. */
 object SettingsTestTags {
@@ -115,14 +112,14 @@ fun SettingsScreenContent(
   var showDeleteConfirm by remember { mutableStateOf(false) }
 
   Scaffold(
-      containerColor = White,
+      containerColor = BackGroundColor,
       contentWindowInsets = WindowInsets.safeDrawing,
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("Settings") },
             colors =
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = White, titleContentColor = Color.Black))
+                    containerColor = BackGroundColor, titleContentColor = TextColor))
       },
       // ✅ Guard: only render bottom bar when navigation is available (e.g., real app; tests pass
       // null)
@@ -138,7 +135,7 @@ fun SettingsScreenContent(
         }
       }) { paddingValues ->
         BoxWithConstraints(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).background(White)) {
+            modifier = Modifier.fillMaxSize().padding(paddingValues).background(BackGroundColor)) {
               val maxW = this.maxWidth
               val isCompact = maxW < 360.dp
               val isTablet = maxW >= 600.dp
@@ -178,7 +175,7 @@ fun SettingsScreenContent(
                                             .clip(CircleShape)
                                             .background(PalePink.copy(alpha = 0.16f)),
                                     contentAlignment = Alignment.Center) {
-                                      Text(initial, fontWeight = FontWeight.Bold, color = Red0)
+                                      Text(initial, fontWeight = FontWeight.Bold, color = MainColor)
                                     }
 
                                 Column(modifier = Modifier.weight(1f)) {
@@ -190,7 +187,7 @@ fun SettingsScreenContent(
                                   Text(
                                       "View profile",
                                       style = MaterialTheme.typography.bodySmall,
-                                      color = Color(0xFF7A7A7A),
+                                      color = MainColor,
                                       maxLines = 1,
                                       overflow = TextOverflow.Ellipsis)
                                 }
@@ -284,9 +281,9 @@ fun SettingsScreenContent(
 
                           if (blockedExpanded) {
                             Surface(
-                                color = White,
+                                color = BackGroundColor,
                                 shape = MaterialTheme.shapes.medium,
-                                border = BorderStroke(1.dp, LightGray0),
+                                border = BorderStroke(1.dp, TextBoxColor), //check si pas mieux en light gray
                                 modifier =
                                     Modifier.fillMaxWidth()
                                         .bringIntoViewRequester(blockedBringIntoView)
@@ -297,7 +294,7 @@ fun SettingsScreenContent(
                                           text = name,
                                           style = MaterialTheme.typography.bodyMedium,
                                           modifier = Modifier.padding(vertical = 4.dp),
-                                          color = Color.Black,
+                                          color = TextColor,
                                           maxLines = 1,
                                           overflow = TextOverflow.Ellipsis)
                                     }
@@ -332,13 +329,13 @@ fun SettingsScreenContent(
                                 enabled = !ui.isDeleting,
                                 colors =
                                     ButtonDefaults.buttonColors(
-                                        containerColor = White,
-                                        contentColor = Red0,
-                                        disabledContainerColor = White,
-                                        disabledContentColor = Red0.copy(alpha = 0.5f)),
+                                        containerColor = BackGroundColor,
+                                        contentColor = MainColor,
+                                        disabledContainerColor = BackGroundColor,
+                                        disabledContentColor = MainColor.copy(alpha = 0.5f)),
                                 shape = RoundedCornerShape(28.dp),
                                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                border = BorderStroke(1.dp, Red0.copy(alpha = 0.15f)),
+                                border = BorderStroke(1.dp, MainColor.copy(alpha = 0.15f)),
                                 modifier =
                                     Modifier.fillMaxWidth()
                                         .padding(top = 8.dp)
@@ -377,9 +374,9 @@ fun SettingsScreenContent(
 @Composable
 private fun CardBlock(content: @Composable ColumnScope.() -> Unit) {
   Surface(
-      color = White,
+      color = BackGroundColor,
       shape = MaterialTheme.shapes.large,
-      border = BorderStroke(1.dp, LightGray0),
+      border = BorderStroke(1.dp, TextBoxColor),//check si pas mieux en light gray
       shadowElevation = 0.dp,
       tonalElevation = 0.dp,
       modifier = Modifier.fillMaxWidth()) {
@@ -392,13 +389,13 @@ private fun SectionLabel(text: String) {
   Text(
       text = text,
       style = MaterialTheme.typography.titleMedium,
-      color = Color.Black,
+      color = TextColor,
       modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
 }
 
 @Composable
 private fun SoftDivider() {
-  HorizontalDivider(thickness = 1.dp, color = LightGray0.copy(alpha = 0.25f))
+  HorizontalDivider(thickness = 1.dp, color = TextBoxColor.copy(alpha = 0.25f)) //check si pas mieux en light gray
 }
 
 /** Adaptive switch row to prevent overlaps on small screens. */
@@ -414,7 +411,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
           Text(
               label,
               style = MaterialTheme.typography.bodyLarge,
-              color = Color.Black,
+              color = TextColor,
               maxLines = 2,
               overflow = TextOverflow.Ellipsis,
               modifier = Modifier.weight(1f).padding(end = 12.dp))
@@ -430,16 +427,16 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
               colors =
                   SwitchDefaults.colors(
                       checkedThumbColor = White,
-                      checkedTrackColor = Red0,
-                      uncheckedThumbColor = LightGray0,
-                      uncheckedTrackColor = LightGray0.copy(alpha = 0.5f)))
+                      checkedTrackColor = MainColor,
+                      uncheckedThumbColor = LightGray, //check si pas mieux en textbox color
+                      uncheckedTrackColor = LightGray.copy(alpha = 0.5f))) //check si pas mieux en text box color
         }
   } else {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
       Text(
           label,
           style = MaterialTheme.typography.bodyLarge,
-          color = Color.Black,
+          color = TextColor,
           maxLines = 3,
           overflow = TextOverflow.Ellipsis,
           modifier = Modifier.fillMaxWidth())
@@ -457,10 +454,10 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
                 onCheckedChange = onCheckedChange,
                 colors =
                     SwitchDefaults.colors(
-                        checkedThumbColor = White,
-                        checkedTrackColor = Red0,
-                        uncheckedThumbColor = LightGray0,
-                        uncheckedTrackColor = LightGray0.copy(alpha = 0.5f)))
+                        checkedThumbColor = BackGroundColor,
+                        checkedTrackColor = MainColor,
+                        uncheckedThumbColor = TextBoxColor,
+                        uncheckedTrackColor = TextBoxColor.copy(alpha = 0.5f)))
           }
     }
   }

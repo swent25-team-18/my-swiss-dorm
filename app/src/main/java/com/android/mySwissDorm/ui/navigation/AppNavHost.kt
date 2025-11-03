@@ -18,7 +18,9 @@ import com.android.mySwissDorm.ui.homepage.HomePageScreen
 import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreen
+import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun AppNavHost(
@@ -83,7 +85,14 @@ fun AppNavHost(
       AddListingScreen(
           onOpenMap = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
           onBack = { navActions.goBack() },
-          onConfirm = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() })
+          onConfirm = { created ->
+            navController.navigate(Screen.ListingOverview(created.uid).route) {
+              // Remove AddListing so back from overview goes to whatever was before it (Homepage
+              // here)
+              popUpTo(Screen.AddListing.route) { inclusive = true }
+              launchSingleTop = true
+            }
+          })
     }
 
     composable(Screen.CityOverview.route) { navBackStackEntry ->
@@ -107,14 +116,44 @@ fun AppNavHost(
     composable(Screen.ListingOverview.route) { navBackStackEntry ->
       val listingUid = navBackStackEntry.arguments?.getString("listingUid")
 
-      // create listing overview with listingUid
       listingUid?.let {
         ViewListingScreen(
             listingUid = it,
             onGoBack = { navActions.goBack() },
             onApply = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
-            onEdit = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() })
+            onEdit = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
+            onViewProfile = { ownerId ->
+              val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+              if (ownerId == currentUserId) {
+                // It's the current user, go to their editable profile
+                navActions.navigateTo(Screen.Profile)
+              } else {
+                // It's another user, go to the read-only profile screen
+                navActions.navigateTo(Screen.ViewUserProfile(ownerId))
+              }
+            })
       }
+    }
+
+    composable(Screen.ViewUserProfile.route) { navBackStackEntry ->
+      // Extract the userId argument from the route
+      val userId = navBackStackEntry.arguments?.getString("userId")
+
+      userId?.let {
+        ViewUserProfileScreen(
+            ownerId = it,
+            onBack = { navActions.goBack() },
+            onSendMessage = {
+              Toast.makeText(context, "Messaging not implemented yet", Toast.LENGTH_SHORT).show()
+            })
+      }
+          ?: run {
+            // Handle error if userId is missing
+            Log.e("AppNavHost", "User ID is null for ViewUserProfile route")
+            Toast.makeText(context, "Could not load profile, user ID missing", Toast.LENGTH_SHORT)
+                .show()
+            navActions.goBack()
+          }
     }
 
     composable(Screen.EditListing.route) {

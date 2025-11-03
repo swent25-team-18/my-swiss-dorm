@@ -30,8 +30,7 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     Log.d("", Screen.topLevel.joinToString { it.name })
     setContent {
-      MySwissDormAppTheme {
-        // A surface container using the 'background' color from the theme
+      MySwissDormAppTheme(darkTheme = true) {
         Surface(
             modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
             color = MaterialTheme.colorScheme.background) {

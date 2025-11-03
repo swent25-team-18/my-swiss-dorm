@@ -37,3 +37,5 @@ google-services.json
 
 .DS_Store
 
+.firebaserc
+/firebase.json

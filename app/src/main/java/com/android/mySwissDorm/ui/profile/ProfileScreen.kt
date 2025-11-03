@@ -31,9 +31,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.LightGray
-import com.android.mySwissDorm.ui.theme.Red0
-import com.android.mySwissDorm.ui.theme.White
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
 
 /**
  * High-level Profile screen entry point.
@@ -131,7 +133,7 @@ private fun ProfileScreenContent(
               Text(
                   text = "Profile",
                   fontSize = 24.sp,
-                  color = Color.Black,
+                  color = TextColor,
                   modifier = Modifier.testTag(C.Tag.PROFILE_SCREEN_TITLE))
             },
             navigationIcon = {
@@ -140,7 +142,7 @@ private fun ProfileScreenContent(
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Go back",
-                        tint = Red0)
+                        tint = MainColor)
                   }
             },
             actions = {
@@ -148,9 +150,15 @@ private fun ProfileScreenContent(
               IconButton(
                   onClick = onToggleEditing, modifier = Modifier.testTag("profile_edit_toggle")) {
                     if (state.isEditing) {
-                      Icon(Icons.Default.Close, contentDescription = "Cancel editing", tint = Red0)
+                      Icon(
+                          Icons.Default.Close,
+                          contentDescription = "Cancel editing",
+                          tint = MainColor)
                     } else {
-                      Icon(Icons.Default.Edit, contentDescription = "Modify profile", tint = Red0)
+                      Icon(
+                          Icons.Default.Edit,
+                          contentDescription = "Modify profile",
+                          tint = MainColor)
                     }
                   }
             })
@@ -173,8 +181,8 @@ private fun ProfileScreenContent(
                         modifier =
                             Modifier.size(100.dp)
                                 .clip(CircleShape)
-                                .border(2.dp, Red0, CircleShape)
-                                .background(LightGray)
+                                .border(2.dp, MainColor, CircleShape)
+                                .background(BackGroundColor)
                                 .clickable(enabled = state.isEditing) { onChangeProfilePicture() }
                                 .testTag("profile_picture_box"),
                         contentAlignment = Alignment.Center) {
@@ -182,7 +190,7 @@ private fun ProfileScreenContent(
                               imageVector = Icons.Default.Person,
                               contentDescription = "Change profile picture",
                               modifier = Modifier.size(40.dp),
-                              tint = Red0)
+                              tint = MainColor)
                         }
                   }
 
@@ -251,7 +259,8 @@ private fun ProfileScreenContent(
                             .clip(RoundedCornerShape(12.dp))
                             .testTag("profile_save_button"),
                     colors =
-                        ButtonDefaults.buttonColors(containerColor = Red0, contentColor = White),
+                        ButtonDefaults.buttonColors(
+                            containerColor = MainColor, contentColor = BackGroundColor),
                     enabled = !state.isSaving) {
                       Text(text = if (state.isSaving) "SAVING..." else "SAVE")
                     }
@@ -265,8 +274,9 @@ private fun ProfileScreenContent(
                             .clip(RoundedCornerShape(12.dp))
                             .testTag("profile_logout_button"),
                     colors =
-                        ButtonDefaults.buttonColors(containerColor = White, contentColor = Red0)) {
-                      Text(text = "LOGOUT", color = Red0)
+                        ButtonDefaults.buttonColors(
+                            containerColor = BackGroundColor, contentColor = MainColor)) {
+                      Text(text = "LOGOUT", color = MainColor)
                     }
               }
 
@@ -309,13 +319,13 @@ fun EditableTextField(
       colors =
           TextFieldDefaults.colors(
               unfocusedIndicatorColor = Color.Transparent,
-              focusedIndicatorColor = Red0,
-              focusedLabelColor = Red0,
-              cursorColor = Red0,
-              focusedContainerColor = LightGray,
-              unfocusedContainerColor = LightGray,
-              disabledContainerColor = LightGray),
-      textStyle = TextStyle(color = Color.Black, fontSize = 16.sp, textAlign = TextAlign.Start),
+              focusedIndicatorColor = MainColor,
+              focusedLabelColor = MainColor,
+              cursorColor = MainColor,
+              focusedContainerColor = TextBoxColor,
+              unfocusedContainerColor = TextBoxColor,
+              disabledContainerColor = TextBoxColor),
+      textStyle = TextStyle(color = TextColor, fontSize = 16.sp, textAlign = TextAlign.Start),
       keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done))
 }
 
@@ -362,14 +372,13 @@ private fun DropdownField(
             colors =
                 TextFieldDefaults.colors(
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = Red0,
-                    focusedLabelColor = Red0,
-                    cursorColor = Red0,
-                    focusedContainerColor = LightGray,
-                    unfocusedContainerColor = LightGray,
-                    disabledContainerColor = LightGray),
-            textStyle =
-                TextStyle(color = Color.Black, fontSize = 16.sp, textAlign = TextAlign.Start))
+                    focusedIndicatorColor = MainColor,
+                    focusedLabelColor = MainColor,
+                    cursorColor = MainColor,
+                    focusedContainerColor = TextBoxColor,
+                    unfocusedContainerColor = TextBoxColor,
+                    disabledContainerColor = TextBoxColor),
+            textStyle = TextStyle(color = TextColor, fontSize = 16.sp, textAlign = TextAlign.Start))
 
         // Dropdown menu (rounded corners to match the field)
         ExposedDropdownMenu(
@@ -395,7 +404,11 @@ private fun DropdownField(
  * - In edit mode, you can type and pick dropdown values.
  * - Pressing "SAVE" in this preview simply flips back to view mode.
  */
-@Preview(showBackground = true, name = "Profile – Interactive")
+@Preview(showBackground = true, name = "Profile – Light Mode")
+@Preview(
+    showBackground = true,
+    name = "Profile – Dark Mode",
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Preview_Profile_Interactive() {
   // Local preview state (no ViewModel involved)
@@ -405,7 +418,6 @@ private fun Preview_Profile_Interactive() {
   var language by rememberSaveable { mutableStateOf("English") }
   var residence by rememberSaveable { mutableStateOf("Vortex, Coloc") }
 
-  // Build the UI state the screen expects
   val ui =
       ProfileUiState(
           firstName = firstName,
@@ -416,18 +428,17 @@ private fun Preview_Profile_Interactive() {
           isSaving = false,
           errorMsg = null)
 
-  MaterialTheme {
+  MySwissDormAppTheme {
     ProfileScreenContent(
         state = ui,
-        onFirstNameChange = { firstName = it }, // called on SAVE
-        onLastNameChange = { lastName = it }, // called on SAVE
-        onLanguageChange = { language = it }, // called on SAVE
-        onResidenceChange = { residence = it }, // called on SAVE
+        onFirstNameChange = { firstName = it },
+        onLastNameChange = { lastName = it },
+        onLanguageChange = { language = it },
+        onResidenceChange = { residence = it },
         onLogout = {},
         onChangeProfilePicture = {},
         onBack = {},
-        onToggleEditing = { isEditing = !isEditing }, // Modify/Cancel
-        onSave = { isEditing = false } // after SAVE, return to view mode
-        )
+        onToggleEditing = { isEditing = !isEditing },
+        onSave = { isEditing = false })
   }
 }

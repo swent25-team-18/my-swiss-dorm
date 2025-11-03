@@ -10,7 +10,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class HomePageUIState(val cities: List<City> = emptyList(), val errorMsg: String? = null)
+data class HomePageUIState(
+    val cities: List<City> = emptyList(),
+    val errorMsg: String? = null,
+    val customLocation: String = "",
+    val showCustomLocationDialog: Boolean = false
+)
 
 class HomePageViewModel(
     private val citiesRepository: CitiesRepository = CitiesRepositoryProvider.repository
@@ -32,5 +37,22 @@ class HomePageViewModel(
         _uiState.value = _uiState.value.copy(errorMsg = e.message)
       }
     }
+  }
+
+  fun setCustomLocation(location: String) {
+    _uiState.value = _uiState.value.copy(customLocation = location)
+  }
+
+  fun onCustomLocationClick() {
+    _uiState.value = _uiState.value.copy(showCustomLocationDialog = true)
+  }
+
+  fun dismissCustomLocationDialog() {
+    _uiState.value = _uiState.value.copy(showCustomLocationDialog = false, customLocation = "")
+  }
+
+  fun onCustomLocationConfirm() {
+    // TODO: Handle custom location logic
+    dismissCustomLocationDialog()
   }
 }

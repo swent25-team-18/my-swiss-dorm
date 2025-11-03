@@ -5,6 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.review.Review
+import com.android.mySwissDorm.model.review.ReviewsRepository
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,28 +48,61 @@ data class ListingsState(
 )
 
 /**
- * Represents the overall UI state for browsing previews and listings in a city.
+ * Represents the UI state of a single review.
  *
- * @property listings The state of the listings being displayed // Future enhancement: add reviews
- *   state here as well
+ * @property title The title of the review
+ * @property leftBullets A list of strings to be displayed as bullet points on the left side
+ * @property rightBullets A list of strings to be displayed as bullet points on the right side
+ * @property reviewUid The unique identifier of the review
  */
-data class BrowseCityUiState(
-    val listings: ListingsState = ListingsState()
-    // will then add equivalent for reviews
+data class ReviewCardUI(
+    val title: String,
+    val leftBullets: List<String>,
+    val rightBullets: List<String>,
+    val reviewUid: String,
 )
 
 /**
- * ViewModel for browsing listings in a specific city.
+ * Represents the state of reviews being loaded, including loading status, list of items, and any
+ * error message.
  *
- * Responsible for managing the UI state, by fetching and providing rental listings via the
- * [RentalListingRepository].
+ * @property loading A boolean indicating if the reviews are currently being loaded
+ * @property items A list of `ReviewCardUI` items representing the loaded reviews
+ * @property error An optional error message if loading failed
+ */
+data class ReviewsState(
+    val loading: Boolean = false,
+    val items: List<ReviewCardUI> = emptyList(),
+    val error: String? = null
+)
+
+/**
+ * Represents the overall UI state for browsing previews and listings in a city.
  *
- * @property listingsRepository The repository used to fetch and manage rental listings. // Future
- *   enhancement: add reviews repository here as well
+ * @property listings The state of the listings being displayed
+ * @property reviews The state of the reviews being displayed
+ */
+data class BrowseCityUiState(
+    val listings: ListingsState = ListingsState(),
+    val reviews: ReviewsState = ReviewsState()
+)
+
+/**
+ * ViewModel for browsing listings and reviews in a specific city.
+ *
+ * Responsible for managing the UI state, by fetching and providing rental listings and reviews via
+ * the [RentalListingRepository] and the [ReviewsRepository].
+ *
+ * @property listingsRepository The repository used to fetch and manage rental listings.
+ * @property reviewsRepository The repository used to fetch and manage reviews.
+ * @property residenciesRepository The repository used to fetch residencies, used to filter reviews
  */
 class BrowseCityViewModel(
     private val listingsRepository: RentalListingRepository =
-        RentalListingRepositoryProvider.repository
+        RentalListingRepositoryProvider.repository,
+    private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
+    private val residenciesRepository: ResidenciesRepository =
+        ResidenciesRepositoryProvider.repository
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(BrowseCityUiState())
@@ -92,6 +130,35 @@ class BrowseCityViewModel(
       }
     }
   }
+
+  fun loadReviews(cityName: String) {
+    _uiState.update { it.copy(reviews = it.reviews.copy(loading = true, error = null)) }
+
+    viewModelScope.launch {
+      try {
+        // Fetch all and filter by city
+        val all = reviewsRepository.getAllReviews()
+        val filtered =
+            all.filter {
+              residenciesRepository
+                  .getResidency(it.residencyName)
+                  .city
+                  .equals(cityName, ignoreCase = true)
+            }
+        val mapped = filtered.map { it.toCardUI() }
+
+        _uiState.update {
+          it.copy(reviews = it.reviews.copy(loading = false, items = mapped, error = null))
+        }
+      } catch (e: Exception) {
+        _uiState.update {
+          it.copy(
+              reviews =
+                  it.reviews.copy(loading = false, error = e.message ?: "Failed to load reviews"))
+        }
+      }
+    }
+  }
 }
 
 // Mapping RentalListing to ListingCardUI
@@ -106,4 +173,18 @@ private fun RentalListing.toCardUI(): ListingCardUI {
       leftBullets = listOf(roomType.toString(), price, area),
       rightBullets = listOf(start, resName),
       listingUid = uid)
+}
+
+// Mapping Review to ListingCardUI
+private fun Review.toCardUI(): ReviewCardUI {
+  val price = String.format(Locale.getDefault(), "%.0f.-/month", pricePerMonth)
+  val area = "${areaInM2}m²"
+  val postedAt = "Posted: ${formatDate(postedAt)}"
+  val grade = "Grade: $grade / 5.0"
+
+  return ReviewCardUI(
+      title = title,
+      leftBullets = listOf(roomType.toString(), price, area),
+      rightBullets = listOf(postedAt, residencyName, grade),
+      reviewUid = uid)
 }

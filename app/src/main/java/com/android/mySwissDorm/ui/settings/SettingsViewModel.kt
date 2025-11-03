@@ -1,29 +1,23 @@
 package com.android.mySwissDorm.ui.settings
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class SettingItem(val icon: ImageVector, val title: String)
+data class SettingItem(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val title: String
+)
 
 data class SettingsUiState(
-    val userName: String = "",
+    val userName: String = "User",
     val email: String = "",
     val topItems: List<SettingItem> = emptyList(),
     val accountItems: List<SettingItem> = emptyList(),
@@ -32,116 +26,87 @@ data class SettingsUiState(
 )
 
 /**
- * NOTE: no Firebase singletons created here. We inject what we need: Auth + a ProfileRepository. In
- * production, provide them from a Factory/DI (e.g., Hilt or your Provider). In tests, pass
- * emulator-backed instances.
+ * NOTE: Default params let the system instantiate this VM with the stock Factory. Tests can still
+ * inject emulator-backed deps by passing them explicitly.
  */
 class SettingsViewModel(
-    private val auth: FirebaseAuth,
-    private val profiles: ProfileRepository,
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val profiles: ProfileRepository = ProfileRepositoryProvider.repository
 ) : ViewModel() {
 
-  private val _uiState =
-      MutableStateFlow(
-          SettingsUiState(
-              userName = "",
-              email = auth.currentUser?.email.orEmpty(),
-              topItems =
-                  listOf(
-                      SettingItem(Icons.AutoMirrored.Filled.List, "Lists"),
-                      SettingItem(Icons.Filled.HelpOutline, "Broadcast messages"),
-                      SettingItem(Icons.Filled.Devices, "Connected devices")),
-              accountItems =
-                  listOf(
-                      SettingItem(Icons.Filled.Lock, "Privacy"),
-                      SettingItem(Icons.Filled.ChatBubble, "Chats"),
-                      SettingItem(Icons.Filled.Notifications, "Notifications"),
-                      SettingItem(Icons.Filled.Storage, "Storage & data")),
-          ))
+  private val _ui = MutableStateFlow(SettingsUiState())
+  val uiState: StateFlow<SettingsUiState> = _ui.asStateFlow()
 
-  val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
-
-  init {
-    refresh()
-  }
-
-  /** Fetch display name from repository (profile) + email from Auth. */
-  fun refresh() =
-      viewModelScope.launch {
-        try {
-          val user = auth.currentUser
-          var next = _uiState.value.copy(email = user?.email.orEmpty(), errorMsg = null)
-
-          val uid = user?.uid
-          if (uid != null) {
-            runCatching { profiles.getProfile(uid) }
-                .onSuccess { prof ->
-                  val first = prof.userInfo.name?.trim().orEmpty()
-                  val last = prof.userInfo.lastName?.trim().orEmpty()
-                  val composed = listOf(first, last).filter { it.isNotEmpty() }.joinToString(" ")
-                  next =
-                      next.copy(
-                          userName =
-                              if (composed.isNotEmpty()) composed else (user.displayName ?: "User"))
-                }
-                .onFailure { next = next.copy(userName = user?.displayName ?: "User") }
-          } else {
-            next = next.copy(userName = "User", email = "")
-          }
-
-          _uiState.value = next
-        } catch (ce: CancellationException) {
-          throw ce
-        } catch (e: Exception) {
-          _uiState.value = _uiState.value.copy(errorMsg = e.localizedMessage)
-        }
+  fun refresh() {
+    viewModelScope.launch {
+      val user = auth.currentUser
+      if (user == null) {
+        _ui.value = _ui.value.copy(userName = "User", email = "")
+        return@launch
       }
 
+      // Try repository first
+      val nameFromRepo =
+          runCatching {
+                val p = profiles.getProfile(user.uid)
+                "${p.userInfo.name} ${p.userInfo.lastName}".trim()
+              }
+              .getOrNull()
+
+      if (nameFromRepo != null && nameFromRepo.isNotBlank()) {
+        _ui.value = _ui.value.copy(userName = nameFromRepo, email = user.email ?: "")
+        return@launch
+      }
+
+      // Fallback to auth displayName
+      val fallback = user.displayName ?: "User"
+      _ui.value = _ui.value.copy(userName = fallback, email = user.email ?: "")
+    }
+  }
+
   fun clearError() {
-    _uiState.value = _uiState.value.copy(errorMsg = null)
+    _ui.value = _ui.value.copy(errorMsg = null)
   }
 
-  fun onItemClick(@Suppress("UNUSED_PARAMETER") title: String) {
-    /* no-op */
+  fun onItemClick(title: String) {
+    // Reserved for future; keep no-op for now to make tests deterministic
   }
 
-  /** Deletes profile via repository + deletes Auth user. */
-  fun deleteAccount(onDone: (ok: Boolean, msg: String?) -> Unit) {
+  /**
+   * Deletes profile doc; then tries to delete auth user. If recent login is required, we surface an
+   * error but still ensure flags reset.
+   */
+  fun deleteAccount(onDone: (Boolean, String?) -> Unit) {
+    val user = auth.currentUser
+    if (user == null) {
+      _ui.value = _ui.value.copy(errorMsg = "Not signed in", isDeleting = false)
+      onDone(false, "Not signed in")
+      return
+    }
+
+    _ui.value = _ui.value.copy(isDeleting = true)
     viewModelScope.launch {
-      _uiState.value = _uiState.value.copy(isDeleting = true, errorMsg = null)
+      var ok = true
+      var msg: String? = null
       try {
-        val user = auth.currentUser
-        val uid = user?.uid
-        if (user == null || uid == null) {
-          _uiState.value =
-              _uiState.value.copy(isDeleting = false, errorMsg = "No authenticated user.")
-          onDone(false, "No authenticated user.")
-          return@launch
-        }
-
-        runCatching {
-          profiles.deleteProfile(uid)
-        } // ignore failure here; user deletion is the critical step
-
-        try {
-          user.delete() // .await() not needed if your Auth wrapper suspends; otherwise keep await()
-          _uiState.value = _uiState.value.copy(isDeleting = false)
-          onDone(true, null)
-        } catch (e: Exception) {
-          val msg =
-              if (e is FirebaseAuthRecentLoginRequiredException)
-                  "Please log out and sign in again to confirm, then retry deleting."
-              else e.localizedMessage ?: "Failed to delete account."
-          _uiState.value = _uiState.value.copy(isDeleting = false, errorMsg = msg)
-          onDone(false, msg)
-        }
-      } catch (ce: CancellationException) {
-        _uiState.value = _uiState.value.copy(isDeleting = false)
-        throw ce
+        profiles.deleteProfile(user.uid)
+        // Try deleting the auth user; may throw recent-login required
+        runCatching { user.delete() }
+            .onFailure { e ->
+              if (e is FirebaseAuthRecentLoginRequiredException) {
+                ok = false
+                msg = "Please re-authenticate to delete your account."
+              } else {
+                ok = false
+                msg = e.message
+              }
+            }
       } catch (e: Exception) {
-        val msg = e.localizedMessage ?: "Failed to delete account."
-        _uiState.value = _uiState.value.copy(isDeleting = false, errorMsg = msg)
-        onDone(false, msg)
+        ok = false
+        msg = e.message
+      } finally {
+        _ui.value = _ui.value.copy(isDeleting = false, errorMsg = msg)
+        onDone(ok, msg)
       }
     }
   }

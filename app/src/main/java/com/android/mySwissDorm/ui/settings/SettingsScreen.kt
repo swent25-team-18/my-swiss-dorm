@@ -1,9 +1,7 @@
 package com.android.mySwissDorm.ui.settings
 
-import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -19,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -35,11 +32,22 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
-import com.android.mySwissDorm.ui.theme.*
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.PalePink
+import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 /** Centralized test tags for the Settings screen. */
 object SettingsTestTags {
@@ -54,13 +62,29 @@ object SettingsTestTags {
   fun switch(label: String) = "SettingSwitch_$label"
 }
 
+/** Build a SettingsViewModel with real Firebase singletons (works in app & in e2e). */
+@Composable
+private fun rememberSettingsViewModel(): SettingsViewModel {
+  val factory =
+      object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+          val auth = FirebaseAuth.getInstance()
+          val repo = ProfileRepositoryFirestore(FirebaseFirestore.getInstance())
+          return SettingsViewModel(auth = auth, profiles = repo) as T
+        }
+      }
+  return viewModel(factory = factory)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
-    vm: SettingsViewModel = viewModel()
+    // IMPORTANT: supply our own factory to avoid “Cannot create an instance…” in app/E2E
+    vm: SettingsViewModel = rememberSettingsViewModel(),
 ) {
   val ui by vm.uiState.collectAsState()
 
@@ -85,14 +109,6 @@ fun SettingsScreen(
       navigationActions = navigationActions)
 }
 
-private val previewUiState =
-    SettingsUiState(
-        userName = "John Doe",
-        email = "john.doe@email.com",
-        errorMsg = null,
-        topItems = emptyList(),
-        accountItems = emptyList())
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun SettingsScreenContent(
@@ -102,13 +118,9 @@ fun SettingsScreenContent(
     onDeleteAccount: () -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {
-  // Independent toggle states
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
   var readReceipts by remember { mutableStateOf(true) }
-  var nightShift by remember { mutableStateOf(true) }
-  var anonymous by remember { mutableStateOf(false) }
-
   var blockedExpanded by remember { mutableStateOf(false) }
   val blockedContacts = listOf("Clarisse K.", "Alice P.", "Benjamin M.")
   val focusManager = LocalFocusManager.current
@@ -136,9 +148,8 @@ fun SettingsScreenContent(
         BoxWithConstraints(
             modifier = Modifier.fillMaxSize().padding(paddingValues).background(BackGroundColor)) {
               val maxW = this.maxWidth
-              val isCompact = maxW < 360.dp
               val isTablet = maxW >= 600.dp
-
+              val isCompact = maxW < 360.dp
               val horizontalPad: Dp =
                   when {
                     isTablet -> 24.dp
@@ -158,54 +169,51 @@ fun SettingsScreenContent(
                           bottom = 24.dp)) {
                     item {
                       Column(modifier = Modifier.fillMaxWidth().widthIn(max = contentWidthCap)) {
-
-                        // ---- Profile card ----------------------------------------------------
-                        CardBlock {
-                          Row(
-                              modifier = Modifier.fillMaxWidth(),
-                              verticalAlignment = Alignment.CenterVertically,
-                              horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                val avatarSize = if (isTablet) 64.dp else 56.dp
-                                val initial =
-                                    (ui.userName.firstOrNull()?.uppercaseChar() ?: 'A').toString()
-
-                                // Avatar background = PalePink, hardcoded as requested
-                                Box(
-                                    modifier =
-                                        Modifier.size(avatarSize)
-                                            .clip(CircleShape)
-                                            .background(PalePink.copy(alpha = 0.16f)),
-                                    contentAlignment = Alignment.Center) {
-                                      Text(initial, fontWeight = FontWeight.Bold, color = MainColor)
+                        // Profile card
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = BackGroundColor),
+                            shape = MaterialTheme.shapes.large,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, TextBoxColor)) {
+                              Row(
+                                  modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                  verticalAlignment = Alignment.CenterVertically,
+                                  horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    val initial =
+                                        (ui.userName.firstOrNull()?.uppercaseChar() ?: 'U')
+                                    Surface(
+                                        modifier = Modifier.size(if (isTablet) 64.dp else 56.dp),
+                                        color = PalePink.copy(alpha = 0.16f),
+                                        shape = CircleShape) {
+                                          Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                initial.toString(),
+                                                fontWeight = FontWeight.Bold,
+                                                color = MainColor)
+                                          }
+                                        }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                      Text(
+                                          ui.userName.ifBlank { "User" },
+                                          style = MaterialTheme.typography.titleMedium,
+                                          maxLines = 1,
+                                          overflow = TextOverflow.Ellipsis)
+                                      Text(
+                                          "View profile",
+                                          style = MaterialTheme.typography.bodySmall,
+                                          color = MainColor)
                                     }
+                                    IconButton(
+                                        onClick = onProfileClick,
+                                        modifier =
+                                            Modifier.testTag(SettingsTestTags.ProfileButton)) {
+                                          Icon(
+                                              imageVector = Icons.Filled.ChevronRight,
+                                              contentDescription = "Open profile")
+                                        }
+                                  }
+                            }
 
-                                Column(modifier = Modifier.weight(1f)) {
-                                  Text(
-                                      ui.userName.ifBlank { "User" },
-                                      style = MaterialTheme.typography.titleMedium,
-                                      color = TextColor,
-                                      maxLines = 1,
-                                      overflow = TextOverflow.Ellipsis)
-                                  Text(
-                                      "View profile",
-                                      style = MaterialTheme.typography.bodySmall,
-                                      color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                      maxLines = 1,
-                                      overflow = TextOverflow.Ellipsis)
-                                }
-
-                                IconButton(
-                                    onClick = onProfileClick,
-                                    modifier = Modifier.testTag(SettingsTestTags.ProfileButton)) {
-                                      Icon(
-                                          imageVector = Icons.Filled.ChevronRight,
-                                          contentDescription = "Open profile",
-                                          tint = TextColor)
-                                    }
-                              }
-                        }
-
-                        // ---- Notifications ---------------------------------------------------
                         SectionLabel("Notifications")
                         CardBlock {
                           SettingSwitchRow(
@@ -219,7 +227,6 @@ fun SettingsScreenContent(
                               onCheckedChange = { notificationsListings = it })
                         }
 
-                        // ---- Account ---------------------------------------------------------
                         SectionLabel("Account")
                         CardBlock {
                           OutlinedTextField(
@@ -235,18 +242,10 @@ fun SettingsScreenContent(
                               keyboardActions =
                                   androidx.compose.foundation.text.KeyboardActions(
                                       onDone = { focusManager.clearFocus() }),
-                              colors =
-                                  OutlinedTextFieldDefaults.colors(
-                                      disabledTextColor = TextColor.copy(alpha = 0.9f),
-                                      disabledBorderColor = TextBoxColor,
-                                      disabledLabelColor =
-                                          MaterialTheme.colorScheme.onSurfaceVariant,
-                                      disabledContainerColor = MaterialTheme.colorScheme.surface),
                               modifier =
                                   Modifier.fillMaxWidth().testTag(SettingsTestTags.EmailField))
                         }
 
-                        // ---- Privacy ---------------------------------------------------------
                         SectionLabel("Privacy")
                         CardBlock {
                           SettingSwitchRow(
@@ -256,17 +255,14 @@ fun SettingsScreenContent(
                           SoftDivider()
 
                           Row(
-                              modifier =
-                                  Modifier.fillMaxWidth()
-                                      .padding(horizontal = 4.dp, vertical = 10.dp),
+                              modifier = Modifier.fillMaxWidth().padding(4.dp, 10.dp),
                               verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     "Blocked contacts (${blockedContacts.size})",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = TextColor,
+                                    modifier = Modifier.weight(1f),
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f))
+                                    overflow = TextOverflow.Ellipsis)
                                 val rotation by
                                     animateFloatAsState(
                                         targetValue = if (blockedExpanded) 90f else 0f,
@@ -281,29 +277,28 @@ fun SettingsScreenContent(
                                           contentDescription =
                                               if (blockedExpanded) "Hide blocked"
                                               else "Show blocked",
-                                          modifier = Modifier.rotate(rotation),
-                                          tint = TextColor)
+                                          modifier = Modifier.rotate(rotation))
                                     }
                               }
 
-                          val blockedBringIntoView = remember { BringIntoViewRequester() }
+                          val bring = remember { BringIntoViewRequester() }
                           LaunchedEffect(blockedExpanded) {
-                            if (blockedExpanded) blockedBringIntoView.bringIntoView()
+                            if (blockedExpanded) bring.bringIntoView()
                           }
-
                           if (blockedExpanded) {
                             Surface(
                                 color = BackGroundColor,
                                 shape = MaterialTheme.shapes.medium,
-                                border = BorderStroke(1.dp, TextBoxColor),
+                                border =
+                                    androidx.compose.foundation.BorderStroke(1.dp, TextBoxColor),
                                 modifier =
                                     Modifier.fillMaxWidth()
-                                        .bringIntoViewRequester(blockedBringIntoView)
+                                        .bringIntoViewRequester(bring)
                                         .testTag(SettingsTestTags.BlockedContactsList)) {
                                   Column(Modifier.padding(12.dp)) {
                                     blockedContacts.forEach { name ->
                                       Text(
-                                          text = name,
+                                          name,
                                           style = MaterialTheme.typography.bodyMedium,
                                           color = TextColor,
                                           modifier = Modifier.padding(vertical = 4.dp),
@@ -315,46 +310,42 @@ fun SettingsScreenContent(
                           }
                         }
 
-                        // ---- Accessibility ---------------------------------------------------
                         SectionLabel("Accessibility")
                         CardBlock {
                           SettingSwitchRow(
                               label = "Night Shift",
-                              checked = nightShift,
-                              onCheckedChange = { nightShift = it })
+                              checked = notificationsMessages,
+                              onCheckedChange = { notificationsMessages = it })
                           SoftDivider()
                           SettingSwitchRow(
                               label = "Anonymous",
-                              checked = anonymous,
-                              onCheckedChange = { anonymous = it })
+                              checked = notificationsListings,
+                              onCheckedChange = { notificationsListings = it })
                         }
                       }
                     }
 
                     item {
-                      Box(
+                      Button(
+                          onClick = { showDeleteConfirm = true },
+                          enabled = !ui.isDeleting,
+                          colors =
+                              ButtonDefaults.buttonColors(
+                                  containerColor = BackGroundColor,
+                                  contentColor = MainColor,
+                                  disabledContainerColor = BackGroundColor,
+                                  disabledContentColor = MainColor.copy(alpha = 0.5f)),
+                          shape = RoundedCornerShape(28.dp),
+                          elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                          border =
+                              androidx.compose.foundation.BorderStroke(
+                                  1.dp, MainColor.copy(alpha = 0.15f)),
                           modifier =
                               Modifier.fillMaxWidth()
-                                  .widthIn(max = if (maxW >= 600.dp) 600.dp else maxW)) {
-                            Button(
-                                onClick = { showDeleteConfirm = true },
-                                enabled = !ui.isDeleting,
-                                colors =
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = BackGroundColor,
-                                        contentColor = MainColor,
-                                        disabledContainerColor = BackGroundColor,
-                                        disabledContentColor = MainColor.copy(alpha = 0.5f)),
-                                shape = RoundedCornerShape(28.dp),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                border = BorderStroke(1.dp, MainColor.copy(alpha = 0.15f)),
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .padding(top = 8.dp)
-                                        .testTag(SettingsTestTags.DeleteAccountButton)
-                                        .navigationBarsPadding()) {
-                                  Text(if (ui.isDeleting) "DELETING…" else "DELETE MY ACCOUNT")
-                                }
+                                  .padding(top = 8.dp)
+                                  .testTag(SettingsTestTags.DeleteAccountButton)
+                                  .navigationBarsPadding()) {
+                            Text(if (ui.isDeleting) "DELETING…" else "DELETE MY ACCOUNT")
                           }
                     }
                   }
@@ -381,14 +372,14 @@ fun SettingsScreenContent(
   }
 }
 
-// ---------- Helpers ----------
+/* ---------- small UI helpers ---------- */
 
 @Composable
 private fun CardBlock(content: @Composable ColumnScope.() -> Unit) {
   Surface(
       color = BackGroundColor,
       shape = MaterialTheme.shapes.large,
-      border = BorderStroke(1.dp, TextBoxColor),
+      border = androidx.compose.foundation.BorderStroke(1.dp, TextBoxColor),
       shadowElevation = 0.dp,
       tonalElevation = 0.dp,
       modifier = Modifier.fillMaxWidth()) {
@@ -410,19 +401,10 @@ private fun SoftDivider() {
   HorizontalDivider(thickness = 1.dp, color = TextBoxColor.copy(alpha = 0.25f))
 }
 
-/** Switch row with white thumb and theme-aware colors */
 @Composable
 private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
   val screenWidthDp = LocalConfiguration.current.screenWidthDp
   val isExtraNarrow = screenWidthDp < 340
-
-  val switchColors =
-      SwitchDefaults.colors(
-          checkedThumbColor = White,
-          checkedTrackColor = MainColor,
-          uncheckedThumbColor = White,
-          uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f))
-
   if (!isExtraNarrow) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -443,7 +425,8 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
                       },
               checked = checked,
               onCheckedChange = onCheckedChange,
-              colors = switchColors)
+              colors =
+                  SwitchDefaults.colors(checkedThumbColor = White, checkedTrackColor = MainColor))
         }
   } else {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -452,8 +435,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
           style = MaterialTheme.typography.bodyLarge,
           color = TextColor,
           maxLines = 3,
-          overflow = TextOverflow.Ellipsis,
-          modifier = Modifier.fillMaxWidth())
+          overflow = TextOverflow.Ellipsis)
       Row(
           modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
           horizontalArrangement = Arrangement.End) {
@@ -465,31 +447,20 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
                           stateDescription = if (checked) "On" else "Off"
                         },
                 checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = switchColors)
+                onCheckedChange = onCheckedChange)
           }
     }
   }
 }
 
-// ---------- Previews ----------
-
-@Preview(
-    name = "Settings – Light Mode",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_NO,
-    widthDp = 360)
+@Preview(showBackground = true, widthDp = 360)
 @Composable
-private fun SettingsPreview_Light() {
-  MySwissDormAppTheme { SettingsScreenContent(ui = previewUiState) }
+private fun SettingsScreenPreviewPhone() {
+  MySwissDormAppTheme { SettingsScreenContent(ui = SettingsUiState()) }
 }
 
-@Preview(
-    name = "Settings – Dark Mode",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    widthDp = 360)
+@Preview(showBackground = true, widthDp = 700)
 @Composable
-private fun SettingsPreview_Dark() {
-  MySwissDormAppTheme { SettingsScreenContent(ui = previewUiState) }
+private fun SettingsScreenPreviewTablet() {
+  MySwissDormAppTheme { SettingsScreenContent(ui = SettingsUiState()) }
 }

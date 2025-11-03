@@ -19,6 +19,7 @@ import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
+import com.android.mySwissDorm.ui.review.ViewReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.google.firebase.auth.FirebaseAuth
 
@@ -105,6 +106,9 @@ fun AppNavHost(
             onGoBack = { navActions.goBack() },
             onSelectListing = {
               navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
+            },
+            onSelectReview = {
+              navActions.navigateTo(Screen.ReviewOverview(reviewUid = it.reviewUid))
             })
       }
           ?: run {
@@ -121,6 +125,27 @@ fun AppNavHost(
             listingUid = it,
             onGoBack = { navActions.goBack() },
             onApply = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
+            onEdit = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
+            onViewProfile = { ownerId ->
+              val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+              if (ownerId == currentUserId) {
+                // It's the current user, go to their editable profile
+                navActions.navigateTo(Screen.Profile)
+              } else {
+                // It's another user, go to the read-only profile screen
+                navActions.navigateTo(Screen.ViewUserProfile(ownerId))
+              }
+            })
+      }
+    }
+
+    composable(Screen.ReviewOverview.route) { navBackStackEntry ->
+      val listingUid = navBackStackEntry.arguments?.getString("reviewUid")
+
+      listingUid?.let {
+        ViewReviewScreen(
+            reviewUid = it,
+            onGoBack = { navActions.goBack() },
             onEdit = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
             onViewProfile = { ownerId ->
               val currentUserId = FirebaseAuth.getInstance().currentUser?.uid

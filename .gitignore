@@ -39,3 +39,5 @@ google-services.json
 
 .firebaserc
 /firebase.json
+firestore.indexes.json
+firebase/firestore/firestore.rules

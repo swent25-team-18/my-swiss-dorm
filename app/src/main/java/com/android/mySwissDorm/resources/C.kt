@@ -90,4 +90,8 @@ object C {
   object CameraButtonTag {
     const val TAG = "cameraButtonTag"
   }
+
+  object GalleryButtonTag {
+    const val TAG = "galleryButtonTag"
+  }
 }

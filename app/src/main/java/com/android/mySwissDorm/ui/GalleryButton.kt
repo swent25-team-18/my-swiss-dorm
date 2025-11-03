@@ -57,7 +57,7 @@ fun GalleryButton(
       }
   Button(
       onClick = { galleryLauncher.launch("image/*") },
-      modifier = modifier.testTag(tag = C.CameraButtonTag.TAG),
+      modifier = modifier.testTag(tag = C.GalleryButtonTag.TAG),
       enabled = enabled,
       shape = shape,
       colors = colors,

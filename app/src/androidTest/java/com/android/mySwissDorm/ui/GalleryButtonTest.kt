@@ -8,7 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -66,8 +66,8 @@ class GalleryButtonTest {
       }
     }
 
-    composeTestRule.onNodeWithTag(C.GalleryButtonTag.TAG).isDisplayed()
-    composeTestRule.onNodeWithTag(simpleTestTag).isDisplayed()
+    composeTestRule.onNodeWithTag(C.GalleryButtonTag.TAG).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(simpleTestTag, useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
@@ -83,7 +83,7 @@ class GalleryButtonTest {
           choosePictureContract = FakeGetContentContract.success())
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.TAG)
-    galleryButtonNode.isDisplayed()
+    galleryButtonNode.assertIsDisplayed()
     galleryButtonNode.performClick()
 
     composeTestRule.waitUntil(5_000) {
@@ -101,7 +101,7 @@ class GalleryButtonTest {
           choosePictureContract = FakeGetContentContract.failure())
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.TAG)
-    galleryButtonNode.isDisplayed()
+    galleryButtonNode.assertIsDisplayed()
     galleryButtonNode.performClick()
 
     composeTestRule.waitForIdle()

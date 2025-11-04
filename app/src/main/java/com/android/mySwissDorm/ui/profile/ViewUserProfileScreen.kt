@@ -18,17 +18,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
-import com.android.mySwissDorm.ui.theme.LightGray
-import com.android.mySwissDorm.ui.theme.Red0
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
 import com.github.se.bootcamp.ui.profile.ViewProfileScreenViewModel
 import com.github.se.bootcamp.ui.profile.ViewProfileUiState
 
@@ -96,7 +97,7 @@ fun ViewUserProfileScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Red0)
+                    tint = MainColor)
               }
             })
       }) { padding ->
@@ -129,16 +130,18 @@ fun ViewUserProfileScreen(
                         modifier =
                             Modifier.size(180.dp)
                                 .clip(CircleShape)
-                                .border(3.dp, Red0, CircleShape)
+                                .border(3.dp, MainColor, CircleShape)
                                 .testTag(T.AVATAR_BOX)) {
                           Box(
                               modifier =
-                                  Modifier.size(150.dp).clip(CircleShape).background(LightGray),
+                                  Modifier.size(150.dp)
+                                      .clip(CircleShape)
+                                      .background(BackGroundColor),
                               contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Outlined.Person,
                                     contentDescription = "Profile picture",
-                                    tint = Red0,
+                                    tint = MainColor,
                                     modifier = Modifier.size(64.dp))
                               }
                         }
@@ -151,7 +154,7 @@ fun ViewUserProfileScreen(
                   item {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = LightGray,
+                        color = TextBoxColor,
                         modifier =
                             Modifier.fillMaxWidth()
                                 .heightIn(min = 48.dp)
@@ -162,7 +165,7 @@ fun ViewUserProfileScreen(
                                 Text(
                                     text = ui.residence,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = Color.Black.copy(alpha = 0.85f))
+                                    color = TextColor)
                               }
                         }
                     Spacer(Modifier.height(16.dp))
@@ -174,25 +177,21 @@ fun ViewUserProfileScreen(
                   Surface(
                       onClick = { ownerId?.let { onSendMessage() } },
                       shape = RoundedCornerShape(12.dp),
-                      color = LightGray,
+                      color = TextBoxColor,
                       modifier =
-                          Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag(T.SEND_MESSAGE)) {
+                          Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(T.SEND_MESSAGE)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                               Icon(
-                                  imageVector =
-                                      Icons.Outlined
-                                          .Forum, // ← was Icons.Outlined.ChatBubbleOutline
+                                  imageVector = Icons.Outlined.Forum,
                                   contentDescription = null,
-                                  tint = Color.Black.copy(alpha = 0.85f))
+                                  tint = TextColor)
                               Spacer(Modifier.width(12.dp))
                               Text(
                                   text = "Send a message",
-                                  style =
-                                      MaterialTheme.typography.bodyLarge.copy(
-                                          fontWeight = FontWeight.Medium),
-                                  color = Color.Black.copy(alpha = 0.85f))
+                                  style = MaterialTheme.typography.bodyLarge.copy(),
+                                  color = TextColor)
                             }
                       }
                 }
@@ -208,7 +207,7 @@ fun ViewUserProfileScreen(
 @Preview(showBackground = true, name = "ViewUserProfile – Preview")
 @Composable
 private fun Preview_ViewUserProfile() {
-  MaterialTheme {
+  MySwissDormAppTheme {
     ViewUserProfileScreen(
         viewModel = null, // do NOT create a VM in preview
         ownerId = null,

@@ -29,7 +29,7 @@ fun RequestDetailScreen(
   LaunchedEffect(id) { vm.load(id) }
 
   Scaffold(
-      containerColor = White,
+      containerColor = BackGroundColor,
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text("Received request") },
@@ -38,18 +38,18 @@ fun RequestDetailScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Red0)
+                    tint = MainColor)
               }
             },
             colors =
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = White, titleContentColor = Color.Black))
+                    containerColor = BackGroundColor, titleContentColor = TextColor))
       }) { inner ->
         Column(
             modifier =
                 Modifier.padding(inner)
                     .fillMaxSize()
-                    .background(White)
+                    .background(BackGroundColor)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               FieldBlock("Identifier", "Request #${ui.id}", "req_field_identifiant")
@@ -69,10 +69,10 @@ fun RequestDetailScreen(
                 OutlinedButton(
                     onClick = { vm.reject() },
                     modifier = Modifier.testTag("btn_reject"),
-                    border = BorderStroke(1.dp, Red0),
+                    border = BorderStroke(1.dp, MainColor),
                     colors =
                         ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color.Transparent, contentColor = Red0),
+                            containerColor = BackGroundColor, contentColor = MainColor),
                     shape = MaterialTheme.shapes.medium) {
                       Text("Reject")
                     }
@@ -81,7 +81,8 @@ fun RequestDetailScreen(
                     onClick = { vm.accept() },
                     modifier = Modifier.testTag("btn_accept"),
                     colors =
-                        ButtonDefaults.buttonColors(containerColor = Red0, contentColor = White),
+                        ButtonDefaults.buttonColors(
+                            containerColor = MainColor, contentColor = BackGroundColor),
                     shape = MaterialTheme.shapes.medium) {
                       Text("Accept")
                     }
@@ -94,8 +95,8 @@ fun RequestDetailScreen(
 private fun FieldBlock(label: String, value: String, tag: String? = null) {
   Surface(
       modifier = Modifier.fillMaxWidth().then(if (tag != null) Modifier.testTag(tag) else Modifier),
-      color = White, // white field like Figma
-      border = BorderStroke(1.dp, LightGray0),
+      color = BackGroundColor, // white field like Figma
+      border = BorderStroke(1.dp, LightGray),
       shadowElevation = 0.dp,
       tonalElevation = 0.dp,
       shape = MaterialTheme.shapes.large) {
@@ -108,7 +109,7 @@ private fun FieldBlock(label: String, value: String, tag: String? = null) {
               style =
                   MaterialTheme.typography.bodyLarge.copy(
                       fontSize = 16.sp, fontWeight = FontWeight.Medium),
-              color = Color.Black)
+              color = TextColor)
         }
       }
 }

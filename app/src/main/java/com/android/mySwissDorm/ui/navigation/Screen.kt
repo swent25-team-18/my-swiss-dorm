@@ -17,7 +17,7 @@ sealed class Screen(
 
   data object Inbox : Screen("inbox", "Inbox", isTopLevelDestination = true)
 
-  data object Settings : Screen("settings", "Settings")
+  data object Settings : Screen("settings", "Settings", isTopLevelDestination = true)
 
   // Secondary (non-bottom-bar) destinations
   data object AddListing : Screen("addListing", "Add Listing")
@@ -55,6 +55,7 @@ sealed class Screen(
   data object Profile : Screen(route = "profile", name = "Profile")
 
   companion object {
+    // Keep the same order you use in the bottom bar
     val topLevel: List<Screen> = listOf(Homepage, AddListing, Inbox, Settings)
   }
 }

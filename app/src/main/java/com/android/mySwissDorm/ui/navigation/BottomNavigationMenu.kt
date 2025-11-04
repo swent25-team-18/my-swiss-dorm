@@ -2,6 +2,8 @@ package com.android.mySwissDorm.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -10,13 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.MainColor
+
+// This code is based on the bootcamp and on AI
 
 @Composable
 fun BottomNavigationMenu(
     selectedScreen: Screen,
-    onTabSelected: (Screen) -> Unit,
+    onTabSelected: (Screen) -> Unit = {}, // ← default no-op for tests
     modifier: Modifier = Modifier,
 ) {
   NavigationBar(modifier = modifier.testTag("bottom_nav")) {
@@ -24,12 +26,12 @@ fun BottomNavigationMenu(
     tabs.forEach { screen ->
       val (label, icon) =
           when (screen) {
-            Screen.Homepage -> Pair(screen.name, Icons.Filled.Home) // Main screen
-            Screen.Inbox -> Pair(screen.name, Icons.AutoMirrored.Filled.Chat)
-            Screen.Settings -> Pair(screen.name, Icons.Filled.Settings)
-            else -> Pair(screen.name, Icons.Filled.Home)
+            Screen.Homepage -> screen.name to Icons.Filled.Home
+            Screen.AddHub -> screen.name to Icons.Filled.Add
+            Screen.Inbox -> screen.name to Icons.Filled.Chat
+            Screen.Settings -> screen.name to Icons.Filled.Settings
+            else -> screen.name to Icons.Filled.Home
           }
-
       NavigationBarItem(
           selected = selectedScreen.route == screen.route,
           onClick = { onTabSelected(screen) },
@@ -38,12 +40,12 @@ fun BottomNavigationMenu(
           alwaysShowLabel = true,
           colors =
               NavigationBarItemDefaults.colors(
-                  indicatorColor = MainColor, // <-- your highlight color
-                  selectedIconColor = Color.White, // good contrast on red
-                  selectedTextColor = MainColor,
-                  unselectedIconColor = MainColor, // <-- red when NOT selected
-                  unselectedTextColor = MainColor),
-          modifier = Modifier.testTag(C.Tag.buttonNavBarTestTag(screen)))
+                  indicatorColor = Color(0xFFFF6666),
+                  selectedIconColor = Color.White,
+                  selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                  unselectedIconColor = Color(0xFFFF6666),
+                  unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant),
+          modifier = Modifier.testTag("bottom_nav_${screen.route}"))
     }
   }
 }
@@ -60,6 +62,7 @@ fun BottomBarFromNav(navigationActions: NavigationActions?) {
         route == Screen.Homepage.route || route == Screen.CityOverview.route -> Screen.Homepage
         route == Screen.Inbox.route -> Screen.Inbox
         route == Screen.Settings.route -> Screen.Settings
+        route == Screen.AddHub.route -> Screen.AddHub
         else -> Screen.Homepage
       }
 

@@ -204,7 +204,7 @@ fun SettingsScreenContent(
                                     }
                               }
                         } //
-
+                        //
                         // ---- Notifications ---------------------------------------------------
                         SectionLabel("Notifications")
                         CardBlock {

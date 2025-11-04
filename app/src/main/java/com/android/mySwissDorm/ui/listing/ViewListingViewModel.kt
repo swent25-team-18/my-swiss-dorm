@@ -14,12 +14,14 @@ import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.String
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 private val defaultListing =
     RentalListing(
@@ -50,12 +52,14 @@ data class ViewListingUIState(
     val errorMsg: String? = null,
     val contactMessage: String = "",
     val isOwner: Boolean = false,
+    val isBlockedByOwner: Boolean = false,
 )
 
 class ViewListingViewModel(
     private val rentalListingRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
@@ -81,9 +85,31 @@ class ViewListingViewModel(
         val listing = rentalListingRepository.getRentalListing(listingId)
         val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
         val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
-        val isOwner = FirebaseAuth.getInstance().currentUser?.uid == listing.ownerId
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        val isOwner = currentUserId == listing.ownerId
+
+        // Check if the current user is blocked by the listing owner
+        val isBlockedByOwner =
+            if (currentUserId != null && !isOwner) {
+              try {
+                val ownerDoc = db.collection("profiles").document(listing.ownerId).get().await()
+                @Suppress("UNCHECKED_CAST")
+                val blockedIds = ownerDoc.get("blockedUserIds") as? List<String> ?: emptyList()
+                currentUserId in blockedIds
+              } catch (e: Exception) {
+                Log.e("ViewListingViewModel", "Error checking blocked status", e)
+                false
+              }
+            } else {
+              false
+            }
+
         _uiState.update {
-          it.copy(listing = listing, fullNameOfPoster = fullNameOfPoster, isOwner = isOwner)
+          it.copy(
+              listing = listing,
+              fullNameOfPoster = fullNameOfPoster,
+              isOwner = isOwner,
+              isBlockedByOwner = isBlockedByOwner)
         }
       } catch (e: Exception) {
         Log.e("EditTodoViewModel", "Error loading ToDo by ID: $listingId", e)

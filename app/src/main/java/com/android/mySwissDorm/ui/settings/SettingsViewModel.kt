@@ -6,15 +6,21 @@ import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 data class SettingItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val title: String
 )
+
+data class BlockedContact(val uid: String, val displayName: String)
 
 data class SettingsUiState(
     val userName: String = "User",
@@ -23,6 +29,7 @@ data class SettingsUiState(
     val accountItems: List<SettingItem> = emptyList(),
     val isDeleting: Boolean = false,
     val errorMsg: String? = null,
+    val blockedContacts: List<BlockedContact> = emptyList(),
 )
 
 /**
@@ -31,7 +38,8 @@ data class SettingsUiState(
  */
 class SettingsViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val profiles: ProfileRepository = ProfileRepositoryProvider.repository
+    private val profiles: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : ViewModel() {
 
   private val _ui = MutableStateFlow(SettingsUiState())
@@ -41,7 +49,7 @@ class SettingsViewModel(
     viewModelScope.launch {
       val user = auth.currentUser
       if (user == null) {
-        _ui.value = _ui.value.copy(userName = "User", email = "")
+        _ui.value = _ui.value.copy(userName = "User", email = "", blockedContacts = emptyList())
         return@launch
       }
 
@@ -53,14 +61,31 @@ class SettingsViewModel(
               }
               .getOrNull()
 
-      if (nameFromRepo != null && nameFromRepo.isNotBlank()) {
-        _ui.value = _ui.value.copy(userName = nameFromRepo, email = user.email ?: "")
-        return@launch
-      }
+      val userName = nameFromRepo?.takeIf { it.isNotBlank() } ?: (user.displayName ?: "User")
+      _ui.value = _ui.value.copy(userName = userName, email = user.email ?: "")
 
-      // Fallback to auth displayName
-      val fallback = user.displayName ?: "User"
-      _ui.value = _ui.value.copy(userName = fallback, email = user.email ?: "")
+      // Load blocked user IDs from Firestore and map to display names
+      val blockedContacts =
+          runCatching {
+                val doc = db.collection("profiles").document(user.uid).get().await()
+                @Suppress("UNCHECKED_CAST")
+                val blockedIds = doc.get("blockedUserIds") as? List<String> ?: emptyList()
+
+                blockedIds.mapNotNull { blockedUid ->
+                  runCatching {
+                        val profile = profiles.getProfile(blockedUid)
+                        val displayName =
+                            "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                        if (displayName.isNotBlank()) {
+                          BlockedContact(uid = blockedUid, displayName = displayName)
+                        } else null
+                      }
+                      .getOrNull()
+                }
+              }
+              .getOrElse { emptyList() }
+
+      _ui.value = _ui.value.copy(blockedContacts = blockedContacts)
     }
   }
 
@@ -108,6 +133,47 @@ class SettingsViewModel(
         _ui.value = _ui.value.copy(isDeleting = false, errorMsg = msg)
         onDone(ok, msg)
       }
+    }
+  }
+
+  /** Add a user to the current user's blocked list in Firestore. */
+  fun blockUser(targetUid: String) {
+    val uid = auth.currentUser?.uid ?: return
+    viewModelScope.launch {
+      runCatching {
+            // Ensure ownerId is set, then add to blocked list
+            db.collection("profiles")
+                .document(uid)
+                .set(mapOf("ownerId" to uid), SetOptions.merge())
+                .await()
+            db.collection("profiles")
+                .document(uid)
+                .update("blockedUserIds", FieldValue.arrayUnion(targetUid))
+                .await()
+          }
+          .onFailure { e ->
+            _ui.value = _ui.value.copy(errorMsg = "Failed to block user: ${e.message}")
+          }
+      // Refresh to update the list
+      refresh()
+    }
+  }
+
+  /** Remove a user from the current user's blocked list in Firestore. */
+  fun unblockUser(targetUid: String) {
+    val uid = auth.currentUser?.uid ?: return
+    viewModelScope.launch {
+      runCatching {
+            db.collection("profiles")
+                .document(uid)
+                .update("blockedUserIds", FieldValue.arrayRemove(targetUid))
+                .await()
+          }
+          .onFailure { e ->
+            _ui.value = _ui.value.copy(errorMsg = "Failed to unblock user: ${e.message}")
+          }
+      // Refresh to update the list
+      refresh()
     }
   }
 }

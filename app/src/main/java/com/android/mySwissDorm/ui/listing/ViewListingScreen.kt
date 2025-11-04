@@ -52,8 +52,14 @@ fun ViewListingScreen(
   val listing = listingUIState.listing
   val fullNameOfPoster = listingUIState.fullNameOfPoster
   val errorMsg = listingUIState.errorMsg
-  val canApply = listingUIState.contactMessage.any { !it.isWhitespace() }
+  val hasMessage = listingUIState.contactMessage.any { !it.isWhitespace() }
   val isOwner = listingUIState.isOwner
+  val isBlockedByOwner = listingUIState.isBlockedByOwner
+
+  // Button is enabled only if there's a message and user is not blocked
+  val canApply = hasMessage && !isBlockedByOwner
+  // Button color: violet if blocked, red (MainColor) if normal
+  val buttonColor = if (isBlockedByOwner && hasMessage) Color(0xFF9C27B0) else MainColor
 
   val context = LocalContext.current
 
@@ -197,7 +203,16 @@ fun ViewListingScreen(
                             focusedBorderColor = MaterialTheme.colorScheme.outline,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline))
 
-                // Apply now button (centered, half width, rounded, red)
+                // Warning message if blocked
+                if (isBlockedByOwner && hasMessage) {
+                  Text(
+                      text = "You are not allowed to contact this user",
+                      color = Color(0xFFFF5722),
+                      style = MaterialTheme.typography.bodyMedium,
+                      modifier = Modifier.padding(horizontal = 4.dp))
+                }
+
+                // Apply now button (centered, half width, rounded, red or violet)
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                   Button(
                       onClick = onApply,
@@ -209,7 +224,7 @@ fun ViewListingScreen(
                       shape = RoundedCornerShape(16.dp),
                       colors =
                           ButtonDefaults.buttonColors(
-                              containerColor = MainColor,
+                              containerColor = buttonColor,
                               disabledContainerColor = Color(0xFFEBD0CE),
                               disabledContentColor = Color(0xFFFFFFFF))) {
                         Text(

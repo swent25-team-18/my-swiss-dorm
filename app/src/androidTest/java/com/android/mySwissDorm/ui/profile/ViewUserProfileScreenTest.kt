@@ -115,8 +115,10 @@ class ViewUserProfileScreenTest : FirestoreTest() {
 
     // Retry should now load successfully
     compose.onNodeWithTag(T.RETRY_BTN).performClick()
-
-    compose.waitUntil(10_000) {
+    compose.waitUntil(5000) {
+      compose.onAllNodesWithTag(T.RETRY_BTN, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+    }
+    compose.waitUntil(5000) {
       compose.onAllNodesWithTag(T.TITLE, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithTag(T.TITLE).assertIsDisplayed()

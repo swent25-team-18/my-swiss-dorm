@@ -16,6 +16,7 @@ sealed class Screen(
   data object Homepage : Screen("homepage", "Homepage", isTopLevelDestination = true)
 
   data object AddHub : Screen("add", "Add")
+
   data object AddListing : Screen("addListing", "Add Listing", isTopLevelDestination = true)
 
   data object Inbox : Screen("inbox", "Inbox", isTopLevelDestination = true)

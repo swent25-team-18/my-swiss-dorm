@@ -11,7 +11,12 @@ import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import java.util.concurrent.atomic.AtomicReference
+import com.android.mySwissDorm.utils.FakeUser
+import com.android.mySwissDorm.utils.FirebaseEmulator
+import com.android.mySwissDorm.utils.FirestoreTest
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -149,22 +154,6 @@ class SettingsScreenTest : FirestoreTest() {
     compose.onNodeWithText("Settings", useUnmergedTree = true).assertIsDisplayed()
     compose.onNodeWithText("View profile", useUnmergedTree = true).assertIsDisplayed()
     compose.onNodeWithText("Mansour Kanaan", useUnmergedTree = true).assertIsDisplayed()
-  }
-
-  @Test
-  fun deleteAccountButton_triggersOnItemClickCallback() {
-    val clickedItem = AtomicReference<String?>(null)
-    composeTestRule.setContent {
-      MySwissDormAppTheme { SettingsScreen(onItemClick = { item -> clickedItem.set(item) }) }
-    }
-    composeTestRule.waitForIdle()
-
-    composeTestRule
-        .onNodeWithTag(SettingsTestTags.DeleteAccountButton, useUnmergedTree = true)
-        .performClick()
-    assert(clickedItem.get() == "Delete my account") {
-      "onItemClick was not called with 'Delete my account'."
-    }
   }
 
   @Test

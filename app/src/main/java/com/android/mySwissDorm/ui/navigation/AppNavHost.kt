@@ -73,11 +73,11 @@ fun AppNavHost(
     }
     composable(Screen.Settings.route) { navBackStackEntry ->
       SettingsScreen(
-          onGoBack = { navActions.goBack() },
           onItemClick = {
             Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
           },
-          onProfileClick = { navActions.navigateTo(Screen.Profile) })
+          onProfileClick = { navActions.navigateTo(Screen.Profile) },
+          navigationActions = navActions)
     }
 
     // --- Secondary destinations ---

@@ -203,7 +203,7 @@ fun SettingsScreenContent(
                                           tint = TextColor)
                                     }
                               }
-                        }
+                        } //
 
                         // ---- Notifications ---------------------------------------------------
                         SectionLabel("Notifications")

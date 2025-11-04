@@ -27,7 +27,7 @@ Our mission is simple: **help students find a place to live, stress-free.**
 - **Language**: Kotlin
 - **Backend & Database**: Firebase (Authentication, Firestore, Storage)
 - **UI**: Jetpack Compose
-- **Figma**: For design and prototyping ([Figma Project Link](https://www.figma.com/design/ZWLWDTwJYxXIbm5lXj0ImE/MySwissDorm?node-id=0-1&p=f))
+- **Figma**: For design and prototyping ([Figma Project Link](https://www.figma.com/design/XbtLYdmVy6eMZRafkgtyAX/MySwissDorm?m=auto&t=hZvRKo6cEr5kbGtE-6))
 
 ---
 

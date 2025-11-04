@@ -19,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -332,6 +331,29 @@ fun SettingsScreenContent(
                         }
                       }
                     }
+                    item {
+                      if (isAdmin) {
+                        SectionLabel("Admin")
+                        CardBlock {
+                          Row(
+                              modifier =
+                                  Modifier.fillMaxWidth()
+                                      .padding(horizontal = 16.dp, vertical = 10.dp)
+                                      .clickable(onClick = onAdminClick),
+                              verticalAlignment = Alignment.CenterVertically,
+                              horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(
+                                    "Admin page",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextColor,
+                                )
+                                Icon(
+                                    imageVector = Icons.Filled.ChevronRight,
+                                    contentDescription = "Open admin page")
+                              }
+                        }
+                      }
+                    }
 
                     item {
                       Button(
@@ -378,27 +400,6 @@ fun SettingsScreenContent(
         },
         dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } })
   }
-    if (isAdmin) {
-        SectionLabel("Admin")
-        CardBlock {
-            Row(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                        .clickable(onClick = onAdminClick),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(
-                    "Admin page",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Black,
-                )
-                Icon(
-                    imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = "Open admin page")
-            }
-        }
-    }
 }
 
 /* ---------- small UI helpers ---------- */

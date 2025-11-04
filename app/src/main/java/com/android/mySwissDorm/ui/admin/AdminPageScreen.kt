@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,6 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.ui.theme.TextColor
+import coralColor
 
 @OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
 
@@ -66,7 +69,7 @@ fun AdminPageScreen(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = accentColor)
+                    tint = Color(coralColor))
               }
             })
       },
@@ -123,24 +126,28 @@ fun AdminPageScreen(
                   onValueChange = vm::onName,
                   label = { Text("Name") },
                   singleLine = true,
+                  colors = coloring(),
                   modifier = Modifier.fillMaxWidth())
               OutlinedTextField(
                   value = ui.latitude,
                   onValueChange = vm::onLatitude,
                   label = { Text("Latitude") },
                   singleLine = true,
+                  colors = coloring(),
                   modifier = Modifier.fillMaxWidth())
               OutlinedTextField(
                   value = ui.longitude,
                   onValueChange = vm::onLongitude,
                   label = { Text("Longitude") },
                   singleLine = true,
+                  colors = coloring(),
                   modifier = Modifier.fillMaxWidth())
               OutlinedTextField(
                   value = ui.locName,
                   onValueChange = vm::onLocName,
                   label = { Text("Location Name") },
                   singleLine = true,
+                  colors = coloring(),
                   modifier = Modifier.fillMaxWidth())
 
               // Entity-specific fields
@@ -150,11 +157,13 @@ fun AdminPageScreen(
                   OutlinedTextField(
                       value = ui.description,
                       onValueChange = vm::onDescription,
+                      colors = coloring(),
                       label = { Text("Description") },
                       modifier = Modifier.fillMaxWidth())
                   OutlinedTextField(
                       value = ui.imageId,
                       onValueChange = vm::onImageId,
+                      colors = coloring(),
                       label = { Text("Image ID") },
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth())
@@ -164,28 +173,33 @@ fun AdminPageScreen(
                   OutlinedTextField(
                       value = ui.description,
                       onValueChange = vm::onDescription,
+                      colors = coloring(),
                       label = { Text("Description") },
                       modifier = Modifier.fillMaxWidth())
                   OutlinedTextField(
                       value = ui.city,
                       onValueChange = vm::onCity,
                       label = { Text("City") },
+                      colors = coloring(),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth())
                   OutlinedTextField(
                       value = ui.email,
+                      colors = coloring(),
                       onValueChange = vm::onEmail,
                       label = { Text("Email (optional)") },
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth())
                   OutlinedTextField(
                       value = ui.phone,
+                      colors = coloring(),
                       onValueChange = vm::onPhone,
                       label = { Text("Phone (optional)") },
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth())
                   OutlinedTextField(
                       value = ui.website,
+                      colors = coloring(),
                       onValueChange = vm::onWebsite,
                       label = { Text("Website (optional)") },
                       singleLine = true,
@@ -198,30 +212,43 @@ fun AdminPageScreen(
                       onValueChange = vm::onCity,
                       label = { Text("City") },
                       singleLine = true,
+                      colors = coloring(),
                       modifier = Modifier.fillMaxWidth())
                   OutlinedTextField(
                       value = ui.email,
                       onValueChange = vm::onEmail,
                       label = { Text("Email") },
                       singleLine = true,
+                      colors = coloring(),
                       modifier = Modifier.fillMaxWidth())
                   OutlinedTextField(
                       value = ui.phone,
                       onValueChange = vm::onPhone,
                       label = { Text("Phone") },
                       singleLine = true,
+                      colors = coloring(),
                       modifier = Modifier.fillMaxWidth())
                   OutlinedTextField(
                       value = ui.website,
                       onValueChange = vm::onWebsite,
                       label = { Text("Website URL") },
                       singleLine = true,
+                      colors = coloring(),
                       modifier = Modifier.fillMaxWidth())
                 }
               }
               Spacer(Modifier.height(16.dp))
             }
       }
+}
+
+@Composable
+private fun coloring(): androidx.compose.material3.TextFieldColors {
+  return OutlinedTextFieldDefaults.colors(
+      focusedBorderColor = Color(coralColor),
+      unfocusedBorderColor = Color(coralColor),
+      focusedLabelColor = Color(coralColor),
+      unfocusedLabelColor = Color.Gray)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -233,7 +260,7 @@ private fun EntityChip(text: String, selected: Boolean, onClick: () -> Unit) {
       label = { Text(text) },
       leadingIcon =
           if (selected) {
-            { Icon(Icons.Default.Check, contentDescription = null) }
+            { Icon(Icons.Default.Check, contentDescription = null, tint = TextColor) }
           } else null,
       modifier = Modifier.testTag("Chip_$text"))
 }

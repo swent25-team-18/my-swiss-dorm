@@ -140,6 +140,7 @@ class Epic1Test : FirestoreTest() {
         val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
 
         composeTestRule.setContent { MySwissDormApp(LocalContext.current, fakeCredentialManager) }
+
         // Sign up
         ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
           assertIsDisplayed()
@@ -149,6 +150,7 @@ class Epic1Test : FirestoreTest() {
           }
         }
         composeTestRule.waitForIdle()
+
         // Fill the profile form and register
         ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
           assertIsDisplayed()
@@ -171,54 +173,75 @@ class Epic1Test : FirestoreTest() {
             performClick()
           }
         }
+
         runCatching {
               ProfileRepositoryProvider.repository.getProfile(
                   FirebaseEmulator.auth.uid ?: throw NoSuchElementException())
             }
             .isSuccess
+
         composeTestRule.waitForIdle()
+
+        // Ensure bottom bar is visible and go to Settings
         composeTestRule.waitUntil(5_000) {
           composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
         }
-        // Go to settings
         composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).performClick()
+
+        // Wait until Settings screen is shown (use Profile button which exists there)
         composeTestRule.waitUntil(5_000) {
           composeTestRule
               .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
               .isDisplayed()
         }
-        // Go to profile settings
+
+        // Go to profile screen from settings
         composeTestRule
             .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
             .performClick()
+
+        // Wait for profile screen title
         composeTestRule.waitUntil(5_000) {
           composeTestRule.onNodeWithTag(C.Tag.PROFILE_SCREEN_TITLE).isDisplayed()
         }
-        // Go back to settings
+
+        // Go back to settings (profile screen has its own back button)
         composeTestRule
             .onNodeWithTag(C.Tag.PROFILE_SCREEN_BACK_BUTTON)
             .assertIsDisplayed()
             .performClick()
 
-        // Go back to homepage
+        // Now we're back on Settings; assert again via Profile button visibility
+        composeTestRule.waitUntil(5_000) {
+          composeTestRule
+              .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+              .isDisplayed()
+        }
+
+        // Return to Homepage via the bottom navigation (no back button on Settings)
         composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).performClick()
+
         composeTestRule.waitUntil(5_000) {
           composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
         }
+
         // Go to Lausanne's listings
         composeTestRule
             .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
             .performScrollTo()
             .performClick()
+
         composeTestRule.waitUntil(5_000) {
           composeTestRule.onNodeWithTag(C.BrowseCityTags.card(rentalUid)).isDisplayed()
         }
+
         // Go to first rental listing element
         composeTestRule.onNodeWithTag(C.BrowseCityTags.card(rentalUid)).isDisplayed()
         composeTestRule
             .onNodeWithTag(C.BrowseCityTags.card(rentalUid))
             .performScrollTo()
             .performClick()
+
         composeTestRule.waitUntil(5_000) {
           composeTestRule.onNodeWithTag(C.ViewListingTags.TITLE).isDisplayed()
         }

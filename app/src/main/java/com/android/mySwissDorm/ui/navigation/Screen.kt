@@ -16,14 +16,13 @@ sealed class Screen(
   data object Homepage : Screen("homepage", "Homepage", isTopLevelDestination = true)
 
   data object AddHub : Screen("add", "Add")
+  data object AddListing : Screen("addListing", "Add Listing", isTopLevelDestination = true)
 
   data object Inbox : Screen("inbox", "Inbox", isTopLevelDestination = true)
 
   data object Settings : Screen("settings", "Settings", isTopLevelDestination = true)
 
   // Secondary (non-bottom-bar) destinations
-  data object AddListing : Screen("addListing", "Add Listing")
-
   data class CityOverview(val city: City) :
       Screen(route = "cityOverview/${city.name}", name = "City") {
     companion object {

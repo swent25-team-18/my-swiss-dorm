@@ -4,6 +4,7 @@ import android.util.Log
 import com.android.mySwissDorm.model.map.Location
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import java.net.MalformedURLException
 import java.net.URL
 import kotlinx.coroutines.tasks.await
 
@@ -61,7 +62,15 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
       val email = document.getString("email")
       val phone = document.getString("phone")
       val websiteString = document.getString("website")
-      val website = websiteString?.let { URL(it) }
+      val website =
+          websiteString?.let {
+            try {
+              URL(it)
+            } catch (e: MalformedURLException) {
+              Log.w("ResidenciesRepositoryFirestore", "Malformed website URL: $it")
+              null
+            }
+          }
 
       Residency(
           name = name,

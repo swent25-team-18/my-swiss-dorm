@@ -60,6 +60,20 @@ object C {
     const val EDIT_BTN = "viewListingEditBtn"
   }
 
+  object ViewReviewTags {
+    const val ROOT = "viewReviewRoot"
+    const val TITLE = "viewReviewTitle"
+    const val POSTED_BY = "viewReviewPostedBy"
+    const val BULLETS = "viewReviewBullets"
+    const val FILLED_STAR = "viewReviewFilledStar"
+    const val EMPTY_STAR = "viewReviewEmptyStar"
+    const val HALF_STAR = "viewReviewHalfStar"
+    const val REVIEW_TEXT = "viewReviewReviewText"
+    const val PHOTOS = "viewReviewPhotos"
+    const val LOCATION = "viewReviewLocation"
+    const val EDIT_BTN = "viewReviewEditBtn"
+  }
+
   object ViewUserProfileTags {
     const val ROOT = "view_user_profile_root"
     const val TITLE = "view_user_profile_title"

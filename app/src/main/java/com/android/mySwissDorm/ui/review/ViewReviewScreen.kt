@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -112,14 +114,15 @@ fun ViewReviewScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .verticalScroll(rememberScrollState())
-                    .imePadding(),
+                    .imePadding()
+                    .testTag(C.ViewReviewTags.ROOT),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
                   text = review.title,
                   fontSize = 28.sp,
                   fontWeight = FontWeight.SemiBold,
                   lineHeight = 32.sp,
-                  modifier = Modifier,
+                  modifier = Modifier.testTag(C.ViewReviewTags.TITLE),
                   color = TextColor)
 
               // tag we'll look for
@@ -152,7 +155,7 @@ fun ViewReviewScreen(
                           color = MaterialTheme.colorScheme.onSurfaceVariant),
                   onTextLayout = { textLayoutResult = it },
                   modifier =
-                      Modifier.pointerInput(Unit) {
+                      Modifier.testTag(C.ViewReviewTags.POSTED_BY).pointerInput(Unit) {
                         detectTapGestures { pos ->
                           val l = textLayoutResult ?: return@detectTapGestures
                           val offset = l.getOffsetForPosition(pos)
@@ -169,7 +172,7 @@ fun ViewReviewScreen(
                       })
 
               // Bullet section
-              SectionCard(modifier = Modifier) {
+              SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.BULLETS)) {
                 BulletRow("${review.roomType}")
                 BulletRow("${review.pricePerMonth}.-/month")
                 BulletRow("${review.areaInM2}m²")
@@ -177,7 +180,7 @@ fun ViewReviewScreen(
               }
 
               // Actual review
-              SectionCard(modifier = Modifier) {
+              SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.REVIEW_TEXT)) {
                 Text("Review :", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(3.dp))
                 Text(review.reviewText, style = MaterialTheme.typography.bodyLarge)
@@ -185,18 +188,25 @@ fun ViewReviewScreen(
 
               // Photos placeholder
               PlaceholderBlock(
-                  text = "PHOTOS (Not implemented yet)", height = 220.dp, modifier = Modifier)
+                  text = "PHOTOS (Not implemented yet)",
+                  height = 220.dp,
+                  modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
 
               // Location placeholder
               PlaceholderBlock(
-                  text = "LOCATION (Not implemented yet)", height = 180.dp, modifier = Modifier)
+                  text = "LOCATION (Not implemented yet)",
+                  height = 180.dp,
+                  modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
 
               if (isOwner) {
                 // Owner sees an Edit button centered
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                   Button(
                       onClick = onEdit,
-                      modifier = Modifier.fillMaxWidth(0.55f).height(52.dp),
+                      modifier =
+                          Modifier.fillMaxWidth(0.55f)
+                              .height(52.dp)
+                              .testTag(C.ViewReviewTags.EDIT_BTN),
                       shape = RoundedCornerShape(16.dp),
                       colors =
                           ButtonColors(
@@ -256,17 +266,17 @@ private fun DisplayGrade(grade: Double) {
                     imageVector = Icons.Filled.Star,
                     contentDescription = null,
                     tint = YellowStar,
-                    modifier = Modifier.size(24.dp))
+                    modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.FILLED_STAR))
               }
               i == filledStars + 1 && hasHalfStar -> { // Draw a half filled star
-                Box(modifier = Modifier.size(24.dp)) {
+                Box(modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.HALF_STAR)) {
                   Icon(
                       imageVector = Icons.Default.StarBorder,
                       contentDescription = null,
                       tint = YellowStar,
                       modifier = Modifier.matchParentSize())
                   Icon(
-                      imageVector = Icons.Outlined.Star,
+                      imageVector = Icons.Filled.Star,
                       contentDescription = null,
                       tint = YellowStar,
                       modifier =
@@ -288,7 +298,7 @@ private fun DisplayGrade(grade: Double) {
                     imageVector = Icons.Default.StarBorder,
                     contentDescription = null,
                     tint = YellowStar,
-                    modifier = Modifier.size(24.dp))
+                    modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.EMPTY_STAR))
               }
             }
           }

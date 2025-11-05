@@ -19,8 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
@@ -42,10 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -64,7 +62,6 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
-import com.android.mySwissDorm.ui.theme.YellowStar
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
 import kotlin.math.floor
 
@@ -265,39 +262,21 @@ private fun DisplayGrade(grade: Double) {
                 Icon(
                     imageVector = Icons.Filled.Star,
                     contentDescription = null,
-                    tint = YellowStar,
+                    tint = MainColor,
                     modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.FILLED_STAR))
               }
               i == filledStars + 1 && hasHalfStar -> { // Draw a half filled star
-                Box(modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.HALF_STAR)) {
-                  Icon(
-                      imageVector = Icons.Default.StarBorder,
-                      contentDescription = null,
-                      tint = YellowStar,
-                      modifier = Modifier.matchParentSize())
-                  Icon(
-                      imageVector = Icons.Filled.Star,
-                      contentDescription = null,
-                      tint = YellowStar,
-                      modifier =
-                          Modifier.matchParentSize()
-                              .clip(RectangleShape)
-                              .graphicsLayer {
-                                clip = true
-                                shape = RectangleShape
-                              }
-                              .drawWithContent {
-                                clipRect(right = size.width / 2) {
-                                  this@drawWithContent.drawContent()
-                                }
-                              })
-                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.StarHalf,
+                    contentDescription = null,
+                    tint = MainColor,
+                    modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.HALF_STAR))
               }
               else -> { // Draw a star's border only (not filled)
                 Icon(
                     imageVector = Icons.Default.StarBorder,
                     contentDescription = null,
-                    tint = YellowStar,
+                    tint = MainColor,
                     modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.EMPTY_STAR))
               }
             }

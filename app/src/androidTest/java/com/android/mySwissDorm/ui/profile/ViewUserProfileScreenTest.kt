@@ -1,12 +1,12 @@
 package com.android.mySwissDorm.profile
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.ProfileRepository
@@ -49,21 +49,44 @@ class ViewUserProfileScreenTest : FirestoreTest() {
 
   @Test
   fun elements_areDisplayed_and_scrollable_sections_work() = runTest {
-    // Use previewUi to bypass the real ViewModel + async loading
+    // Use a real ownerId (different user) so SEND_MESSAGE appears
+    // Create a second user profile with a residence so residence chip appears
+    switchToUser(FakeUser.FakeUser2)
+    val otherUserUid = FirebaseEmulator.auth.currentUser!!.uid
+    val profileWithResidence =
+        profile2.copy(
+            ownerId = otherUserUid,
+            userInfo = profile2.userInfo.copy(residencyName = "Vortex, Coloc"))
+    profileRepo.createProfile(profileWithResidence)
+
+    // Switch back to FakeUser1 to view FakeUser2's profile
+    switchToUser(FakeUser.FakeUser1)
+
+    val vm =
+        ViewProfileScreenViewModel(
+            repo = profileRepo, auth = FirebaseEmulator.auth, db = FirebaseEmulator.firestore)
+
     compose.setContent {
       ViewUserProfileScreen(
-          ownerId = null, // important: prevents onSendMessage from firing but shows UI
+          viewModel = vm,
+          ownerId = otherUserUid, // View FakeUser2's profile (not current user)
           onBack = {},
-          onSendMessage = {},
-          previewUi =
-              ViewProfileUiState(
-                  name = "Mansour Kanaan", residence = "Vortex, Coloc", image = null, error = null))
+          onSendMessage = {})
     }
 
-    // Wait until the title node exists (rendered)
+    // Wait for profile to load in ViewModel - check that the name is set correctly
+    compose.waitUntil(timeoutMillis = 10_000) {
+      vm.uiState.value.name.isNotEmpty() && vm.uiState.value.name.contains("Alice")
+    }
+
+    // Now wait for UI to update
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithTag(T.TITLE, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
     }
+    // Verify the title contains the expected name
+    compose
+        .onNodeWithTag(T.TITLE, useUnmergedTree = true)
+        .assertTextContains("Alice", substring = true)
 
     // TopAppBar content: NEVER scroll these
     compose.onNodeWithTag(T.TITLE, useUnmergedTree = true).assertIsDisplayed()
@@ -75,23 +98,42 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     compose.onNodeWithTag(T.AVATAR_BOX).assertIsDisplayed()
 
     // Residence chip is optional (only when non-blank)
+    // Wait for it to appear since we set a residence
+    compose.waitUntil(10_000) {
+      compose
+          .onAllNodesWithTag(T.RESIDENCE_CHIP, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
     compose.onNodeWithTag(T.ROOT).performScrollToNode(hasTestTag(T.RESIDENCE_CHIP))
-    // If previewUi.residence is non-blank, it will be present and displayed:
     compose.onNodeWithTag(T.RESIDENCE_CHIP).assertIsDisplayed()
 
-    // "Send a message" row
+    // Wait for profile to load and then check for "Send a message" row
+    // (only appears when viewing other user's profile)
+    compose.waitUntil(10_000) {
+      compose
+          .onAllNodesWithTag(T.SEND_MESSAGE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
     compose.onNodeWithTag(T.ROOT).performScrollToNode(hasTestTag(T.SEND_MESSAGE))
     compose.onNodeWithTag(T.SEND_MESSAGE).assertIsDisplayed()
   }
 
   @Test
   fun repositoryError_showsError_andRetryReloadsAfterProfileAppears() = runTest {
-    // Use a real user as the "missing" id (FakeUser2)
+    // Use FakeUser2 as the "missing" user (profile not created yet)
     switchToUser(FakeUser.FakeUser2)
     val missingId = FirebaseEmulator.auth.currentUser!!.uid
 
+    // Switch to FakeUser1 to view FakeUser2's profile (so send message button appears)
+    switchToUser(FakeUser.FakeUser1)
+
+    val vm =
+        ViewProfileScreenViewModel(
+            repo = profileRepo, auth = FirebaseEmulator.auth, db = FirebaseEmulator.firestore)
+
     compose.setContent {
-      val vm = ViewProfileScreenViewModel(profileRepo)
       ViewUserProfileScreen(
           viewModel = vm,
           ownerId = missingId, // will fail first (profile not created yet)
@@ -109,17 +151,45 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     compose.onNodeWithTag(T.ERROR_TEXT).assertIsDisplayed()
     compose.onNodeWithTag(T.RETRY_BTN).assertIsDisplayed()
 
-    // Now create that profile WHILE SIGNED IN AS THE SAME USER
+    // Now create that profile WHILE SIGNED IN AS THE SAME USER (FakeUser2)
     switchToUser(FakeUser.FakeUser2)
-    profileRepo.createProfile(profile1.copy(ownerId = missingId))
+    // Create profile with a residence so it displays properly
+    val profileWithResidence =
+        profile2.copy(
+            ownerId = missingId,
+            userInfo = profile2.userInfo.copy(residencyName = "Test Residence"))
+    profileRepo.createProfile(profileWithResidence)
+
+    // Switch back to FakeUser1 to view the profile
+    switchToUser(FakeUser.FakeUser1)
 
     // Retry should now load successfully
     compose.onNodeWithTag(T.RETRY_BTN).performClick()
 
-    compose.waitUntil(10_000) {
+    // Wait for profile to load in ViewModel - check that the name is set correctly
+    compose.waitUntil(timeoutMillis = 10_000) {
+      vm.uiState.value.name.isNotEmpty() && vm.uiState.value.name.contains("Alice")
+    }
+
+    // Now wait for UI to update
+    compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithTag(T.TITLE, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
     }
+    // Verify the title contains the expected name
+    compose
+        .onNodeWithTag(T.TITLE, useUnmergedTree = true)
+        .assertTextContains("Alice", substring = true)
     compose.onNodeWithTag(T.TITLE).assertIsDisplayed()
+
+    // Wait for send message button to appear (since FakeUser1 is viewing FakeUser2)
+    compose.waitUntil(10_000) {
+      compose
+          .onAllNodesWithTag(T.SEND_MESSAGE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose.onNodeWithTag(T.ROOT).performScrollToNode(hasTestTag(T.SEND_MESSAGE))
+    compose.onNodeWithTag(T.SEND_MESSAGE).assertIsDisplayed()
   }
 
   @Test
@@ -127,7 +197,9 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     var back = false
 
     compose.setContent {
-      val vm = ViewProfileScreenViewModel(profileRepo)
+      val vm =
+          ViewProfileScreenViewModel(
+              repo = profileRepo, auth = FirebaseEmulator.auth, db = FirebaseEmulator.firestore)
       ViewUserProfileScreen(
           viewModel = vm, ownerId = ownerUid, onBack = { back = true }, onSendMessage = {})
     }
@@ -144,10 +216,14 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     var send = false
 
     compose.setContent {
-      val vm = ViewProfileScreenViewModel(profileRepo) // ignored because previewUi != null
+      val vm =
+          ViewProfileScreenViewModel(
+              repo = profileRepo,
+              auth = FirebaseEmulator.auth,
+              db = FirebaseEmulator.firestore) // ignored because previewUi != null
       ViewUserProfileScreen(
           viewModel = vm,
-          ownerId = null,
+          ownerId = null, // null ownerId means no send message button appears
           onBack = {},
           onSendMessage = { send = true },
           previewUi =
@@ -169,8 +245,13 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     // Title shows immediately
     compose.onNodeWithTag(T.TITLE).assertIsDisplayed()
 
-    // Click send message (should do nothing when ownerId == null)
-    compose.onNodeWithTag(T.SEND_MESSAGE, useUnmergedTree = true).performScrollTo().performClick()
+    // Send message button should NOT exist when ownerId is null (new behavior)
+    val sendMessageExists =
+        compose
+            .onAllNodesWithTag(T.SEND_MESSAGE, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+    assert(!sendMessageExists) { "Send message button should not appear when ownerId is null" }
 
     // Just settle the UI and assert the flag stayed false
     compose.waitForIdle()
@@ -200,7 +281,9 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     val missingId = "missing-" + java.util.UUID.randomUUID().toString()
 
     compose.setContent {
-      val vm = ViewProfileScreenViewModel(profileRepo)
+      val vm =
+          ViewProfileScreenViewModel(
+              repo = profileRepo, auth = FirebaseEmulator.auth, db = FirebaseEmulator.firestore)
       ViewUserProfileScreen(
           viewModel = vm,
           ownerId = missingId, // not created in repo

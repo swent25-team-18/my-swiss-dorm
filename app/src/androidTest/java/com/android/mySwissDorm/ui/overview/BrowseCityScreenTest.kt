@@ -9,13 +9,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.*
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.model.review.Review
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.*
 import org.junit.runner.RunWith
@@ -27,18 +31,42 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   private val profileRepo = ProfileRepositoryProvider.repository
   private val listingsRepo = RentalListingRepositoryProvider.repository
+  private val reviewsRepo = ReviewsRepositoryProvider.repository
+  private val residenciesRepo = ResidenciesRepositoryProvider.repository
+  private lateinit var vm: BrowseCityViewModel
 
   private lateinit var ownerUid: String
   private lateinit var otherUid: String
 
-  private lateinit var laus1: RentalListing
-  private lateinit var laus2: RentalListing
-  private lateinit var zurich: RentalListing
+  private lateinit var listingLaus1: RentalListing
+  private lateinit var listingLaus2: RentalListing
+  private lateinit var listingZurich: RentalListing
 
-  override fun createRepositories() {}
+  private lateinit var reviewLaus1: Review
+  private lateinit var reviewLaus2: Review
+  private lateinit var reviewZurich: Review
+
+  override fun createRepositories() {
+    val vortex =
+        Residency(
+            name = "Vortex",
+            description = "description",
+            location = Location("name", 0.0, 0.0),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null)
+    val woko = vortex.copy(name = "WOKO", city = "Zurich")
+
+    runBlocking {
+      residenciesRepo.addResidency(vortex)
+      residenciesRepo.addResidency(woko)
+    }
+  }
 
   @Before
   override fun setUp() {
+    createRepositories()
     runTest {
       super.setUp()
       // two users + profiles
@@ -64,7 +92,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             website = null)
     val resZurich = resLaus.copy(city = "Zurich", name = "CUG")
 
-    laus1 =
+    listingLaus1 =
         RentalListing(
             uid = "laus1",
             ownerId = ownerUid,
@@ -78,19 +106,48 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             description = "",
             imageUrls = emptyList(),
             status = RentalStatus.POSTED)
-    laus2 =
-        laus1.copy(uid = "laus2", ownerId = otherUid, title = "Lausanne Studio 2", areaInM2 = 22)
-    zurich =
-        laus1.copy(
+    listingLaus2 =
+        listingLaus1.copy(
+            uid = "laus2", ownerId = otherUid, title = "Lausanne Studio 2", areaInM2 = 22)
+    listingZurich =
+        listingLaus1.copy(
             uid = "zurich1", ownerId = otherUid, title = "Zurich Room", residency = resZurich)
+
+    reviewLaus1 =
+        Review(
+            uid = "reviewLaus1",
+            ownerId = ownerUid,
+            postedAt = Timestamp.now(),
+            title = "Lausanne Review 1",
+            reviewText = "First review",
+            grade = 4.5,
+            residencyName = "Vortex",
+            roomType = RoomType.STUDIO,
+            pricePerMonth = 1200.0,
+            areaInM2 = 60,
+            imageUrls = emptyList())
+    reviewLaus2 =
+        reviewLaus1.copy(uid = "reviewLaus2", ownerId = otherUid, title = "Lausanne Review 2")
+    reviewZurich =
+        reviewLaus1.copy(
+            uid = "reviewZurich", ownerId = otherUid, title = "Zurich Room", residencyName = "WOKO")
 
     runTest {
       switchToUser(FakeUser.FakeUser1)
-      listingsRepo.addRentalListing(laus1)
+      listingsRepo.addRentalListing(listingLaus1)
+      reviewsRepo.addReview(reviewLaus1)
       switchToUser(FakeUser.FakeUser2)
-      listingsRepo.addRentalListing(laus2)
-      listingsRepo.addRentalListing(zurich)
+      listingsRepo.addRentalListing(listingLaus2)
+      listingsRepo.addRentalListing(listingZurich)
+      reviewsRepo.addReview(reviewLaus2)
+      reviewsRepo.addReview(reviewZurich)
     }
+
+    vm =
+        BrowseCityViewModel(
+            listingsRepository = listingsRepo,
+            reviewsRepository = reviewsRepo,
+            residenciesRepository = residenciesRepo)
   }
 
   @After
@@ -107,10 +164,37 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     compose.setContent { BrowseCityScreen(cityName = "Lausanne", onSelectListing = {}) }
     compose.waitForIdle()
 
-    compose.onNodeWithTag(C.BrowseCityTags.LIST).assertIsDisplayed()
-    compose.onNodeWithTag(C.BrowseCityTags.card(laus1.uid)).performScrollTo().assertIsDisplayed()
-    compose.onNodeWithTag(C.BrowseCityTags.card(laus2.uid)).performScrollTo().assertIsDisplayed()
-    compose.onNodeWithTag(C.BrowseCityTags.card(zurich.uid)).assertDoesNotExist()
+    compose.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus1.uid))
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus2.uid))
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose.onNodeWithTag(C.BrowseCityTags.listingCard(listingZurich.uid)).assertDoesNotExist()
+  }
+
+  @Test
+  fun onlyLausanneReviewsAreDisplayed() {
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, cityName = "Lausanne") }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.isNotEmpty() }
+
+    compose.onNodeWithTag(C.BrowseCityTags.REVIEW_LIST).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewCard(reviewLaus1.uid))
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewCard(reviewLaus2.uid))
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose.onNodeWithTag(C.BrowseCityTags.reviewCard(reviewZurich.uid)).assertIsNotDisplayed()
   }
 
   @Test
@@ -123,18 +207,34 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     }
     compose.waitForIdle()
 
-    compose.onNodeWithTag(C.BrowseCityTags.card(laus1.uid)).performScrollTo().performClick()
-    compose.waitUntil(5_000) { clicked.value?.listingUid == laus1.uid }
+    compose
+        .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus1.uid))
+        .performScrollTo()
+        .performClick()
+    compose.waitUntil(5_000) { clicked.value?.listingUid == listingLaus1.uid }
   }
 
   @Test
-  fun switchingToReviews_showsPlaceholder() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    compose.setContent { BrowseCityScreen(cityName = "Lausanne") }
-    compose.waitForIdle()
+  fun emptyState_showsNoReviewsYet() {
+    compose.setContent { BrowseCityScreen(cityName = "Geneva") } // no Geneva data
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.ROOT, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
     compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
-    compose.onNodeWithText("Not implemented yet").assertIsDisplayed()
+
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.EMPTY, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.onNodeWithTag(C.BrowseCityTags.EMPTY, useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("No reviews yet.", useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test

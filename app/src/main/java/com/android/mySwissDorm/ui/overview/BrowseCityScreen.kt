@@ -130,7 +130,10 @@ private fun BrowseCityScreenUI(
                 }
                 else -> {
                   LazyColumn(
-                      modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                      modifier =
+                          Modifier.fillMaxSize()
+                              .padding(horizontal = 16.dp)
+                              .testTag(C.BrowseCityTags.REVIEW_LIST),
                       contentPadding = PaddingValues(vertical = 12.dp),
                       verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(reviewsState.items) { item -> ReviewCard(item, onSelectReview) }
@@ -163,7 +166,7 @@ private fun BrowseCityScreenUI(
                       modifier =
                           Modifier.fillMaxSize()
                               .padding(horizontal = 16.dp)
-                              .testTag(C.BrowseCityTags.LIST),
+                              .testTag(C.BrowseCityTags.LISTING_LIST),
                       contentPadding = PaddingValues(vertical = 12.dp),
                       verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(listingsState.items) { item -> ListingCard(item, onSelectListing) }
@@ -180,7 +183,7 @@ private fun BrowseCityScreenUI(
 private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
-      modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.card(data.listingUid)),
+      modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.listingCard(data.listingUid)),
       onClick = { onClick(data) }) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
           // Image placeholder (left)
@@ -224,7 +227,7 @@ private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
 private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.reviewCard(data.reviewUid)),
       onClick = { onClick(data) }) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
           // Image placeholder (left)

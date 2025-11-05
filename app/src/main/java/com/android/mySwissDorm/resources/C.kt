@@ -93,12 +93,15 @@ object C {
     const val TAB_REVIEWS = "browseCityTabReviews"
     const val TAB_LISTINGS = "browseCityTabListings"
 
-    const val LIST = "browseCityList"
+    const val LISTING_LIST = "browseCityListingList"
+    const val REVIEW_LIST = "browseCityReviewList"
     const val LOADING = "browseCityLoading"
     const val ERROR = "browseCityError"
     const val EMPTY = "browseCityEmpty"
 
-    fun card(listingUid: String) = "browseCityCard_$listingUid"
+    fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
+
+    fun reviewCard(reviewUid: String) = "browseCityReviewCard_$reviewUid"
   }
 
   object CameraButtonTag {

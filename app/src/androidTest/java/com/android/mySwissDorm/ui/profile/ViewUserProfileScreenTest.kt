@@ -166,6 +166,11 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     // Retry should now load successfully
     compose.onNodeWithTag(T.RETRY_BTN).performClick()
 
+    // Wait for retry button to disappear (from main branch)
+    compose.waitUntil(5000) {
+      compose.onAllNodesWithTag(T.RETRY_BTN, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+    }
+
     // Wait for profile to load in ViewModel - check that the name is set correctly
     compose.waitUntil(timeoutMillis = 10_000) {
       vm.uiState.value.name.isNotEmpty() && vm.uiState.value.name.contains("Alice")

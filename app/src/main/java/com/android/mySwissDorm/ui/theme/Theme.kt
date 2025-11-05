@@ -21,6 +21,9 @@ val TextColor
 
 val BackGroundColor
   @Composable get() = MaterialTheme.colorScheme.background
+
+val OutlineColor
+  @Composable get() = MaterialTheme.colorScheme.outline
 private val LightColors =
     lightColorScheme(
         primary = White,
@@ -34,8 +37,8 @@ private val LightColors =
         onTertiary = Dark,
         onBackground = Dark, // normal text color
         onSurface = Dark, // text on cards/fields
-        onSurfaceVariant = Color.DarkGray // labels, hints
-        )
+        onSurfaceVariant = Color.DarkGray, // labels, hints
+        outline = Gray)
 
 private val DarkColors =
     darkColorScheme(
@@ -50,8 +53,8 @@ private val DarkColors =
         onTertiary = White,
         onBackground = White, // white text on dark background
         onSurface = White, // white text on dark surfaces
-        onSurfaceVariant = LightGray // lighter labels/hints
-        )
+        onSurfaceVariant = LightGray, // lighter labels/hints
+        outline = White)
 
 @Composable
 fun MySwissDormAppTheme(

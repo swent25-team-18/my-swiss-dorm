@@ -16,7 +16,7 @@ interface PhotoRepository {
    * Upload a photo in the repository
    *
    * @param photo the photo to be uploaded
-   * @throws java.io.FileNotFoundException if the uri of the
+   * @throws java.io.FileNotFoundException if no data is associated to the [Photo]
    */
   suspend fun uploadPhoto(photo: Photo)
 }

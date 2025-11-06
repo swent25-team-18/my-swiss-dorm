@@ -12,7 +12,7 @@ import android.content.Context
  */
 object PhotoRepositoryProvider {
   private lateinit var _local_repository: PhotoRepository
-  private val _repository by lazy { PhotoRepositoryStorage() }
+  private val _repository: PhotoRepository by lazy { _local_repository }
   private var initialized = false
 
   /**

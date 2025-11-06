@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,7 +45,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -82,7 +82,7 @@ object HomePageScreenTestTags {
  *
  * @param homePageViewModel The ViewModel for this screen.
  * @param credentialManager The credential manager for handling user credentials.
- * @param onSelectCity A callback for when a city is selected.
+ * @param onSelectLocation A callback for when a city or custom location is selected.
  * @param navigationActions Actions for navigating to other screens.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,7 +90,7 @@ object HomePageScreenTestTags {
 fun HomePageScreen(
     homePageViewModel: HomePageViewModel = viewModel(),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
-    onSelectCity: (City) -> Unit = {},
+    onSelectLocation: (Location) -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {
   val uiState by homePageViewModel.uiState.collectAsState()
@@ -161,7 +161,7 @@ fun HomePageScreen(
                   val city = uiState.cities[index]
                   if (city.name.contains(inputText, ignoreCase = true) ||
                       city.description.contains(inputText, ignoreCase = true)) {
-                    CityCard(city = city, onClick = { onSelectCity(city) })
+                    CityCard(city = city, onClick = { onSelectLocation(city.location) })
                     Spacer(modifier = Modifier.height(16.dp))
                   }
                 }
@@ -173,21 +173,21 @@ fun HomePageScreen(
               remember<(String) -> Unit> {
                 { query -> homePageViewModel.setCustomLocationQuery(query) }
               }
-          val onLocationSelect =
+          val onDropDownLocationSelect =
               remember<(Location) -> Unit> {
                 { location -> homePageViewModel.setCustomLocation(location) }
               }
           val onDismiss =
               remember<() -> Unit> { { homePageViewModel.dismissCustomLocationDialog() } }
-          val onConfirm = remember<() -> Unit> { { homePageViewModel.onCustomLocationConfirm() } }
 
           CustomLocationDialog(
               value = uiState.customLocationQuery,
+              currentLocation = uiState.customLocation,
               locationSuggestions = uiState.locationSuggestions,
               onValueChange = onValueChange,
-              onLocationSelect = onLocationSelect,
+              onDropDownLocationSelect = onDropDownLocationSelect,
               onDismiss = onDismiss,
-              onConfirm = onConfirm)
+              onConfirm = onSelectLocation)
         }
       }
 }
@@ -196,9 +196,10 @@ fun HomePageScreen(
  * A dialog for entering a custom location, with autocomplete suggestions.
  *
  * @param value The current text in the location search field.
+ * @param currentLocation The currently selected location.
  * @param locationSuggestions A list of location suggestions to display.
  * @param onValueChange A callback for when the search text changes.
- * @param onLocationSelect A callback for when a location is selected from the suggestions.
+ * @param onDropDownLocationSelect A callback for when a location is selected from the suggestions.
  * @param onDismiss A callback for when the dialog is dismissed.
  * @param onConfirm A callback for when the confirm button is clicked.
  */
@@ -206,11 +207,12 @@ fun HomePageScreen(
 @Composable
 fun CustomLocationDialog(
     value: String,
+    currentLocation: Location?,
     locationSuggestions: List<Location>,
     onValueChange: (String) -> Unit,
-    onLocationSelect: (Location) -> Unit,
+    onDropDownLocationSelect: (Location) -> Unit,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: (Location) -> Unit
 ) {
   var showDropdown by remember { mutableStateOf(false) }
 
@@ -248,7 +250,8 @@ fun CustomLocationDialog(
                                       maxLines = 1)
                                 },
                                 onClick = {
-                                  onLocationSelect(location)
+                                  onValueChange(location.name)
+                                  onDropDownLocationSelect(location)
                                   showDropdown = false
                                 })
                           }
@@ -260,10 +263,20 @@ fun CustomLocationDialog(
                           }
                         }
                   }
-              Button(onClick = onConfirm) { Text("Confirm") }
+              Button(
+                  onClick = {
+                    currentLocation?.let {
+                      onConfirm(it)
+                      onDismiss()
+                    }
+                  },
+                  enabled = currentLocation != null,
+                  colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
+                    Text("Confirm")
+                  }
             }
         IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart)) {
-          Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Red)
+          Icon(Icons.Default.Close, contentDescription = "Close", tint = MainColor)
         }
       }
     }

@@ -107,10 +107,4 @@ class HomePageViewModel(
         _uiState.value.copy(
             showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
   }
-
-  /** Confirms the custom location selection and dismisses the dialog. */
-  fun onCustomLocationConfirm() {
-    // TODO: Handle custom location logic
-    dismissCustomLocationDialog()
-  }
 }

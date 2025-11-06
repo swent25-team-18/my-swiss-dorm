@@ -19,9 +19,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -32,15 +34,15 @@ import com.android.mySwissDorm.ui.theme.TextColor
 @Composable
 fun BrowseCityScreen(
     browseCityViewModel: BrowseCityViewModel = viewModel(),
-    cityName: String,
+    location: Location,
     onGoBack: () -> Unit = {},
     onSelectListing: (ListingCardUI) -> Unit = {}
 ) {
-  LaunchedEffect(cityName) { browseCityViewModel.loadListings(cityName) }
+  LaunchedEffect(location) { browseCityViewModel.loadListings(location) }
 
   val uiState by browseCityViewModel.uiState.collectAsState()
   BrowseCityScreenUI(
-      cityName = cityName,
+      location = location,
       listingsState = uiState.listings,
       onGoBack = onGoBack,
       onSelectListing = onSelectListing)
@@ -50,17 +52,19 @@ fun BrowseCityScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BrowseCityScreenUI(
-    cityName: String,
+    location: Location,
     listingsState: ListingsState,
     onGoBack: () -> Unit,
     onSelectListing: (ListingCardUI) -> Unit
 ) {
-  var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
+  var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0 Reviews, 1 Listings
 
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text(cityName) },
+            title = {
+              Text(text = location.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }, // TODO crop name if too long
             navigationIcon = {
               IconButton(
                   onClick = onGoBack, modifier = Modifier.testTag(C.BrowseCityTags.BACK_BUTTON)) {
@@ -222,6 +226,9 @@ private fun BrowseCityScreen_Preview() {
       )
   MySwissDormAppTheme {
     BrowseCityScreenUI(
-        cityName = "Lausanne", listingsState = sampleUi, onGoBack = {}, onSelectListing = {})
+        location = Location("Lausanne", 46.5197, 6.6323),
+        listingsState = sampleUi,
+        onGoBack = {},
+        onSelectListing = {})
   }
 }

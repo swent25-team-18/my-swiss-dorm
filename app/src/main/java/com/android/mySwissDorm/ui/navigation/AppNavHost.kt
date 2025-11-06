@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.authentification.SignInScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
@@ -62,7 +63,7 @@ fun AppNavHost(
 
     composable(Screen.Homepage.route) {
       HomePageScreen(
-          onSelectCity = { city -> navActions.navigateTo(Screen.CityOverview(city)) },
+          onSelectLocation = { location -> navActions.navigateTo(Screen.BrowseOverview(location)) },
           credentialManager = credentialManager,
           navigationActions = navActions)
     }
@@ -95,22 +96,24 @@ fun AppNavHost(
           })
     }
 
-    composable(Screen.CityOverview.route) { navBackStackEntry ->
-      val cityName = navBackStackEntry.arguments?.getString("cityName")
+    composable(Screen.BrowseOverview.route) { navBackStackEntry ->
+      val name = navBackStackEntry.arguments?.getString("name")
+      val latString = navBackStackEntry.arguments?.getString("lat")
+      val lngString = navBackStackEntry.arguments?.getString("lng")
 
-      // create city screen with the cityName
-      cityName?.let {
+      val latitude = latString?.toDoubleOrNull()
+      val longitude = lngString?.toDoubleOrNull()
+
+      if (name != null && latitude != null && longitude != null) {
+        val location = Location(name, latitude, longitude)
+
         BrowseCityScreen(
-            cityName = cityName,
+            location = location,
             onGoBack = { navActions.goBack() },
             onSelectListing = {
               navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
             })
       }
-          ?: run {
-            Log.e("BrowseCityScreen", "city name is null")
-            Toast.makeText(context, "city name is null", Toast.LENGTH_SHORT).show()
-          }
     }
 
     composable(Screen.ListingOverview.route) { navBackStackEntry ->

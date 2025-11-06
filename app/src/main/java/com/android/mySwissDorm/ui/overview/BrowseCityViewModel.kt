@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.overview
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -70,14 +71,13 @@ class BrowseCityViewModel(
   private val _uiState = MutableStateFlow(BrowseCityUiState())
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()
 
-  fun loadListings(cityName: String) {
+  fun loadListings(location: Location) {
     _uiState.update { it.copy(listings = it.listings.copy(loading = true, error = null)) }
 
     viewModelScope.launch {
       try {
         // Fetch all and filter by residency.city value matching the given cityName string
-        val all = listingsRepository.getAllRentalListings()
-        val filtered = all.filter { it.residency.city.equals(cityName, ignoreCase = true) }
+        val filtered = listingsRepository.getAllRentalListingsByLocation(location, 10.0)
         val mapped = filtered.map { it.toCardUI() }
 
         _uiState.update {

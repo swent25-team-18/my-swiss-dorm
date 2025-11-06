@@ -218,4 +218,25 @@ class PhotoRepositoryLocalTest {
 
     assertTrue(testFilesDir.listFiles()?.size == 0)
   }
+
+  @Test
+  fun clearRepositoryShouldClearOnlyPhotos() {
+    val uid = "test_photo"
+    val uid2 = "test_photo2"
+    val file = File(testFilesDir, repository.fileName(uid))
+    val file2 = File(testFilesDir, repository.fileName(uid2))
+    val file3 = File(testFilesDir.parentFile, "text.txt")
+    file.createNewFile()
+    file2.createNewFile()
+    file3.createNewFile()
+    file.writeText("EZ win")
+    file2.writeText("team diff")
+    file3.writeText("report")
+
+    repository.clearRepository()
+
+    assertTrue(testFilesDir.listFiles()?.size == 0)
+    assertTrue(file3.exists())
+    file3.delete()
+  }
 }

@@ -101,11 +101,19 @@ class ViewProfileScreenViewModel(
               false
             }
 
+        // Handle null residency name
+        var temp = ""
+        if (profile.userInfo.residencyName == null) {
+          temp = "No Residency"
+        } else {
+          temp = profile.userInfo.residencyName
+        }
+        
         // Map domain model to UI state (kept simple & synchronous here).
         _ui.value =
             ViewProfileUiState(
                 name = profile.userInfo.name + " " + profile.userInfo.lastName,
-                residence = profile.userInfo.residencyName.toString(),
+                residence = temp,
                 image = null,
                 error = null,
                 isBlocked = isBlocked)

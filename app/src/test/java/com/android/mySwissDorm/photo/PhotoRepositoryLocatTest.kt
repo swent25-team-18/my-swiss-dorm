@@ -31,7 +31,8 @@ class PhotoRepositoryLocalTest {
   @Before
   fun setUp() {
     context = RuntimeEnvironment.getApplication()
-    testFilesDir = context.filesDir
+    testFilesDir = File(context.filesDir, "photos")
+    if (!testFilesDir.exists()) testFilesDir.mkdirs()
     testFilesDir.listFiles()?.forEach { it.delete() }
 
     mockkStatic(FileProvider::class)
@@ -48,7 +49,7 @@ class PhotoRepositoryLocalTest {
   @Test
   fun retrievePhotoWorksPhotoExists() = runTest {
     val uid = "test_photo"
-    val file = File(testFilesDir, uid + repository.extensionFormat)
+    val file = File(testFilesDir, repository.fileName(uid))
     file.createNewFile()
 
     val expectedUri = Uri.parse(getUriString(uid))
@@ -60,6 +61,7 @@ class PhotoRepositoryLocalTest {
     assertEquals(expectedUri, photo.image)
 
     verify { FileProvider.getUriForFile(any(), any(), file) }
+    file.delete()
   }
 
   @Test(expected = FileNotFoundException::class)
@@ -71,7 +73,7 @@ class PhotoRepositoryLocalTest {
   @Test
   fun retrievePhotoCorrectlyRetrieve() = runTest {
     val uid = "test_photo"
-    val expectedFile = File(testFilesDir, uid + repository.extensionFormat)
+    val expectedFile = File(testFilesDir, repository.fileName(uid))
     expectedFile.createNewFile()
     val expectedUri = Uri.parse(getUriString(uid))
     val authority = "${BuildConfig.APPLICATION_ID}.provider"
@@ -80,6 +82,7 @@ class PhotoRepositoryLocalTest {
     repository.retrievePhoto(uid)
 
     verify { FileProvider.getUriForFile(context, authority, expectedFile) }
+    expectedFile.delete()
   }
 
   @Test
@@ -164,5 +167,55 @@ class PhotoRepositoryLocalTest {
     assertEquals(largeContent, persistentFile.readText())
 
     file.delete()
+  }
+
+  @Test
+  fun deletePhotoWorks() = runTest {
+    val uid = "test_photo"
+    val file = File(testFilesDir, repository.fileName(uid))
+    file.createNewFile()
+    file.writeText("Are you in pain?")
+
+    assertTrue(repository.deletePhoto(uid))
+    assertTrue(!file.exists())
+  }
+
+  @Test
+  fun deletePhotoReturnFalseWhenDoesNotExist() = runTest {
+    assertTrue(!repository.deletePhoto("arbitrary_uid"))
+  }
+
+  @Test
+  fun deletePhotoOnlyTheOneRequested() = runTest {
+    val uid = "test_photo"
+    val uid2 = "test_photo2"
+    val file = File(testFilesDir, repository.fileName(uid))
+    val file2 = File(testFilesDir, repository.fileName(uid2))
+    file.createNewFile()
+    file2.createNewFile()
+    file.writeText("EZ win")
+    file2.writeText("team diff")
+
+    assertTrue(repository.deletePhoto(uid))
+    assertTrue(!file.exists())
+
+    assertTrue(file2.exists())
+    file2.delete()
+  }
+
+  @Test
+  fun clearRepositoryShouldClearEverything() {
+    val uid = "test_photo"
+    val uid2 = "test_photo2"
+    val file = File(testFilesDir, repository.fileName(uid))
+    val file2 = File(testFilesDir, repository.fileName(uid2))
+    file.createNewFile()
+    file2.createNewFile()
+    file.writeText("EZ win")
+    file2.writeText("team diff")
+
+    repository.clearRepository()
+
+    assertTrue(testFilesDir.listFiles()?.size == 0)
   }
 }

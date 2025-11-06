@@ -15,11 +15,16 @@ import okio.FileNotFoundException
  */
 class PhotoRepositoryLocal(private val context: Context) : PhotoRepository {
   val extensionFormat = ".jpg"
+  val photosDir = File(context.filesDir, "photos")
   /** Gives the name of the file created when storing it on disk */
   fun fileName(uid: String): String = uid + extensionFormat
 
+  init {
+    if (!photosDir.exists()) photosDir.mkdirs()
+  }
+
   override suspend fun retrievePhoto(uid: String): Photo {
-    val file = File(context.filesDir, uid + extensionFormat)
+    val file = File(photosDir, fileName(uid))
     if (!file.exists()) throw FileNotFoundException("Photo with uid $uid does not exist")
     return Photo(
         image =
@@ -29,10 +34,21 @@ class PhotoRepositoryLocal(private val context: Context) : PhotoRepository {
   }
 
   override suspend fun uploadPhoto(photo: Photo) {
-    val persistentFile = File(context.filesDir, photo.uid + extensionFormat)
+    val persistentFile = File(photosDir, fileName(photo.uid))
     context.contentResolver.openInputStream(photo.image)?.use { inputStream ->
       persistentFile.outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
     }
     Log.d("PhotoRepositoryLocal", "File successfully moved to persistent files")
+  }
+
+  override suspend fun deletePhoto(uid: String): Boolean {
+    val file = File(photosDir, fileName(uid))
+    if (file.exists()) return file.delete()
+    return false
+  }
+
+  /** Delete every [Photo] known to this repository */
+  fun clearRepository() {
+    photosDir.listFiles()?.forEach { file -> file.delete() }
   }
 }

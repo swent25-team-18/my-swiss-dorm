@@ -12,7 +12,6 @@ import android.content.Context
  */
 object PhotoRepositoryProvider {
   private lateinit var _local_repository: PhotoRepository
-  private val _repository: PhotoRepository by lazy { _local_repository }
   private var initialized = false
 
   /**
@@ -21,12 +20,12 @@ object PhotoRepositoryProvider {
    * @param context the context in which the local repository is defined
    */
   fun initialize(context: Context) {
-    if (initialized) {
+    if (!initialized) {
       _local_repository = PhotoRepositoryLocal(context)
       initialized = true
     }
   }
 
-  var local_repository: PhotoRepository = _local_repository
-  var repository: PhotoRepository = _repository
+  val local_repository: PhotoRepository
+    get() = _local_repository
 }

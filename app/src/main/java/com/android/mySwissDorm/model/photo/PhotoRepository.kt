@@ -13,7 +13,7 @@ interface PhotoRepository {
   suspend fun retrievePhoto(uid: String): Photo
 
   /**
-   * Upload a photo in the repository
+   * Upload a photo in the repository. A successful upload should NOT delete the given [Photo]
    *
    * @param photo the photo to be uploaded
    * @throws java.io.FileNotFoundException if no data is associated to the [Photo]

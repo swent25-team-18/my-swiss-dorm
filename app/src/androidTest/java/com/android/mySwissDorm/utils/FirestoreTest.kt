@@ -10,6 +10,7 @@ import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.residency.RESIDENCIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.model.review.REVIEWS_COLLECTION_PATH
 import com.android.mySwissDorm.utils.FirebaseEmulator.auth
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
@@ -49,6 +50,10 @@ abstract class FirestoreTest : TestCase() {
 
   suspend fun getRentalListingCount(): Int {
     return FirebaseEmulator.firestore.collection(RENTAL_LISTINGS_COLLECTION).get().await().size()
+  }
+  // Just to get the number of reviews in the reviews collection
+  suspend fun getReviewCount(): Int {
+    return FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).get().await().size()
   }
 
   suspend fun getCityCount(): Int {

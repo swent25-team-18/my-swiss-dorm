@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import com.android.mySwissDorm.BuildConfig
 import java.io.File
-import java.util.Objects
 import okio.FileNotFoundException
 
 /**
@@ -27,9 +26,7 @@ class PhotoRepositoryLocal(private val context: Context) : PhotoRepository {
     val file = File(photosDir, fileName(uid))
     if (!file.exists()) throw FileNotFoundException("Photo with uid $uid does not exist")
     return Photo(
-        image =
-            FileProvider.getUriForFile(
-                Objects.requireNonNull(context), BuildConfig.APPLICATION_ID + ".provider", file),
+        image = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", file),
         uid = uid)
   }
 

@@ -108,7 +108,7 @@ class ViewProfileScreenViewModel(
         } else {
           temp = profile.userInfo.residencyName
         }
-        
+
         // Map domain model to UI state (kept simple & synchronous here).
         _ui.value =
             ViewProfileUiState(

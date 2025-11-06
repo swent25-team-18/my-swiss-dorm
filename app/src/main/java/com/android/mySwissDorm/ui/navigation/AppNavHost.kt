@@ -112,6 +112,9 @@ fun AppNavHost(
             onGoBack = { navActions.goBack() },
             onSelectListing = {
               navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
+            },
+            onLocationChange = { newLocation ->
+              navActions.navigateTo(Screen.BrowseOverview(newLocation))
             })
       }
     }

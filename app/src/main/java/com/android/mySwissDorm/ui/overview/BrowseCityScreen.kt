@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -29,6 +30,7 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,16 +38,49 @@ fun BrowseCityScreen(
     browseCityViewModel: BrowseCityViewModel = viewModel(),
     location: Location,
     onGoBack: () -> Unit = {},
-    onSelectListing: (ListingCardUI) -> Unit = {}
+    onSelectListing: (ListingCardUI) -> Unit = {},
+    onLocationChange: (Location) -> Unit = {}
 ) {
   LaunchedEffect(location) { browseCityViewModel.loadListings(location) }
 
   val uiState by browseCityViewModel.uiState.collectAsState()
+
+  // Show dialog when location title is clicked (with empty text field)
+  val onLocationClick = remember { { browseCityViewModel.onCustomLocationClick() } }
+
+  // Handle dialog callbacks
+  val onValueChange =
+      remember<(String) -> Unit> { { query -> browseCityViewModel.setCustomLocationQuery(query) } }
+  val onDropDownLocationSelect =
+      remember<(Location) -> Unit> {
+        { location -> browseCityViewModel.setCustomLocation(location) }
+      }
+  val onDismiss = remember<() -> Unit> { { browseCityViewModel.dismissCustomLocationDialog() } }
+  val onConfirm =
+      remember<(Location) -> Unit> {
+        { newLocation ->
+          onLocationChange(newLocation)
+          browseCityViewModel.dismissCustomLocationDialog()
+        }
+      }
+
   BrowseCityScreenUI(
       location = location,
       listingsState = uiState.listings,
       onGoBack = onGoBack,
-      onSelectListing = onSelectListing)
+      onSelectListing = onSelectListing,
+      onLocationClick = onLocationClick)
+
+  if (uiState.showCustomLocationDialog) {
+    CustomLocationDialog(
+        value = uiState.customLocationQuery,
+        currentLocation = uiState.customLocation,
+        locationSuggestions = uiState.locationSuggestions,
+        onValueChange = onValueChange,
+        onDropDownLocationSelect = onDropDownLocationSelect,
+        onDismiss = onDismiss,
+        onConfirm = onConfirm)
+  }
 }
 
 // Pure UI (stateless) — easy to preview & test.
@@ -55,7 +90,8 @@ private fun BrowseCityScreenUI(
     location: Location,
     listingsState: ListingsState,
     onGoBack: () -> Unit,
-    onSelectListing: (ListingCardUI) -> Unit
+    onSelectListing: (ListingCardUI) -> Unit,
+    onLocationClick: () -> Unit
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0 Reviews, 1 Listings
 
@@ -63,8 +99,19 @@ private fun BrowseCityScreenUI(
       topBar = {
         CenterAlignedTopAppBar(
             title = {
-              Text(text = location.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }, // TODO crop name if too long
+              TextButton(onClick = onLocationClick) {
+                Icon(
+                    imageVector = Icons.Default.Place,
+                    contentDescription = "Location",
+                    tint = MainColor)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = location.name,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MainColor)
+              }
+            },
             navigationIcon = {
               IconButton(
                   onClick = onGoBack, modifier = Modifier.testTag(C.BrowseCityTags.BACK_BUTTON)) {
@@ -229,6 +276,7 @@ private fun BrowseCityScreen_Preview() {
         location = Location("Lausanne", 46.5197, 6.6323),
         listingsState = sampleUi,
         onGoBack = {},
-        onSelectListing = {})
+        onSelectListing = {},
+        onLocationClick = {})
   }
 }

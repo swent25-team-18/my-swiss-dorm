@@ -36,7 +36,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.*
@@ -47,12 +46,6 @@ import com.android.mySwissDorm.ui.theme.PalePink
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
-import com.android.mySwissDorm.ui.navigation.NavigationActions
-import com.android.mySwissDorm.ui.navigation.Screen
-import com.android.mySwissDorm.ui.theme.*
 
 /** Centralized test tags for the Settings screen. */
 object SettingsTestTags {

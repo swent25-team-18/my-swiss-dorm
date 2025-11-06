@@ -24,8 +24,8 @@ class PhotoRepositoryLocalTest {
   private lateinit var repository: PhotoRepositoryLocal
   private lateinit var testFilesDir: File
 
-  private fun getUriString(uid: String): String {
-    return "content://test.provider/${uid + repository.extensionFormat}"
+  private fun getUriString(uid: String, extension: String): String {
+    return "content://test.provider/${uid + extension}"
   }
 
   @Before
@@ -49,10 +49,10 @@ class PhotoRepositoryLocalTest {
   @Test
   fun retrievePhotoWorksPhotoExists() = runTest {
     val uid = "test_photo"
-    val file = File(testFilesDir, repository.fileName(uid))
+    val file = File(testFilesDir, repository.fileName(uid, ".png"))
     file.createNewFile()
 
-    val expectedUri = Uri.parse(getUriString(uid))
+    val expectedUri = Uri.parse(getUriString(uid, ".png"))
     every { FileProvider.getUriForFile(any(), any(), any()) } returns expectedUri
 
     val photo = repository.retrievePhoto(uid)
@@ -73,9 +73,9 @@ class PhotoRepositoryLocalTest {
   @Test
   fun retrievePhotoCorrectlyRetrieve() = runTest {
     val uid = "test_photo"
-    val expectedFile = File(testFilesDir, repository.fileName(uid))
+    val expectedFile = File(testFilesDir, repository.fileName(uid, ".jpg"))
     expectedFile.createNewFile()
-    val expectedUri = Uri.parse(getUriString(uid))
+    val expectedUri = Uri.parse(getUriString(uid, ".jpg"))
     val authority = "${BuildConfig.APPLICATION_ID}.provider"
     every { FileProvider.getUriForFile(context, authority, expectedFile) } returns expectedUri
 
@@ -88,13 +88,13 @@ class PhotoRepositoryLocalTest {
   @Test
   fun retrievePhotoSucceedsAfterUploadPhoto() = runTest {
     val uid = "test_file"
-    val file = File.createTempFile(uid, repository.extensionFormat, context.cacheDir)
+    val file = File(testFilesDir, repository.fileName(uid, ".png"))
     file.createNewFile()
 
     val uri = Uri.fromFile(file)
     val photo = Photo(image = uri, uid = uid)
 
-    val expectedUri = Uri.parse(getUriString(uid))
+    val expectedUri = Uri.parse(getUriString(uid, ".png"))
     every { FileProvider.getUriForFile(any(), any(), any()) } returns expectedUri
 
     repository.uploadPhoto(photo)
@@ -108,8 +108,7 @@ class PhotoRepositoryLocalTest {
   @Test
   fun uploadPhotoCopiesFileContentToPersistentStorage() = runTest {
     val uid = "test_photo"
-
-    val file = File.createTempFile(uid, repository.extensionFormat, context.cacheDir)
+    val file = File.createTempFile(uid, ".png", context.cacheDir)
     val testContent = "Test image content"
     file.writeText(testContent)
     val uri = Uri.fromFile(file)
@@ -120,7 +119,7 @@ class PhotoRepositoryLocalTest {
 
     repository.uploadPhoto(photo)
 
-    val persistentFile = File(testFilesDir, repository.fileName(uid))
+    val persistentFile = File(testFilesDir, repository.fileName(uid, ".png"))
     assertTrue(persistentFile.exists())
     assertEquals(testContent, persistentFile.readText())
     file.delete()
@@ -130,7 +129,7 @@ class PhotoRepositoryLocalTest {
   fun multipleUploadPhotoCallsCreateSeparateFiles() = runTest {
     val photos =
         listOf("photo1", "photo2", "photo3").map { uid ->
-          val file = File.createTempFile(uid, repository.extensionFormat, context.cacheDir)
+          val file = File.createTempFile(uid, ".png", context.cacheDir)
           file.writeText("content of $uid")
           val uri = Uri.fromFile(file)
           shadowOf(context.contentResolver).registerInputStream(uri, file.inputStream())
@@ -139,7 +138,7 @@ class PhotoRepositoryLocalTest {
     photos.forEach { (_, photo) -> repository.uploadPhoto(photo) }
 
     photos.forEach { (file, photo) ->
-      val persistentFile = File(testFilesDir, repository.fileName(photo.uid))
+      val persistentFile = File(testFilesDir, repository.fileName(photo.uid, ".png"))
       assertTrue(persistentFile.exists())
       assertEquals("content of ${photo.uid}", persistentFile.readText())
       file.delete()
@@ -149,7 +148,7 @@ class PhotoRepositoryLocalTest {
   @Test
   fun uploadPhotoCopiesLargeFileCorrectly() = runTest {
     val uid = "large_file"
-    val file = File.createTempFile(uid, repository.extensionFormat, context.cacheDir)
+    val file = File.createTempFile(uid, ".jpeg", context.cacheDir)
 
     val largeContent = "HELLO".repeat(10_000)
     file.writeText(largeContent)
@@ -161,7 +160,7 @@ class PhotoRepositoryLocalTest {
 
     repository.uploadPhoto(photo)
 
-    val persistentFile = File(testFilesDir, repository.fileName(uid))
+    val persistentFile = File(testFilesDir, repository.fileName(uid, ".jpeg"))
     assertTrue(persistentFile.exists())
     assertEquals(largeContent.length, persistentFile.readText().length)
     assertEquals(largeContent, persistentFile.readText())
@@ -172,7 +171,7 @@ class PhotoRepositoryLocalTest {
   @Test
   fun deletePhotoWorks() = runTest {
     val uid = "test_photo"
-    val file = File(testFilesDir, repository.fileName(uid))
+    val file = File(testFilesDir, repository.fileName(uid, ".jpg"))
     file.createNewFile()
     file.writeText("Are you in pain?")
 
@@ -189,8 +188,8 @@ class PhotoRepositoryLocalTest {
   fun deletePhotoOnlyTheOneRequested() = runTest {
     val uid = "test_photo"
     val uid2 = "test_photo2"
-    val file = File(testFilesDir, repository.fileName(uid))
-    val file2 = File(testFilesDir, repository.fileName(uid2))
+    val file = File(testFilesDir, repository.fileName(uid, ".png"))
+    val file2 = File(testFilesDir, repository.fileName(uid2, ".jpg"))
     file.createNewFile()
     file2.createNewFile()
     file.writeText("EZ win")
@@ -207,8 +206,8 @@ class PhotoRepositoryLocalTest {
   fun clearRepositoryShouldClearEverything() {
     val uid = "test_photo"
     val uid2 = "test_photo2"
-    val file = File(testFilesDir, repository.fileName(uid))
-    val file2 = File(testFilesDir, repository.fileName(uid2))
+    val file = File(testFilesDir, repository.fileName(uid, ".png"))
+    val file2 = File(testFilesDir, repository.fileName(uid2, ".jpg"))
     file.createNewFile()
     file2.createNewFile()
     file.writeText("EZ win")
@@ -223,8 +222,8 @@ class PhotoRepositoryLocalTest {
   fun clearRepositoryShouldClearOnlyPhotos() {
     val uid = "test_photo"
     val uid2 = "test_photo2"
-    val file = File(testFilesDir, repository.fileName(uid))
-    val file2 = File(testFilesDir, repository.fileName(uid2))
+    val file = File(testFilesDir, repository.fileName(uid, ".png"))
+    val file2 = File(testFilesDir, repository.fileName(uid2, ".png"))
     val file3 = File(testFilesDir.parentFile, "text.txt")
     file.createNewFile()
     file2.createNewFile()

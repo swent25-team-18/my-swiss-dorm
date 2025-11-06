@@ -2,6 +2,14 @@ package com.android.mySwissDorm.model.photo
 
 import android.content.Context
 
+/**
+ * Provides a single instance of a local photo repository (on disk) and a single instance of any
+ * other photo repository.
+ *
+ * The local repository should be used first before any cloud retrieving.
+ *
+ * The repositories are mutable for testing purposes.
+ */
 object PhotoRepositoryProvider {
   private lateinit var _local_repository: PhotoRepository
   private val _repository by lazy { PhotoRepositoryStorage() }

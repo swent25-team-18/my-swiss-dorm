@@ -234,7 +234,7 @@ class SettingsScreenTest : FirestoreTest() {
     compose.waitForIdle()
 
     val scrollTag = SettingsTestTags.SettingsScroll
-    val nightShiftTag = SettingsTestTags.switch("Night Shift")
+    val nightShiftTag = SettingsTestTags.switch("Dark mode")
     val anonymousTag = SettingsTestTags.switch("Anonymous")
 
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")

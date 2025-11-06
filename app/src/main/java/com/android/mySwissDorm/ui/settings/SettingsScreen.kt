@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -66,7 +67,9 @@ fun SettingsScreen(
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
-    vm: SettingsViewModel = viewModel()
+    vm: SettingsViewModel = viewModel(),
+    isAdmin: Boolean = false,
+    onAdminClick: () -> Unit = {}
 ) {
   val ui by vm.uiState.collectAsState()
 
@@ -88,7 +91,9 @@ fun SettingsScreen(
       },
       onProfileClick = onProfileClick,
       onDeleteAccount = { vm.deleteAccount { _, _ -> } },
-      navigationActions = navigationActions)
+      navigationActions = navigationActions,
+      isAdmin = isAdmin,
+      onAdminClick = onAdminClick)
 }
 
 private val previewUiState =
@@ -106,7 +111,9 @@ fun SettingsScreenContent(
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
     onDeleteAccount: () -> Unit = {},
-    navigationActions: NavigationActions? = null
+    navigationActions: NavigationActions? = null,
+    isAdmin: Boolean = false,
+    onAdminClick: () -> Unit = {}
 ) {
   // Independent toggle states
   var notificationsMessages by remember { mutableStateOf(true) }
@@ -321,7 +328,7 @@ fun SettingsScreenContent(
                         SectionLabel("Accessibility")
                         CardBlock {
                           SettingSwitchRow(
-                              label = "Night Shift",
+                              label = "Dark mode",
                               checked = nightShift,
                               onCheckedChange = { nightShift = it })
                           SoftDivider()
@@ -329,6 +336,29 @@ fun SettingsScreenContent(
                               label = "Anonymous",
                               checked = anonymous,
                               onCheckedChange = { anonymous = it })
+                        }
+                      }
+                    }
+                    item {
+                      if (isAdmin) {
+                        SectionLabel("Admin")
+                        CardBlock {
+                          Row(
+                              modifier =
+                                  Modifier.fillMaxWidth()
+                                      .padding(horizontal = 16.dp, vertical = 10.dp)
+                                      .clickable(onClick = onAdminClick),
+                              verticalAlignment = Alignment.CenterVertically,
+                              horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(
+                                    "Admin page",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextColor,
+                                )
+                                Icon(
+                                    imageVector = Icons.Filled.ChevronRight,
+                                    contentDescription = "Open admin page")
+                              }
                         }
                       }
                     }

@@ -54,6 +54,8 @@ abstract class FirestoreTest : TestCase() {
   // Just to get the number of reviews in the reviews collection
   suspend fun getReviewCount(): Int {
     return FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).get().await().size()
+  }
+
   suspend fun getCityCount(): Int {
     return FirebaseEmulator.firestore.collection(CITIES_COLLECTION_PATH).get().await().size()
   }

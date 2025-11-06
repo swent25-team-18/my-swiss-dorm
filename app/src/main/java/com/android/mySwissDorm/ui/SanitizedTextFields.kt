@@ -408,6 +408,7 @@ fun ResidencyDropdownResID(
     onSelected: (String) -> Unit,
     accentColor: Color,
     residencies: List<Residency>,
+    modifier: Modifier = Modifier
 ) {
   var expanded by remember { mutableStateOf(false) }
   val label = selected?.toString() ?: "Select residency"

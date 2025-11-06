@@ -10,7 +10,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -96,8 +95,7 @@ fun AddReviewScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp, vertical = 10.dp)
-                .verticalScroll(scrollState)
-                .imePadding(),
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               TitleField(
                   value = ui.title,
@@ -107,7 +105,8 @@ fun AddReviewScreen(
                   selected = ui.residencyName,
                   onSelected = { addReviewViewModel.setResidencyName(it) },
                   residencies = ui.residencies,
-                  accentColor = MainColor)
+                  accentColor = MainColor,
+                  modifier = Modifier.testTag("residencyDropdown").fillMaxWidth())
 
               HousingTypeDropdown(
                   selected = ui.roomType,
@@ -156,7 +155,6 @@ fun AddReviewScreen(
                   value = ui.reviewText,
                   onValueChange = { addReviewViewModel.setReviewText(it) },
                   label = "Review",
-                  maxLines = 6,
                   modifier = Modifier.testTag("descField").fillMaxWidth())
               Row(
                   modifier = Modifier.fillMaxWidth(),
@@ -165,7 +163,7 @@ fun AddReviewScreen(
                     Text(
                         text = "Rating: ",
                         color = TextColor,
-                        style = MaterialTheme.typography.bodyLarge)
+                        style = MaterialTheme.typography.titleMedium)
                     StarRatingBar(
                         rating = ui.grade,
                         onRatingChange = { addReviewViewModel.setGrade(it) },

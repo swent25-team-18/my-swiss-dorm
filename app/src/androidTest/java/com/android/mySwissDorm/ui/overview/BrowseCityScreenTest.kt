@@ -18,6 +18,7 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
+import java.net.URL
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -55,7 +56,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             city = "Lausanne",
             email = null,
             phone = null,
-            website = null)
+            website = URL("https://www.google.com"))
     val woko = vortex.copy(name = "WOKO", city = "Zurich")
 
     runBlocking {

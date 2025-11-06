@@ -49,7 +49,7 @@ abstract class FirestoreTest : TestCase() {
   suspend fun getRentalListingCount(): Int {
     return FirebaseEmulator.firestore.collection(RENTAL_LISTINGS_COLLECTION).get().await().size()
   }
-
+  // Just to get the number of reviews in the reviews collection
   suspend fun getReviewCount(): Int {
     return FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).get().await().size()
   }

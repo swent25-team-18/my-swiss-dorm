@@ -19,4 +19,12 @@ interface PhotoRepository {
    * @throws java.io.FileNotFoundException if no data is associated to the [Photo]
    */
   suspend fun uploadPhoto(photo: Photo)
+
+  /**
+   * Delete a photo in the repository
+   *
+   * @param uid the uid of the photo to be deleted
+   * @return true if the photo has been deleted with success
+   */
+  suspend fun deletePhoto(uid: String): Boolean
 }

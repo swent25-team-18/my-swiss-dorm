@@ -8,7 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -56,8 +56,8 @@ class CameraButtonTest {
       }
     }
 
-    composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG).isDisplayed()
-    composeTestRule.onNodeWithTag(simpleTestTag).isDisplayed()
+    composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(simpleTestTag, useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
@@ -69,7 +69,7 @@ class CameraButtonTest {
           takePictureContract = FakeTakePictureContract.success())
     }
     val cameraButtonNode = composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG)
-    cameraButtonNode.isDisplayed()
+    cameraButtonNode.assertIsDisplayed()
     cameraButtonNode.performClick()
 
     composeTestRule.waitUntil(5_000) { clicked.value }
@@ -84,7 +84,7 @@ class CameraButtonTest {
           takePictureContract = FakeTakePictureContract.failure())
     }
     val cameraButtonNode = composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG)
-    cameraButtonNode.isDisplayed()
+    cameraButtonNode.assertIsDisplayed()
     cameraButtonNode.performClick()
 
     composeTestRule.waitForIdle()

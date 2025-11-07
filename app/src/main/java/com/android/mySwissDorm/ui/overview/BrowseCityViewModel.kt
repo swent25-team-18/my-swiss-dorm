@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.overview
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.rental.RentalListing
@@ -140,10 +141,15 @@ class BrowseCityViewModel(
         val all = reviewsRepository.getAllReviews()
         val filtered =
             all.filter {
-              residenciesRepository
-                  .getResidency(it.residencyName)
-                  .city
-                  .equals(cityName, ignoreCase = true)
+              try {
+                residenciesRepository
+                    .getResidency(it.residencyName)
+                    .city
+                    .equals(cityName, ignoreCase = true)
+              } catch (e: Exception) {
+                Log.w("BrowseCityViewModel", "Could not fetch residency for ${it.residencyName}", e)
+                false
+              }
             }
         val mapped = filtered.map { it.toCardUI() }
 

@@ -68,7 +68,7 @@ object C {
     const val FILLED_STAR = "viewReviewFilledStar"
     const val EMPTY_STAR = "viewReviewEmptyStar"
     const val HALF_STAR = "viewReviewHalfStar"
-    const val REVIEW_TEXT = "viewReviewReviewText"
+    const val REVIEW_TEXT = "viewReviewText"
     const val PHOTOS = "viewReviewPhotos"
     const val LOCATION = "viewReviewLocation"
     const val EDIT_BTN = "viewReviewEditBtn"

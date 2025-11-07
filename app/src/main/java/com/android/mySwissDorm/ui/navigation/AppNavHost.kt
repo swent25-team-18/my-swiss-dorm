@@ -137,12 +137,16 @@ fun AppNavHost(
               }
             })
       }
+          ?: run {
+            Log.e("AppNavHost", "listingUid is null")
+            Toast.makeText(context, "listingUid is null", Toast.LENGTH_SHORT).show()
+          }
     }
 
     composable(Screen.ReviewOverview.route) { navBackStackEntry ->
-      val listingUid = navBackStackEntry.arguments?.getString("reviewUid")
+      val reviewUid = navBackStackEntry.arguments?.getString("reviewUid")
 
-      listingUid?.let {
+      reviewUid?.let {
         ViewReviewScreen(
             reviewUid = it,
             onGoBack = { navActions.goBack() },
@@ -158,6 +162,10 @@ fun AppNavHost(
               }
             })
       }
+          ?: run {
+            Log.e("AppNavHost", "reviewUid is null")
+            Toast.makeText(context, "reviewUid is null", Toast.LENGTH_SHORT).show()
+          }
     }
 
     composable(Screen.ViewUserProfile.route) { navBackStackEntry ->

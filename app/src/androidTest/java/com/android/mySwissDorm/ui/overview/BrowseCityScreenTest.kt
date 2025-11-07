@@ -67,9 +67,9 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @Before
   override fun setUp() {
-    createRepositories()
     runTest {
       super.setUp()
+      createRepositories()
       // two users + profiles
       switchToUser(FakeUser.FakeUser1)
       ownerUid = FirebaseEmulator.auth.currentUser!!.uid

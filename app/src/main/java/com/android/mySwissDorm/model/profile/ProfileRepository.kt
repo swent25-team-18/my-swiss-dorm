@@ -39,4 +39,13 @@ interface ProfileRepository {
    * @throws Exception if the given [Profile does not exist]
    */
   suspend fun deleteProfile(ownerId: String)
+
+  /** Returns the list of blocked user ids for the given [ownerId]. */
+  suspend fun getBlockedUserIds(ownerId: String): List<String>
+
+  /** Adds [targetUid] to the blocked list of [ownerId]. */
+  suspend fun addBlockedUser(ownerId: String, targetUid: String)
+
+  /** Removes [targetUid] from the blocked list of [ownerId]. */
+  suspend fun removeBlockedUser(ownerId: String, targetUid: String)
 }

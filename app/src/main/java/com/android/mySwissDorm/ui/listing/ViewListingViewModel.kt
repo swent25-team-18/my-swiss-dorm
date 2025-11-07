@@ -50,6 +50,7 @@ data class ViewListingUIState(
     val errorMsg: String? = null,
     val contactMessage: String = "",
     val isOwner: Boolean = false,
+    val isBlockedByOwner: Boolean = false,
 )
 
 class ViewListingViewModel(
@@ -81,9 +82,28 @@ class ViewListingViewModel(
         val listing = rentalListingRepository.getRentalListing(listingId)
         val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
         val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
-        val isOwner = FirebaseAuth.getInstance().currentUser?.uid == listing.ownerId
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        val isOwner = currentUserId == listing.ownerId
+
+        // Check if the current user is blocked by the listing owner
+        val isBlockedByOwner =
+            if (currentUserId != null && !isOwner) {
+              runCatching { profileRepository.getBlockedUserIds(listing.ownerId) }
+                  .onFailure { e ->
+                    Log.e("ViewListingViewModel", "Error checking blocked status", e)
+                  }
+                  .getOrDefault(emptyList())
+                  .contains(currentUserId)
+            } else {
+              false
+            }
+
         _uiState.update {
-          it.copy(listing = listing, fullNameOfPoster = fullNameOfPoster, isOwner = isOwner)
+          it.copy(
+              listing = listing,
+              fullNameOfPoster = fullNameOfPoster,
+              isOwner = isOwner,
+              isBlockedByOwner = isBlockedByOwner)
         }
       } catch (e: Exception) {
         Log.e("EditTodoViewModel", "Error loading ToDo by ID: $listingId", e)

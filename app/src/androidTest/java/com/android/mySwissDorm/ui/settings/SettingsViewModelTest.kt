@@ -77,6 +77,12 @@ class SettingsViewModelTest : FirestoreTest() {
           override suspend fun editProfile(profile: Profile) {}
 
           override suspend fun deleteProfile(ownerId: String) {}
+
+          override suspend fun getBlockedUserIds(ownerId: String): List<String> = emptyList()
+
+          override suspend fun addBlockedUser(ownerId: String, targetUid: String) {}
+
+          override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {}
         }
 
     val vm = vm(repo = fakeRepo)

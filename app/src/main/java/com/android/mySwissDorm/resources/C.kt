@@ -89,6 +89,7 @@ object C {
   object BrowseCityTags {
     const val ROOT = "browseCityRoot"
     const val BACK_BUTTON = "browseCityBackButton"
+    const val LOCATION_BUTTON = "browseCityLocationButton"
 
     const val TAB_REVIEWS = "browseCityTabReviews"
     const val TAB_LISTINGS = "browseCityTabListings"
@@ -110,5 +111,17 @@ object C {
 
   object GalleryButtonTag {
     const val TAG = "galleryButtonTag"
+  }
+
+  object CustomLocationDialogTags {
+    const val DIALOG_TITLE = "customLocationDialogTitle"
+    const val LOCATION_TEXT_FIELD = "customLocationDialogTextField"
+    const val CONFIRM_BUTTON = "customLocationDialogConfirmButton"
+    const val CLOSE_BUTTON = "customLocationDialogCloseButton"
+    const val DROPDOWN_MENU = "customLocationDialogDropdownMenu"
+
+    fun locationSuggestion(index: Int): String = "customLocationDialogSuggestion$index"
+
+    const val MORE_OPTION = "customLocationDialogMoreOption"
   }
 }

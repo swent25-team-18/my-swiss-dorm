@@ -3,6 +3,11 @@ package com.android.mySwissDorm.ui.overview
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -12,6 +17,7 @@ import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,10 +88,19 @@ data class ReviewsState(
  *
  * @property listings The state of the listings being displayed
  * @property reviews The state of the reviews being displayed
+ * @property customLocationQuery The user's input query for a custom location.
+ * @property customLocation The selected custom location.
+ * @property locationSuggestions A list of location suggestions based on the user's query.
+ * @property showCustomLocationDialog A flag to control the visibility of the custom location
+ *   dialog.
  */
 data class BrowseCityUiState(
     val listings: ListingsState = ListingsState(),
-    val reviews: ReviewsState = ReviewsState()
+    val reviews: ReviewsState = ReviewsState(),
+    val customLocationQuery: String = "",
+    val customLocation: Location? = null,
+    val locationSuggestions: List<Location> = emptyList(),
+    val showCustomLocationDialog: Boolean = false
 )
 
 /**
@@ -97,6 +112,9 @@ data class BrowseCityUiState(
  * @property listingsRepository The repository used to fetch and manage rental listings.
  * @property reviewsRepository The repository used to fetch and manage reviews.
  * @property residenciesRepository The repository used to fetch residencies, used to filter reviews
+ * @property locationRepository The repository for searching locations.
+ * @property profileRepository The repository for managing user profile data.
+ * @property auth The Firebase Auth instance for getting the current user.
  */
 class BrowseCityViewModel(
     private val listingsRepository: RentalListingRepository =
@@ -104,19 +122,21 @@ class BrowseCityViewModel(
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository
+    private val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(BrowseCityUiState())
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()
 
-  fun loadListings(cityName: String) {
+  fun loadListings(location: Location) {
     _uiState.update { it.copy(listings = it.listings.copy(loading = true, error = null)) }
 
     viewModelScope.launch {
       try {
         // Fetch all and filter by residency.city value matching the given cityName string
-        val all = listingsRepository.getAllRentalListings()
-        val filtered = all.filter { it.residency.city.equals(cityName, ignoreCase = true) }
+        val filtered = listingsRepository.getAllRentalListingsByLocation(location, 10.0)
         val mapped = filtered.map { it.toCardUI() }
 
         _uiState.update {
@@ -162,6 +182,82 @@ class BrowseCityViewModel(
               reviews =
                   it.reviews.copy(loading = false, error = e.message ?: "Failed to load reviews"))
         }
+      }
+    }
+  }
+  
+  /**
+   * Sets the custom location query and fetches suggestions if the query is not empty.
+   *
+   * @param query The user's search query.
+   */
+  fun setCustomLocationQuery(query: String) {
+    _uiState.update { it.copy(customLocationQuery = query) }
+    if (query.isNotEmpty()) {
+      viewModelScope.launch {
+        try {
+          val results = locationRepository.search(query)
+          _uiState.update { it.copy(locationSuggestions = results) }
+        } catch (e: Exception) {
+          Log.e("BrowseCityViewModel", "Error fetching location suggestions", e)
+          _uiState.update { it.copy(locationSuggestions = emptyList()) }
+        }
+      }
+    } else {
+      _uiState.update { it.copy(locationSuggestions = emptyList()) }
+    }
+  }
+
+  /**
+   * Sets the selected custom location and updates the query to match.
+   *
+   * @param location The selected location.
+   */
+  fun setCustomLocation(location: Location) {
+    _uiState.update { it.copy(customLocation = location, customLocationQuery = location.name) }
+  }
+
+  /** Shows the custom location dialog. */
+  fun onCustomLocationClick(currentLocation: Location? = null) {
+    _uiState.update {
+      it.copy(
+          showCustomLocationDialog = true,
+          customLocationQuery = currentLocation?.name ?: "",
+          customLocation = currentLocation)
+    }
+  }
+
+  /** Hides the custom location dialog and resets its state. */
+  fun dismissCustomLocationDialog() {
+    _uiState.update {
+      it.copy(showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
+    }
+  }
+
+  /**
+   * Saves the selected location to the user's profile.
+   *
+   * @param location The location to save to the profile.
+   */
+  fun saveLocationToProfile(location: Location) {
+    val uid = auth.currentUser?.uid
+    if (uid == null) {
+      Log.e("BrowseCityViewModel", "Cannot save location: user not logged in")
+      return
+    }
+
+    viewModelScope.launch {
+      try {
+        // get current profile
+        val profile = profileRepository.getProfile(uid)
+        // update location in userInfo
+        val updatedUserInfo = profile.userInfo.copy(location = location)
+        val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+        // save updated profile
+        profileRepository.editProfile(updatedProfile)
+        Log.d("BrowseCityViewModel", "Location saved to profile: ${location.name}")
+      } catch (e: Exception) {
+        Log.e("BrowseCityViewModel", "Error saving location to profile", e)
       }
     }
   }

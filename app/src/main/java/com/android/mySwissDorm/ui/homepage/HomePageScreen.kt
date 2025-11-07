@@ -12,17 +12,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -44,14 +47,16 @@ import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.city.City
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
-import org.w3c.dom.Text
+import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 
+/** Test tags for the Home Page screen, used for UI testing. */
 object HomePageScreenTestTags {
   const val SEARCH_BAR = "searchBar"
   const val SEARCH_BAR_TEXT_FIELD = "searchBarTextField"
@@ -64,12 +69,20 @@ object HomePageScreenTestTags {
   fun getTestTagForCityCardDescription(cityName: String): String = "cityCardDescription${cityName}"
 }
 
+/**
+ * The main screen for the home page, displaying a list of cities and a search bar.
+ *
+ * @param homePageViewModel The ViewModel for this screen.
+ * @param credentialManager The credential manager for handling user credentials.
+ * @param onSelectLocation A callback for when a city or custom location is selected.
+ * @param navigationActions Actions for navigating to other screens.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomePageScreen(
     homePageViewModel: HomePageViewModel = viewModel(),
     credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
-    onSelectCity: (City) -> Unit = {},
+    onSelectLocation: (Location) -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {
   val uiState by homePageViewModel.uiState.collectAsState()
@@ -117,6 +130,18 @@ fun HomePageScreen(
                             unfocusedIndicatorColor = BackGroundColor,
                             focusedIndicatorColor = BackGroundColor))
               }
+
+          TextButton(
+              onClick = { homePageViewModel.onCustomLocationClick() },
+              modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Icon(
+                    imageVector = Icons.Default.Place,
+                    contentDescription = "Custom Location",
+                    tint = MainColor)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = "Custom location", color = MainColor)
+              }
+
           LazyColumn(
               modifier =
                   Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
@@ -128,15 +153,51 @@ fun HomePageScreen(
                   val city = uiState.cities[index]
                   if (city.name.contains(inputText, ignoreCase = true) ||
                       city.description.contains(inputText, ignoreCase = true)) {
-                    CityCard(city = city, onClick = { onSelectCity(city) })
+                    CityCard(city = city, onClick = { onSelectLocation(city.location) })
                     Spacer(modifier = Modifier.height(16.dp))
                   }
                 }
               }
         }
+
+        if (uiState.showCustomLocationDialog) {
+          val onValueChange =
+              remember<(String) -> Unit> {
+                { query -> homePageViewModel.setCustomLocationQuery(query) }
+              }
+          val onDropDownLocationSelect =
+              remember<(Location) -> Unit> {
+                { location -> homePageViewModel.setCustomLocation(location) }
+              }
+          val onDismiss =
+              remember<() -> Unit> { { homePageViewModel.dismissCustomLocationDialog() } }
+          val onConfirm =
+              remember<(Location) -> Unit> {
+                { location ->
+                  homePageViewModel.saveLocationToProfile(location)
+                  onSelectLocation(location)
+                  homePageViewModel.dismissCustomLocationDialog()
+                }
+              }
+
+          CustomLocationDialog(
+              value = uiState.customLocationQuery,
+              currentLocation = uiState.customLocation,
+              locationSuggestions = uiState.locationSuggestions,
+              onValueChange = onValueChange,
+              onDropDownLocationSelect = onDropDownLocationSelect,
+              onDismiss = onDismiss,
+              onConfirm = onConfirm)
+        }
       }
 }
 
+/**
+ * A card that displays information about a city.
+ *
+ * @param city The city to display.
+ * @param onClick A callback for when the card is clicked.
+ */
 @Composable
 fun CityCard(city: City, onClick: () -> Unit) {
   Card(
@@ -164,8 +225,8 @@ fun CityCard(city: City, onClick: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             modifier =
-                Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardDescription(city.name))
-                    .fillMaxWidth(0.9f),
+                Modifier.testTag(
+                    HomePageScreenTestTags.getTestTagForCityCardDescription(city.name)),
             text = city.description,
             color = TextColor,
             fontSize = 12.sp)

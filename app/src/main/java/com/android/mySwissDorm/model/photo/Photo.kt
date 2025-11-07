@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.android.mySwissDorm.BuildConfig
 import java.io.File
-import java.util.Objects
 
 /** This class represent a photo in the application */
 data class Photo(val image: Uri, val uid: String) {
@@ -22,8 +21,7 @@ data class Photo(val image: Uri, val uid: String) {
       file.deleteOnExit()
       return Photo(
           image =
-              FileProvider.getUriForFile(
-                  Objects.requireNonNull(context), BuildConfig.APPLICATION_ID + ".provider", file),
+              FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", file),
           uid = uid)
     }
   }

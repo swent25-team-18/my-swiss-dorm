@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.credentials.CredentialManager
 import com.android.mySwissDorm.model.authentification.AuthRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.AppNavHost
 import com.android.mySwissDorm.ui.navigation.Screen
@@ -30,6 +31,8 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     Log.d("", Screen.topLevel.joinToString { it.name })
     setContent {
+      PhotoRepositoryProvider.initialize(LocalContext.current)
+
       MySwissDormAppTheme(darkTheme = true) {
         Surface(
             modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },

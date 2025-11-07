@@ -42,11 +42,18 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
+import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
-import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.PalePink
+import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 
 /** Centralized test tags for the Settings screen. */
 object SettingsTestTags {
@@ -157,11 +164,7 @@ fun SettingsScreenContent(
       },
       bottomBar = {
         if (navigationActions != null) {
-          BottomNavigationMenu(
-              selectedScreen = Screen.Settings,
-              onTabSelected = { screen ->
-                if (screen != Screen.Settings) navigationActions.navigateTo(screen)
-              })
+          BottomBarFromNav(navigationActions)
         }
       }) { paddingValues ->
         BoxWithConstraints(

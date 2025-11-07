@@ -48,7 +48,6 @@ fun AdminPageScreen(
     vm: AdminPageViewModel = viewModel(),
     canAccess: Boolean,
     onBack: () -> Unit,
-    accentColor: Color = Color(0xFFFF0004)
 ) {
   if (!canAccess) {
     // This won't show since only admins can view the admin page in settings but it's here for extra

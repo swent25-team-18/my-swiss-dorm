@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
@@ -51,7 +50,6 @@ import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 fun BrowseCityScreen(
     browseCityViewModel: BrowseCityViewModel = viewModel(),
     location: Location,
-    onGoBack: () -> Unit = {},
     onSelectListing: (ListingCardUI) -> Unit = {},
     onLocationChange: (Location) -> Unit = {}
 ) {
@@ -67,7 +65,7 @@ fun BrowseCityScreen(
       remember<(Location) -> Unit> {
         { location -> browseCityViewModel.setCustomLocation(location) }
       }
-  val onDismiss = remember<() -> Unit> { { browseCityViewModel.dismissCustomLocationDialog() } }
+  val onDismiss = remember { { browseCityViewModel.dismissCustomLocationDialog() } }
   val onConfirm =
       remember<(Location) -> Unit> {
         { newLocation ->
@@ -79,7 +77,6 @@ fun BrowseCityScreen(
   BrowseCityScreenUI(
       location = location,
       listingsState = uiState.listings,
-      onGoBack = onGoBack,
       onSelectListing = onSelectListing,
       onLocationClick = onLocationClick)
 
@@ -113,7 +110,6 @@ fun BrowseCityScreen(
 private fun BrowseCityScreenUI(
     location: Location,
     listingsState: ListingsState,
-    onGoBack: () -> Unit,
     onSelectListing: (ListingCardUI) -> Unit,
     onLocationClick: () -> Unit
 ) {
@@ -135,15 +131,6 @@ private fun BrowseCityScreenUI(
                     overflow = TextOverflow.Ellipsis,
                     color = MainColor)
               }
-            },
-            navigationIcon = {
-              IconButton(
-                  onClick = onGoBack, modifier = Modifier.testTag(C.BrowseCityTags.BACK_BUTTON)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MainColor)
-                  }
             })
       }) { pd ->
         Column(modifier = Modifier.padding(pd).fillMaxSize().testTag(C.BrowseCityTags.ROOT)) {
@@ -322,7 +309,6 @@ private fun BrowseCityScreen_Preview() {
     BrowseCityScreenUI(
         location = Location("Lausanne", 46.5197, 6.6323),
         listingsState = sampleUi,
-        onGoBack = {},
         onSelectListing = {},
         onLocationClick = {})
   }

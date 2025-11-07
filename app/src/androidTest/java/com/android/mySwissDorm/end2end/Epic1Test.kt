@@ -4,6 +4,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -223,6 +224,14 @@ class Epic1Test : FirestoreTest() {
 
         composeTestRule.waitUntil(5_000) {
           composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
+        }
+
+        // Wait for cities to load before trying to interact with them
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+          composeTestRule
+              .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+              .fetchSemanticsNodes()
+              .isNotEmpty()
         }
 
         // Go to Lausanne's listings

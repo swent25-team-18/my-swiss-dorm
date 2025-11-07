@@ -27,6 +27,7 @@ import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
+import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.google.firebase.auth.FirebaseAuth
 
@@ -78,7 +79,7 @@ fun AppNavHost(
     composable(Screen.AddHub.route) {
       AddHubScreen(
           onBack = { navActions.goBack() },
-          onAddReview = { /* TODO: wire add review */},
+          onAddReview = { navActions.navigateTo(Screen.AddReview) },
           onAddListing = { navActions.navigateTo(Screen.AddListing) })
     }
 
@@ -114,6 +115,11 @@ fun AppNavHost(
               launchSingleTop = true
             }
           })
+    }
+
+    composable(Screen.AddReview.route) {
+      AddReviewScreen(
+          onConfirm = { navActions.navigateTo(Screen.Homepage) }, onBack = { navActions.goBack() })
     }
 
     composable(Screen.CityOverview.route) { navBackStackEntry ->

@@ -77,7 +77,7 @@ class SettingsScreenTest : FirestoreTest() {
         .set(seededProfile)
         .await()
   }
-
+  //
   // ---------- small helpers ----------
 
   private fun ComposeTestRule.waitUntilTagExists(tag: String, timeoutMs: Long = 30_000) {

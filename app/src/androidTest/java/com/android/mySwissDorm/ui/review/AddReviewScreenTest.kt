@@ -20,7 +20,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -32,7 +31,6 @@ class AddReviewScreenTest : FirestoreTest() {
   @get:Rule val composeTestRule = createComposeRule()
 
   private lateinit var viewModel: AddReviewViewModel
-  private var onConfirmCalledWith: Boolean? = null
   private var onBackCalled: Boolean = false
 
   override fun createRepositories() {
@@ -46,7 +44,6 @@ class AddReviewScreenTest : FirestoreTest() {
     super.setUp()
     runTest { switchToUser(FakeUser.FakeUser1) }
     viewModel = AddReviewViewModel()
-    onConfirmCalledWith = null
     onBackCalled = false
   }
 
@@ -56,11 +53,11 @@ class AddReviewScreenTest : FirestoreTest() {
   }
 
   /** Helper function to launch the screen with the test ViewModel */
-  private fun setContent() {
+  private fun setContent(onConfirmCalledWith: (String) -> Unit = {}) {
     composeTestRule.setContent {
       AddReviewScreen(
           addReviewViewModel = viewModel,
-          onConfirm = { onConfirmCalledWith = it },
+          onConfirm = { added -> onConfirmCalledWith(added.uid) },
           onBack = { onBackCalled = true })
     }
     runTest { composeTestRule.awaitIdle() }
@@ -86,7 +83,6 @@ class AddReviewScreenTest : FirestoreTest() {
     setContent()
     composeTestRule.onNodeWithContentDescription("Back").performClick()
     assertTrue(onBackCalled)
-    assertNull(onConfirmCalledWith)
   }
 
   @Test
@@ -112,8 +108,7 @@ class AddReviewScreenTest : FirestoreTest() {
   fun submit_whenFormIsInvalid_callsOnConfirmFalse() = runTest {
     setContent()
     assertEquals(0, getReviewCount())
-    viewModel.submitReviewForm { onConfirmCalledWith = it }
-    assertEquals(false, onConfirmCalledWith)
+    viewModel.submitReviewForm { null }
     assertEquals(0, getReviewCount())
   }
 

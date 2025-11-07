@@ -120,18 +120,20 @@ private fun BrowseCityScreenUI(
       topBar = {
         CenterAlignedTopAppBar(
             title = {
-              TextButton(onClick = onLocationClick) {
-                Icon(
-                    imageVector = Icons.Default.Place,
-                    contentDescription = "Location",
-                    tint = MainColor)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = location.name,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MainColor)
-              }
+              TextButton(
+                  onClick = onLocationClick,
+                  modifier = Modifier.testTag(C.BrowseCityTags.LOCATION_BUTTON)) {
+                    Icon(
+                        imageVector = Icons.Default.Place,
+                        contentDescription = "Location",
+                        tint = MainColor)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = location.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MainColor)
+                  }
             })
       }) { pd ->
         Column(modifier = Modifier.padding(pd).fillMaxSize().testTag(C.BrowseCityTags.ROOT)) {

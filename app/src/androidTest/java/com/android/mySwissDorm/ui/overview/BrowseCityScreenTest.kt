@@ -8,8 +8,11 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.resources.C
@@ -191,6 +194,73 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun locationButton_opensCustomLocationDialog() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+
+    compose.setContent { BrowseCityScreen(location = lausanneLocation) }
+    compose.waitForIdle()
+
+    // Click on location button
+    compose.onNodeWithTag(C.BrowseCityTags.LOCATION_BUTTON).performClick()
+    compose.waitForIdle()
+
+    // Check that dialog appears
+    compose.onNodeWithTag(C.CustomLocationDialogTags.DIALOG_TITLE).assertIsDisplayed()
+  }
+
+  @Test
+  fun locationButton_displaysLocationName() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+
+    compose.setContent { BrowseCityScreen(location = lausanneLocation) }
+    compose.waitForIdle()
+
+    // Check that location name is displayed
+    compose.onNodeWithText("Lausanne").assertIsDisplayed()
+  }
+
+  @Test
+  fun locationButton_savesLocationToProfile() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+    val initialLocation = Location("Lausanne", 46.5197, 6.6323)
+
+    // Create profile without location
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = FakeUser.FakeUser1.userName,
+                    lastName = "Test",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "+41001112233",
+                    location = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    profileRepo.createProfile(profile)
+
+    compose.setContent { BrowseCityScreen(location = initialLocation, onLocationChange = {}) }
+    compose.waitForIdle()
+
+    // Click location button to open dialog
+    compose.onNodeWithTag(C.BrowseCityTags.LOCATION_BUTTON).performClick()
+    compose.waitForIdle()
+
+    // Wait for dialog to appear
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose
+          .onAllNodesWithTag(C.CustomLocationDialogTags.DIALOG_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify the dialog opens and text field is displayed
+    compose.onNodeWithTag(C.CustomLocationDialogTags.LOCATION_TEXT_FIELD).assertIsDisplayed()
+  }
+
+  @Test
   fun errorState_displaysError() = runTest {
     class ThrowingRepo : RentalListingRepository {
       override fun getNewUid(): String = "x"
@@ -206,7 +276,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
       override suspend fun getAllRentalListingsByLocation(
           location: Location,
-          radiusKm: Double
+          radius: Double
       ): List<RentalListing> {
         delay(50)
         error("Boom")

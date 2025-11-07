@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
@@ -15,12 +16,18 @@ import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.android.mySwissDorm.model.profile.UserSettings
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -242,5 +249,111 @@ class HomePageScreenTest : FirestoreTest() {
               .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard(it))
               .assertIsNotDisplayed()
         }
+  }
+
+  @Test
+  fun customLocationDialog_savesLocationToProfile() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile without location
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = FakeUser.FakeUser1.userName,
+                    lastName = "Test",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "+41001112233",
+                    location = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    ProfileRepositoryProvider.repository.createProfile(profile)
+
+    // Open custom location dialog
+    viewModel.onCustomLocationClick()
+    composeTestRule.waitForIdle()
+
+    // Check dialog is displayed
+    composeTestRule.onNodeWithTag(C.CustomLocationDialogTags.DIALOG_TITLE).assertIsDisplayed()
+
+    // Set a location
+    val testLocation = Location("Lausanne", 46.5197, 6.6323)
+    viewModel.setCustomLocation(testLocation)
+    composeTestRule.waitForIdle()
+
+    // Save location to profile
+    viewModel.saveLocationToProfile(testLocation)
+
+    // Wait for the save to complete by checking if profile was updated
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      runBlocking {
+        try {
+          val profile = ProfileRepositoryProvider.repository.getProfile(uid)
+          profile.userInfo.location?.name == "Lausanne"
+        } catch (e: Exception) {
+          false
+        }
+      }
+    }
+
+    // Verify location was saved to profile
+    val updatedProfile = runBlocking { ProfileRepositoryProvider.repository.getProfile(uid) }
+    assertEquals(
+        "Location should be saved to profile", "Lausanne", updatedProfile.userInfo.location?.name)
+  }
+
+  @Test
+  fun customLocationDialog_confirmButtonSavesLocation() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile without location
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = FakeUser.FakeUser1.userName,
+                    lastName = "Test",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "+41001112233",
+                    location = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    ProfileRepositoryProvider.repository.createProfile(profile)
+
+    // Open custom location dialog
+    viewModel.onCustomLocationClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for dialog to appear
+    composeTestRule.waitUntil(timeoutMillis = 3_000) {
+      composeTestRule
+          .onAllNodesWithTag(C.CustomLocationDialogTags.DIALOG_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Set a location
+    val testLocation = Location("Geneva", 46.2044, 6.1432)
+    viewModel.setCustomLocation(testLocation)
+    composeTestRule.waitForIdle()
+
+    // Click confirm (this should save to profile)
+    composeTestRule.onNodeWithTag(C.CustomLocationDialogTags.CONFIRM_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for dialog to disappear (indicating save completed)
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(C.CustomLocationDialogTags.DIALOG_TITLE)
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
+
+    // Verify location was saved to profile
+    val updatedProfile = ProfileRepositoryProvider.repository.getProfile(uid)
+    assertEquals(
+        "Location should be saved to profile", "Geneva", updatedProfile.userInfo.location?.name)
   }
 }

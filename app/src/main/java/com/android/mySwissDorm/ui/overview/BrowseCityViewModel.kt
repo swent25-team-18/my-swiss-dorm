@@ -6,10 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -75,11 +78,15 @@ data class BrowseCityUiState(
  * @property listingsRepository The repository used to fetch and manage rental listings. // Future
  *   enhancement: add reviews repository here as well
  * @property locationRepository The repository for searching locations.
+ * @property profileRepository The repository for managing user profile data.
+ * @property auth The Firebase Auth instance for getting the current user.
  */
 class BrowseCityViewModel(
     private val listingsRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
-    private val locationRepository: LocationRepository = LocationRepositoryProvider.repository
+    private val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(BrowseCityUiState())
@@ -152,6 +159,34 @@ class BrowseCityViewModel(
   fun dismissCustomLocationDialog() {
     _uiState.update {
       it.copy(showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
+    }
+  }
+
+  /**
+   * Saves the selected location to the user's profile.
+   *
+   * @param location The location to save to the profile.
+   */
+  fun saveLocationToProfile(location: Location) {
+    val uid = auth.currentUser?.uid
+    if (uid == null) {
+      Log.e("BrowseCityViewModel", "Cannot save location: user not logged in")
+      return
+    }
+
+    viewModelScope.launch {
+      try {
+        // get current profile
+        val profile = profileRepository.getProfile(uid)
+        // update location in userInfo
+        val updatedUserInfo = profile.userInfo.copy(location = location)
+        val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+        // save updated profile
+        profileRepository.editProfile(updatedProfile)
+        Log.d("BrowseCityViewModel", "Location saved to profile: ${location.name}")
+      } catch (e: Exception) {
+        Log.e("BrowseCityViewModel", "Error saving location to profile", e)
+      }
     }
   }
 }

@@ -69,6 +69,7 @@ fun BrowseCityScreen(
   val onConfirm =
       remember<(Location) -> Unit> {
         { newLocation ->
+          browseCityViewModel.saveLocationToProfile(newLocation)
           onLocationChange(newLocation)
           browseCityViewModel.dismissCustomLocationDialog()
         }

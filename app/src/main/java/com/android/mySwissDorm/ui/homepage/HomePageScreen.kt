@@ -171,6 +171,14 @@ fun HomePageScreen(
               }
           val onDismiss =
               remember<() -> Unit> { { homePageViewModel.dismissCustomLocationDialog() } }
+          val onConfirm =
+              remember<(Location) -> Unit> {
+                { location ->
+                  homePageViewModel.saveLocationToProfile(location)
+                  onSelectLocation(location)
+                  homePageViewModel.dismissCustomLocationDialog()
+                }
+              }
 
           CustomLocationDialog(
               value = uiState.customLocationQuery,
@@ -179,7 +187,7 @@ fun HomePageScreen(
               onValueChange = onValueChange,
               onDropDownLocationSelect = onDropDownLocationSelect,
               onDismiss = onDismiss,
-              onConfirm = onSelectLocation)
+              onConfirm = onConfirm)
         }
       }
 }

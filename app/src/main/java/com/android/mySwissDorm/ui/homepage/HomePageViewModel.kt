@@ -9,6 +9,9 @@ import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,10 +42,14 @@ data class HomePageUIState(
  *
  * @param citiesRepository The repository for fetching city data.
  * @param locationRepository The repository for searching locations.
+ * @param profileRepository The repository for managing user profile data.
+ * @param auth The Firebase Auth instance for getting the current user.
  */
 class HomePageViewModel(
     private val citiesRepository: CitiesRepository = CitiesRepositoryProvider.repository,
-    private val locationRepository: LocationRepository = LocationRepositoryProvider.repository
+    private val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(HomePageUIState())
@@ -106,5 +113,33 @@ class HomePageViewModel(
     _uiState.value =
         _uiState.value.copy(
             showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
+  }
+
+  /**
+   * Saves the selected location to the user's profile.
+   *
+   * @param location The location to save to the profile.
+   */
+  fun saveLocationToProfile(location: Location) {
+    val uid = auth.currentUser?.uid
+    if (uid == null) {
+      Log.e("HomePageViewModel", "Cannot save location: user not logged in")
+      return
+    }
+
+    viewModelScope.launch {
+      try {
+        // get current profile
+        val profile = profileRepository.getProfile(uid)
+        // update location in userInfo
+        val updatedUserInfo = profile.userInfo.copy(location = location)
+        val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+        // save updated profile
+        profileRepository.editProfile(updatedProfile)
+        Log.d("HomePageViewModel", "Location saved to profile: ${location.name}")
+      } catch (e: Exception) {
+        Log.e("HomePageViewModel", "Error saving location to profile", e)
+      }
+    }
   }
 }

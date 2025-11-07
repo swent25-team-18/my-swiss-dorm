@@ -94,8 +94,7 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
   private fun vm() =
       SettingsViewModel(
           auth = FirebaseEmulator.auth,
-          profiles = ProfileRepositoryFirestore(FirebaseEmulator.firestore),
-          db = FirebaseEmulator.firestore)
+          profiles = ProfileRepositoryFirestore(FirebaseEmulator.firestore))
 
   private suspend fun awaitUntil(timeoutMs: Long = 5000, intervalMs: Long = 25, p: () -> Boolean) {
     val start = System.currentTimeMillis()

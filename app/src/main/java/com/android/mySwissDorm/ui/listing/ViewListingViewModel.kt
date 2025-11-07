@@ -14,14 +14,12 @@ import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.String
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 private val defaultListing =
     RentalListing(
@@ -59,7 +57,6 @@ class ViewListingViewModel(
     private val rentalListingRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
@@ -91,15 +88,12 @@ class ViewListingViewModel(
         // Check if the current user is blocked by the listing owner
         val isBlockedByOwner =
             if (currentUserId != null && !isOwner) {
-              try {
-                val ownerDoc = db.collection("profiles").document(listing.ownerId).get().await()
-                @Suppress("UNCHECKED_CAST")
-                val blockedIds = ownerDoc.get("blockedUserIds") as? List<String> ?: emptyList()
-                currentUserId in blockedIds
-              } catch (e: Exception) {
-                Log.e("ViewListingViewModel", "Error checking blocked status", e)
-                false
-              }
+              runCatching { profileRepository.getBlockedUserIds(listing.ownerId) }
+                  .onFailure { e ->
+                    Log.e("ViewListingViewModel", "Error checking blocked status", e)
+                  }
+                  .getOrDefault(emptyList())
+                  .contains(currentUserId)
             } else {
               false
             }

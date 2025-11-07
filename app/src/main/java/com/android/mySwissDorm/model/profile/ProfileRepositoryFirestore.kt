@@ -3,7 +3,9 @@ package com.android.mySwissDorm.model.profile
 import android.util.Log
 import com.android.mySwissDorm.model.map.Location
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlin.collections.get
 import kotlinx.coroutines.tasks.await
 
@@ -32,6 +34,30 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
 
   override suspend fun deleteProfile(ownerId: String) {
     db.collection(PROFILE_COLLECTION_PATH).document(ownerId).delete().await()
+  }
+
+  override suspend fun getBlockedUserIds(ownerId: String): List<String> {
+    val doc = db.collection(PROFILE_COLLECTION_PATH).document(ownerId).get().await()
+    @Suppress("UNCHECKED_CAST")
+    return doc.get("blockedUserIds") as? List<String> ?: emptyList()
+  }
+
+  override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
+    db.collection(PROFILE_COLLECTION_PATH)
+        .document(ownerId)
+        .set(mapOf("ownerId" to ownerId), SetOptions.merge())
+        .await()
+    db.collection(PROFILE_COLLECTION_PATH)
+        .document(ownerId)
+        .update("blockedUserIds", FieldValue.arrayUnion(targetUid))
+        .await()
+  }
+
+  override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
+    db.collection(PROFILE_COLLECTION_PATH)
+        .document(ownerId)
+        .update("blockedUserIds", FieldValue.arrayRemove(targetUid))
+        .await()
   }
 
   private fun documentToProfile(document: DocumentSnapshot): Profile? {

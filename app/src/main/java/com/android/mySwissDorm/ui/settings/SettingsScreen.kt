@@ -62,22 +62,6 @@ object SettingsTestTags {
   fun switch(label: String) = "SettingSwitch_$label"
 }
 
-/** Build a SettingsViewModel with real Firebase singletons (works in app & in e2e). */
-@Composable
-private fun rememberSettingsViewModel(): SettingsViewModel {
-  val factory =
-      object : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-          val auth = FirebaseAuth.getInstance()
-          val repo = ProfileRepositoryFirestore(FirebaseFirestore.getInstance())
-          val db = FirebaseFirestore.getInstance()
-          return SettingsViewModel(auth = auth, profiles = repo, db = db) as T
-        }
-      }
-  return viewModel(factory = factory)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(

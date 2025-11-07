@@ -6,14 +6,10 @@ import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 data class SettingItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -39,7 +35,6 @@ data class SettingsUiState(
 class SettingsViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val profiles: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : ViewModel() {
 
   private val _ui = MutableStateFlow(SettingsUiState())
@@ -67,11 +62,7 @@ class SettingsViewModel(
       // Load blocked user IDs from Firestore and map to display names
       val blockedContacts =
           runCatching {
-                val doc = db.collection("profiles").document(user.uid).get().await()
-                @Suppress("UNCHECKED_CAST")
-                val blockedIds = doc.get("blockedUserIds") as? List<String> ?: emptyList()
-
-                blockedIds.mapNotNull { blockedUid ->
+                profiles.getBlockedUserIds(user.uid).mapNotNull { blockedUid ->
                   runCatching {
                         val profile = profiles.getProfile(blockedUid)
                         val displayName =
@@ -140,17 +131,7 @@ class SettingsViewModel(
   fun blockUser(targetUid: String) {
     val uid = auth.currentUser?.uid ?: return
     viewModelScope.launch {
-      runCatching {
-            // Ensure ownerId is set, then add to blocked list
-            db.collection("profiles")
-                .document(uid)
-                .set(mapOf("ownerId" to uid), SetOptions.merge())
-                .await()
-            db.collection("profiles")
-                .document(uid)
-                .update("blockedUserIds", FieldValue.arrayUnion(targetUid))
-                .await()
-          }
+      runCatching { profiles.addBlockedUser(uid, targetUid) }
           .onFailure { e ->
             _ui.value = _ui.value.copy(errorMsg = "Failed to block user: ${e.message}")
           }
@@ -163,12 +144,7 @@ class SettingsViewModel(
   fun unblockUser(targetUid: String) {
     val uid = auth.currentUser?.uid ?: return
     viewModelScope.launch {
-      runCatching {
-            db.collection("profiles")
-                .document(uid)
-                .update("blockedUserIds", FieldValue.arrayRemove(targetUid))
-                .await()
-          }
+      runCatching { profiles.removeBlockedUser(uid, targetUid) }
           .onFailure { e ->
             _ui.value = _ui.value.copy(errorMsg = "Failed to unblock user: ${e.message}")
           }

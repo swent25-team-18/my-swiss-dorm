@@ -35,8 +35,7 @@ class SettingsScreenTest : FirestoreTest() {
   /** VM backed by emulator singletons. */
   private fun makeVm(): SettingsViewModel {
     val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    return SettingsViewModel(
-        auth = FirebaseEmulator.auth, profiles = repo, db = FirebaseEmulator.firestore)
+    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
   }
 
   /** Set content with our explicit VM. */

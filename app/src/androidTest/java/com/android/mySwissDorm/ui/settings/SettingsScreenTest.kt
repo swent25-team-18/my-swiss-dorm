@@ -3,185 +3,254 @@ package com.android.mySwissDorm.ui.settings
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
+import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
+import com.android.mySwissDorm.utils.FakeUser
+import com.android.mySwissDorm.utils.FirebaseEmulator
+import com.android.mySwissDorm.utils.FirestoreTest
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
-/** UI tests for the Settings screen (screen owns its ViewModel). */
-class SettingsScreenTest {
+/**
+ * UI tests for SettingsScreen. We pass an explicit SettingsViewModel built on the emulators to
+ * avoid viewModel() constructing without a factory.
+ */
+@RunWith(AndroidJUnit4::class)
+class SettingsScreenTest : FirestoreTest() {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  @get:Rule val compose = createComposeRule()
+  private lateinit var uid: String
 
-  /** Wait for any node with [tag] to exist in the semantics tree. */
+  /** VM backed by emulator singletons. */
+  private fun makeVm(): SettingsViewModel {
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+  }
+
+  /** Set content with our explicit VM. */
+  private fun setContentWithVm() {
+    val vm = makeVm()
+    compose.setContent { MySwissDormAppTheme { SettingsScreen(vm = vm) } }
+  }
+
+  override fun createRepositories() {
+    /* none */
+  }
+
+  @Before
+  override fun setUp() = runTest {
+    super.setUp()
+
+    // Sign in a fake user via FirestoreTest helper (per PR review)
+    switchToUser(FakeUser.FakeUser1)
+    uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Seed a full Profile document using the schema the repo expects.
+    val seededProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Mansour",
+                    lastName = "Kanaan",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "+41001112233",
+                    universityName = "EPFL",
+                    location = Location("Somewhere", 0.0, 0.0),
+                    residencyName = "Vortex, Coloc"),
+            userSettings = UserSettings(),
+            ownerId = uid)
+
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(uid)
+        .set(seededProfile)
+        .await()
+  }
+
+  // ---------- small helpers ----------
+
   private fun ComposeTestRule.waitUntilTagExists(tag: String, timeoutMs: Long = 30_000) {
     waitUntil(timeoutMs) {
       onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
     }
   }
 
-  /** Wait for any node with [tag] to be gone from the semantics tree. */
+  private fun ComposeTestRule.waitUntilTextExists(text: String, timeoutMs: Long = 30_000) {
+    waitUntil(timeoutMs) {
+      onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+    }
+  }
+
   private fun ComposeTestRule.waitUntilTagGone(tag: String, timeoutMs: Long = 30_000) {
     waitUntil(timeoutMs) {
       onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
     }
   }
 
-  /**
-   * Scrolls the scrollable with [scrollTag] until a node with [targetTag] is actually *displayed*
-   * (visible on screen), or we hit [maxSwipes].
-   */
   private fun ComposeTestRule.scrollUntilDisplayed(
       scrollTag: String,
       targetTag: String,
-      maxSwipes: Int = 18
+      maxSwipes: Int = 48,
   ) {
     val scrollNode = onNodeWithTag(scrollTag, useUnmergedTree = true)
-    var swipes = 0
-    while (swipes < maxSwipes) {
-      try {
-        onNodeWithTag(targetTag, useUnmergedTree = true).assertIsDisplayed()
-        return
-      } catch (_: AssertionError) {
-        scrollNode.performTouchInput { swipeUp() }
-        waitForIdle()
-        swipes++
+    repeat(maxSwipes) {
+      val nodes = onAllNodesWithTag(targetTag, useUnmergedTree = true).fetchSemanticsNodes()
+      if (nodes.isNotEmpty()) {
+        try {
+          onNodeWithTag(targetTag, useUnmergedTree = true).assertIsDisplayed()
+          return
+        } catch (_: AssertionError) {
+          /* keep scrolling */
+        }
       }
+      scrollNode.performTouchInput { swipeUp() }
+      waitForIdle()
     }
-    // Final assert to throw a clear error if not visible after scrolling.
     onNodeWithTag(targetTag, useUnmergedTree = true).assertIsDisplayed()
   }
 
-  @Test
-  fun settingsScreen_showsProfileRowAndButton() {
-    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithText("Sophie").assertExists()
-    composeTestRule.onNodeWithText("View profile").assertExists()
-    composeTestRule
-        .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
-        .assertExists()
+  private fun ComposeTestRule.scrollUntilTextDisplayed(
+      scrollTag: String,
+      text: String,
+      maxSwipes: Int = 48,
+  ) {
+    val scrollNode = onNodeWithTag(scrollTag, useUnmergedTree = true)
+    repeat(maxSwipes) {
+      val nodes = onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes()
+      if (nodes.isNotEmpty()) {
+        try {
+          onNodeWithText(text, useUnmergedTree = true).assertIsDisplayed()
+          return
+        } catch (_: AssertionError) {
+          /* keep scrolling */
+        }
+      }
+      scrollNode.performTouchInput { swipeUp() }
+      waitForIdle()
+    }
+    onNodeWithText(text, useUnmergedTree = true).assertIsDisplayed()
   }
 
+  // ---------- tests ----------
+
+  /** Verifies Firestore-seeded display name is shown, plus base header elements. */
   @Test
-  fun backButton_triggersOnGoBackCallback() {
-    val onGoBackCalled = AtomicBoolean(false)
-    composeTestRule.setContent {
-      MySwissDormAppTheme { SettingsScreen(onGoBack = { onGoBackCalled.set(true) }) }
-    }
-    composeTestRule.waitForIdle()
+  fun settings_showsSeededFirestoreNameAndEmail() {
+    setContentWithVm()
+    // Wait for the ViewModel refresh to pull profile + compose to settle
+    compose.waitUntilTextExists("Settings")
+    compose.waitUntilTextExists("Mansour Kanaan")
 
-    composeTestRule
-        .onNodeWithTag(SettingsTestTags.BackButton, useUnmergedTree = true)
-        .performClick()
-    assert(onGoBackCalled.get()) { "onGoBack callback was not called." }
-  }
-
-  @Test
-  fun deleteAccountButton_triggersOnItemClickCallback() {
-    val clickedItem = AtomicReference<String?>(null)
-    composeTestRule.setContent {
-      MySwissDormAppTheme { SettingsScreen(onItemClick = { item -> clickedItem.set(item) }) }
-    }
-    composeTestRule.waitForIdle()
-
-    composeTestRule
-        .onNodeWithTag(SettingsTestTags.DeleteAccountButton, useUnmergedTree = true)
-        .performClick()
-    assert(clickedItem.get() == "Delete my account") {
-      "onItemClick was not called with 'Delete my account'."
-    }
+    compose.onNodeWithText("Settings", useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("View profile", useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("Mansour Kanaan", useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
   fun notificationSwitches_toggleStateCorrectly() {
-    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
-    composeTestRule.waitForIdle()
+    setContentWithVm()
+    compose.waitForIdle()
 
     val messagesTag = SettingsTestTags.switch("Show notifications for messages")
     val listingsTag = SettingsTestTags.switch("Show notifications for new listings")
 
-    composeTestRule
+    compose
         .onNodeWithTag(messagesTag, useUnmergedTree = true)
         .assert(hasStateDescription("On"))
         .performClick()
-    composeTestRule
-        .onNodeWithTag(messagesTag, useUnmergedTree = true)
-        .assert(hasStateDescription("Off"))
+    compose.onNodeWithTag(messagesTag, useUnmergedTree = true).assert(hasStateDescription("Off"))
 
-    composeTestRule
+    compose
         .onNodeWithTag(listingsTag, useUnmergedTree = true)
         .assert(hasStateDescription("Off"))
         .performClick()
-    composeTestRule
-        .onNodeWithTag(listingsTag, useUnmergedTree = true)
-        .assert(hasStateDescription("On"))
+    compose.onNodeWithTag(listingsTag, useUnmergedTree = true).assert(hasStateDescription("On"))
   }
 
   @Test
   fun blockedContacts_expandsAndCollapsesOnClick() {
-    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
-    composeTestRule.waitForIdle()
+    setContentWithVm()
+    compose.waitForIdle()
 
     val scrollTag = SettingsTestTags.SettingsScroll
     val listTag = SettingsTestTags.BlockedContactsList
     val toggleTag = SettingsTestTags.BlockedContactsToggle
 
-    // Starts collapsed
-    composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
+    compose.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
 
-    // Make sure the toggle is actually on screen (not just present in semantics)
-    composeTestRule.scrollUntilDisplayed(scrollTag, toggleTag)
-    composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
-    composeTestRule.waitForIdle()
+    compose.scrollUntilDisplayed(scrollTag, toggleTag)
+    compose.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
+    compose.waitUntilTagExists(listTag)
+    compose.scrollUntilDisplayed(scrollTag, listTag)
+    compose.onNodeWithTag(listTag, useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("Clarisse K.", useUnmergedTree = true).assertIsDisplayed()
 
-    // Wait for the list to exist, then ensure it's displayed
-    composeTestRule.waitUntilTagExists(listTag, timeoutMs = 30_000)
-    composeTestRule.scrollUntilDisplayed(scrollTag, listTag)
-    composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Clarisse K.").assertExists()
-
-    // Collapse again
-    composeTestRule.scrollUntilDisplayed(scrollTag, toggleTag)
-    composeTestRule.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
-    composeTestRule.waitForIdle()
-
-    composeTestRule.waitUntilTagGone(listTag, timeoutMs = 30_000)
-    composeTestRule.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
+    compose.scrollUntilDisplayed(scrollTag, toggleTag)
+    compose.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
+    compose.waitUntilTagGone(listTag)
+    compose.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
   }
 
   @Test
-  fun emailField_updatesValueOnInput() {
-    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
-    composeTestRule.waitForIdle()
-
-    val emailFieldTag = SettingsTestTags.EmailField
-    composeTestRule
-        .onNodeWithTag(emailFieldTag, useUnmergedTree = true)
-        .assert(hasText("john.doe@email.com"))
-        .performTextClearance()
-    composeTestRule
-        .onNodeWithTag(emailFieldTag, useUnmergedTree = true)
-        .performTextInput("new.email@example.com")
-    composeTestRule
-        .onNodeWithTag(emailFieldTag, useUnmergedTree = true)
-        .assert(hasText("new.email@example.com"))
+  fun emailField_isDisabledAndReadOnly() {
+    setContentWithVm()
+    compose.waitForIdle()
+    compose.onNodeWithTag(SettingsTestTags.EmailField, useUnmergedTree = true).assertIsNotEnabled()
   }
 
   @Test
-  fun emailField_clearsFocusOnDone() {
-    composeTestRule.setContent { MySwissDormAppTheme { SettingsScreen() } }
-    composeTestRule.waitForIdle()
+  fun deleteAccountButton_opensAndClosesConfirmDialog() {
+    setContentWithVm()
+    compose.waitForIdle()
 
-    val emailFieldTag = SettingsTestTags.EmailField
-    val emailNode = composeTestRule.onNodeWithTag(emailFieldTag, useUnmergedTree = true)
+    val scrollTag = SettingsTestTags.SettingsScroll
+    compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
+    compose.scrollUntilDisplayed(scrollTag, SettingsTestTags.DeleteAccountButton)
+    compose.waitUntilTagExists(SettingsTestTags.DeleteAccountButton)
 
-    // Focus then send IME action (Done) and verify focus is cleared.
-    emailNode.performClick()
-    emailNode.assertIsFocused()
-    emailNode.performImeAction()
-    emailNode.assertIsNotFocused()
+    compose
+        .onNodeWithTag(SettingsTestTags.DeleteAccountButton, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    compose.onNodeWithText("Delete account?", useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("Cancel", useUnmergedTree = true).performClick()
+    compose.onNodeWithText("Delete account?", useUnmergedTree = true).assertDoesNotExist()
+  }
+
+  @Test
+  fun accessibilitySwitches_toggleStateCorrectly() {
+    setContentWithVm()
+    compose.waitForIdle()
+
+    val scrollTag = SettingsTestTags.SettingsScroll
+    val nightShiftTag = SettingsTestTags.switch("Dark mode")
+    val anonymousTag = SettingsTestTags.switch("Anonymous")
+
+    compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
+    compose.waitUntilTagExists(nightShiftTag)
+
+    compose
+        .onNodeWithTag(nightShiftTag, useUnmergedTree = true)
+        .assert(hasStateDescription("On"))
+        .performClick()
+    compose.onNodeWithTag(nightShiftTag, useUnmergedTree = true).assert(hasStateDescription("Off"))
+
+    compose.scrollUntilDisplayed(scrollTag, anonymousTag)
+    compose
+        .onNodeWithTag(anonymousTag, useUnmergedTree = true)
+        .assert(hasStateDescription("Off"))
+        .performClick()
+    compose.onNodeWithTag(anonymousTag, useUnmergedTree = true).assert(hasStateDescription("On"))
   }
 }

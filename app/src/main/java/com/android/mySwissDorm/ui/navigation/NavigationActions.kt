@@ -11,24 +11,40 @@ class NavigationActions(private val navController: NavHostController) {
     navController.popBackStack()
   }
 
-  fun currentRoute(): String? = navController.currentDestination?.route
+  //  Use currentBackStackEntry for reliable route reads during transitions
+  fun currentRoute(): String? = navController.currentBackStackEntry?.destination?.route
 
+  /**
+   * Navigate to a screen with correct behavior for:
+   * - Top-level tabs (bottom bar): singleTop, restoreState, popUpTo startDestination (saveState)
+   * - Sign-in: clear the entire back stack
+   * - Others: regular push with singleTop
+   */
   fun navigateTo(screen: Screen) {
-    // Avoid reselecting the same top-level screen
     val current = currentRoute()
+
+    // Avoid reselecting the same top-level destination
     if (screen.isTopLevelDestination && current == screen.route) return
 
     navController.navigate(screen.route) {
-      if (screen == Screen.SignIn) {
-        popUpTo(0) { inclusive = true }
-      } else if (screen.isTopLevelDestination) {
-        // Top-level: single top, restore state, pop up to graph start
-        launchSingleTop = true
-        restoreState = true
-        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-      } else {
-        // Sub-screens keep default behavior
-        launchSingleTop = true
+      when {
+        // Auth flow: clear everything
+        screen == Screen.SignIn -> {
+          popUpTo(0) { inclusive = true }
+          launchSingleTop = true
+        }
+
+        // Bottom bar destinations
+        screen.isTopLevelDestination -> {
+          launchSingleTop = true
+          restoreState = true
+          popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+        }
+
+        // Secondary destinations
+        else -> {
+          launchSingleTop = true
+        }
       }
     }
   }

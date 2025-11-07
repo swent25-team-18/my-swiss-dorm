@@ -70,4 +70,21 @@ class ResidenciesRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     assertEquals(runCatching { repo.getResidency("Vortex") }.isFailure, true)
   }
+
+  @Test
+  fun getResidencyWithNullParametersWork() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val residencyToAdd =
+        Residency(
+            name = "Vortex",
+            description = "Description of Vortex",
+            location = Location(name = "Vortex", latitude = 2.0, longitude = 2.0),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null)
+
+    repo.addResidency(residencyToAdd)
+    assertEquals(residencyToAdd, repo.getResidency("Vortex"))
+  }
 }

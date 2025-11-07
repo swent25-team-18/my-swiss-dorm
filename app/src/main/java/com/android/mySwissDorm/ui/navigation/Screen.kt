@@ -15,17 +15,24 @@ sealed class Screen(
   // Bottom bar (top-level) destinations — order matters
   data object Homepage : Screen("homepage", "Homepage", isTopLevelDestination = true)
 
+  data object AddHub : Screen("add", "Add", isTopLevelDestination = true)
+
   data object Inbox : Screen("inbox", "Inbox", isTopLevelDestination = true)
 
-  data object Settings : Screen("settings", "Settings")
+  data object Settings : Screen("settings", "Settings", isTopLevelDestination = true)
 
   // Secondary (non-bottom-bar) destinations
   data object AddListing : Screen("addListing", "Add Listing")
+
+  data object AddReview : Screen("addReview", "Add Review")
+
+  data object Admin : Screen("admin", "Admin")
 
   data class BrowseOverview(private val location: Location) :
       Screen(
           route = "browseOverview/${location.name}/${location.latitude}/${location.longitude}",
           name = "Location") {
+
     companion object {
       const val route = "browseOverview/{name}/{lat}/{lng}"
     }
@@ -55,6 +62,10 @@ sealed class Screen(
   data object Profile : Screen(route = "profile", name = "Profile")
 
   companion object {
-    val topLevel: List<Screen> = listOf(Homepage, AddListing, Inbox, Settings)
+    // Compute on access so objects are definitely initialized
+    val topLevel: List<Screen>
+      get() = listOf(Homepage, AddHub, Inbox, Settings)
+    // (Alternatively: val topLevel by lazy { listOf(ReviewOverview, ListingOverview, Inbox,
+    // Settings) })
   }
 }

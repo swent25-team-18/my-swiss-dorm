@@ -72,12 +72,17 @@ class ViewProfileScreenViewModel(
       try {
         // Repository call; throws on failure.
         val profile = repo.getProfile(ownerId)
-
+        var temp = ""
+        if (profile.userInfo.residencyName == null) {
+          temp = "No Residency"
+        } else {
+          temp = profile.userInfo.residencyName
+        }
         // Map domain model to UI state (kept simple & synchronous here).
         _ui.value =
             ViewProfileUiState(
                 name = profile.userInfo.name + " " + profile.userInfo.lastName,
-                residence = profile.userInfo.residencyName.toString(),
+                residence = temp.toString(),
                 image = null,
                 error = null)
       } catch (e: Exception) {

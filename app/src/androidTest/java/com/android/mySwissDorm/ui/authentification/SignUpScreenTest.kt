@@ -1,7 +1,7 @@
 package com.android.mySwissDorm.ui.authentification
 
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -178,13 +178,13 @@ class SignUpScreenTest : FirestoreTest() {
     step("Check that the support texts are displayed") {
       composeTestRule
           .onNodeWithTag(C.Tag.SIGN_UP_NAME_HELP_TEXT, useUnmergedTree = true)
-          .isDisplayed()
+          .assertIsDisplayed()
       composeTestRule
           .onNodeWithTag(C.Tag.SIGN_UP_LAST_NAME_HELP_TEXT, useUnmergedTree = true)
-          .isDisplayed()
+          .assertIsDisplayed()
       composeTestRule
           .onNodeWithTag(C.Tag.SIGN_UP_PHONE_NUMBER_HELP_TEXT, useUnmergedTree = true)
-          .isDisplayed()
+          .assertIsDisplayed()
     }
 
     step("Check support texts are displayed when fields are ill-formed") {
@@ -209,13 +209,13 @@ class SignUpScreenTest : FirestoreTest() {
       composeTestRule.waitForIdle()
       composeTestRule
           .onNodeWithTag(C.Tag.SIGN_UP_NAME_HELP_TEXT, useUnmergedTree = true)
-          .isDisplayed()
+          .assertIsDisplayed()
       composeTestRule
           .onNodeWithTag(C.Tag.SIGN_UP_LAST_NAME_HELP_TEXT, useUnmergedTree = true)
-          .isDisplayed()
+          .assertIsDisplayed()
       composeTestRule
           .onNodeWithTag(C.Tag.SIGN_UP_PHONE_NUMBER_HELP_TEXT, useUnmergedTree = true)
-          .isDisplayed()
+          .assertIsDisplayed()
       ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
         signUpPhoneNumberField {
           assertIsDisplayed()
@@ -226,7 +226,7 @@ class SignUpScreenTest : FirestoreTest() {
       composeTestRule.waitForIdle()
       composeTestRule
           .onNodeWithTag(C.Tag.SIGN_UP_PHONE_NUMBER_HELP_TEXT, useUnmergedTree = true)
-          .isDisplayed()
+          .assertIsDisplayed()
     }
   }
 
@@ -242,7 +242,7 @@ class SignUpScreenTest : FirestoreTest() {
         }
         composeTestRule
             .onNodeWithTag(C.Tag.SIGN_UP_RESIDENCY_DROP_DOWN_MENU, useUnmergedTree = true)
-            .isDisplayed()
+            .assertIsDisplayed()
         signUpResidencyDropDownBox.performClick()
         composeTestRule
             .onNodeWithTag(C.Tag.SIGN_UP_RESIDENCY_DROP_DOWN_MENU, useUnmergedTree = true)
@@ -258,7 +258,7 @@ class SignUpScreenTest : FirestoreTest() {
         }
         composeTestRule
             .onNodeWithTag(C.Tag.SIGN_UP_UNIVERSITY_DROP_DOWN_MENU, useUnmergedTree = true)
-            .isDisplayed()
+            .assertIsDisplayed()
         signUpResidencyDropDownBox.performClick()
         composeTestRule
             .onNodeWithTag(C.Tag.SIGN_UP_UNIVERSITY_DROP_DOWN_MENU, useUnmergedTree = true)
@@ -273,13 +273,10 @@ class SignUpScreenTest : FirestoreTest() {
           assertIsDisplayed()
           performClick()
         }
-        composeTestRule
-            .onNodeWithTag(C.Tag.SIGN_UP_RESIDENCY_DROP_DOWN_MENU, useUnmergedTree = true)
-            .isDisplayed()
         residencies.forEach {
           composeTestRule
               .onNodeWithTag(C.Tag.residencyNameTestTag(it.name), useUnmergedTree = true)
-              .isDisplayed()
+              .assertIsDisplayed()
         }
         signUpResidencyDropDownBox.performClick()
         composeTestRule
@@ -297,13 +294,10 @@ class SignUpScreenTest : FirestoreTest() {
           assertIsDisplayed()
           performClick()
         }
-        composeTestRule
-            .onNodeWithTag(C.Tag.SIGN_UP_UNIVERSITY_DROP_DOWN_MENU, useUnmergedTree = true)
-            .isDisplayed()
         universities.forEach {
           composeTestRule
               .onNodeWithTag(C.Tag.universityNameTestTag(it.name), useUnmergedTree = true)
-              .isDisplayed()
+              .assertIsDisplayed()
         }
       }
     }
@@ -323,20 +317,20 @@ class SignUpScreenTest : FirestoreTest() {
         val dropDownMenuNode =
             composeTestRule.onNodeWithTag(
                 C.Tag.SIGN_UP_RESIDENCY_DROP_DOWN_MENU, useUnmergedTree = true)
-        dropDownMenuNode.isDisplayed()
+        dropDownMenuNode.assertIsDisplayed()
         residencies.forEach {
           val residencyNode =
               composeTestRule.onNodeWithTag(
                   C.Tag.residencyNameTestTag(it.name), useUnmergedTree = true)
-          residencyNode.isDisplayed()
+          residencyNode.assertIsDisplayed()
           residencyNode.performScrollTo()
           residencyNode.performClick()
           composeTestRule.waitForIdle()
           dropDownMenuNode.isNotDisplayed()
-          residencyNode.isDisplayed()
+          residencyNode.assertIsDisplayed()
           signUpResidencyDropDownBox.performClick()
           composeTestRule.waitForIdle()
-          dropDownMenuNode.isDisplayed()
+          dropDownMenuNode.assertIsDisplayed()
         }
       }
     }
@@ -353,20 +347,20 @@ class SignUpScreenTest : FirestoreTest() {
         val dropDownMenuNode =
             composeTestRule.onNodeWithTag(
                 C.Tag.SIGN_UP_UNIVERSITY_DROP_DOWN_MENU, useUnmergedTree = true)
-        dropDownMenuNode.isDisplayed()
+        dropDownMenuNode.assertIsDisplayed()
         universities.forEach {
           val universityNode =
               composeTestRule.onNodeWithTag(
                   C.Tag.universityNameTestTag(it.name), useUnmergedTree = true)
-          universityNode.isDisplayed()
+          universityNode.assertIsDisplayed()
           universityNode.performScrollTo()
           universityNode.performClick()
           composeTestRule.waitForIdle()
           dropDownMenuNode.isNotDisplayed()
-          universityNode.isDisplayed()
+          universityNode.assertIsDisplayed()
           signUpUniversityDropDownBox.performClick()
           composeTestRule.waitForIdle()
-          dropDownMenuNode.isDisplayed()
+          dropDownMenuNode.assertIsDisplayed()
         }
       }
     }

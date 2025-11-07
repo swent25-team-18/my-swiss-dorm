@@ -11,6 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,8 +22,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.ui.add.AddHubScreen
+import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
@@ -28,6 +34,7 @@ import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
+import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.google.firebase.auth.FirebaseAuth
@@ -89,7 +96,7 @@ fun AppNavHost(
           onBack = { navActions.goBack() })
     }
 
-    // --- Bottom bar destinations ---
+    // these are strictly the Bottom bar destinations
 
     composable(Screen.Homepage.route) {
       HomePageScreen(
@@ -98,17 +105,30 @@ fun AppNavHost(
           navigationActions = navActions)
     }
 
+    composable(Screen.AddHub.route) {
+      AddHubScreen(
+          onBack = { navActions.goBack() },
+          onAddReview = { navActions.navigateTo(Screen.AddReview) },
+          onAddListing = { navActions.navigateTo(Screen.AddListing) })
+    }
+
     composable(Screen.Inbox.route) {
       Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
       navActions.navigateTo(Screen.Homepage)
     }
-    composable(Screen.Settings.route) { navBackStackEntry ->
+    composable(Screen.Settings.route) {
+      val adminRepo = remember { AdminRepository() }
+      var isAdmin by remember { mutableStateOf(false) }
+
+      LaunchedEffect(Unit) { isAdmin = adminRepo.isCurrentUserAdmin() }
       SettingsScreen(
-          onGoBack = { navActions.goBack() },
           onItemClick = {
             Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
           },
-          onProfileClick = { navActions.navigateTo(Screen.Profile) })
+          onProfileClick = { navActions.navigateTo(Screen.Profile) },
+          navigationActions = navActions,
+          onAdminClick = { navActions.navigateTo(Screen.Admin) },
+          isAdmin = isAdmin)
     }
 
     // --- Secondary destinations ---
@@ -120,7 +140,7 @@ fun AppNavHost(
             navController.navigate(Screen.ListingOverview(created.uid).route) {
               // Remove AddListing so back from overview goes to whatever was before it (Homepage
               // here)
-              popUpTo(Screen.AddListing.route) { inclusive = true }
+              popUpTo(Screen.AddHub.route) { inclusive = true }
               launchSingleTop = true
             }
           })
@@ -146,6 +166,11 @@ fun AppNavHost(
               navActions.navigateTo(Screen.BrowseOverview(newLocation))
             })
       }
+    }
+
+    composable(Screen.AddReview.route) {
+      AddReviewScreen(
+          onConfirm = { navActions.navigateTo(Screen.Homepage) }, onBack = { navActions.goBack() })
     }
 
     composable(Screen.ListingOverview.route) { navBackStackEntry ->
@@ -194,7 +219,9 @@ fun AppNavHost(
     composable(Screen.EditListing.route) {
       Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
     }
-
+    composable(Screen.Admin.route) {
+      AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })
+    }
     composable(Screen.Profile.route) {
       ProfileScreen(
           onBack = { navActions.goBack() },

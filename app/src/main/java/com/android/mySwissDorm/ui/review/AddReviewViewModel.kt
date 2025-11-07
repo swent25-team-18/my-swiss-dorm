@@ -109,7 +109,7 @@ class AddReviewViewModel(
     }
   }
 
-  fun submitReviewForm(onConfirm: (Boolean) -> Unit) {
+  fun submitReviewForm(onConfirm: (Review) -> Unit) {
     val state = _uiState.value
 
     // To check if fields are well written
@@ -121,7 +121,6 @@ class AddReviewViewModel(
     val reviewRes = InputSanitizers.validateFinal<String>(FieldType.Description, state.reviewText)
 
     if (!state.isFormValid) {
-      onConfirm(false)
       return
     }
 
@@ -143,10 +142,8 @@ class AddReviewViewModel(
     viewModelScope.launch {
       try {
         reviewRepository.addReview(reviewToAdd)
-        onConfirm(true)
-      } catch (e: Exception) {
-        onConfirm(false)
-      }
+        onConfirm(reviewToAdd)
+      } catch (_: Exception) {}
     }
   }
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
 import com.android.mySwissDorm.ui.InputSanitizers
@@ -40,7 +41,7 @@ import kotlin.math.roundToInt
 fun AddReviewScreen(
     addReviewViewModel: AddReviewViewModel = viewModel(),
     modifier: Modifier = Modifier,
-    onConfirm: (Boolean) -> Unit,
+    onConfirm: (Review) -> Unit,
     onBack: () -> Unit
 ) {
   val reviewUIState by addReviewViewModel.uiState.collectAsState()

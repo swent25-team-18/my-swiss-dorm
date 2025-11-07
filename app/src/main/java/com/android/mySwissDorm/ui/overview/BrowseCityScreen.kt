@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
+import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
@@ -51,7 +53,8 @@ fun BrowseCityScreen(
     browseCityViewModel: BrowseCityViewModel = viewModel(),
     location: Location,
     onSelectListing: (ListingCardUI) -> Unit = {},
-    onLocationChange: (Location) -> Unit = {}
+    onLocationChange: (Location) -> Unit = {},
+    navigationActions: NavigationActions? = null,
 ) {
   LaunchedEffect(location) { browseCityViewModel.loadListings(location) }
 
@@ -79,7 +82,8 @@ fun BrowseCityScreen(
       location = location,
       listingsState = uiState.listings,
       onSelectListing = onSelectListing,
-      onLocationClick = onLocationClick)
+      onLocationClick = onLocationClick,
+      navigationActions = navigationActions)
 
   if (uiState.showCustomLocationDialog) {
     CustomLocationDialog(
@@ -112,11 +116,13 @@ private fun BrowseCityScreenUI(
     location: Location,
     listingsState: ListingsState,
     onSelectListing: (ListingCardUI) -> Unit,
-    onLocationClick: () -> Unit
+    onLocationClick: () -> Unit,
+    navigationActions: NavigationActions? = null,
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
 
   Scaffold(
+      bottomBar = { BottomBarFromNav(navigationActions) },
       topBar = {
         CenterAlignedTopAppBar(
             title = {

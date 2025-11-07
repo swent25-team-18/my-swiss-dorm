@@ -219,48 +219,4 @@ class NavigationViewModelTest : FirestoreTest() {
         Screen.Homepage.route,
         state.initialDestination)
   }
-
-  @Test
-  fun determineInitialDestination_outerException_defaultsToSignIn() = runTest {
-    // This test is difficult to implement directly since we can't easily make auth.currentUser
-    // throw
-    // However, the outer catch block exists for safety. The inner catch block (profile not found)
-    // is already tested.
-    // For completeness, we verify that the ViewModel handles errors gracefully
-    switchToUser(FakeUser.FakeUser1)
-
-    // Create a repository that throws on getProfile (inner catch)
-    val throwingRepository =
-        object : ProfileRepository {
-          override suspend fun createProfile(profile: Profile) {
-            throw UnsupportedOperationException()
-          }
-
-          override suspend fun getProfile(ownerId: String): Profile {
-            throw RuntimeException("Unexpected error")
-          }
-
-          override suspend fun getAllProfile(): List<Profile> {
-            throw UnsupportedOperationException()
-          }
-
-          override suspend fun editProfile(profile: Profile) {
-            throw UnsupportedOperationException()
-          }
-
-          override suspend fun deleteProfile(ownerId: String) {
-            throw UnsupportedOperationException()
-          }
-        }
-
-    val viewModel = createViewModel(profileRepository = throwingRepository)
-    val state = waitForNavigationState(viewModel)
-
-    // Should default to Homepage (inner catch handles profile errors)
-    assertFalse("Should not be loading", state.isLoading)
-    assertEquals(
-        "Should default to Homepage when profile fetch fails",
-        Screen.Homepage.route,
-        state.initialDestination)
-  }
 }

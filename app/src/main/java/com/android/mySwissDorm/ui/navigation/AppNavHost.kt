@@ -164,7 +164,8 @@ fun AppNavHost(
             },
             onLocationChange = { newLocation ->
               navActions.navigateTo(Screen.BrowseOverview(newLocation))
-            })
+            },
+            navigationActions = navActions)
       }
     }
 

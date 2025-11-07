@@ -176,7 +176,8 @@ fun ViewListingScreen(
                               .height(52.dp)
                               .testTag(C.ViewListingTags.EDIT_BTN),
                       shape = RoundedCornerShape(16.dp)) {
-                        Text("Edit", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Edit", style = MaterialTheme.typography.titleMedium, color = MainColor)
                       }
                 }
               } else {

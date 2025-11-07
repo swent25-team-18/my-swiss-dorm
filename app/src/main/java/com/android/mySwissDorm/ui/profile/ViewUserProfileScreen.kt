@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.profile
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,6 +20,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +36,7 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.github.se.bootcamp.ui.profile.ViewProfileScreenViewModel
 import com.github.se.bootcamp.ui.profile.ViewProfileUiState
+import com.google.firebase.auth.FirebaseAuth
 
 /**
  * Displays a read-only view of another user's profile.
@@ -81,6 +86,10 @@ fun ViewUserProfileScreen(
             val vmUi by realVm!!.uiState.collectAsState()
             vmUi
           }
+
+  val context = LocalContext.current
+  val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+  val isCurrentUser = ownerId == currentUserId
 
   Scaffold(
       topBar = {
@@ -172,28 +181,71 @@ fun ViewUserProfileScreen(
                   }
                 }
 
-                // Send a message row (enabled only when ownerId is non-null)
-                item {
-                  Surface(
-                      onClick = { ownerId?.let { onSendMessage() } },
-                      shape = RoundedCornerShape(12.dp),
-                      color = TextBoxColor,
-                      modifier =
-                          Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(T.SEND_MESSAGE)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                              Icon(
-                                  imageVector = Icons.Outlined.Forum,
-                                  contentDescription = null,
-                                  tint = TextColor)
-                              Spacer(Modifier.width(12.dp))
-                              Text(
-                                  text = "Send a message",
-                                  style = MaterialTheme.typography.bodyLarge.copy(),
-                                  color = TextColor)
+                // Send a message row (enabled only when ownerId is non-null and not current user)
+                if (!isCurrentUser && ownerId != null) {
+                  item {
+                    Surface(
+                        onClick = { onSendMessage() },
+                        shape = RoundedCornerShape(12.dp),
+                        color = TextBoxColor,
+                        modifier =
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(T.SEND_MESSAGE)) {
+                          Row(
+                              verticalAlignment = Alignment.CenterVertically,
+                              modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Forum,
+                                    contentDescription = null,
+                                    tint = TextColor)
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    text = "Send a message",
+                                    style = MaterialTheme.typography.bodyLarge.copy(),
+                                    color = TextColor)
+                              }
+                        }
+                  }
+                }
+
+                // Block user row (enabled only when ownerId is non-null and not current user)
+                if (!isCurrentUser && ownerId != null && realVm != null) {
+                  item {
+                    Spacer(Modifier.height(12.dp))
+                    val buttonColor = if (ui.isBlocked) Color(0xFFFF4444) else TextBoxColor
+                    val textColor = if (ui.isBlocked) Color.White else TextColor
+                    val iconColor = if (ui.isBlocked) Color.White else TextColor
+                    val buttonText = if (ui.isBlocked) "Blocked" else "Block user"
+
+                    Surface(
+                        onClick = {
+                          if (!ui.isBlocked) {
+                            ownerId?.let { targetUid ->
+                              realVm?.blockUser(
+                                  targetUid,
+                                  onError = { errorMsg ->
+                                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                  })
                             }
-                      }
+                          }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = buttonColor,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                          Row(
+                              verticalAlignment = Alignment.CenterVertically,
+                              modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ReportProblem,
+                                    contentDescription = null,
+                                    tint = iconColor)
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    text = buttonText,
+                                    style = MaterialTheme.typography.bodyLarge.copy(),
+                                    color = textColor)
+                              }
+                        }
+                  }
                 }
               }
         }

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,6 +92,7 @@ fun SettingsScreen(
       },
       onProfileClick = onProfileClick,
       onDeleteAccount = { vm.deleteAccount { _, _ -> } },
+      onUnblockUser = { uid -> vm.unblockUser(uid) },
       navigationActions = navigationActions,
       isAdmin = isAdmin,
       onAdminClick = onAdminClick)
@@ -111,6 +113,7 @@ fun SettingsScreenContent(
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
     onDeleteAccount: () -> Unit = {},
+    onUnblockUser: (String) -> Unit = {},
     navigationActions: NavigationActions? = null,
     isAdmin: Boolean = false,
     onAdminClick: () -> Unit = {}
@@ -123,7 +126,7 @@ fun SettingsScreenContent(
   var anonymous by remember { mutableStateOf(false) }
 
   var blockedExpanded by remember { mutableStateOf(false) }
-  val blockedContacts = listOf("Clarisse K.", "Alice P.", "Benjamin M.")
+  val blockedContacts = ui.blockedContacts
   val focusManager = LocalFocusManager.current
   var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -212,8 +215,8 @@ fun SettingsScreenContent(
                                           tint = TextColor)
                                     }
                               }
-                        } //
-                        //
+                        }
+
                         // ---- Notifications ---------------------------------------------------
                         SectionLabel("Notifications")
                         CardBlock {
@@ -310,14 +313,32 @@ fun SettingsScreenContent(
                                         .bringIntoViewRequester(blockedBringIntoView)
                                         .testTag(SettingsTestTags.BlockedContactsList)) {
                                   Column(Modifier.padding(12.dp)) {
-                                    blockedContacts.forEach { name ->
+                                    if (blockedContacts.isEmpty()) {
                                       Text(
-                                          text = name,
+                                          text = "No blocked contacts",
                                           style = MaterialTheme.typography.bodyMedium,
-                                          color = TextColor,
-                                          modifier = Modifier.padding(vertical = 4.dp),
-                                          maxLines = 1,
-                                          overflow = TextOverflow.Ellipsis)
+                                          color = TextColor.copy(alpha = 0.6f),
+                                          modifier = Modifier.padding(vertical = 4.dp))
+                                    } else {
+                                      blockedContacts.forEach { contact ->
+                                        Row(
+                                            modifier =
+                                                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically) {
+                                              Text(
+                                                  text = contact.displayName,
+                                                  style = MaterialTheme.typography.bodyMedium,
+                                                  color = TextColor,
+                                                  maxLines = 1,
+                                                  overflow = TextOverflow.Ellipsis,
+                                                  modifier =
+                                                      Modifier.weight(1f).padding(end = 12.dp))
+                                              TextButton(onClick = { onUnblockUser(contact.uid) }) {
+                                                Text("Unblock")
+                                              }
+                                            }
+                                      }
                                     }
                                   }
                                 }

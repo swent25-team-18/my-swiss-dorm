@@ -180,7 +180,13 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.onNodeWithTag("profile_save_button").performClick()
     compose.waitForIdle()
 
-    // Back to view mode
+    // Back to view mode (wait until logout button reappears)
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag("profile_logout_button", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
     compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_logout_button"))
     compose.onNodeWithTag("profile_logout_button").assertIsDisplayed()
     compose.onNodeWithTag("profile_save_button").assertDoesNotExist()

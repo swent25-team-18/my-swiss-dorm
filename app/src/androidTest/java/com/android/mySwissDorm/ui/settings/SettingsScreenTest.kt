@@ -14,6 +14,7 @@ import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -75,8 +76,8 @@ class SettingsScreenTest : FirestoreTest() {
         .document(uid)
         .set(seededProfile)
         .await()
-  }
-
+  } //
+  //
   // ---------- small helpers ----------
 
   private fun ComposeTestRule.waitUntilTagExists(tag: String, timeoutMs: Long = 30_000) {
@@ -178,9 +179,50 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun blockedContacts_expandsAndCollapsesOnClick() {
+  fun blockedContacts_expandsAndCollapsesOnClick() = runTest {
+    // Use FakeUser2 as the blocked user
+    switchToUser(FakeUser.FakeUser2)
+    val blockedUserUid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile for blocked user (FakeUser2)
+    val blockedUserProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Clarisse",
+                    lastName = "K.",
+                    email = FakeUser.FakeUser2.email,
+                    phoneNumber = "+41001112233",
+                    universityName = "EPFL",
+                    location = Location("Lausanne", 0.0, 0.0),
+                    residencyName = "Residence"),
+            userSettings = UserSettings(),
+            ownerId = blockedUserUid)
+
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(blockedUserUid)
+        .set(blockedUserProfile)
+        .await()
+
+    // Switch back to current user (FakeUser1) and add blocked user to their list
+    switchToUser(FakeUser.FakeUser1)
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(uid)
+        .update("blockedUserIds", FieldValue.arrayUnion(blockedUserUid))
+        .await()
+
     setContentWithVm()
     compose.waitForIdle()
+
+    // Wait for ViewModel to refresh and load blocked contacts
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(SettingsTestTags.BlockedContactsToggle, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
     val scrollTag = SettingsTestTags.SettingsScroll
     val listTag = SettingsTestTags.BlockedContactsList
@@ -193,6 +235,14 @@ class SettingsScreenTest : FirestoreTest() {
     compose.waitUntilTagExists(listTag)
     compose.scrollUntilDisplayed(scrollTag, listTag)
     compose.onNodeWithTag(listTag, useUnmergedTree = true).assertIsDisplayed()
+
+    // Wait for blocked contact name to appear
+    compose.waitUntil(3_000) {
+      compose
+          .onAllNodesWithText("Clarisse K.", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
     compose.onNodeWithText("Clarisse K.", useUnmergedTree = true).assertIsDisplayed()
 
     compose.scrollUntilDisplayed(scrollTag, toggleTag)

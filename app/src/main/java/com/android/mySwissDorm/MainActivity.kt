@@ -49,8 +49,5 @@ fun MySwissDormApp(
     context: Context = LocalContext.current,
     credentialManager: CredentialManager = CredentialManager.create(context),
 ) {
-  AppNavHost(
-      isLoggedIn = FirebaseAuth.getInstance().currentUser != null,
-      context = context,
-      credentialManager = credentialManager)
+  AppNavHost(context = context, credentialManager = credentialManager)
 }

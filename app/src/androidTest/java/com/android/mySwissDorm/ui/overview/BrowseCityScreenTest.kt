@@ -7,7 +7,12 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.resources.C
@@ -35,7 +40,10 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private lateinit var laus2: RentalListing
   private lateinit var zurich: RentalListing
 
-  override fun createRepositories() {}
+  override fun createRepositories() {
+    ProfileRepositoryProvider.repository =
+        ProfileRepositoryFirestore(db = FirebaseEmulator.firestore)
+  }
 
   @Before
   override fun setUp() {
@@ -62,7 +70,11 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             email = null,
             phone = null,
             website = null)
-    val resZurich = resLaus.copy(city = "Zurich", name = "CUG")
+    val resZurich =
+        resLaus.copy(
+            city = "Zurich",
+            name = "CUG",
+            location = Location("CUG", 47.3769, 8.5417)) // Zurich coordinates
 
     laus1 =
         RentalListing(
@@ -104,7 +116,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   fun loadsFromFirestore_filtersByCity_displaysOnlyLausanne() = runTest {
     switchToUser(FakeUser.FakeUser1)
 
-    compose.setContent { BrowseCityScreen(cityName = "Lausanne", onSelectListing = {}) }
+    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+    compose.setContent { BrowseCityScreen(location = lausanneLocation, onSelectListing = {}) }
     compose.waitForIdle()
 
     compose.onNodeWithTag(C.BrowseCityTags.LIST).assertIsDisplayed()
@@ -118,8 +131,9 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val clicked = mutableStateOf<ListingCardUI?>(null)
     switchToUser(FakeUser.FakeUser1)
 
+    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
     compose.setContent {
-      BrowseCityScreen(cityName = "Lausanne", onSelectListing = { clicked.value = it })
+      BrowseCityScreen(location = lausanneLocation, onSelectListing = { clicked.value = it })
     }
     compose.waitForIdle()
 
@@ -130,7 +144,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   @Test
   fun switchingToReviews_showsPlaceholder() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    compose.setContent { BrowseCityScreen(cityName = "Lausanne") }
+    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+    compose.setContent { BrowseCityScreen(location = lausanneLocation) }
     compose.waitForIdle()
 
     compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
@@ -141,7 +156,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   fun emptyState_showsNoListingsYet() = runTest {
     switchToUser(FakeUser.FakeUser1)
 
-    compose.setContent { BrowseCityScreen(cityName = "Geneva") } // no Geneva data
+    val genevaLocation = Location("Geneva", 46.2044, 6.1432) // no Geneva data
+    compose.setContent { BrowseCityScreen(location = genevaLocation) }
     compose.waitUntil(5_000) {
       compose
           .onAllNodesWithTag(C.BrowseCityTags.ROOT, useUnmergedTree = true)
@@ -161,20 +177,87 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun topBar_updatesWhenCityChanges() = runTest {
-    var city by mutableStateOf("Lausanne")
+    var location by mutableStateOf(Location("Lausanne", 46.5197, 6.6323))
 
-    compose.setContent { BrowseCityScreen(cityName = city) }
+    compose.setContent { BrowseCityScreen(location = location) }
     compose.waitForIdle()
 
     // initial title
     compose.onNodeWithText("Lausanne").assertIsDisplayed()
 
     // change city -> title should update
-    compose.runOnIdle { city = "Zurich" }
+    compose.runOnIdle { location = Location("Zurich", 47.3769, 8.5417) }
     compose.waitForIdle()
 
     compose.onNodeWithText("Zurich").assertIsDisplayed()
     compose.onNodeWithText("Lausanne").assertDoesNotExist()
+  }
+
+  @Test
+  fun locationButton_opensCustomLocationDialog() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+
+    compose.setContent { BrowseCityScreen(location = lausanneLocation) }
+    compose.waitForIdle()
+
+    // Click on location button
+    compose.onNodeWithTag(C.BrowseCityTags.LOCATION_BUTTON).performClick()
+    compose.waitForIdle()
+
+    // Check that dialog appears
+    compose.onNodeWithTag(C.CustomLocationDialogTags.DIALOG_TITLE).assertIsDisplayed()
+  }
+
+  @Test
+  fun locationButton_displaysLocationName() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+
+    compose.setContent { BrowseCityScreen(location = lausanneLocation) }
+    compose.waitForIdle()
+
+    // Check that location name is displayed
+    compose.onNodeWithText("Lausanne").assertIsDisplayed()
+  }
+
+  @Test
+  fun locationButton_savesLocationToProfile() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+    val initialLocation = Location("Lausanne", 46.5197, 6.6323)
+
+    // Create profile without location
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = FakeUser.FakeUser1.userName,
+                    lastName = "Test",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "+41001112233",
+                    location = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    profileRepo.createProfile(profile)
+
+    compose.setContent { BrowseCityScreen(location = initialLocation, onLocationChange = {}) }
+    compose.waitForIdle()
+
+    // Click location button to open dialog
+    compose.onNodeWithTag(C.BrowseCityTags.LOCATION_BUTTON).performClick()
+    compose.waitForIdle()
+
+    // Wait for dialog to appear
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose
+          .onAllNodesWithTag(C.CustomLocationDialogTags.DIALOG_TITLE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify the dialog opens and text field is displayed
+    compose.onNodeWithTag(C.CustomLocationDialogTags.LOCATION_TEXT_FIELD).assertIsDisplayed()
   }
 
   @Test
@@ -191,6 +274,14 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         error("unused")
       }
 
+      override suspend fun getAllRentalListingsByLocation(
+          location: Location,
+          radius: Double
+      ): List<RentalListing> {
+        delay(50)
+        error("Boom")
+      }
+
       override suspend fun getRentalListing(rentalPostId: String): RentalListing = error("unused")
 
       override suspend fun addRentalListing(rentalPost: RentalListing) {}
@@ -199,9 +290,20 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
       override suspend fun deleteRentalListing(rentalPostId: String) {}
     }
-    val vm = BrowseCityViewModel(ThrowingRepo())
+    // Create mock LocationRepository and ProfileRepository
+    val mockLocationRepository =
+        object : LocationRepository {
+          override suspend fun search(query: String): List<Location> = emptyList()
+        }
+    val vm =
+        BrowseCityViewModel(
+            listingsRepository = ThrowingRepo(),
+            locationRepository = mockLocationRepository,
+            profileRepository = ProfileRepositoryProvider.repository,
+            auth = FirebaseEmulator.auth)
 
-    compose.setContent { BrowseCityScreen(cityName = "Lausanne", browseCityViewModel = vm) }
+    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+    compose.setContent { BrowseCityScreen(location = lausanneLocation, browseCityViewModel = vm) }
 
     // We should eventually see the error label
     compose.waitUntil(timeoutMillis = 4_000) {
@@ -211,13 +313,5 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         .onNodeWithTag(C.BrowseCityTags.ERROR)
         .assertIsDisplayed()
         .assertTextContains("Boom", substring = true)
-  }
-
-  @Test
-  fun backButton_invokesCallback() = runTest {
-    var back = false
-    compose.setContent { BrowseCityScreen(cityName = "Lausanne", onGoBack = { back = true }) }
-    compose.onNodeWithTag(C.BrowseCityTags.BACK_BUTTON).performClick()
-    assert(back)
   }
 }

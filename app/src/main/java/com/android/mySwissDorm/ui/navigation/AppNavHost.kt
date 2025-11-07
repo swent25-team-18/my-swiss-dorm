@@ -4,20 +4,27 @@ import AddListingScreen
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.credentials.CredentialManager
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.add.AddHubScreen
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
@@ -30,27 +37,55 @@ import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
+import com.android.mySwissDorm.ui.theme.MainColor
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun AppNavHost(
-    isLoggedIn: Boolean,
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
     credentialManager: CredentialManager = CredentialManager.create(context),
     navActionsExternal: NavigationActions? = null,
+    navigationViewModel: NavigationViewModel = viewModel(),
 ) {
   val navController = navActionsExternal?.navController() ?: rememberNavController()
   val navActions = navActionsExternal ?: NavigationActions(navController)
 
-  val startDestination = if (isLoggedIn) Screen.Homepage.route else Screen.SignIn.route
+  val navigationState by navigationViewModel.navigationState.collectAsState()
+
+  // loading screen while finding screen to display
+  if (navigationState.isLoading) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      CircularProgressIndicator(color = MainColor)
+    }
+    return
+  }
+
+  LaunchedEffect(navigationState.initialDestination) {
+    val destination = navigationState.initialDestination
+    if (destination != null) {
+      val currentRoute = navController.currentDestination?.route
+      if (currentRoute != destination) {
+        try {
+          navController.navigate(destination) {
+            popUpTo(0) { inclusive = true }
+            launchSingleTop = true
+          }
+        } catch (e: Exception) {
+          Log.e("AppNavHost", "Error navigating to initial destination: $destination", e)
+        }
+      }
+    }
+  }
+
+  val startDestination = navigationState.initialDestination ?: Screen.SignIn.route
 
   NavHost(navController = navController, startDestination = startDestination, modifier = modifier) {
     // --- Auth flow ---
     composable(Screen.SignIn.route) {
       SignInScreen(
           credentialManager = credentialManager,
-          onSignedIn = { navActions.navigateTo(Screen.Homepage) },
+          onSignedIn = { navigationViewModel.determineInitialDestination() },
           onSignUp = { navActions.navigateTo(Screen.SignUp) },
       )
     }
@@ -58,13 +93,7 @@ fun AppNavHost(
     composable(Screen.SignUp.route) {
       SignUpScreen(
           credentialManager = credentialManager,
-          onSignedUp = {
-            // this helps not return to auth after a successful singup
-            navController.navigate(Screen.Homepage.route) {
-              popUpTo(Screen.SignIn.route) { inclusive = true }
-              launchSingleTop = true
-            }
-          },
+          onSignedUp = { navigationViewModel.determineInitialDestination() },
           onBack = { navActions.goBack() })
     }
 
@@ -72,7 +101,7 @@ fun AppNavHost(
 
     composable(Screen.Homepage.route) {
       HomePageScreen(
-          onSelectCity = { city -> navActions.navigateTo(Screen.CityOverview(city)) },
+          onSelectLocation = { location -> navActions.navigateTo(Screen.BrowseOverview(location)) },
           credentialManager = credentialManager,
           navigationActions = navActions)
     }
@@ -118,28 +147,32 @@ fun AppNavHost(
           })
     }
 
-    composable(Screen.AddReview.route) {
-      AddReviewScreen(
-          onConfirm = { navActions.navigateTo(Screen.Homepage) }, onBack = { navActions.goBack() })
-    }
+    composable(Screen.BrowseOverview.route) { navBackStackEntry ->
+      val name = navBackStackEntry.arguments?.getString("name")
+      val latString = navBackStackEntry.arguments?.getString("lat")
+      val lngString = navBackStackEntry.arguments?.getString("lng")
 
-    composable(Screen.CityOverview.route) { navBackStackEntry ->
-      val cityName = navBackStackEntry.arguments?.getString("cityName")
+      val latitude = latString?.toDoubleOrNull()
+      val longitude = lngString?.toDoubleOrNull()
 
-      // create city screen with the cityName
-      cityName?.let {
+      if (name != null && latitude != null && longitude != null) {
+        val location = Location(name, latitude, longitude)
+
         BrowseCityScreen(
-            cityName = cityName,
-            onGoBack = { navActions.goBack() },
+            location = location,
             onSelectListing = {
               navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
             },
+            onLocationChange = { newLocation ->
+              navActions.navigateTo(Screen.BrowseOverview(newLocation))
+            },
             navigationActions = navActions)
       }
-          ?: run {
-            Log.e("BrowseCityScreen", "city name is null")
-            Toast.makeText(context, "city name is null", Toast.LENGTH_SHORT).show()
-          }
+    }
+
+    composable(Screen.AddReview.route) {
+      AddReviewScreen(
+          onConfirm = { navActions.navigateTo(Screen.Homepage) }, onBack = { navActions.goBack() })
     }
 
     composable(Screen.ListingOverview.route) { navBackStackEntry ->
@@ -209,8 +242,8 @@ fun AppNavHost(
       ProfileScreen(
           onBack = { navActions.goBack() },
           onLogout = {
-            navActions.navigateTo(Screen.SignIn)
             AuthRepositoryProvider.repository.signOut()
+            navigationViewModel.determineInitialDestination()
           },
           onChangeProfilePicture = {
             Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()

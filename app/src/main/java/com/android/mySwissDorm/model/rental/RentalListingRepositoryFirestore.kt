@@ -7,6 +7,11 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import java.net.URL
 import kotlin.collections.get
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlinx.coroutines.tasks.await
 
 const val RENTAL_LISTINGS_COLLECTION = "rental_listings"
@@ -33,6 +38,23 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
             .get()
             .await()
     return snapshot.mapNotNull { documentToRentalListing(it) }
+  }
+
+  override suspend fun getAllRentalListingsByLocation(
+      location: Location,
+      radius: Double
+  ): List<RentalListing> {
+    val allListings = getAllRentalListings()
+    return allListings.filter { listing ->
+      val listingLocation = listing.residency.location
+      val distance =
+          haversineDistance(
+              location.latitude,
+              location.longitude,
+              listingLocation.latitude,
+              listingLocation.longitude)
+      distance <= radius
+    }
   }
 
   override suspend fun getRentalListing(rentalPostId: String): RentalListing {
@@ -133,5 +155,30 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
       Log.e("RentalListingsRepositoryFirestore", "Error converting document to RentalListing", e)
       null
     }
+  }
+
+  /**
+   * Calculates the great-circle distance between two points on Earth using the Haversine formula.
+   *
+   * @param lat1 Latitude of the first point in decimal degrees.
+   * @param lon1 Longitude of the first point in decimal degrees.
+   * @param lat2 Latitude of the second point in decimal degrees.
+   * @param lon2 Longitude of the second point in decimal degrees.
+   * @return The distance between the two points in kilometers.
+   */
+  // Haversine formula implementation with the help of AI
+  private fun haversineDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val R = 6371.0 // Earth's mean radius in kilometers
+
+    val latDistance = Math.toRadians(lat2 - lat1)
+    val lonDistance = Math.toRadians(lon2 - lon1)
+
+    val a =
+        sin(latDistance / 2).pow(2) +
+            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(lonDistance / 2).pow(2)
+
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    return R * c // Distance in kilometers
   }
 }

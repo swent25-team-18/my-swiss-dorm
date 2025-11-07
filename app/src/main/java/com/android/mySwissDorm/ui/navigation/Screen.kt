@@ -1,6 +1,6 @@
 package com.android.mySwissDorm.ui.navigation
 
-import com.android.mySwissDorm.model.city.City
+import com.android.mySwissDorm.model.map.Location
 
 sealed class Screen(
     val route: String,
@@ -28,10 +28,13 @@ sealed class Screen(
 
   data object Admin : Screen("admin", "Admin")
 
-  data class CityOverview(val city: City) :
-      Screen(route = "cityOverview/${city.name}", name = "City") {
+  data class BrowseOverview(private val location: Location) :
+      Screen(
+          route = "browseOverview/${location.name}/${location.latitude}/${location.longitude}",
+          name = "Location") {
+
     companion object {
-      const val route = "cityOverview/{cityName}"
+      const val route = "browseOverview/{name}/{lat}/{lng}"
     }
   }
 

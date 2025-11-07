@@ -59,7 +59,7 @@ fun BottomBarFromNav(navigationActions: NavigationActions?) {
   // Map nested routes to their parent tab
   val selected =
       when {
-        route == Screen.Homepage.route || route == Screen.CityOverview.route -> Screen.Homepage
+        route == Screen.Homepage.route || route == Screen.BrowseOverview.route -> Screen.Homepage
         route == Screen.Inbox.route -> Screen.Inbox
         route == Screen.Settings.route -> Screen.Settings
         route == Screen.AddHub.route -> Screen.AddHub

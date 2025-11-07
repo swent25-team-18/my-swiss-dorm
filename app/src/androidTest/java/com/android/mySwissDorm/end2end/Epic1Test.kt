@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.MySwissDormApp
 import com.android.mySwissDorm.R
@@ -225,10 +226,28 @@ class Epic1Test : FirestoreTest() {
           composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
         }
 
+        // Wait for cities list to be available
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+          composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
+        }
+
+        // Scroll the cities list to Lausanne's index (third city, index 2) to bring it into view
+        composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+
+        // Wait for Lausanne card to be displayed after scrolling
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+          composeTestRule
+              .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+              .isDisplayed()
+        }
+
         // Go to Lausanne's listings
         composeTestRule
             .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
             .performScrollTo()
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
             .performClick()
 
         composeTestRule.waitUntil(5_000) {

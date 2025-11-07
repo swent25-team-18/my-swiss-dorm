@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -19,9 +19,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
@@ -29,36 +31,93 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 
+/**
+ * The main screen for browsing listings and reviews in a specific location.
+ *
+ * This screen displays a tabbed interface with "Reviews" and "Listings" tabs. The top bar shows a
+ * clickable location name with a pin icon that opens a dialog to change the location. When a new
+ * location is selected, the [onLocationChange] callback is invoked to navigate to the new location.
+ *
+ * @param browseCityViewModel The ViewModel for managing the screen's state and data.
+ * @param location The current location being browsed.
+ * @param onGoBack A callback invoked when the back button is clicked.
+ * @param onSelectListing A callback invoked when a listing card is clicked, passing the selected
+ *   listing.
+ * @param onLocationChange A callback invoked when the user selects a new location from the dialog.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowseCityScreen(
     browseCityViewModel: BrowseCityViewModel = viewModel(),
-    cityName: String,
-    onGoBack: () -> Unit = {},
+    location: Location,
     onSelectListing: (ListingCardUI) -> Unit = {},
-    navigationActions: NavigationActions? = null
+    onLocationChange: (Location) -> Unit = {},
+    navigationActions: NavigationActions? = null,
 ) {
-  LaunchedEffect(cityName) { browseCityViewModel.loadListings(cityName) }
+  LaunchedEffect(location) { browseCityViewModel.loadListings(location) }
 
   val uiState by browseCityViewModel.uiState.collectAsState()
+
+  val onLocationClick = remember { { browseCityViewModel.onCustomLocationClick() } }
+
+  val onValueChange =
+      remember<(String) -> Unit> { { query -> browseCityViewModel.setCustomLocationQuery(query) } }
+  val onDropDownLocationSelect =
+      remember<(Location) -> Unit> {
+        { location -> browseCityViewModel.setCustomLocation(location) }
+      }
+  val onDismiss = remember { { browseCityViewModel.dismissCustomLocationDialog() } }
+  val onConfirm =
+      remember<(Location) -> Unit> {
+        { newLocation ->
+          browseCityViewModel.saveLocationToProfile(newLocation)
+          onLocationChange(newLocation)
+          browseCityViewModel.dismissCustomLocationDialog()
+        }
+      }
+
   BrowseCityScreenUI(
-      cityName = cityName,
+      location = location,
       listingsState = uiState.listings,
-      onGoBack = onGoBack,
       onSelectListing = onSelectListing,
+      onLocationClick = onLocationClick,
       navigationActions = navigationActions)
+
+  if (uiState.showCustomLocationDialog) {
+    CustomLocationDialog(
+        value = uiState.customLocationQuery,
+        currentLocation = uiState.customLocation,
+        locationSuggestions = uiState.locationSuggestions,
+        onValueChange = onValueChange,
+        onDropDownLocationSelect = onDropDownLocationSelect,
+        onDismiss = onDismiss,
+        onConfirm = onConfirm)
+  }
 }
 
-// Pure UI (stateless) — easy to preview & test.
+/**
+ * Pure UI composable for the browse city screen (stateless).
+ *
+ * This is a stateless UI component that displays the browse city interface with tabs for Reviews
+ * and Listings. The top bar shows a clickable location name that triggers the location change
+ * dialog.
+ *
+ * @param location The current location being displayed.
+ * @param listingsState The state of the listings (loading, items, error).
+ * @param onGoBack A callback invoked when the back button is clicked.
+ * @param onSelectListing A callback invoked when a listing card is clicked.
+ * @param onLocationClick A callback invoked when the location title is clicked to open the dialog.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BrowseCityScreenUI(
-    cityName: String,
+    location: Location,
     listingsState: ListingsState,
-    onGoBack: () -> Unit,
     onSelectListing: (ListingCardUI) -> Unit,
-    navigationActions: NavigationActions? = null
+    onLocationClick: () -> Unit,
+    navigationActions: NavigationActions? = null,
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
 
@@ -66,14 +125,20 @@ private fun BrowseCityScreenUI(
       bottomBar = { BottomBarFromNav(navigationActions) },
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text(cityName) },
-            navigationIcon = {
-              IconButton(
-                  onClick = onGoBack, modifier = Modifier.testTag(C.BrowseCityTags.BACK_BUTTON)) {
+            title = {
+              TextButton(
+                  onClick = onLocationClick,
+                  modifier = Modifier.testTag(C.BrowseCityTags.LOCATION_BUTTON)) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        imageVector = Icons.Default.Place,
+                        contentDescription = "Location",
                         tint = MainColor)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = location.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MainColor)
                   }
             })
       }) { pd ->
@@ -152,6 +217,15 @@ private fun BrowseCityScreenUI(
       }
 }
 
+/**
+ * A card component that displays information about a rental listing.
+ *
+ * The card shows a placeholder image on the left, and the listing title with bullet points on the
+ * right. The card is clickable and invokes [onClick] when tapped.
+ *
+ * @param data The listing data to display, including title, bullets, and listing UID.
+ * @param onClick A callback invoked when the card is clicked, passing the listing data.
+ */
 @Composable
 private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
   OutlinedCard(
@@ -196,6 +270,14 @@ private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
       }
 }
 
+/**
+ * A column that displays a list of items as bullet points.
+ *
+ * Each item is displayed with a bullet point (•) prefix and proper spacing between items.
+ *
+ * @param items The list of strings to display as bullet points.
+ * @param modifier Optional modifier to apply to the column.
+ */
 @Composable
 private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
   Column(modifier) {
@@ -206,6 +288,12 @@ private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
   }
 }
 
+/**
+ * Preview composable for the BrowseCityScreen UI.
+ *
+ * Displays a preview of the browse city screen with sample listing data for design and testing
+ * purposes.
+ */
 @Preview(showBackground = true, widthDp = 420)
 @Composable
 private fun BrowseCityScreen_Preview() {
@@ -228,6 +316,9 @@ private fun BrowseCityScreen_Preview() {
       )
   MySwissDormAppTheme {
     BrowseCityScreenUI(
-        cityName = "Lausanne", listingsState = sampleUi, onGoBack = {}, onSelectListing = {})
+        location = Location("Lausanne", 46.5197, 6.6323),
+        listingsState = sampleUi,
+        onSelectListing = {},
+        onLocationClick = {})
   }
 }

@@ -14,6 +14,9 @@ import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -32,6 +35,8 @@ class HomePageScreenTest : FirestoreTest() {
 
   override fun createRepositories() {
     CitiesRepositoryProvider.repository = CitiesRepositoryFirestore(db = FirebaseEmulator.firestore)
+    ProfileRepositoryProvider.repository =
+        ProfileRepositoryFirestore(db = FirebaseEmulator.firestore)
 
     val repository = CitiesRepositoryProvider.repository
 
@@ -71,7 +76,17 @@ class HomePageScreenTest : FirestoreTest() {
   @Before
   fun setup() {
     super.setUp()
-    viewModel = HomePageViewModel(CitiesRepositoryProvider.repository)
+    // Create a mock LocationRepository that returns empty list
+    val mockLocationRepository =
+        object : LocationRepository {
+          override suspend fun search(query: String): List<Location> = emptyList()
+        }
+    viewModel =
+        HomePageViewModel(
+            citiesRepository = CitiesRepositoryProvider.repository,
+            locationRepository = mockLocationRepository,
+            profileRepository = ProfileRepositoryProvider.repository,
+            auth = FirebaseEmulator.auth)
     composeTestRule.setContent { HomePageScreen(viewModel) }
   }
 

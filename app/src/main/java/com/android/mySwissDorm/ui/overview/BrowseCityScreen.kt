@@ -114,7 +114,7 @@ private fun BrowseCityScreenUI(
     onSelectListing: (ListingCardUI) -> Unit,
     onLocationClick: () -> Unit
 ) {
-  var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0 Reviews, 1 Listings
+  var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
 
   Scaffold(
       topBar = {

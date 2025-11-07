@@ -37,7 +37,7 @@ fun BrowseCityScreen(
     cityName: String,
     onGoBack: () -> Unit = {},
     onSelectListing: (ListingCardUI) -> Unit = {},
-    onSelectReview: (ReviewCardUI) -> Unit = {}
+    onSelectReview: (ReviewCardUI) -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {
   LaunchedEffect(cityName) {

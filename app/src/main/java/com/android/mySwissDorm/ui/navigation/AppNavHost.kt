@@ -28,8 +28,8 @@ import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
-import com.android.mySwissDorm.ui.review.ViewReviewScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
+import com.android.mySwissDorm.ui.review.ViewReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.google.firebase.auth.FirebaseAuth
 

@@ -15,7 +15,7 @@ sealed class Screen(
   // Bottom bar (top-level) destinations — order matters
   data object Homepage : Screen("homepage", "Homepage", isTopLevelDestination = true)
 
-  data object AddHub : Screen("add", "AddHub", isTopLevelDestination = true)
+  data object AddHub : Screen("add", "Add", isTopLevelDestination = true)
 
   data object Inbox : Screen("inbox", "Inbox", isTopLevelDestination = true)
 
@@ -23,6 +23,8 @@ sealed class Screen(
 
   // Secondary (non-bottom-bar) destinations
   data object AddListing : Screen("addListing", "Add Listing")
+
+  data object AddReview : Screen("addReview", "Add Review")
 
   data object Admin : Screen("admin", "Admin")
 

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.MySwissDormApp
 import com.android.mySwissDorm.R
@@ -234,10 +235,16 @@ class Epic1Test : FirestoreTest() {
               .isNotEmpty()
         }
 
+        // Scroll the cities list to Lausanne's index (third city, index 2)
+        composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+
         // Go to Lausanne's listings
         composeTestRule
             .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
             .performScrollTo()
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
             .performClick()
 
         composeTestRule.waitUntil(5_000) {

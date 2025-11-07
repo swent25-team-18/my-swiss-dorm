@@ -323,20 +323,17 @@ fun SettingsScreenContent(
                                       blockedContacts.forEach { contact ->
                                         Row(
                                             modifier =
-                                                Modifier.fillMaxWidth()
-                                                    .padding(vertical = 4.dp),
-                                            horizontalArrangement =
-                                                Arrangement.SpaceBetween,
+                                                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically) {
                                               Text(
                                                   text = contact.displayName,
-                                                  style =
-                                                      MaterialTheme.typography.bodyMedium,
+                                                  style = MaterialTheme.typography.bodyMedium,
                                                   color = TextColor,
                                                   maxLines = 1,
                                                   overflow = TextOverflow.Ellipsis,
-                                                  modifier = Modifier.weight(1f)
-                                                      .padding(end = 12.dp))
+                                                  modifier =
+                                                      Modifier.weight(1f).padding(end = 12.dp))
                                               TextButton(onClick = { onUnblockUser(contact.uid) }) {
                                                 Text("Unblock")
                                               }

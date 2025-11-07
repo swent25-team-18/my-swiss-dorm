@@ -38,8 +38,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
 
   override suspend fun getBlockedUserIds(ownerId: String): List<String> {
     val doc = db.collection(PROFILE_COLLECTION_PATH).document(ownerId).get().await()
-    @Suppress("UNCHECKED_CAST")
-    return doc.get("blockedUserIds") as? List<String> ?: emptyList()
+    @Suppress("UNCHECKED_CAST") return doc.get("blockedUserIds") as? List<String> ?: emptyList()
   }
 
   override suspend fun addBlockedUser(ownerId: String, targetUid: String) {

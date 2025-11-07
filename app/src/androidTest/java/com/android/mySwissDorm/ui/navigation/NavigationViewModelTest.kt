@@ -153,6 +153,18 @@ class NavigationViewModelTest : FirestoreTest() {
           override suspend fun deleteProfile(ownerId: String) {
             throw UnsupportedOperationException()
           }
+
+          override suspend fun getBlockedUserIds(ownerId: String): List<String> {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
+            throw UnsupportedOperationException()
+          }
         }
 
     val viewModel = createViewModel(profileRepository = throwingRepository)

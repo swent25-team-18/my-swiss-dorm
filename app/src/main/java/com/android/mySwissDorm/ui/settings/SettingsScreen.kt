@@ -38,19 +38,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-<<<<<<< HEAD
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.*
-=======
-import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
-import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
-import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
-import com.android.mySwissDorm.ui.navigation.NavigationActions
-import com.android.mySwissDorm.ui.theme.*
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
->>>>>>> e142fea10e6a087a281a22c414d776c2747e51cc
+
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme

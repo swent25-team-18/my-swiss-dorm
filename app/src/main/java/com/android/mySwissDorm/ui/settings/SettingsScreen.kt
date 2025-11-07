@@ -37,16 +37,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
-import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
+import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
-import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.*
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.PalePink
+import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 
 /** Centralized test tags for the Settings screen. */
 object SettingsTestTags {
@@ -83,7 +84,7 @@ fun SettingsScreen(
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
-    vm: SettingsViewModel = rememberSettingsViewModel(),
+    vm: SettingsViewModel = viewModel(),
     isAdmin: Boolean = false,
     onAdminClick: () -> Unit = {}
 ) {
@@ -157,11 +158,7 @@ fun SettingsScreenContent(
       },
       bottomBar = {
         if (navigationActions != null) {
-          BottomNavigationMenu(
-              selectedScreen = Screen.Settings,
-              onTabSelected = { screen ->
-                if (screen != Screen.Settings) navigationActions.navigateTo(screen)
-              })
+          BottomBarFromNav(navigationActions)
         }
       }) { paddingValues ->
         BoxWithConstraints(
@@ -342,18 +339,22 @@ fun SettingsScreenContent(
                                       blockedContacts.forEach { contact ->
                                         Row(
                                             modifier =
-                                                Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                Modifier.fillMaxWidth()
+                                                    .padding(vertical = 4.dp),
+                                            horizontalArrangement =
+                                                Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically) {
                                               Text(
                                                   text = contact.displayName,
-                                                  style = MaterialTheme.typography.bodyMedium,
+                                                  style =
+                                                      MaterialTheme.typography.bodyMedium,
                                                   color = TextColor,
                                                   maxLines = 1,
                                                   overflow = TextOverflow.Ellipsis,
-                                                  modifier = Modifier.weight(1f))
+                                                  modifier = Modifier.weight(1f)
+                                                      .padding(end = 12.dp))
                                               TextButton(onClick = { onUnblockUser(contact.uid) }) {
-                                                Text("Unblock", color = MainColor)
+                                                Text("Unblock")
                                               }
                                             }
                                       }

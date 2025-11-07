@@ -77,7 +77,10 @@ fun ViewListingScreen(
             title = { Text("Listing Details") },
             navigationIcon = {
               IconButton(onClick = { onGoBack() }) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MainColor)
               }
             })
       },

@@ -22,6 +22,7 @@ import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
+import com.android.mySwissDorm.ui.listing.EditListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreen
@@ -134,7 +135,7 @@ fun AppNavHost(
             listingUid = it,
             onGoBack = { navActions.goBack() },
             onApply = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
-            onEdit = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
+            onEdit = { navActions.navigateTo(Screen.EditListing(it)) },
             onViewProfile = { ownerId ->
               val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
               if (ownerId == currentUserId) {
@@ -169,8 +170,22 @@ fun AppNavHost(
           }
     }
 
-    composable(Screen.EditListing.route) {
-      Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
+    composable(Screen.EditListing.route) { entry ->
+      val id = requireNotNull(entry.arguments?.getString("listingUid"))
+
+      EditListingScreen(
+          rentalListingID = id,
+          onBack = navActions::goBack,
+          onConfirm = {
+            navActions.navigateTo(Screen.ListingOverview(id))
+            navController.popBackStack(Screen.EditListing.route, inclusive = true)
+            Toast.makeText(context, "Listing saved", Toast.LENGTH_SHORT).show()
+          },
+          onDelete = {
+            navActions.navigateTo(Screen.Homepage)
+            navController.popBackStack(Screen.EditListing.route, inclusive = true)
+            Toast.makeText(context, "Listing deleted", Toast.LENGTH_SHORT).show()
+          })
     }
     composable(Screen.Admin.route) {
       AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })

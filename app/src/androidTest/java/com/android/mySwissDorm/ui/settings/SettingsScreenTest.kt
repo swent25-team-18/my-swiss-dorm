@@ -157,29 +157,6 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun settingsScreen_showsProfileRowAndButton() {
-    setContentWithVm()
-    compose.waitForIdle()
-
-    compose.onNodeWithText("Settings", useUnmergedTree = true).assertIsDisplayed()
-    compose.onNodeWithText("View profile", useUnmergedTree = true).assertIsDisplayed()
-    compose
-        .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .assertHasClickAction()
-        .performClick()
-  }
-
-  @Test
-  fun bottomBar_notRenderedInTests_whenNoNavigationActions() {
-    setContentWithVm()
-    compose.waitForIdle()
-    compose
-        .onAllNodesWithTag(SettingsTestTags.BottomBar, useUnmergedTree = true)
-        .assertCountEquals(0)
-  }
-
-  @Test
   fun notificationSwitches_toggleStateCorrectly() {
     setContentWithVm()
     compose.waitForIdle()

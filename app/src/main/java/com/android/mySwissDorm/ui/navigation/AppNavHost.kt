@@ -18,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.ui.add.AddHubScreen
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
@@ -56,7 +57,7 @@ fun AppNavHost(
       SignUpScreen(
           credentialManager = credentialManager,
           onSignedUp = {
-            // After successful sign-up, go to main screen and clear auth from backstack
+            // this helps not return to auth after a successful singup
             navController.navigate(Screen.Homepage.route) {
               popUpTo(Screen.SignIn.route) { inclusive = true }
               launchSingleTop = true
@@ -65,13 +66,20 @@ fun AppNavHost(
           onBack = { navActions.goBack() })
     }
 
-    // --- Bottom bar destinations ---
+    // these are strictly the Bottom bar destinations
 
     composable(Screen.Homepage.route) {
       HomePageScreen(
           onSelectCity = { city -> navActions.navigateTo(Screen.CityOverview(city)) },
           credentialManager = credentialManager,
           navigationActions = navActions)
+    }
+
+    composable(Screen.AddHub.route) {
+      AddHubScreen(
+          onBack = { navActions.goBack() },
+          onAddReview = { /* TODO: wire add review */},
+          onAddListing = { navActions.navigateTo(Screen.AddListing) })
     }
 
     composable(Screen.Inbox.route) {
@@ -102,7 +110,7 @@ fun AppNavHost(
             navController.navigate(Screen.ListingOverview(created.uid).route) {
               // Remove AddListing so back from overview goes to whatever was before it (Homepage
               // here)
-              popUpTo(Screen.AddListing.route) { inclusive = true }
+              popUpTo(Screen.AddHub.route) { inclusive = true }
               launchSingleTop = true
             }
           })
@@ -118,7 +126,8 @@ fun AppNavHost(
             onGoBack = { navActions.goBack() },
             onSelectListing = {
               navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
-            })
+            },
+            navigationActions = navActions)
       }
           ?: run {
             Log.e("BrowseCityScreen", "city name is null")

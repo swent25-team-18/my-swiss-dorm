@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.utils
 
+import com.android.mySwissDorm.model.city.CITIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
@@ -7,7 +8,9 @@ import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.rental.RentalListing
+import com.android.mySwissDorm.model.residency.RESIDENCIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.model.review.REVIEWS_COLLECTION_PATH
 import com.android.mySwissDorm.utils.FirebaseEmulator.auth
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
@@ -47,6 +50,18 @@ abstract class FirestoreTest : TestCase() {
 
   suspend fun getRentalListingCount(): Int {
     return FirebaseEmulator.firestore.collection(RENTAL_LISTINGS_COLLECTION).get().await().size()
+  }
+  // Just to get the number of reviews in the reviews collection
+  suspend fun getReviewCount(): Int {
+    return FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).get().await().size()
+  }
+
+  suspend fun getCityCount(): Int {
+    return FirebaseEmulator.firestore.collection(CITIES_COLLECTION_PATH).get().await().size()
+  }
+
+  suspend fun getResidenciesCount(): Int {
+    return FirebaseEmulator.firestore.collection(RESIDENCIES_COLLECTION_PATH).get().await().size()
   }
 
   private suspend fun clearTestCollection() {

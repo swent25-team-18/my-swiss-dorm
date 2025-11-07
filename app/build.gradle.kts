@@ -59,6 +59,7 @@ android {
             enableAndroidTestCoverage = true
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -66,12 +67,15 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -89,9 +93,9 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
-
             isReturnDefaultValues = true
         }
+        // Keep if you rely on legacy JNI packaging for tests
         packagingOptions {
             jniLibs {
                 useLegacyPackaging = true
@@ -99,34 +103,18 @@ android {
         }
     }
 
-
-    buildFeatures {
-        compose = true
-        buildConfig = true
-    }
-
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-
-    // Robolectric needs to be run only in debug. But its tests are placed in the shared source set (test)
-    // The next lines transfers the src/test/* from shared to the testDebug one
-    //
-    // This prevent errors from occurring during unit tests
+    // Robolectric only in debug; keep the split source sets
     sourceSets {
         getByName("test") {
             java.srcDirs("src/test/java")
             resources.srcDirs("src/test/resources")
         }
-
         getByName("testDebug") {
             java.srcDirs("src/testDebug/java")
             resources.srcDirs("src/testDebug/resources")
         }
     }
-
 }
-
 
 dependencies {
 
@@ -179,6 +167,16 @@ dependencies {
     // Networking with OkHttp
     implementation(libs.okhttp)
 
+    
+
+    // --- Coroutines ---
+    // Runtime on Android (explicit, recommended)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    // Test utilities (JVM unit tests)
+    testImplementation(libs.kotlinx.coroutines.test)
+    // Test utilities (instrumented tests)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+
     // Testing Unit
     testImplementation(libs.junit)
     androidTestImplementation(libs.mockk)
@@ -202,11 +200,9 @@ dependencies {
     androidTestImplementation(libs.kaspresso.allure.support)
     androidTestImplementation(libs.kaspresso.compose.support)
 
-    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
-
+    testImplementation(kotlin("test"))
 }
-
 
 tasks.withType<Test> {
     // Configure Jacoco for each tests

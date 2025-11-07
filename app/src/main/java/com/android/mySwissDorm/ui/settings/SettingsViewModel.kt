@@ -1,58 +1,155 @@
 package com.android.mySwissDorm.ui.settings
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class SettingItem(val icon: ImageVector, val title: String)
-
-data class SettingsUiState(
-    val userName: String = "Sophie",
-    val topItems: List<SettingItem> = emptyList(),
-    val accountItems: List<SettingItem> = emptyList(),
-    val errorMsg: String? = null,
+data class SettingItem(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val title: String
 )
 
-class SettingsViewModel : ViewModel() {
+data class BlockedContact(val uid: String, val displayName: String)
 
-  private val _uiState =
-      MutableStateFlow(
-          SettingsUiState(
-              userName = "Sophie",
-              topItems =
-                  listOf(
-                      SettingItem(Icons.AutoMirrored.Filled.List, "Lists"),
-                      SettingItem(Icons.Filled.HelpOutline, "Broadcast messages"),
-                      SettingItem(Icons.Filled.Devices, "Connected devices"),
-                  ),
-              accountItems =
-                  listOf(
-                      SettingItem(Icons.Filled.Lock, "Privacy"),
-                      SettingItem(Icons.Filled.ChatBubble, "Chats"),
-                      SettingItem(Icons.Filled.Notifications, "Notifications"),
-                      SettingItem(Icons.Filled.Storage, "Storage & data"),
-                  )))
-  val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+data class SettingsUiState(
+    val userName: String = "User",
+    val email: String = "",
+    val topItems: List<SettingItem> = emptyList(),
+    val accountItems: List<SettingItem> = emptyList(),
+    val isDeleting: Boolean = false,
+    val errorMsg: String? = null,
+    val blockedContacts: List<BlockedContact> = emptyList(),
+)
 
-  fun refresh() = viewModelScope.launch { _uiState.value = _uiState.value.copy(errorMsg = null) }
+/**
+ * NOTE: Default params let the system instantiate this VM with the stock Factory. Tests can still
+ * inject emulator-backed deps by passing them explicitly.
+ */
+class SettingsViewModel(
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val profiles: ProfileRepository = ProfileRepositoryProvider.repository,
+) : ViewModel() {
+
+  private val _ui = MutableStateFlow(SettingsUiState())
+  val uiState: StateFlow<SettingsUiState> = _ui.asStateFlow()
+
+  fun refresh() {
+    viewModelScope.launch {
+      val user = auth.currentUser
+      if (user == null) {
+        _ui.value = _ui.value.copy(userName = "User", email = "", blockedContacts = emptyList())
+        return@launch
+      }
+
+      // Try repository first
+      val nameFromRepo =
+          runCatching {
+                val p = profiles.getProfile(user.uid)
+                "${p.userInfo.name} ${p.userInfo.lastName}".trim()
+              }
+              .getOrNull()
+
+      val userName = nameFromRepo?.takeIf { it.isNotBlank() } ?: (user.displayName ?: "User")
+      _ui.value = _ui.value.copy(userName = userName, email = user.email ?: "")
+
+      // Load blocked user IDs from Firestore and map to display names
+      val blockedContacts =
+          runCatching {
+                profiles.getBlockedUserIds(user.uid).mapNotNull { blockedUid ->
+                  runCatching {
+                        val profile = profiles.getProfile(blockedUid)
+                        val displayName =
+                            "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                        if (displayName.isNotBlank()) {
+                          BlockedContact(uid = blockedUid, displayName = displayName)
+                        } else null
+                      }
+                      .getOrNull()
+                }
+              }
+              .getOrElse { emptyList() }
+
+      _ui.value = _ui.value.copy(blockedContacts = blockedContacts)
+    }
+  }
 
   fun clearError() {
-    _uiState.value = _uiState.value.copy(errorMsg = null)
+    _ui.value = _ui.value.copy(errorMsg = null)
   }
 
   fun onItemClick(title: String) {
-    // No-op for now
+    // Reserved for future; keep no-op for now to make tests deterministic
+  }
+
+  /**
+   * Deletes profile doc; then tries to delete auth user. If recent login is required, we surface an
+   * error but still ensure flags reset.
+   */
+  fun deleteAccount(onDone: (Boolean, String?) -> Unit) {
+    val user = auth.currentUser
+    if (user == null) {
+      _ui.value = _ui.value.copy(errorMsg = "Not signed in", isDeleting = false)
+      onDone(false, "Not signed in")
+      return
+    }
+
+    _ui.value = _ui.value.copy(isDeleting = true)
+    viewModelScope.launch {
+      var ok = true
+      var msg: String? = null
+      try {
+        profiles.deleteProfile(user.uid)
+        // Try deleting the auth user; may throw recent-login required
+        runCatching { user.delete() }
+            .onFailure { e ->
+              if (e is FirebaseAuthRecentLoginRequiredException) {
+                ok = false
+                msg = "Please re-authenticate to delete your account."
+              } else {
+                ok = false
+                msg = e.message
+              }
+            }
+      } catch (e: Exception) {
+        ok = false
+        msg = e.message
+      } finally {
+        _ui.value = _ui.value.copy(isDeleting = false, errorMsg = msg)
+        onDone(ok, msg)
+      }
+    }
+  }
+
+  /** Add a user to the current user's blocked list in Firestore. */
+  fun blockUser(targetUid: String) {
+    val uid = auth.currentUser?.uid ?: return
+    viewModelScope.launch {
+      runCatching { profiles.addBlockedUser(uid, targetUid) }
+          .onFailure { e ->
+            _ui.value = _ui.value.copy(errorMsg = "Failed to block user: ${e.message}")
+          }
+      // Refresh to update the list
+      refresh()
+    }
+  }
+
+  /** Remove a user from the current user's blocked list in Firestore. */
+  fun unblockUser(targetUid: String) {
+    val uid = auth.currentUser?.uid ?: return
+    viewModelScope.launch {
+      runCatching { profiles.removeBlockedUser(uid, targetUid) }
+          .onFailure { e ->
+            _ui.value = _ui.value.copy(errorMsg = "Failed to unblock user: ${e.message}")
+          }
+      // Refresh to update the list
+      refresh()
+    }
   }
 }

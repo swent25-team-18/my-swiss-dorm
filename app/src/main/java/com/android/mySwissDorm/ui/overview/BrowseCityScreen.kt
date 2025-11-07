@@ -23,6 +23,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
+import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
@@ -36,6 +38,7 @@ fun BrowseCityScreen(
     onGoBack: () -> Unit = {},
     onSelectListing: (ListingCardUI) -> Unit = {},
     onSelectReview: (ReviewCardUI) -> Unit = {}
+    navigationActions: NavigationActions? = null
 ) {
   LaunchedEffect(cityName) {
     browseCityViewModel.loadListings(cityName)
@@ -49,7 +52,8 @@ fun BrowseCityScreen(
       reviewsState = uiState.reviews,
       onGoBack = onGoBack,
       onSelectListing = onSelectListing,
-      onSelectReview = onSelectReview)
+      onSelectReview = onSelectReview,
+      navigationActions = navigationActions)
 }
 
 // Pure UI (stateless) — easy to preview & test.
@@ -61,11 +65,13 @@ private fun BrowseCityScreenUI(
     reviewsState: ReviewsState,
     onGoBack: () -> Unit,
     onSelectListing: (ListingCardUI) -> Unit,
-    onSelectReview: (ReviewCardUI) -> Unit
+    onSelectReview: (ReviewCardUI) -> Unit,
+    navigationActions: NavigationActions? = null
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
 
   Scaffold(
+      bottomBar = { BottomBarFromNav(navigationActions) },
       topBar = {
         CenterAlignedTopAppBar(
             title = { Text(cityName) },

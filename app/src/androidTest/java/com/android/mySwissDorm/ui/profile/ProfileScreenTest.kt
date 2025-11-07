@@ -10,7 +10,6 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -33,40 +32,80 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Firestore-backed tests for ProfileScreen using the emulator. Screen uses ProfileViewModel ->
- * Firebase directly (no repository), so we seed Firestore in setUp() and verify writes after Save.
- */
 @RunWith(AndroidJUnit4::class)
 class ProfileScreenFirestoreTest : FirestoreTest() {
+  private fun waitForProfileScreenReady(timeoutMs: Long = 5_000) {
+    // Wait until the app bar title is composed
+    compose.waitUntil(timeoutMs) {
+      compose
+          .onAllNodesWithTag("profile_title", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    // And the list container is present (screen content mounted)
+    compose.waitUntil(timeoutMs) {
+      compose
+          .onAllNodesWithTag("profile_list", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    // Give Compose a beat to settle any async state updates
+    compose.waitForIdle()
+  }
 
   @get:Rule val compose = createComposeRule()
 
   private lateinit var uid: String
 
-  /** No repositories are needed for this screen; it talks to Firestore directly. */
-  override fun createRepositories() {
-    // Intentionally empty
-  }
+  override fun createRepositories() {}
 
+  @Override
   @Before
   override fun setUp() {
     runTest {
       super.setUp()
-      // Sign in a fake user on the emulator and seed their profile doc
+
+      // Sign in a fake user
       switchToUser(FakeUser.FakeUser1)
       uid = FirebaseEmulator.auth.currentUser!!.uid
 
+      // Seed residencies BEFORE composing (so VM init sees them)
+      val resRepo = ResidenciesRepositoryProvider.repository
+      resRepo.addResidency(
+          Residency(
+              name = "Vortex, Coloc",
+              description = "",
+              location = Location("", 0.0, 0.0),
+              city = "",
+              email = null,
+              phone = null,
+              website = URL("https://example.com")))
+      resRepo.addResidency(
+          Residency(
+              name = "Atrium",
+              description = "",
+              location = Location("", 0.0, 0.0),
+              city = "",
+              email = null,
+              phone = null,
+              website = URL("https://www.google.com")))
+
+      // Seed the profile using the **nested** structure your VM/repo expects
       FirebaseEmulator.firestore
           .collection("profiles")
           .document(uid)
           .set(
               mapOf(
-                  "ownerId" to uid, // required by your rules
-                  "firstName" to "Mansour",
-                  "lastName" to "Kanaan",
-                  "language" to "English",
-                  "residence" to "Vortex, Coloc"))
+                  "ownerId" to uid,
+                  "userInfo" to
+                      mapOf(
+                          "name" to "Mansour",
+                          "lastName" to "Kanaan",
+                          "email" to (FirebaseEmulator.auth.currentUser?.email ?: ""),
+                          "phoneNumber" to "",
+                          "residencyName" to "Vortex, Coloc"),
+                  // Store enum as NAME unless your repo writes display strings
+                  "userSettings" to mapOf("language" to "ENGLISH")))
           .await()
     }
   }
@@ -74,33 +113,22 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun initialElements_viewMode_and_nonClickable_avatar() {
     compose.setContent { ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}) }
+    waitForProfileScreenReady()
 
-    // Wait until UI renders
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag("profile_title", useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // App bar & edit toggle
     compose.onNodeWithTag("profile_title").assertIsDisplayed().assertTextEquals("Profile")
     compose.onNodeWithTag("profile_back_button").assertIsDisplayed()
     compose.onNodeWithTag("profile_edit_toggle").assertIsDisplayed()
 
-    // Logout visible, Save not
     compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_logout_button"))
     compose.onNodeWithTag("profile_logout_button").assertIsDisplayed()
     compose.onNodeWithTag("profile_save_button").assertDoesNotExist()
 
-    // Fields disabled in view mode
     compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("field_first_name"))
     compose.onNodeWithTag("field_first_name").assertIsNotEnabled()
     compose.onNodeWithTag("field_last_name").assertIsNotEnabled()
     compose.onNodeWithTag("field_language").assertIsNotEnabled()
     compose.onNodeWithTag("field_residence").assertIsNotEnabled()
 
-    // Avatar shows click action but is DISABLED in view mode
     compose
         .onNodeWithTag("profile_picture_box")
         .assertIsDisplayed()
@@ -110,21 +138,9 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun editToggle_enablesFields_save_writes_to_firestore() = runTest {
-    val repo = ResidenciesRepositoryProvider.repository
-    repo.addResidency(
-        Residency(
-            name = "Atrium",
-            description = "",
-            location = Location("", 0.0, 0.0),
-            city = "",
-            email = null,
-            phone = null,
-            website = URL("https://www.google.com")))
-    compose.waitForIdle()
-    ResidenciesRepositoryProvider.repository = repo
-    compose.waitForIdle()
+    // Screen AFTER repos + seed are ready
     compose.setContent { ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}) }
-    compose.waitForIdle()
+    waitForProfileScreenReady()
 
     // Enter edit mode
     compose.onNodeWithTag("profile_edit_toggle").performClick()
@@ -137,53 +153,60 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     // Fields enabled
     compose.onNodeWithTag("field_first_name").assertIsEnabled()
     compose.onNodeWithTag("field_last_name").assertIsEnabled()
-    compose.onNodeWithTag("field_language").assertIsEnabled() // dropdown
-    compose.onNodeWithTag("field_residence").assertIsEnabled() // dropdown
+    compose.onNodeWithTag("field_language").assertIsEnabled()
+    compose.onNodeWithTag("field_residence").assertIsEnabled()
 
-    // Type first/last — call methods on the same node (no chaining)
-    val first = compose.onNodeWithTag("field_first_name")
-    first.performTextClearance()
-    first.performTextInput("John")
-
-    val last = compose.onNodeWithTag("field_last_name")
-    last.performTextClearance()
-    last.performTextInput("Doe")
-
-    // LANGUAGE (dropdown): open and pick "français" (Language.FRENCH("français"))
-    compose.onNodeWithTag("field_language").performClick()
-    val languagePick = "Français" // exact display string from your Language enum
-    // ensure it exists (useUnmergedTree for popup)
-    compose.onAllNodesWithText(languagePick, useUnmergedTree = true).fetchSemanticsNodes().also {
-      require(it.isNotEmpty()) { "Could not find language option '$languagePick' in dropdown." }
+    // Type first/last
+    compose.onNodeWithTag("field_first_name").apply {
+      performTextClearance()
+      performTextInput("John")
     }
+    compose.onNodeWithTag("field_last_name").apply {
+      performTextClearance()
+      performTextInput("Doe")
+    }
+
+    // LANGUAGE dropdown
+    val languagePick = "Français" // must match Language.FRENCH.displayLanguage
+    compose.onNodeWithTag("field_language").performClick()
     compose.onNodeWithText(languagePick, useUnmergedTree = true).performClick()
 
-    // RESIDENCE (dropdown): open and pick enum display
-    compose.onNodeWithTag("field_residence").performClick()
+    // RESIDENCE dropdown
     val residencePick = "Atrium"
+    compose.onNodeWithTag("field_residence").performClick()
     compose.onNodeWithText(residencePick, useUnmergedTree = true).performClick()
 
     // Save
     compose.onNodeWithTag("profile_save_button").performClick()
-
     compose.waitForIdle()
 
-    // After save, back to view mode (Logout visible)
+    // Back to view mode (wait until logout button reappears)
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag("profile_logout_button", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
     compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_logout_button"))
     compose.onNodeWithTag("profile_logout_button").assertIsDisplayed()
+    compose.onNodeWithTag("profile_save_button").assertDoesNotExist()
 
-    // Verify Firestore document
+    // Verify Firestore with nested paths
     val snap = FirebaseEmulator.firestore.collection("profiles").document(uid).get().await()
     val data = snap.data!!
-    assertEquals("John", data["firstName"])
-    assertEquals("Doe", data["lastName"])
-    assertEquals(languagePick, data["language"])
-    assertEquals(residencePick, data["residence"])
+    val userInfo = data["userInfo"] as Map<*, *>
+    val userSettings = data["userSettings"] as Map<*, *>
+
+    assertEquals("John", userInfo["name"])
+    assertEquals("Doe", userInfo["lastName"])
+    assertEquals(residencePick, userInfo["residencyName"])
+    assertEquals("FRENCH", userSettings["language"]) // enum typically stored by name
   }
 
   @Test
   fun editToggle_tap_twice_cancels_and_restores_viewMode() {
     compose.setContent { ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}) }
+    waitForProfileScreenReady()
 
     compose.onNodeWithTag("profile_edit_toggle").performClick()
     compose.onNodeWithTag("profile_edit_toggle").performClick()
@@ -201,15 +224,14 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun avatar_clickable_only_in_edit_mode() {
     compose.setContent { ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}) }
+    waitForProfileScreenReady()
 
-    // View mode: present, disabled, has click action
     compose
         .onNodeWithTag("profile_picture_box")
         .assertIsDisplayed()
         .assertIsNotEnabled()
         .assert(hasClickAction())
 
-    // Edit mode: enabled and clickable
     compose.onNodeWithTag("profile_edit_toggle").performClick()
     compose
         .onNodeWithTag("profile_picture_box")

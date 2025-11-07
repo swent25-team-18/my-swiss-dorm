@@ -3,16 +3,19 @@ package com.android.mySwissDorm.ui.profile
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.profile.Language
+import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 /**
  * Immutable UI state for the Profile screen.
@@ -56,7 +59,7 @@ data class ProfileUiState(
  */
 class ProfileScreenViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val profileRepo: ProfileRepository = ProfileRepositoryProvider.repository
 ) : ViewModel() {
 
   // Backing state; screen collects this as StateFlow
@@ -67,6 +70,30 @@ class ProfileScreenViewModel(
     viewModelScope.launch {
       _uiState.update {
         it.copy(allResidencies = ResidenciesRepositoryProvider.repository.getAllResidencies())
+      }
+      loadProfile()
+    }
+  }
+
+  private fun loadProfile() {
+    val uid = auth.currentUser?.uid
+    if (uid == null) {
+      _uiState.update { it.copy(errorMsg = "Not signed in.") }
+      return
+    }
+
+    viewModelScope.launch {
+      try {
+        val profile = profileRepo.getProfile(uid)
+        _uiState.update {
+          it.copy(
+              firstName = profile.userInfo.name,
+              lastName = profile.userInfo.lastName,
+              residence = profile.userInfo.residencyName ?: "",
+              language = profile.userSettings.language.displayLanguage)
+        }
+      } catch (e: Exception) {
+        Log.d("ProfileViewModel", "Profile not found for $uid, assuming new user.")
       }
     }
   }
@@ -112,33 +139,57 @@ class ProfileScreenViewModel(
   fun saveProfile() {
     val uid = auth.currentUser?.uid
     if (uid == null) {
-      _uiState.value = _uiState.value.copy(errorMsg = "Not signed in.")
+      _uiState.update { it.copy(errorMsg = "Not signed in.") }
       return
     }
 
-    // Snapshot current UI values for this write
-    val statev = _uiState.value
-    val updates =
-        mapOf(
-            "ownerId" to uid, // included on every write to satisfy common security rules
-            "firstName" to statev.firstName,
-            "lastName" to statev.lastName,
-            "language" to statev.language,
-            "residence" to statev.residence)
-
+    val state = _uiState.value
     viewModelScope.launch {
       try {
-        _uiState.value = _uiState.value.copy(isSaving = true, errorMsg = null)
+        _uiState.update { it.copy(isSaving = true, errorMsg = null) }
 
-        // Merge update so we don't overwrite unspecified fields
-        db.collection("profiles").document(uid).set(updates, SetOptions.merge()).await()
+        val existingProfile =
+            try {
+              profileRepo.getProfile(uid)
+            } catch (e: Exception) {
+              null
+            }
 
-        // On success: exit edit mode and clear any error
-        _uiState.value = _uiState.value.copy(isSaving = false, isEditing = false, errorMsg = null)
+        val languageEnum =
+            Language.entries.firstOrNull { it.displayLanguage == state.language }
+                ?: Language.ENGLISH
+
+        if (existingProfile != null) {
+          // Edit existing profile
+          val updatedProfile =
+              existingProfile.copy(
+                  userInfo =
+                      existingProfile.userInfo.copy(
+                          name = state.firstName,
+                          lastName = state.lastName,
+                          residencyName = state.residence),
+                  userSettings = existingProfile.userSettings.copy(language = languageEnum))
+          profileRepo.editProfile(updatedProfile)
+        } else {
+          // Create new profile
+          val newProfile =
+              Profile(
+                  ownerId = uid,
+                  userInfo =
+                      UserInfo(
+                          name = state.firstName,
+                          lastName = state.lastName,
+                          email = auth.currentUser?.email ?: "",
+                          phoneNumber = "", // Not in UI
+                          residencyName = state.residence),
+                  userSettings = UserSettings(language = languageEnum))
+          profileRepo.createProfile(newProfile)
+        }
+
+        _uiState.update { it.copy(isSaving = false, isEditing = false, errorMsg = null) }
       } catch (e: Exception) {
         Log.e("ProfileViewModel", "Failed to save profile", e)
-        _uiState.value =
-            _uiState.value.copy(isSaving = false, errorMsg = "Failed to save: ${e.message}")
+        _uiState.update { it.copy(isSaving = false, errorMsg = "Failed to save: ${e.message}") }
       }
     }
   }

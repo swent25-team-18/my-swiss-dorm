@@ -41,7 +41,7 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
             "cityName" to residency.city,
             "email" to residency.email,
             "phone" to residency.phone,
-            "website" to residency.website.toString())
+            "website" to residency.website?.toString())
     db.collection(RESIDENCIES_COLLECTION_PATH).document(residency.name).set(residencyData).await()
   }
 
@@ -61,7 +61,12 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
       val email = document.getString("email")
       val phone = document.getString("phone")
       val websiteString = document.getString("website")
-      val website = websiteString?.let { URL(it) }
+      val website =
+          if (websiteString.isNullOrBlank()) {
+            null
+          } else {
+            URL(websiteString)
+          }
 
       Residency(
           name = name,

@@ -41,7 +41,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.*
-
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme

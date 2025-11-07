@@ -76,7 +76,7 @@ class SettingsScreenTest : FirestoreTest() {
         .document(uid)
         .set(seededProfile)
         .await()
-  }//
+  } //
   //
   // ---------- small helpers ----------
 

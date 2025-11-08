@@ -1,11 +1,9 @@
 package com.android.mySwissDorm.listing
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
-import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -40,16 +38,6 @@ class AddListingViewModel : FirestoreTest() {
 
   private fun freshVM(): AddListingViewModel = AddListingViewModel()
 
-  private fun validResidency() =
-      Residency(
-          name = "VORTEX",
-          description = "desc",
-          location = Location("Vortex", 46.5191, 6.5668),
-          city = "Lausanne",
-          email = "x@example.com",
-          phone = "+4100000000",
-          website = null)
-
   @Before
   override fun setUp() {
     super.setUp()
@@ -79,7 +67,7 @@ class AddListingViewModel : FirestoreTest() {
 
     vm.setTitle("Cozy studio")
     vm.setDescription("Nice place")
-    vm.setResidency(validResidency())
+    vm.setResidency("Vortex")
     vm.setHousingType(RoomType.STUDIO)
     vm.setSizeSqm("25.0") // exactly one decimal for submit-time validator
     vm.setPrice("1200")
@@ -126,7 +114,7 @@ class AddListingViewModel : FirestoreTest() {
     val vm = freshVM()
     vm.setTitle("t")
     vm.setDescription("d")
-    vm.setResidency(validResidency())
+    vm.setResidency("Atrium")
     vm.setHousingType(RoomType.STUDIO)
     vm.setStartDate(Timestamp.now())
 

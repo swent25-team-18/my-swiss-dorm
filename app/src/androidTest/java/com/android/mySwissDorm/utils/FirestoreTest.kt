@@ -48,6 +48,10 @@ abstract class FirestoreTest : TestCase() {
     return FirebaseEmulator.firestore.collection(PROFILE_COLLECTION_PATH).get().await().size()
   }
 
+  suspend fun getAllRentalListingsByUserCount(ownerId: String): Int {
+    return RentalListingRepositoryProvider.repository.getAllRentalListingsByUser(ownerId).size
+  }
+
   suspend fun getRentalListingCount(): Int {
     return FirebaseEmulator.firestore.collection(RENTAL_LISTINGS_COLLECTION).get().await().size()
   }
@@ -171,7 +175,7 @@ abstract class FirestoreTest : TestCase() {
           uid = "rental1",
           ownerId = "",
           postedAt = Timestamp.now(),
-          residency = resTest,
+          residencyName = "Vortex",
           title = "title1",
           roomType = RoomType.STUDIO,
           pricePerMonth = 1200.0,
@@ -185,7 +189,7 @@ abstract class FirestoreTest : TestCase() {
           uid = "rental2",
           ownerId = "",
           postedAt = Timestamp.now(),
-          residency = resTest,
+          residencyName = "Vortex",
           title = "title2",
           roomType = RoomType.STUDIO,
           pricePerMonth = 1500.0,
@@ -199,7 +203,7 @@ abstract class FirestoreTest : TestCase() {
           uid = "rental3",
           ownerId = "",
           postedAt = Timestamp.now(),
-          residency = resTest,
+          residencyName = "Vortex",
           title = "title3",
           roomType = RoomType.STUDIO,
           pricePerMonth = 900.0,

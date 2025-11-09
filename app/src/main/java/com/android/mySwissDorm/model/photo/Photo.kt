@@ -16,8 +16,8 @@ data class Photo(val image: Uri, val uid: String) {
      * @param uid the unique identifier of a photo
      * @return an empty [Photo]
      */
-    fun createNewPhotoOnCache(context: Context, uid: String): Photo {
-      val file = File.createTempFile(uid, ".jpg", context.externalCacheDir)
+    fun createNewPhotoOnCache(context: Context, uid: String, extension: String = "jpg"): Photo {
+      val file = File.createTempFile(uid, ".$extension", context.externalCacheDir)
       file.deleteOnExit()
       return Photo(
           image =

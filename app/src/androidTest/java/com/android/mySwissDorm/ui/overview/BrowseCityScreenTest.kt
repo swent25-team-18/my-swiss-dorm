@@ -56,12 +56,14 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         Residency(
             name = "Vortex",
             description = "description",
-            location = Location("name", 0.0, 0.0),
+            location = Location("Vortex", 46.5245257, 6.575223),
             city = "Lausanne",
             email = null,
             phone = null,
             website = URL("https://www.google.com"))
-    val woko = vortex.copy(name = "WOKO", city = "Zurich")
+    val woko =
+        vortex.copy(
+            name = "WOKO", location = Location("WOKO", 47.3765118, 8.5224785), city = "Zurich")
 
     runBlocking {
       residenciesRepo.addResidency(vortex)
@@ -188,7 +190,9 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun onlyLausanneReviewsAreDisplayed() {
-    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, cityName = "Lausanne") }
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
+    }
     compose.waitForIdle()
 
     compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
@@ -227,7 +231,9 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun emptyState_showsNoReviewsYet() {
-    compose.setContent { BrowseCityScreen(cityName = "Geneva") } // no Geneva data
+    compose.setContent {
+      BrowseCityScreen(location = Location("Geneva", 46.2044, 6.1432))
+    } // no Geneva data
     compose.waitUntil(5_000) {
       compose
           .onAllNodesWithTag(C.BrowseCityTags.ROOT, useUnmergedTree = true)
@@ -368,14 +374,6 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
       override suspend fun getAllRentalListingsByUser(userId: String): List<RentalListing> {
         error("unused")
-      }
-
-      override suspend fun getAllRentalListingsByLocation(
-          location: Location,
-          radius: Double
-      ): List<RentalListing> {
-        delay(50)
-        error("Boom")
       }
 
       override suspend fun getRentalListing(rentalPostId: String): RentalListing = error("unused")

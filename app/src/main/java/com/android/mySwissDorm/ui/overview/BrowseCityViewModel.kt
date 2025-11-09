@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.map.distanceTo
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
@@ -121,7 +122,7 @@ class BrowseCityViewModel(
         RentalListingRepositoryProvider.repository,
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository
+        ResidenciesRepositoryProvider.repository,
     private val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -136,7 +137,8 @@ class BrowseCityViewModel(
     viewModelScope.launch {
       try {
         // Fetch all and filter by residency.city value matching the given cityName string
-        val filtered = listingsRepository.getAllRentalListingsByLocation(location, 10.0)
+        val all = listingsRepository.getAllRentalListings()
+        val filtered = all.filter { location.distanceTo(it.residency.location) <= 10.0 }
         val mapped = filtered.map { it.toCardUI() }
 
         _uiState.update {
@@ -152,7 +154,7 @@ class BrowseCityViewModel(
     }
   }
 
-  fun loadReviews(cityName: String) {
+  fun loadReviews(location: Location) {
     _uiState.update { it.copy(reviews = it.reviews.copy(loading = true, error = null)) }
 
     viewModelScope.launch {
@@ -162,10 +164,8 @@ class BrowseCityViewModel(
         val filtered =
             all.filter {
               try {
-                residenciesRepository
-                    .getResidency(it.residencyName)
-                    .city
-                    .equals(cityName, ignoreCase = true)
+                val resLocation = residenciesRepository.getResidency(it.residencyName).location
+                location.distanceTo(resLocation) <= 10.0
               } catch (e: Exception) {
                 Log.w("BrowseCityViewModel", "Could not fetch residency for ${it.residencyName}", e)
                 false
@@ -185,7 +185,7 @@ class BrowseCityViewModel(
       }
     }
   }
-  
+
   /**
    * Sets the custom location query and fetches suggestions if the query is not empty.
    *

@@ -54,14 +54,14 @@ fun BrowseCityScreen(
     location: Location,
     onSelectListing: (ListingCardUI) -> Unit = {},
     onSelectReview: (ReviewCardUI) -> Unit = {},
-  onLocationChange: (Location) -> Unit = {},
+    onLocationChange: (Location) -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {
-  LaunchedEffect(cityName) {
-    browseCityViewModel.loadListings(cityName)
-    browseCityViewModel.loadReviews(cityName)
+
+  LaunchedEffect(location) {
+    browseCityViewModel.loadReviews(location)
+    browseCityViewModel.loadListings(location)
   }
-  LaunchedEffect(location) { browseCityViewModel.loadListings(location) }
 
   val uiState by browseCityViewModel.uiState.collectAsState()
 
@@ -87,7 +87,6 @@ fun BrowseCityScreen(
       location = location,
       listingsState = uiState.listings,
       reviewsState = uiState.reviews,
-      onGoBack = onGoBack,
       onSelectListing = onSelectListing,
       onSelectReview = onSelectReview,
       onLocationClick = onLocationClick,
@@ -124,7 +123,6 @@ private fun BrowseCityScreenUI(
     location: Location,
     listingsState: ListingsState,
     reviewsState: ReviewsState,
-    onGoBack: () -> Unit,
     onSelectListing: (ListingCardUI) -> Unit,
     onSelectReview: (ReviewCardUI) -> Unit,
     onLocationClick: () -> Unit,
@@ -416,7 +414,6 @@ private fun BrowseCityScreen_Preview() {
     BrowseCityScreenUI(
         listingsState = sampleListingUi,
         reviewsState = sampleReviewUi,
-        onGoBack = {},
         onSelectListing = {},
         onSelectReview = {},
         location = Location("Lausanne", 46.5197, 6.6323),

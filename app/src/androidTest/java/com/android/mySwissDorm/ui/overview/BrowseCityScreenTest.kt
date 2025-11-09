@@ -9,7 +9,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.profile.Profile
-import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings

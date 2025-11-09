@@ -57,10 +57,12 @@ private val DarkColors =
         outline = White)
 
 @Composable
-fun MySwissDormAppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
+fun MySwissDormAppTheme(content: @Composable () -> Unit) {
+  val (userPreference, _) = rememberDarkModePreference()
+  val systemDarkTheme = isSystemInDarkTheme()
+
+  // Use user preference if set, otherwise follow system theme
+  val darkTheme = userPreference ?: systemDarkTheme
   val colorScheme = if (darkTheme) DarkColors else LightColors
 
   val view = LocalView.current

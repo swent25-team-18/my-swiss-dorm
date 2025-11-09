@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+// All documentation was generated with the help of AI
 /**
  * Shared state object that holds the dark mode preference across the app.
  *
@@ -25,7 +26,7 @@ import kotlinx.coroutines.launch
  * @property darkModePreference The current dark mode preference:
  *     - `null`: Follow system theme
  *     - `true`: Dark mode enabled
- *     - `false`: Light mode enabled Generated with the help of AI
+ *     - `false`: Light mode enabled
  */
 object ThemePreferenceState {
   var darkModePreference by mutableStateOf<Boolean?>(null)
@@ -34,8 +35,7 @@ object ThemePreferenceState {
   /**
    * Updates the dark mode preference and triggers recomposition.
    *
-   * @param enabled The new preference value, or null to follow system theme Generated with the help
-   *   of AI
+   * @param enabled The new preference value, or null to follow system theme
    */
   fun updatePreference(enabled: Boolean?) {
     darkModePreference = enabled
@@ -51,8 +51,7 @@ object ThemePreferenceState {
  *
  * @property context The Android context for accessing SharedPreferences
  * @property auth The Firebase authentication instance
- * @property profileRepository The repository for accessing user profiles Generated with the help of
- *   AI
+ * @property profileRepository The repository for accessing user profiles
  */
 class ThemePreferenceManager(
     private val context: Context,
@@ -73,7 +72,7 @@ class ThemePreferenceManager(
    * @return The dark mode preference:
    *     - `null`: No preference set, follow system theme
    *     - `true`: Dark mode enabled
-   *     - `false`: Light mode enabled Generated with the help of AI
+   *     - `false`: Light mode enabled
    */
   suspend fun getDarkModePreference(): Boolean? {
     val user = auth.currentUser
@@ -91,7 +90,7 @@ class ThemePreferenceManager(
   /**
    * Retrieves the preference from local SharedPreferences storage.
    *
-   * @return The stored preference, or null if not set Generated with the help of AI
+   * @return The stored preference, or null if not set
    */
   private fun getLocalPreference(): Boolean? {
     if (!prefs.contains(KEY_DARK_MODE)) {
@@ -110,7 +109,7 @@ class ThemePreferenceManager(
    * @param enabled The preference value:
    *     - `true`: Enable dark mode
    *     - `false`: Enable light mode
-   *     - `null`: Follow system theme Generated with the help of AI
+   *     - `null`: Follow system theme
    */
   suspend fun setDarkModePreference(enabled: Boolean?) {
     val user = auth.currentUser
@@ -144,8 +143,7 @@ class ThemePreferenceManager(
   /**
    * Saves the preference to local SharedPreferences storage.
    *
-   * @param enabled The preference value to save, or null to remove the preference Generated with
-   *   the help of AI
+   * @param enabled The preference value to save, or null to remove the preference
    */
   private fun setLocalPreference(enabled: Boolean?) {
     prefs.edit().apply {
@@ -162,8 +160,7 @@ class ThemePreferenceManager(
    * Initializes the shared state from persistent storage.
    *
    * Should be called when the app starts or when the theme preference manager is created. Loads the
-   * preference from Firebase or SharedPreferences and updates the shared state. Generated with the
-   * help of AI
+   * preference from Firebase or SharedPreferences and updates the shared state.
    */
   suspend fun initializeState() {
     val preference = getDarkModePreference()
@@ -182,7 +179,7 @@ class ThemePreferenceManager(
  * The manager is created once and remembered across recompositions. The shared state is
  * automatically initialized on first composition.
  *
- * @return A remembered instance of [ThemePreferenceManager] Generated with the help of AI
+ * @return A remembered instance of [ThemePreferenceManager]
  */
 @Composable
 fun rememberThemePreferenceManager(): ThemePreferenceManager {
@@ -206,8 +203,7 @@ fun rememberThemePreferenceManager(): ThemePreferenceManager {
  *
  * @return A [Pair] where:
  *     - First element: The current dark mode preference (`Boolean?`)
- *     - Second element: A function to update the preference `(Boolean?) -> Unit` Generated with the
- *       help of AI
+ *     - Second element: A function to update the preference `(Boolean?) -> Unit` G
  */
 @Composable
 fun rememberDarkModePreference(): Pair<Boolean?, (Boolean?) -> Unit> {

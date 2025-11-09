@@ -1,0 +1,55 @@
+package com.android.mySwissDorm.model.photo
+
+import android.content.Context
+import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.storage
+import kotlinx.coroutines.tasks.await
+
+/** The directory in which the photo are stored in storage */
+const val DIR = "photos"
+
+/** This is an implementation of a [PhotoRepositoryCloud] using the storage service of Firebase. */
+class PhotoRepositoryStorage(
+    private val context: Context,
+    private val storageRef: StorageReference = Firebase.storage.reference,
+    localRepository: PhotoRepository = PhotoRepositoryProvider.local_repository
+) : PhotoRepositoryCloud(localRepository) {
+
+  private val dirRef = storageRef.child("$DIR/")
+
+  override suspend fun retrievePhoto(uid: String): Photo {
+    try {
+      return super.retrievePhoto(uid)
+    } catch (_: NoSuchElementException) {
+      val matchRef: StorageReference = findPhotoRef(uid = uid)
+      val extension = matchRef.name.substringAfter("$uid.")
+      val photo = Photo.createNewPhotoOnCache(context, uid, extension)
+      matchRef.getFile(photo.image).await().let {
+        Log.d("PhotoRepositoryStorage", "download ${it.bytesTransferred} bytes")
+      }
+      return photo
+    }
+  }
+
+  override suspend fun uploadPhoto(photo: Photo) {
+    super.uploadPhoto(photo)
+    val extension = PhotoRepository.getExtensionFromUri(context = context, uri = photo.image)
+    val photoRef = dirRef.child("${photo.uid}${extension}")
+    val uploadTask = photoRef.putFile(photo.image)
+
+    uploadTask.await().let {
+      Log.d("PhotoRepositoryStorage", "upload ${it.bytesTransferred} bytes")
+    }
+  }
+
+  override suspend fun deletePhoto(uid: String): Boolean {
+    return super.deletePhoto(uid) && findPhotoRef(uid).delete().isSuccessful
+  }
+
+  private suspend fun findPhotoRef(uid: String): StorageReference {
+    return dirRef.listAll().await().items.find { item -> item.name.startsWith(uid) }
+        ?: throw NoSuchElementException("No photo reference with uid : $uid")
+  }
+}

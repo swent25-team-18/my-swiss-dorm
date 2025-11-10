@@ -388,7 +388,9 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             color = TextColor,
-                            modifier = Modifier.testTag(C.BrowseCityTags.EMPTY_RESIDENCY))
+                            modifier =
+                                Modifier.testTag(
+                                    C.BrowseCityTags.residencyCardEmptyReview(data.title)))
                       }
                     } else { // Review, postedAt, postedBy
                       Column(

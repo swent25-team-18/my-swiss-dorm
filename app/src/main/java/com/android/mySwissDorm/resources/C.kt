@@ -99,11 +99,13 @@ object C {
     const val LOADING = "browseCityLoading"
     const val ERROR = "browseCityError"
     const val EMPTY = "browseCityEmpty"
-    const val EMPTY_RESIDENCY = "browseCityEmptyResidency"
 
     fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
 
     fun residencyCard(residencyName: String) = "browseCityResidencyCard_$residencyName"
+
+    fun residencyCardEmptyReview(residencyName: String) =
+        "browseCityResidencyCardEmptyReview_$residencyName"
 
     fun reviewText(reviewUid: String) = "browseCityReviewText_$reviewUid"
   }

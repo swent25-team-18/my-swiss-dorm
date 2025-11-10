@@ -251,7 +251,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         .assertIsDisplayed()
 
     compose
-        .onNodeWithTag(C.BrowseCityTags.EMPTY_RESIDENCY, useUnmergedTree = true)
+        .onNodeWithTag(
+            C.BrowseCityTags.residencyCardEmptyReview(atrium.name), useUnmergedTree = true)
         .assertIsDisplayed()
   }
 

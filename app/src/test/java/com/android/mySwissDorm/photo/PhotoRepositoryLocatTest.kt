@@ -24,8 +24,8 @@ class PhotoRepositoryLocalTest {
   private lateinit var repository: PhotoRepositoryLocal
   private lateinit var testFilesDir: File
 
-  private fun getUriString(uid: String, extension: String): String {
-    return "content://test.provider/${uid + extension}"
+  private fun getUriString(pathName: String): String {
+    return "content://test.provider/$pathName"
   }
 
   @Before
@@ -48,16 +48,16 @@ class PhotoRepositoryLocalTest {
 
   @Test
   fun retrievePhotoWorksPhotoExists() = runTest {
-    val uid = "test_photo"
-    val file = File(testFilesDir, repository.fileName(uid, ".png"))
+    val uid = "test_photo.jpg"
+    val file = File(testFilesDir, uid)
     file.createNewFile()
 
-    val expectedUri = Uri.parse(getUriString(uid, ".png"))
+    val expectedUri = Uri.parse(getUriString(uid))
     every { FileProvider.getUriForFile(any(), any(), any()) } returns expectedUri
 
     val photo = repository.retrievePhoto(uid)
 
-    assertEquals(uid, photo.uid)
+    assertEquals(uid, photo.fileName)
     assertEquals(expectedUri, photo.image)
 
     verify { FileProvider.getUriForFile(any(), any(), file) }
@@ -66,16 +66,16 @@ class PhotoRepositoryLocalTest {
 
   @Test(expected = FileNotFoundException::class)
   fun retrievePhotoThrowPhotoNonExistent() = runTest {
-    val uid = "non_existent_photo"
+    val uid = "non_existent_photo.png"
     repository.retrievePhoto(uid)
   }
 
   @Test
   fun retrievePhotoCorrectlyRetrieve() = runTest {
-    val uid = "test_photo"
-    val expectedFile = File(testFilesDir, repository.fileName(uid, ".jpg"))
+    val uid = "test_photo.jpg"
+    val expectedFile = File(testFilesDir, uid)
     expectedFile.createNewFile()
-    val expectedUri = Uri.parse(getUriString(uid, ".jpg"))
+    val expectedUri = Uri.parse(getUriString(uid))
     val authority = "${BuildConfig.APPLICATION_ID}.provider"
     every { FileProvider.getUriForFile(context, authority, expectedFile) } returns expectedUri
 
@@ -87,39 +87,41 @@ class PhotoRepositoryLocalTest {
 
   @Test
   fun retrievePhotoSucceedsAfterUploadPhoto() = runTest {
-    val uid = "test_file"
-    val file = File(testFilesDir, repository.fileName(uid, ".png"))
+    val uid = "test_file.png"
+    val file = File(testFilesDir, uid)
     file.createNewFile()
 
     val uri = Uri.fromFile(file)
-    val photo = Photo(image = uri, uid = uid)
+    val photo = Photo(image = uri, fileName = uid)
 
-    val expectedUri = Uri.parse(getUriString(uid, ".png"))
+    val expectedUri = Uri.parse(getUriString(uid))
     every { FileProvider.getUriForFile(any(), any(), any()) } returns expectedUri
 
     repository.uploadPhoto(photo)
     val res = repository.retrievePhoto(uid)
 
-    assertEquals(uid, res.uid)
+    assertEquals(uid, res.fileName)
     assertEquals(expectedUri, res.image)
     file.delete()
   }
 
   @Test
   fun uploadPhotoCopiesFileContentToPersistentStorage() = runTest {
-    val uid = "test_photo"
-    val file = File.createTempFile(uid, ".png", context.cacheDir)
+    val uid = "test_photo.png"
+    val file =
+        File.createTempFile(
+            uid.substringBeforeLast('.'), uid.substringAfterLast('.'), context.cacheDir)
     val testContent = "Test image content"
     file.writeText(testContent)
     val uri = Uri.fromFile(file)
 
-    val photo = Photo(image = uri, uid = uid)
+    val photo = Photo(image = uri, fileName = uid)
 
     shadowOf(context.contentResolver).registerInputStream(uri, file.inputStream())
 
     repository.uploadPhoto(photo)
 
-    val persistentFile = File(testFilesDir, repository.fileName(uid, ".png"))
+    val persistentFile = File(testFilesDir, uid)
     assertTrue(persistentFile.exists())
     assertEquals(testContent, persistentFile.readText())
     file.delete()
@@ -128,39 +130,43 @@ class PhotoRepositoryLocalTest {
   @Test
   fun multipleUploadPhotoCallsCreateSeparateFiles() = runTest {
     val photos =
-        listOf("photo1", "photo2", "photo3").map { uid ->
-          val file = File.createTempFile(uid, ".png", context.cacheDir)
+        listOf("photo1.png", "photo2.png", "photo3.png").map { uid ->
+          val file =
+              File.createTempFile(
+                  uid.substringBeforeLast('.'), uid.substringAfterLast('.'), context.cacheDir)
           file.writeText("content of $uid")
           val uri = Uri.fromFile(file)
           shadowOf(context.contentResolver).registerInputStream(uri, file.inputStream())
-          file to Photo(image = uri, uid = uid)
+          file to Photo(image = uri, fileName = uid)
         }
     photos.forEach { (_, photo) -> repository.uploadPhoto(photo) }
 
     photos.forEach { (file, photo) ->
-      val persistentFile = File(testFilesDir, repository.fileName(photo.uid, ".png"))
+      val persistentFile = File(testFilesDir, photo.fileName)
       assertTrue(persistentFile.exists())
-      assertEquals("content of ${photo.uid}", persistentFile.readText())
+      assertEquals("content of ${photo.fileName}", persistentFile.readText())
       file.delete()
     }
   }
 
   @Test
   fun uploadPhotoCopiesLargeFileCorrectly() = runTest {
-    val uid = "large_file"
-    val file = File.createTempFile(uid, ".jpeg", context.cacheDir)
+    val uid = "large_file.jpeg"
+    val file =
+        File.createTempFile(
+            uid.substringBeforeLast('.'), uid.substringAfterLast('.'), context.cacheDir)
 
     val largeContent = "HELLO".repeat(10_000)
     file.writeText(largeContent)
 
     val uri = Uri.fromFile(file)
-    val photo = Photo(image = uri, uid = uid)
+    val photo = Photo(image = uri, fileName = uid)
 
     shadowOf(context.contentResolver).registerInputStream(uri, file.inputStream())
 
     repository.uploadPhoto(photo)
 
-    val persistentFile = File(testFilesDir, repository.fileName(uid, ".jpeg"))
+    val persistentFile = File(testFilesDir, uid)
     assertTrue(persistentFile.exists())
     assertEquals(largeContent.length, persistentFile.readText().length)
     assertEquals(largeContent, persistentFile.readText())
@@ -170,8 +176,8 @@ class PhotoRepositoryLocalTest {
 
   @Test
   fun deletePhotoWorks() = runTest {
-    val uid = "test_photo"
-    val file = File(testFilesDir, repository.fileName(uid, ".jpg"))
+    val uid = "test_photo.jpg"
+    val file = File(testFilesDir, uid)
     file.createNewFile()
     file.writeText("Are you in pain?")
 
@@ -181,15 +187,15 @@ class PhotoRepositoryLocalTest {
 
   @Test
   fun deletePhotoReturnFalseWhenDoesNotExist() = runTest {
-    assertTrue(!repository.deletePhoto("arbitrary_uid"))
+    assertTrue(!repository.deletePhoto("arbitrary_uid.jpg"))
   }
 
   @Test
   fun deletePhotoOnlyTheOneRequested() = runTest {
-    val uid = "test_photo"
-    val uid2 = "test_photo2"
-    val file = File(testFilesDir, repository.fileName(uid, ".png"))
-    val file2 = File(testFilesDir, repository.fileName(uid2, ".jpg"))
+    val uid = "test_photo.png"
+    val uid2 = "test_photo2.jpg"
+    val file = File(testFilesDir, uid)
+    val file2 = File(testFilesDir, uid2)
     file.createNewFile()
     file2.createNewFile()
     file.writeText("EZ win")
@@ -204,10 +210,10 @@ class PhotoRepositoryLocalTest {
 
   @Test
   fun clearRepositoryShouldClearEverything() {
-    val uid = "test_photo"
-    val uid2 = "test_photo2"
-    val file = File(testFilesDir, repository.fileName(uid, ".png"))
-    val file2 = File(testFilesDir, repository.fileName(uid2, ".jpg"))
+    val uid = "test_photo.png"
+    val uid2 = "test_photo2.jpg"
+    val file = File(testFilesDir, uid)
+    val file2 = File(testFilesDir, uid2)
     file.createNewFile()
     file2.createNewFile()
     file.writeText("EZ win")
@@ -220,10 +226,10 @@ class PhotoRepositoryLocalTest {
 
   @Test
   fun clearRepositoryShouldClearOnlyPhotos() {
-    val uid = "test_photo"
-    val uid2 = "test_photo2"
-    val file = File(testFilesDir, repository.fileName(uid, ".png"))
-    val file2 = File(testFilesDir, repository.fileName(uid2, ".png"))
+    val uid = "test_photo.png"
+    val uid2 = "test_photo2.png"
+    val file = File(testFilesDir, uid)
+    val file2 = File(testFilesDir, uid2)
     val file3 = File(testFilesDir.parentFile, "text.txt")
     file.createNewFile()
     file2.createNewFile()

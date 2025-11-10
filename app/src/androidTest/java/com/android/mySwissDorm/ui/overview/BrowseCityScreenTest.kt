@@ -9,19 +9,22 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.profile.Profile
-import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.model.review.Review
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
+import java.net.URL
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.*
 import org.junit.runner.RunWith
@@ -33,25 +36,48 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   private val profileRepo = ProfileRepositoryProvider.repository
   private val listingsRepo = RentalListingRepositoryProvider.repository
+  private val reviewsRepo = ReviewsRepositoryProvider.repository
+  private val residenciesRepo = ResidenciesRepositoryProvider.repository
+  private lateinit var vm: BrowseCityViewModel
 
   private val residencyRepo = ResidenciesRepositoryProvider.repository
 
   private lateinit var ownerUid: String
   private lateinit var otherUid: String
 
-  private lateinit var laus1: RentalListing
-  private lateinit var laus2: RentalListing
-  private lateinit var zurich: RentalListing
+  private lateinit var listingLaus1: RentalListing
+  private lateinit var listingLaus2: RentalListing
+  private lateinit var listingZurich: RentalListing
+
+  private lateinit var reviewLaus1: Review
+  private lateinit var reviewLaus2: Review
+  private lateinit var reviewZurich: Review
 
   override fun createRepositories() {
-    ProfileRepositoryProvider.repository =
-        ProfileRepositoryFirestore(db = FirebaseEmulator.firestore)
+    val vortex =
+        Residency(
+            name = "Vortex",
+            description = "description",
+            location = Location("Vortex", 46.5245257, 6.575223),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = URL("https://www.google.com"))
+    val woko =
+        vortex.copy(
+            name = "WOKO", location = Location("WOKO", 47.3765118, 8.5224785), city = "Zurich")
+
+    runBlocking {
+      residenciesRepo.addResidency(vortex)
+      residenciesRepo.addResidency(woko)
+    }
   }
 
   @Before
   override fun setUp() {
     runTest {
       super.setUp()
+      createRepositories()
       // two users + profiles
       switchToUser(FakeUser.FakeUser1)
       ownerUid = FirebaseEmulator.auth.currentUser!!.uid
@@ -79,7 +105,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             name = "CUG",
             location = Location("CUG", 47.3769, 8.5417)) // Zurich coordinates
 
-    laus1 =
+    listingLaus1 =
         RentalListing(
             uid = "laus1",
             ownerId = ownerUid,
@@ -93,23 +119,51 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             description = "",
             imageUrls = emptyList(),
             status = RentalStatus.POSTED)
-    laus2 =
-        laus1.copy(uid = "laus2", ownerId = otherUid, title = "Lausanne Studio 2", areaInM2 = 22)
-    zurich =
-        laus1.copy(
+    listingLaus2 =
+        listingLaus1.copy(
+            uid = "laus2", ownerId = otherUid, title = "Lausanne Studio 2", areaInM2 = 22)
+    listingZurich =
+        listingLaus1.copy(
             uid = "zurich1", ownerId = otherUid, title = "Zurich Room", residencyName = "CUG")
+    reviewLaus1 =
+        Review(
+            uid = "reviewLaus1",
+            ownerId = ownerUid,
+            postedAt = Timestamp.now(),
+            title = "Lausanne Review 1",
+            reviewText = "First review",
+            grade = 4.5,
+            residencyName = "Vortex",
+            roomType = RoomType.STUDIO,
+            pricePerMonth = 1200.0,
+            areaInM2 = 60,
+            imageUrls = emptyList())
+    reviewLaus2 =
+        reviewLaus1.copy(uid = "reviewLaus2", ownerId = otherUid, title = "Lausanne Review 2")
+    reviewZurich =
+        reviewLaus1.copy(
+            uid = "reviewZurich", ownerId = otherUid, title = "Zurich Room", residencyName = "WOKO")
 
     runTest {
       switchToUser(FakeUser.FakeUser1)
       residencyRepo.addResidency(resLaus)
       residencyRepo.addResidency(resZurich)
-      listingsRepo.addRentalListing(laus1)
+      listingsRepo.addRentalListing(listingLaus1)
+      reviewsRepo.addReview(reviewLaus1)
       switchToUser(FakeUser.FakeUser2)
       residencyRepo.addResidency(resLaus)
       residencyRepo.addResidency(resZurich)
-      listingsRepo.addRentalListing(laus2)
-      listingsRepo.addRentalListing(zurich)
+      listingsRepo.addRentalListing(listingLaus2)
+      listingsRepo.addRentalListing(listingZurich)
+      reviewsRepo.addReview(reviewLaus2)
+      reviewsRepo.addReview(reviewZurich)
     }
+
+    vm =
+        BrowseCityViewModel(
+            listingsRepository = listingsRepo,
+            reviewsRepository = reviewsRepo,
+            residenciesRepository = residenciesRepo)
   }
 
   @After
@@ -125,15 +179,41 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
     val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
     compose.setContent { BrowseCityScreen(location = lausanneLocation, onSelectListing = {}) }
-    compose.waitUntil(timeoutMillis = 5000) {
-      compose
-          .onAllNodesWithTag(C.BrowseCityTags.LIST, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus1.uid))
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus2.uid))
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose.onNodeWithTag(C.BrowseCityTags.listingCard(listingZurich.uid)).assertDoesNotExist()
+  }
+
+  @Test
+  fun onlyLausanneReviewsAreDisplayed() {
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
     }
-    compose.onNodeWithTag(C.BrowseCityTags.card(laus1.uid)).performScrollTo().assertIsDisplayed()
-    compose.onNodeWithTag(C.BrowseCityTags.card(laus2.uid)).performScrollTo().assertIsDisplayed()
-    compose.onNodeWithTag(C.BrowseCityTags.card(zurich.uid)).assertDoesNotExist()
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.isNotEmpty() }
+
+    compose.onNodeWithTag(C.BrowseCityTags.REVIEW_LIST).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewCard(reviewLaus1.uid))
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewCard(reviewLaus2.uid))
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose.onNodeWithTag(C.BrowseCityTags.reviewCard(reviewZurich.uid)).assertIsNotDisplayed()
   }
 
   @Test
@@ -152,19 +232,36 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
           .isNotEmpty()
     }
 
-    compose.onNodeWithTag(C.BrowseCityTags.card(laus1.uid)).performScrollTo().performClick()
-    compose.waitUntil(5_000) { clicked.value?.listingUid == laus1.uid }
+    compose
+        .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus1.uid))
+        .performScrollTo()
+        .performClick()
+    compose.waitUntil(5_000) { clicked.value?.listingUid == listingLaus1.uid }
   }
 
   @Test
-  fun switchingToReviews_showsPlaceholder() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
-    compose.setContent { BrowseCityScreen(location = lausanneLocation) }
-    compose.waitForIdle()
+  fun emptyState_showsNoReviewsYet() {
+    compose.setContent {
+      BrowseCityScreen(location = Location("Geneva", 46.2044, 6.1432))
+    } // no Geneva data
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.ROOT, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
     compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
-    compose.onNodeWithText("Not implemented yet").assertIsDisplayed()
+
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.EMPTY, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.onNodeWithTag(C.BrowseCityTags.EMPTY, useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("No reviews yet.", useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
@@ -287,14 +384,6 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
       override suspend fun getAllRentalListingsByUser(userId: String): List<RentalListing> {
         error("unused")
-      }
-
-      override suspend fun getAllRentalListingsByLocation(
-          location: Location,
-          radius: Double
-      ): List<RentalListing> {
-        delay(50)
-        error("Boom")
       }
 
       override suspend fun getRentalListing(rentalPostId: String): RentalListing = error("unused")

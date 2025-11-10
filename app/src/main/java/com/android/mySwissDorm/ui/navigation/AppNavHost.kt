@@ -13,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +51,14 @@ fun AppNavHost(
     navigationViewModel: NavigationViewModel = viewModel(),
 ) {
   val navController = navActionsExternal?.navController() ?: rememberNavController()
-  val navActions = navActionsExternal ?: NavigationActions(navController)
+
+  val coroutineScope = rememberCoroutineScope()
+  val navActions =
+      navActionsExternal
+          ?: NavigationActions(
+              navController = navController,
+              coroutineScope = coroutineScope,
+              navigationViewModel = navigationViewModel)
 
   val navigationState by navigationViewModel.navigationState.collectAsState()
 

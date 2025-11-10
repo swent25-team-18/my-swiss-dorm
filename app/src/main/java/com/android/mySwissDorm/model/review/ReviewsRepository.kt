@@ -20,6 +20,14 @@ interface ReviewsRepository {
   suspend fun getAllReviewsByUser(userId: String): List<Review>
 
   /**
+   * Retrieves all Review related to a specific residency from the repository.
+   *
+   * @param residencyName The name of the residency whose reviews to retrieve.
+   * @return A list of all Reviews related to the specified residency.
+   */
+  suspend fun getAllReviewsByResidency(residencyName: String): List<Review>
+
+  /**
    * Retrieves a specific Review by its unique identifier.
    *
    * @param reviewId The unique identifier of the review item to retrieve.

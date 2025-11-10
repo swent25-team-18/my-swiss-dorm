@@ -53,7 +53,7 @@ fun GalleryButton(
 ) {
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePictureContract) {
-        it?.let { uri -> onSelect(Photo(image = uri, uid = UUID.randomUUID().toString())) }
+        it?.let { uri -> onSelect(Photo(image = uri, fileName = UUID.randomUUID().toString())) }
       }
   Button(
       onClick = { galleryLauncher.launch("image/*") },

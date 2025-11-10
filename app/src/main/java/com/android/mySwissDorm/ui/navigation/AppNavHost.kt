@@ -39,6 +39,7 @@ import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
+import com.android.mySwissDorm.ui.review.ViewReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.google.firebase.auth.FirebaseAuth
@@ -179,6 +180,9 @@ fun AppNavHost(
             onSelectListing = {
               navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
             },
+            onSelectReview = {
+              navActions.navigateTo(Screen.ReviewOverview(reviewUid = it.reviewUid))
+            },
             onLocationChange = { newLocation ->
               navActions.navigateTo(Screen.BrowseOverview(newLocation))
             },
@@ -210,6 +214,35 @@ fun AppNavHost(
             },
             onViewMap = { lat, lng, title -> navController.navigate("mapScreen/$lat/$lng/$title") })
       }
+          ?: run {
+            Log.e("AppNavHost", "listingUid is null")
+            Toast.makeText(context, "listingUid is null", Toast.LENGTH_SHORT).show()
+          }
+    }
+
+    composable(Screen.ReviewOverview.route) { navBackStackEntry ->
+      val reviewUid = navBackStackEntry.arguments?.getString("reviewUid")
+
+      reviewUid?.let {
+        ViewReviewScreen(
+            reviewUid = it,
+            onGoBack = { navActions.goBack() },
+            onEdit = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
+            onViewProfile = { ownerId ->
+              val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+              if (ownerId == currentUserId) {
+                // It's the current user, go to their editable profile
+                navActions.navigateTo(Screen.Profile)
+              } else {
+                // It's another user, go to the read-only profile screen
+                navActions.navigateTo(Screen.ViewUserProfile(ownerId))
+              }
+            })
+      }
+          ?: run {
+            Log.e("AppNavHost", "reviewUid is null")
+            Toast.makeText(context, "reviewUid is null", Toast.LENGTH_SHORT).show()
+          }
     }
 
     composable(Screen.ViewUserProfile.route) { navBackStackEntry ->

@@ -53,10 +53,15 @@ fun BrowseCityScreen(
     browseCityViewModel: BrowseCityViewModel = viewModel(),
     location: Location,
     onSelectListing: (ListingCardUI) -> Unit = {},
+    onSelectReview: (ReviewCardUI) -> Unit = {},
     onLocationChange: (Location) -> Unit = {},
-    navigationActions: NavigationActions? = null,
+    navigationActions: NavigationActions? = null
 ) {
-  LaunchedEffect(location) { browseCityViewModel.loadListings(location) }
+
+  LaunchedEffect(location) {
+    browseCityViewModel.loadReviews(location)
+    browseCityViewModel.loadListings(location)
+  }
 
   val uiState by browseCityViewModel.uiState.collectAsState()
 
@@ -81,7 +86,9 @@ fun BrowseCityScreen(
   BrowseCityScreenUI(
       location = location,
       listingsState = uiState.listings,
+      reviewsState = uiState.reviews,
       onSelectListing = onSelectListing,
+      onSelectReview = onSelectReview,
       onLocationClick = onLocationClick,
       navigationActions = navigationActions)
 
@@ -115,7 +122,9 @@ fun BrowseCityScreen(
 private fun BrowseCityScreenUI(
     location: Location,
     listingsState: ListingsState,
+    reviewsState: ReviewsState,
     onSelectListing: (ListingCardUI) -> Unit,
+    onSelectReview: (ReviewCardUI) -> Unit,
     onLocationClick: () -> Unit,
     navigationActions: NavigationActions? = null,
 ) {
@@ -172,11 +181,36 @@ private fun BrowseCityScreenUI(
 
           when (selectedTab) {
             0 -> {
-              Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    "Not implemented yet",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Gray)
+              when {
+                reviewsState.loading -> {
+                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.testTag(C.BrowseCityTags.LOADING))
+                  }
+                }
+                reviewsState.error != null -> {
+                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = reviewsState.error,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.testTag(C.BrowseCityTags.ERROR))
+                  }
+                }
+                reviewsState.items.isEmpty() -> {
+                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No reviews yet.", modifier = Modifier.testTag(C.BrowseCityTags.EMPTY))
+                  }
+                }
+                else -> {
+                  LazyColumn(
+                      modifier =
+                          Modifier.fillMaxSize()
+                              .padding(horizontal = 16.dp)
+                              .testTag(C.BrowseCityTags.REVIEW_LIST),
+                      contentPadding = PaddingValues(vertical = 12.dp),
+                      verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        items(reviewsState.items) { item -> ReviewCard(item, onSelectReview) }
+                      }
+                }
               }
             }
             else -> {
@@ -204,7 +238,7 @@ private fun BrowseCityScreenUI(
                       modifier =
                           Modifier.fillMaxSize()
                               .padding(horizontal = 16.dp)
-                              .testTag(C.BrowseCityTags.LIST),
+                              .testTag(C.BrowseCityTags.LISTING_LIST),
                       contentPadding = PaddingValues(vertical = 12.dp),
                       verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(listingsState.items) { item -> ListingCard(item, onSelectListing) }
@@ -230,7 +264,51 @@ private fun BrowseCityScreenUI(
 private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
-      modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.card(data.listingUid)),
+      modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.listingCard(data.listingUid)),
+      onClick = { onClick(data) }) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+          // Image placeholder (left)
+          Box(
+              modifier =
+                  Modifier.height(140.dp)
+                      .fillMaxWidth(0.35F)
+                      .clip(RoundedCornerShape(12.dp))
+                      .background(Color(0xFFEAEAEA))) {
+                Text(
+                    "IMAGE",
+                    modifier = Modifier.align(Alignment.Center),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray)
+              }
+
+          Spacer(Modifier.width(12.dp))
+
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = data.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                color = TextColor,
+                modifier = Modifier.fillMaxWidth())
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+              BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
+              Spacer(Modifier.width(8.dp))
+              BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
+            }
+          }
+        }
+      }
+}
+
+@Composable
+private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
+  OutlinedCard(
+      shape = RoundedCornerShape(16.dp),
+      modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.reviewCard(data.reviewUid)),
       onClick = { onClick(data) }) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
           // Image placeholder (left)
@@ -298,7 +376,7 @@ private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
 @Composable
 private fun BrowseCityScreen_Preview() {
 
-  val sampleUi =
+  val sampleListingUi =
       ListingsState(
           loading = false,
           items =
@@ -314,11 +392,31 @@ private fun BrowseCityScreen_Preview() {
                       rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
                       listingUid = "preview2")),
       )
+
+  val sampleReviewUi =
+      ReviewsState(
+          loading = false,
+          items =
+              listOf(
+                  ReviewCardUI(
+                      title = "Bad room",
+                      leftBullets = listOf("Room in flatshare", "600.-/month", "19m²"),
+                      rightBullets = listOf("Starting 15/09/2025", "Vortex"),
+                      reviewUid = "preview1"),
+                  ReviewCardUI(
+                      title = "Very nice room near EPFL",
+                      leftBullets = listOf("Studio", "1’150.-/month", "24m²"),
+                      rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
+                      reviewUid = "preview2"),
+              ),
+      )
   MySwissDormAppTheme {
     BrowseCityScreenUI(
-        location = Location("Lausanne", 46.5197, 6.6323),
-        listingsState = sampleUi,
+        listingsState = sampleListingUi,
+        reviewsState = sampleReviewUi,
         onSelectListing = {},
+        onSelectReview = {},
+        location = Location("Lausanne", 46.5197, 6.6323),
         onLocationClick = {})
   }
 }

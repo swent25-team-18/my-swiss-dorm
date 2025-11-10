@@ -52,6 +52,13 @@ sealed class Screen(
     }
   }
 
+  data class ReviewOverview(val reviewUid: String) :
+      Screen(route = "reviewOverview/${reviewUid}", name = "Review") {
+    companion object {
+      const val route = "reviewOverview/{reviewUid}"
+    }
+  }
+
   data class ViewUserProfile(val userId: String) :
       Screen(route = "viewProfile/${userId}", name = "View Profile") {
     companion object {

@@ -96,7 +96,7 @@ class ViewListingViewModel(
               isBlockedByOwner = isBlockedByOwner)
         }
       } catch (e: Exception) {
-        Log.e("EditTodoViewModel", "Error loading ToDo by ID: $listingId", e)
+        Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
         setErrorMsg("Failed to load Listing: ${e.message}")
       }
     }

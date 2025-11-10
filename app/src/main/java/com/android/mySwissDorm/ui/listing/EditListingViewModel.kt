@@ -157,8 +157,8 @@ class EditListingViewModel(
       try {
         rentalListingRepository.editRentalListing(rentalPostId = id, newValue = listing)
       } catch (e: Exception) {
-        Log.e("AddToDoViewModel", "Error adding ToDo", e)
-        setErrorMsg("Failed to add ToDo: ${e.message}")
+        Log.e("EditListingViewModel", "Error editing listing", e)
+        setErrorMsg("Failed to edit rental listing: ${e.message}")
       }
     }
   }

@@ -7,12 +7,15 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ChevronRight
@@ -48,6 +51,7 @@ import com.android.mySwissDorm.ui.theme.PalePink
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
+import com.android.mySwissDorm.ui.theme.rememberDarkModePreference
 
 /** Centralized test tags for the Settings screen. */
 object SettingsTestTags {
@@ -122,8 +126,11 @@ fun SettingsScreenContent(
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
   var readReceipts by remember { mutableStateOf(true) }
-  var nightShift by remember { mutableStateOf(true) }
   var anonymous by remember { mutableStateOf(false) }
+
+  // Dark mode preference - connected to theme
+  val (darkModePreference, setDarkModePreference) = rememberDarkModePreference()
+  val nightShift = darkModePreference ?: isSystemInDarkTheme()
 
   var blockedExpanded by remember { mutableStateOf(false) }
   val blockedContacts = ui.blockedContacts
@@ -241,12 +248,9 @@ fun SettingsScreenContent(
                               singleLine = true,
                               readOnly = true,
                               enabled = false,
-                              keyboardOptions =
-                                  androidx.compose.foundation.text.KeyboardOptions(
-                                      imeAction = ImeAction.Done),
+                              keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                               keyboardActions =
-                                  androidx.compose.foundation.text.KeyboardActions(
-                                      onDone = { focusManager.clearFocus() }),
+                                  KeyboardActions(onDone = { focusManager.clearFocus() }),
                               colors =
                                   OutlinedTextFieldDefaults.colors(
                                       disabledTextColor = TextColor.copy(alpha = 0.9f),
@@ -351,7 +355,7 @@ fun SettingsScreenContent(
                           SettingSwitchRow(
                               label = "Dark mode",
                               checked = nightShift,
-                              onCheckedChange = { nightShift = it })
+                              onCheckedChange = { enabled -> setDarkModePreference(enabled) })
                           SoftDivider()
                           SettingSwitchRow(
                               label = "Anonymous",
@@ -468,7 +472,6 @@ private fun SoftDivider() {
 private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
   val screenWidthDp = LocalConfiguration.current.screenWidthDp
   val isExtraNarrow = screenWidthDp < 340
-
   val switchColors =
       SwitchDefaults.colors(
           checkedThumbColor = White,

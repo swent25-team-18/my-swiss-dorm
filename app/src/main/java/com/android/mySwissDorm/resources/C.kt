@@ -60,6 +60,20 @@ object C {
     const val EDIT_BTN = "viewListingEditBtn"
   }
 
+  object ViewReviewTags {
+    const val ROOT = "viewReviewRoot"
+    const val TITLE = "viewReviewTitle"
+    const val POSTED_BY = "viewReviewPostedBy"
+    const val BULLETS = "viewReviewBullets"
+    const val FILLED_STAR = "viewReviewFilledStar"
+    const val EMPTY_STAR = "viewReviewEmptyStar"
+    const val HALF_STAR = "viewReviewHalfStar"
+    const val REVIEW_TEXT = "viewReviewText"
+    const val PHOTOS = "viewReviewPhotos"
+    const val LOCATION = "viewReviewLocation"
+    const val EDIT_BTN = "viewReviewEditBtn"
+  }
+
   object ViewUserProfileTags {
     const val ROOT = "view_user_profile_root"
     const val TITLE = "view_user_profile_title"
@@ -80,12 +94,15 @@ object C {
     const val TAB_REVIEWS = "browseCityTabReviews"
     const val TAB_LISTINGS = "browseCityTabListings"
 
-    const val LIST = "browseCityList"
+    const val LISTING_LIST = "browseCityListingList"
+    const val REVIEW_LIST = "browseCityReviewList"
     const val LOADING = "browseCityLoading"
     const val ERROR = "browseCityError"
     const val EMPTY = "browseCityEmpty"
 
-    fun card(listingUid: String) = "browseCityCard_$listingUid"
+    fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
+
+    fun reviewCard(reviewUid: String) = "browseCityReviewCard_$reviewUid"
   }
 
   object CameraButtonTag {

@@ -251,13 +251,13 @@ class Epic1Test : FirestoreTest() {
             .performClick()
 
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.BrowseCityTags.card(rentalUid)).isDisplayed()
+          composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(rentalUid)).isDisplayed()
         }
 
         // Go to first rental listing element
-        composeTestRule.onNodeWithTag(C.BrowseCityTags.card(rentalUid)).isDisplayed()
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(rentalUid)).isDisplayed()
         composeTestRule
-            .onNodeWithTag(C.BrowseCityTags.card(rentalUid))
+            .onNodeWithTag(C.BrowseCityTags.listingCard(rentalUid))
             .performScrollTo()
             .performClick()
 

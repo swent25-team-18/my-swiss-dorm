@@ -67,7 +67,7 @@ data class ListingsState(
 data class ResidencyCardUI(
     val title: String,
     val meanGrade: Double,
-    val location: Location,
+    val location: String,
     val latestReview: Review?,
     val fullNameOfPoster: String
 )
@@ -194,7 +194,7 @@ class BrowseCityViewModel(
               ResidencyCardUI(
                   title = it.name,
                   meanGrade = meanGrade,
-                  location = location,
+                  location = it.location.name,
                   latestReview = latestReview,
                   fullNameOfPoster = fullName,
               )

@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RoomType
@@ -334,8 +335,8 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
               // Image placeholder (left)
               Box(
                   modifier =
-                      Modifier.height(140.dp)
-                          .fillMaxWidth(0.35F)
+                      Modifier.height(160.dp)
+                          .fillMaxWidth(0.4F)
                           .clip(RoundedCornerShape(12.dp))
                           .background(Color(0xFFEAEAEA))) {
                     Text(
@@ -348,7 +349,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
               Spacer(Modifier.width(12.dp))
 
               Column(
-                  modifier = Modifier.weight(1f).height(140.dp).padding(4.dp),
+                  modifier = Modifier.weight(1f).height(160.dp).padding(4.dp),
                   verticalArrangement = Arrangement.SpaceBetween) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -373,7 +374,8 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                             modifier = Modifier.size(12.dp),
                             tint = MainColor)
                         Text(
-                            text = "${data.location.latitude}  ${data.location.longitude}",
+                            text = data.location,
+                            fontSize = 12.sp,
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Start,
                             color = TextBoxColor)
@@ -389,54 +391,58 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                             modifier = Modifier.testTag(C.BrowseCityTags.EMPTY_RESIDENCY))
                       }
                     } else { // Review, postedAt, postedBy
-                      Column(modifier = Modifier.fillMaxWidth().height(64.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.SpaceBetween) { // Latest review + post date
-                              Text(
-                                  text = "Latest review :",
-                                  style = MaterialTheme.typography.bodyMedium,
-                                  textAlign = TextAlign.Start,
-                                  color = TextColor)
-                              Text(
-                                  text = formatDate(data.latestReview.postedAt),
+                      Column(
+                          modifier = Modifier.fillMaxSize(),
+                          verticalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                              Row(
+                                  modifier = Modifier.fillMaxWidth(),
+                                  horizontalArrangement =
+                                      Arrangement.SpaceBetween) { // Latest review + post date
+                                    Text(
+                                        text = "Latest review :",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textAlign = TextAlign.Start,
+                                        color = TextColor)
+                                    Text(
+                                        text = formatDate(data.latestReview.postedAt),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        textAlign = TextAlign.End,
+                                        color = TextBoxColor)
+                                  }
+                              val truncatedReview = // truncate the review if it is too large
+                                  data.latestReview.reviewText.let {
+                                    val maxLength = 64
+                                    if (it.length <= maxLength) {
+                                      it
+                                    } else {
+                                      val truncated = it.take(maxLength)
+                                      val lastSpace = truncated.lastIndexOf(' ')
+                                      if (lastSpace != -1) {
+                                        "${truncated.substring(0, lastSpace)}..."
+                                      } else {
+                                        "$truncated..." // No space, probably unreadable review
+                                      }
+                                    }
+                                  }
+                              Text( // Review
+                                  text = truncatedReview,
                                   style = MaterialTheme.typography.bodySmall,
-                                  textAlign = TextAlign.End,
-                                  color = TextBoxColor)
+                                  textAlign = TextAlign.Justify,
+                                  color = TextColor,
+                                  modifier =
+                                      Modifier.testTag(
+                                          C.BrowseCityTags.reviewText(data.latestReview.uid)))
                             }
-                        val truncatedReview = // truncate the review if it is too large
-                            data.latestReview.reviewText.let {
-                              val maxLength = 75
-                              if (it.length <= maxLength) {
-                                it
-                              } else {
-                                val truncated = it.take(maxLength)
-                                val lastSpace = truncated.lastIndexOf(' ')
-                                if (lastSpace != -1) {
-                                  "${truncated.substring(0, lastSpace)}..."
-                                } else {
-                                  "$truncated..." // No space, probably unreadable review
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End) { // posted by
+                                  Text(
+                                      text = "posted by ${data.fullNameOfPoster}",
+                                      style = MaterialTheme.typography.bodySmall,
+                                      textAlign = TextAlign.Justify,
+                                      color = TextColor)
                                 }
-                              }
-                            }
-                        Text( // Review
-                            text = truncatedReview,
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Justify,
-                            color = TextColor,
-                            modifier =
-                                Modifier.testTag(
-                                    C.BrowseCityTags.reviewText(data.latestReview.uid)))
-                      }
-                      Row(
-                          modifier = Modifier.fillMaxWidth(),
-                          horizontalArrangement = Arrangement.End) { // posted by
-                            Text(
-                                text = "posted by ${data.fullNameOfPoster}",
-                                style = MaterialTheme.typography.bodySmall,
-                                textAlign = TextAlign.Justify,
-                                color = TextColor)
                           }
                     }
                   }
@@ -511,13 +517,13 @@ private fun BrowseCityScreen_Preview() {
                   ResidencyCardUI(
                       title = "Vortex",
                       meanGrade = 4.5,
-                      location = Location("Lausanne", 46.5197, 6.6323),
+                      location = "Rte de Praz Véguey 29, 1022 Chavannes-près-Renens",
                       latestReview = sampleReview,
                       fullNameOfPoster = "John Doe"),
                   ResidencyCardUI(
                       title = "Atrium",
                       meanGrade = 2.0,
-                      location = Location("Lausanne", 46.5197, 6.6323),
+                      location = "Rte Louis Favre 4, 1024 Ecublens",
                       latestReview = sampleReview,
                       fullNameOfPoster = "Doe John"),
               ),

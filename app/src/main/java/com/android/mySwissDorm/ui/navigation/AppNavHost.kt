@@ -158,7 +158,6 @@ fun AppNavHost(
                 navArgument("lng") { type = NavType.FloatType },
                 navArgument("title") { type = NavType.StringType })) { backStackEntry ->
           MapScreen(
-              // Read the arguments
               latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
               longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
               title = backStackEntry.arguments?.getString("title") ?: "Location",
@@ -237,7 +236,8 @@ fun AppNavHost(
                 // It's another user, go to the read-only profile screen
                 navActions.navigateTo(Screen.ViewUserProfile(ownerId))
               }
-            })
+            },
+            onViewMap = { lat, lng, title -> navController.navigate("mapScreen/$lat/$lng/$title") })
       }
           ?: run {
             Log.e("AppNavHost", "reviewUid is null")

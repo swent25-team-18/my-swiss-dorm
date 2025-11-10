@@ -1,10 +1,5 @@
 package com.android.mySwissDorm.model.photo
 
-import android.content.ContentResolver
-import android.content.Context
-import android.net.Uri
-import androidx.core.net.toFile
-
 /** Represents a repository that manages photos */
 interface PhotoRepository {
   /**
@@ -32,28 +27,4 @@ interface PhotoRepository {
    * @return true if the photo has been deleted with success
    */
   suspend fun deletePhoto(uid: String): Boolean
-
-  companion object {
-    /**
-     * Helper functions that return the extension of the image pointed by the Uri
-     *
-     * @param context the [Context] in which the image is defined
-     * @param uri the [Uri] that points to the image
-     * @return the extension of the image in the format ".$extension" (for example : ".jpg",
-     *   ".png",...)
-     * @throws IllegalArgumentException if the file pointed by [uri] is not an image
-     */
-    fun getExtensionFromUri(context: Context, uri: Uri): String {
-      return when (uri.scheme) {
-        ContentResolver.SCHEME_CONTENT ->
-            context.contentResolver.getType(uri)?.let { mimeType ->
-              if (!mimeType.startsWith("image/"))
-                  throw IllegalArgumentException("The file is not an image : $mimeType")
-              ".${mimeType.removePrefix("image/")}"
-            }
-        ContentResolver.SCHEME_FILE -> ".${uri.toFile().extension}"
-        else -> null
-      } ?: throw IllegalArgumentException("Unknown file type")
-    }
-  }
 }

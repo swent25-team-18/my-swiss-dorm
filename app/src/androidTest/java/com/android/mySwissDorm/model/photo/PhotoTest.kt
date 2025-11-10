@@ -13,8 +13,8 @@ class PhotoTest {
   @Test
   fun testCreateNewEmptyPhoto() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
-    val uid = UUID.randomUUID().toString()
-    val photo = Photo.createNewPhotoOnCache(context = context, fileName = "$uid.jpg")
+    val uid = UUID.randomUUID().toString() + ".jpg"
+    val photo = Photo.createNewPhotoOnCache(context = context, fileName = uid)
     assertEquals(photo.fileName, uid)
 
     val file = File(context.externalCacheDir, Uri.parse(photo.image.toString()).lastPathSegment!!)

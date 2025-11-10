@@ -325,7 +325,8 @@ private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
 private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> Unit) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
-      modifier = Modifier.fillMaxWidth().padding(0.dp),
+      modifier =
+          Modifier.fillMaxWidth().padding(0.dp).testTag(C.BrowseCityTags.residencyCard(data.title)),
       onClick = { onClick(data) }) {
         Row(
             modifier = Modifier.fillMaxWidth(1f).fillMaxHeight(1f),
@@ -384,7 +385,8 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                             text = "No reviews yet.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
-                            color = TextColor)
+                            color = TextColor,
+                            modifier = Modifier.testTag(C.BrowseCityTags.EMPTY_RESIDENCY))
                       }
                     } else { // Review, postedAt, postedBy
                       Column(modifier = Modifier.fillMaxWidth().height(64.dp)) {
@@ -422,7 +424,10 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                             text = truncatedReview,
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Justify,
-                            color = TextColor)
+                            color = TextColor,
+                            modifier =
+                                Modifier.testTag(
+                                    C.BrowseCityTags.reviewText(data.latestReview.uid)))
                       }
                       Row(
                           modifier = Modifier.fillMaxWidth(),

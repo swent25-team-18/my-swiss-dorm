@@ -46,8 +46,8 @@ data class ViewReviewUIState(
 class ViewReviewViewModel(
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val profilesRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val residencyRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository
-
+    private val residencyRepository: ResidenciesRepository =
+        ResidenciesRepositoryProvider.repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewReviewUIState())
   val uiState: StateFlow<ViewReviewUIState> = _uiState.asStateFlow()
@@ -61,16 +61,18 @@ class ViewReviewViewModel(
   private fun setErrorMsg(errorMsg: String) {
     _uiState.update { it.copy(errorMsg = errorMsg) }
   }
-    fun setLocationOfReview(reviewUid: String){
-        try{viewModelScope.launch {
-            val review = reviewsRepository.getReview(reviewUid)
-            val residency = residencyRepository.getResidency(review.residencyName)
-            _uiState.value = _uiState.value.copy(locationOfReview = residency.location)
-    }}
-        catch (e: Exception) {
-            Log.e("MyViewModel", "Failed to load location", e)
-        }
+
+  fun setLocationOfReview(reviewUid: String) {
+    try {
+      viewModelScope.launch {
+        val review = reviewsRepository.getReview(reviewUid)
+        val residency = residencyRepository.getResidency(review.residencyName)
+        _uiState.value = _uiState.value.copy(locationOfReview = residency.location)
+      }
+    } catch (e: Exception) {
+      Log.e("MyViewModel", "Failed to load location", e)
     }
+  }
   /**
    * Loads a Review by its ID and updates the UI state.
    *

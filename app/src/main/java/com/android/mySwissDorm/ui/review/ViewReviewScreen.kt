@@ -199,24 +199,21 @@ fun ViewReviewScreen(
                   height = 220.dp,
                   modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
               // Location placeholder
-            viewReviewViewModel.setLocationOfReview(reviewUid)
-            val location = uiState.locationOfReview
-            if (location.latitude != 0.0 && location.longitude != 0.0) {
+              viewReviewViewModel.setLocationOfReview(reviewUid)
+              val location = uiState.locationOfReview
+              if (location.latitude != 0.0 && location.longitude != 0.0) {
                 MapPreview(
                     location = location,
                     title = review.title,
                     modifier =
                         Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewReviewTags.LOCATION),
-                    onMapClick = {
-                        onViewMap(location.latitude, location.longitude, review.title)
-                    })
-            } else {
+                    onMapClick = { onViewMap(location.latitude, location.longitude, review.title) })
+              } else {
                 PlaceholderBlock(
                     text = "LOCATION (Not available)",
                     height = 180.dp,
-                    modifier = Modifier.testTag(C.ViewReviewTags.LOCATION)
-                )
-            }
+                    modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
+              }
 
               if (isOwner) {
                 // Owner sees an Edit button centered
@@ -327,6 +324,7 @@ private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
 private fun ViewReviewScreenPreview() {
   ViewReviewScreen(reviewUid = "preview")
 }
+
 @Composable
 private fun MapPreview(
     location: Location,
@@ -334,13 +332,13 @@ private fun MapPreview(
     modifier: Modifier = Modifier,
     onMapClick: () -> Unit
 ) {
-    val reviewLatLng = remember { LatLng(location.latitude, location.longitude) }
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(reviewLatLng, 13f)
-    }
-    Box(
-        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(TextBoxColor),
-        contentAlignment = Alignment.Center) {
+  val reviewLatLng = remember { LatLng(location.latitude, location.longitude) }
+  val cameraPositionState = rememberCameraPositionState {
+    position = CameraPosition.fromLatLngZoom(reviewLatLng, 13f)
+  }
+  Box(
+      modifier = modifier.clip(RoundedCornerShape(16.dp)).background(TextBoxColor),
+      contentAlignment = Alignment.Center) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -351,12 +349,12 @@ private fun MapPreview(
                     scrollGesturesEnabled = false,
                     tiltGesturesEnabled = false,
                     mapToolbarEnabled = false)) {
-            Marker(state = MarkerState(position = reviewLatLng), title = title)
-        }
+              Marker(state = MarkerState(position = reviewLatLng), title = title)
+            }
         Box(
             modifier =
                 Modifier.matchParentSize()
                     .background(Color.Transparent)
                     .clickable(onClick = onMapClick))
-    }
+      }
 }

@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.map.Location // ADDED
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.map.MapScreen
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -181,26 +180,22 @@ fun ViewListingScreen(
                   modifier = Modifier.testTag(C.ViewListingTags.PHOTOS))
 
               // Location placeholder
-            val location = listing.residency.location
-            if (location.latitude != 0.0 && location.longitude != 0.0) {
+              val location = listing.residency.location
+              if (location.latitude != 0.0 && location.longitude != 0.0) {
                 MapPreview(
                     location = location,
                     title = listing.title,
                     modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .testTag(C.ViewListingTags.LOCATION),
+                        Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewListingTags.LOCATION),
                     onMapClick = {
-                        onViewMap(location.latitude, location.longitude, listing.title)
-                    }
-                )
-            } else {
+                      onViewMap(location.latitude, location.longitude, listing.title)
+                    })
+              } else {
                 PlaceholderBlock(
                     text = "LOCATION (Not available)",
                     height = 180.dp,
                     modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
-            }
+              }
 
               if (isOwner) {
                 // Owner sees an Edit button centered, same size as Apply
@@ -313,6 +308,7 @@ private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
 private fun ViewListingScreenPreview() {
   ViewListingScreen(listingUid = "preview")
 }
+
 @Composable
 private fun MapPreview(
     location: Location,
@@ -320,38 +316,29 @@ private fun MapPreview(
     modifier: Modifier = Modifier,
     onMapClick: () -> Unit
 ) {
-    val listingLatLng = remember { LatLng(location.latitude, location.longitude) }
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(listingLatLng, 13f)
-    }
-    Box(
-        modifier =
-            modifier
-                .clip(RoundedCornerShape(16.dp))
-                .background(TextBoxColor),
-        contentAlignment = Alignment.Center
-    ) {
+  val listingLatLng = remember { LatLng(location.latitude, location.longitude) }
+  val cameraPositionState = rememberCameraPositionState {
+    position = CameraPosition.fromLatLngZoom(listingLatLng, 13f)
+  }
+  Box(
+      modifier = modifier.clip(RoundedCornerShape(16.dp)).background(TextBoxColor),
+      contentAlignment = Alignment.Center) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            uiSettings = MapUiSettings(
-                zoomControlsEnabled = false,
-                zoomGesturesEnabled = false,
-                scrollGesturesEnabled = false,
-                tiltGesturesEnabled = false,
-                mapToolbarEnabled = false
-            )
-        ) {
-            Marker(
-                state = MarkerState(position = listingLatLng),
-                title = title
-            )
-        }
+            uiSettings =
+                MapUiSettings(
+                    zoomControlsEnabled = false,
+                    zoomGesturesEnabled = false,
+                    scrollGesturesEnabled = false,
+                    tiltGesturesEnabled = false,
+                    mapToolbarEnabled = false)) {
+              Marker(state = MarkerState(position = listingLatLng), title = title)
+            }
         Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(Color.Transparent)
-                .clickable(onClick = onMapClick)
-        )
-    }
+            modifier =
+                Modifier.matchParentSize()
+                    .background(Color.Transparent)
+                    .clickable(onClick = onMapClick))
+      }
 }

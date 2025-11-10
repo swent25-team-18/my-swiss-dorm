@@ -21,15 +21,15 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
-//This file was implemented with some help of the bootcamp and AI and me
+
+// This file was implemented with some help of the bootcamp and AI and me
 
 /**
  * A full-screen composable that displays an interactive Google Map.
  *
- * This screen is centered on the provided [latitude] and [longitude], displaying a
- * single [Marker] with the given [title]. It features a top app bar with a
- * back button and a Floating Action Button (FAB) that launches the
- * Google Maps app for turn-by-turn navigation.
+ * This screen is centered on the provided [latitude] and [longitude], displaying a single [Marker]
+ * with the given [title]. It features a top app bar with a back button and a Floating Action Button
+ * (FAB) that launches the Google Maps app for turn-by-turn navigation.
  *
  * @param latitude The latitude of the location to center the map on.
  * @param longitude The longitude of the location to center the map on.
@@ -38,62 +38,42 @@ import com.google.maps.android.compose.rememberCameraPositionState
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(
-    latitude: Double,
-    longitude: Double,
-    title: String,
-    onGoBack: () -> Unit
-) {
-    val context = LocalContext.current
-    val listingLocation = remember { LatLng(latitude, longitude) }
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(listingLocation, 15f)
-    }
+fun MapScreen(latitude: Double, longitude: Double, title: String, onGoBack: () -> Unit) {
+  val context = LocalContext.current
+  val listingLocation = remember { LatLng(latitude, longitude) }
+  val cameraPositionState = rememberCameraPositionState {
+    position = CameraPosition.fromLatLngZoom(listingLocation, 15f)
+  }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Listing Location") },
-                navigationIcon = {
-                    IconButton(onClick = onGoBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MainColor
-                        )
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    val gmmIntentUri = Uri.parse("google.navigation:q=$latitude,$longitude")
-                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-                    mapIntent.setPackage("com.google.android.apps.maps")
-                    context.startActivity(mapIntent)
-                },
-                containerColor = MainColor
-            ) {
-                Icon(Icons.Filled.Navigation, "Start navigation",
-                    tint = Color.White)
+  Scaffold(
+      topBar = {
+        CenterAlignedTopAppBar(
+            title = { Text("Listing Location") },
+            navigationIcon = {
+              IconButton(onClick = onGoBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MainColor)
+              }
+            })
+      },
+      floatingActionButton = {
+        FloatingActionButton(
+            onClick = {
+              val gmmIntentUri = Uri.parse("google.navigation:q=$latitude,$longitude")
+              val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+              mapIntent.setPackage("com.google.android.apps.maps")
+              context.startActivity(mapIntent)
+            },
+            containerColor = MainColor) {
+              Icon(Icons.Filled.Navigation, "Start navigation", tint = Color.White)
             }
+      }) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+          GoogleMap(modifier = Modifier.fillMaxSize(), cameraPositionState = cameraPositionState) {
+            Marker(state = MarkerState(position = listingLocation), title = title)
+          }
         }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState
-            ) {
-                Marker(
-                    state = MarkerState(position = listingLocation),
-                    title = title
-                )
-            }
-        }
-    }
+      }
 }

@@ -95,7 +95,7 @@ object C {
     const val TAB_LISTINGS = "browseCityTabListings"
 
     const val LISTING_LIST = "browseCityListingList"
-    const val REVIEW_LIST = "browseCityReviewList"
+    const val RESIDENCY_LIST = "browseCityResidencyList"
     const val LOADING = "browseCityLoading"
     const val ERROR = "browseCityError"
     const val EMPTY = "browseCityEmpty"

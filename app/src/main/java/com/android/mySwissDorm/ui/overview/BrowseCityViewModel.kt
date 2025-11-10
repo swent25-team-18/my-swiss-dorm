@@ -20,6 +20,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -56,31 +57,32 @@ data class ListingsState(
 )
 
 /**
- * Represents the UI state of a single review.
+ * Represents the UI state of a single residency.
  *
- * @property title The title of the review
- * @property leftBullets A list of strings to be displayed as bullet points on the left side
- * @property rightBullets A list of strings to be displayed as bullet points on the right side
- * @property reviewUid The unique identifier of the review
+ * @property title The title of the residency
+ * @property meanGrade The mean grade of the residency (mean of all the grade of the reviews)
+ * @property location The location of the residency
+ * @property latestReview The latest review for this residency if it exists, null otherwise
  */
-data class ReviewCardUI(
+data class ResidencyCardUI(
     val title: String,
-    val leftBullets: List<String>,
-    val rightBullets: List<String>,
-    val reviewUid: String,
+    val meanGrade: Double,
+    val location: Location,
+    val latestReview: Review?,
+    val fullNameOfPoster: String
 )
 
 /**
- * Represents the state of reviews being loaded, including loading status, list of items, and any
- * error message.
+ * Represents the state of residencies being loaded, including loading status, list of items, and
+ * any error message.
  *
  * @property loading A boolean indicating if the reviews are currently being loaded
- * @property items A list of `ReviewCardUI` items representing the loaded reviews
+ * @property items A list of `ResidencyCardUI` items representing the loaded residencies
  * @property error An optional error message if loading failed
  */
-data class ReviewsState(
+data class ResidenciesState(
     val loading: Boolean = false,
-    val items: List<ReviewCardUI> = emptyList(),
+    val items: List<ResidencyCardUI> = emptyList(),
     val error: String? = null
 )
 
@@ -88,7 +90,7 @@ data class ReviewsState(
  * Represents the overall UI state for browsing previews and listings in a city.
  *
  * @property listings The state of the listings being displayed
- * @property reviews The state of the reviews being displayed
+ * @property residencies The state of the residencies being displayed
  * @property customLocationQuery The user's input query for a custom location.
  * @property customLocation The selected custom location.
  * @property locationSuggestions A list of location suggestions based on the user's query.
@@ -97,7 +99,7 @@ data class ReviewsState(
  */
 data class BrowseCityUiState(
     val listings: ListingsState = ListingsState(),
-    val reviews: ReviewsState = ReviewsState(),
+    val residencies: ResidenciesState = ResidenciesState(),
     val customLocationQuery: String = "",
     val customLocation: Location? = null,
     val locationSuggestions: List<Location> = emptyList(),
@@ -131,6 +133,8 @@ class BrowseCityViewModel(
   private val _uiState = MutableStateFlow(BrowseCityUiState())
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()
 
+  private val maxDistanceToDisplay = 15.0
+
   fun loadListings(location: Location) {
     _uiState.update { it.copy(listings = it.listings.copy(loading = true, error = null)) }
 
@@ -138,7 +142,8 @@ class BrowseCityViewModel(
       try {
         // Fetch all and filter by residency.city value matching the given cityName string
         val all = listingsRepository.getAllRentalListings()
-        val filtered = all.filter { location.distanceTo(it.residency.location) <= 10.0 }
+        val filtered =
+            all.filter { location.distanceTo(it.residency.location) <= maxDistanceToDisplay }
         val mapped = filtered.map { it.toCardUI() }
 
         _uiState.update {
@@ -154,33 +159,56 @@ class BrowseCityViewModel(
     }
   }
 
-  fun loadReviews(location: Location) {
-    _uiState.update { it.copy(reviews = it.reviews.copy(loading = true, error = null)) }
+  fun loadResidencies(location: Location) {
+    _uiState.update { it.copy(residencies = it.residencies.copy(loading = true, error = null)) }
 
     viewModelScope.launch {
       try {
-        // Fetch all and filter by city
-        val all = reviewsRepository.getAllReviews()
-        val filtered =
-            all.filter {
-              try {
-                val resLocation = residenciesRepository.getResidency(it.residencyName).location
-                location.distanceTo(resLocation) <= 10.0
-              } catch (e: Exception) {
-                Log.w("BrowseCityViewModel", "Could not fetch residency for ${it.residencyName}", e)
-                false
-              }
+        // Fetch all and filter by residency.city value matching the given cityName string
+        val all = residenciesRepository.getAllResidencies()
+        val filtered = all.filter { location.distanceTo(it.location) <= maxDistanceToDisplay }
+        val mapped =
+            filtered.map {
+              val allReviews = reviewsRepository.getAllReviewsByResidency(it.name)
+              val meanGrade =
+                  if (allReviews.isNotEmpty()) {
+                    val average = allReviews.map { review -> review.grade }.average()
+                    (average * 2).roundToInt() /
+                        2.0 // Round to the nearest half unit (1.0, 1.5, 2.0, etc)
+                  } else 0.0
+              val latestReview = allReviews.maxByOrNull { review -> review.postedAt }
+              val ownerInfo =
+                  if (latestReview != null) {
+                    try {
+                      profileRepository.getProfile(latestReview.ownerId).userInfo
+                    } catch (e: Exception) {
+                      Log.w(
+                          "BrowseCiteViewModel",
+                          "Profile with ownerId ${latestReview.ownerId} not found",
+                          e)
+                      null
+                    }
+                  } else null
+              val fullName =
+                  if (ownerInfo != null) "${ownerInfo.name} ${ownerInfo.lastName}" else "Unknown"
+              ResidencyCardUI(
+                  title = it.name,
+                  meanGrade = meanGrade,
+                  location = location,
+                  latestReview = latestReview,
+                  fullNameOfPoster = fullName,
+              )
             }
-        val mapped = filtered.map { it.toCardUI() }
 
         _uiState.update {
-          it.copy(reviews = it.reviews.copy(loading = false, items = mapped, error = null))
+          it.copy(residencies = it.residencies.copy(loading = false, items = mapped, error = null))
         }
       } catch (e: Exception) {
         _uiState.update {
           it.copy(
-              reviews =
-                  it.reviews.copy(loading = false, error = e.message ?: "Failed to load reviews"))
+              residencies =
+                  it.residencies.copy(
+                      loading = false, error = e.message ?: "Failed to load residencies"))
         }
       }
     }
@@ -275,18 +303,4 @@ private fun RentalListing.toCardUI(): ListingCardUI {
       leftBullets = listOf(roomType.toString(), price, area),
       rightBullets = listOf(start, resName),
       listingUid = uid)
-}
-
-// Mapping Review to ListingCardUI
-private fun Review.toCardUI(): ReviewCardUI {
-  val price = String.format(Locale.getDefault(), "%.0f.-/month", pricePerMonth)
-  val area = "${areaInM2}m²"
-  val postedAt = "Posted: ${formatDate(postedAt)}"
-  val grade = "Grade: $grade / 5.0"
-
-  return ReviewCardUI(
-      title = title,
-      leftBullets = listOf(roomType.toString(), price, area),
-      rightBullets = listOf(postedAt, residencyName, grade),
-      reviewUid = uid)
 }

@@ -2,11 +2,13 @@ package com.android.mySwissDorm.ui.overview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -24,14 +26,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
+import com.android.mySwissDorm.ui.review.DisplayGrade
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
+import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.google.firebase.Timestamp
 
 /**
  * The main screen for browsing listings and reviews in a specific location.
@@ -42,10 +50,12 @@ import com.android.mySwissDorm.ui.utils.CustomLocationDialog
  *
  * @param browseCityViewModel The ViewModel for managing the screen's state and data.
  * @param location The current location being browsed.
- * @param onGoBack A callback invoked when the back button is clicked.
  * @param onSelectListing A callback invoked when a listing card is clicked, passing the selected
  *   listing.
+ * @param onSelectResidency A callback invoked when a residency card is clicked, passing the
+ *   selected residency.
  * @param onLocationChange A callback invoked when the user selects a new location from the dialog.
+ * @param navigationActions Optional navigation helper.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,13 +63,13 @@ fun BrowseCityScreen(
     browseCityViewModel: BrowseCityViewModel = viewModel(),
     location: Location,
     onSelectListing: (ListingCardUI) -> Unit = {},
-    onSelectReview: (ReviewCardUI) -> Unit = {},
+    onSelectResidency: (ResidencyCardUI) -> Unit = {},
     onLocationChange: (Location) -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {
 
   LaunchedEffect(location) {
-    browseCityViewModel.loadReviews(location)
+    browseCityViewModel.loadResidencies(location)
     browseCityViewModel.loadListings(location)
   }
 
@@ -86,9 +96,9 @@ fun BrowseCityScreen(
   BrowseCityScreenUI(
       location = location,
       listingsState = uiState.listings,
-      reviewsState = uiState.reviews,
+      residenciesState = uiState.residencies,
       onSelectListing = onSelectListing,
-      onSelectReview = onSelectReview,
+      onSelectResidency = onSelectResidency,
       onLocationClick = onLocationClick,
       navigationActions = navigationActions)
 
@@ -113,18 +123,20 @@ fun BrowseCityScreen(
  *
  * @param location The current location being displayed.
  * @param listingsState The state of the listings (loading, items, error).
- * @param onGoBack A callback invoked when the back button is clicked.
+ * @param residenciesState The state of the residencies (loading, items, error).
  * @param onSelectListing A callback invoked when a listing card is clicked.
+ * @param onSelectResidency A callback invoked when a residency card is clicked.
  * @param onLocationClick A callback invoked when the location title is clicked to open the dialog.
+ * @param navigationActions Optional navigation helper.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BrowseCityScreenUI(
     location: Location,
     listingsState: ListingsState,
-    reviewsState: ReviewsState,
+    residenciesState: ResidenciesState,
     onSelectListing: (ListingCardUI) -> Unit,
-    onSelectReview: (ReviewCardUI) -> Unit,
+    onSelectResidency: (ResidencyCardUI) -> Unit,
     onLocationClick: () -> Unit,
     navigationActions: NavigationActions? = null,
 ) {
@@ -182,22 +194,25 @@ private fun BrowseCityScreenUI(
           when (selectedTab) {
             0 -> {
               when {
-                reviewsState.loading -> {
+                residenciesState.loading -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(modifier = Modifier.testTag(C.BrowseCityTags.LOADING))
                   }
                 }
-                reviewsState.error != null -> {
+                residenciesState.error != null -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = reviewsState.error,
+                        text = residenciesState.error,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.testTag(C.BrowseCityTags.ERROR))
                   }
                 }
-                reviewsState.items.isEmpty() -> {
+                residenciesState.items.isEmpty() -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No reviews yet.", modifier = Modifier.testTag(C.BrowseCityTags.EMPTY))
+                    Text(
+                        "No residencies yet.",
+                        color = TextColor,
+                        modifier = Modifier.testTag(C.BrowseCityTags.EMPTY))
                   }
                 }
                 else -> {
@@ -205,10 +220,12 @@ private fun BrowseCityScreenUI(
                       modifier =
                           Modifier.fillMaxSize()
                               .padding(horizontal = 16.dp)
-                              .testTag(C.BrowseCityTags.REVIEW_LIST),
+                              .testTag(C.BrowseCityTags.RESIDENCY_LIST),
                       contentPadding = PaddingValues(vertical = 12.dp),
                       verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        items(reviewsState.items) { item -> ReviewCard(item, onSelectReview) }
+                        items(residenciesState.items) { item ->
+                          ResidencyCard(item, onSelectResidency)
+                        }
                       }
                 }
               }
@@ -305,46 +322,121 @@ private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
 }
 
 @Composable
-private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
+private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> Unit) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
-      modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.reviewCard(data.reviewUid)),
+      modifier = Modifier.fillMaxWidth().padding(0.dp),
       onClick = { onClick(data) }) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-          // Image placeholder (left)
-          Box(
-              modifier =
-                  Modifier.height(140.dp)
-                      .fillMaxWidth(0.35F)
-                      .clip(RoundedCornerShape(12.dp))
-                      .background(Color(0xFFEAEAEA))) {
-                Text(
-                    "IMAGE",
-                    modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray)
-              }
+        Row(
+            modifier = Modifier.fillMaxWidth(1f).fillMaxHeight(1f),
+            verticalAlignment = Alignment.CenterVertically) {
+              // Image placeholder (left)
+              Box(
+                  modifier =
+                      Modifier.height(140.dp)
+                          .fillMaxWidth(0.35F)
+                          .clip(RoundedCornerShape(12.dp))
+                          .background(Color(0xFFEAEAEA))) {
+                    Text(
+                        "IMAGE",
+                        modifier = Modifier.align(Alignment.Center),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray)
+                  }
 
-          Spacer(Modifier.width(12.dp))
+              Spacer(Modifier.width(12.dp))
 
-          Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = data.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                color = TextColor,
-                modifier = Modifier.fillMaxWidth())
-
-            Spacer(Modifier.height(8.dp))
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-              BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
-              Spacer(Modifier.width(8.dp))
-              BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
+              Column(
+                  modifier = Modifier.weight(1f).height(140.dp).padding(4.dp),
+                  verticalArrangement = Arrangement.SpaceBetween) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start,
+                    ) { // Title, location, and grade
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.SpaceBetween) { // Title + location
+                            Text( // Title
+                                text = data.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Start,
+                                color = TextColor,
+                            )
+                            DisplayGrade(data.meanGrade, 16.dp) // Display the mean grade with stars
+                      }
+                      Row { // Location
+                        Icon(
+                            Icons.Outlined.Place,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = MainColor)
+                        Text(
+                            text = "${data.location.latitude}  ${data.location.longitude}",
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Start,
+                            color = TextBoxColor)
+                      }
+                    }
+                    if (data.latestReview == null) { // No latest review => No reviews yet
+                      Box(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = "No reviews yet.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            color = TextColor)
+                      }
+                    } else { // Review, postedAt, postedBy
+                      Column(modifier = Modifier.fillMaxWidth().height(64.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.SpaceBetween) { // Latest review + post date
+                              Text(
+                                  text = "Latest review :",
+                                  style = MaterialTheme.typography.bodyMedium,
+                                  textAlign = TextAlign.Start,
+                                  color = TextColor)
+                              Text(
+                                  text = formatDate(data.latestReview.postedAt),
+                                  style = MaterialTheme.typography.bodySmall,
+                                  textAlign = TextAlign.End,
+                                  color = TextBoxColor)
+                            }
+                        val truncatedReview = // truncate the review if it is too large
+                            data.latestReview.reviewText.let {
+                              val maxLength = 75
+                              if (it.length <= maxLength) {
+                                it
+                              } else {
+                                val truncated = it.take(maxLength)
+                                val lastSpace = truncated.lastIndexOf(' ')
+                                if (lastSpace != -1) {
+                                  "${truncated.substring(0, lastSpace)}..."
+                                } else {
+                                  "$truncated..." // No space, probably unreadable review
+                                }
+                              }
+                            }
+                        Text( // Review
+                            text = truncatedReview,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Justify,
+                            color = TextColor)
+                      }
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.End) { // posted by
+                            Text(
+                                text = "posted by ${data.fullNameOfPoster}",
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Justify,
+                                color = TextColor)
+                          }
+                    }
+                  }
+              Spacer(Modifier.width(12.dp))
             }
-          }
-        }
       }
 }
 
@@ -375,7 +467,6 @@ private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
 @Preview(showBackground = true, widthDp = 420)
 @Composable
 private fun BrowseCityScreen_Preview() {
-
   val sampleListingUi =
       ListingsState(
           loading = false,
@@ -393,29 +484,45 @@ private fun BrowseCityScreen_Preview() {
                       listingUid = "preview2")),
       )
 
-  val sampleReviewUi =
-      ReviewsState(
+  val sampleReview =
+      Review(
+          uid = "",
+          ownerId = "",
+          postedAt = Timestamp.now(),
+          title = "",
+          reviewText = "This is an example review, I can write anything here",
+          grade = 4.0,
+          residencyName = "Vortex",
+          roomType = RoomType.STUDIO,
+          pricePerMonth = 1000.0,
+          areaInM2 = 44,
+          imageUrls = emptyList())
+
+  val sampleResidencyUi =
+      ResidenciesState(
           loading = false,
           items =
               listOf(
-                  ReviewCardUI(
-                      title = "Bad room",
-                      leftBullets = listOf("Room in flatshare", "600.-/month", "19m²"),
-                      rightBullets = listOf("Starting 15/09/2025", "Vortex"),
-                      reviewUid = "preview1"),
-                  ReviewCardUI(
-                      title = "Very nice room near EPFL",
-                      leftBullets = listOf("Studio", "1’150.-/month", "24m²"),
-                      rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
-                      reviewUid = "preview2"),
+                  ResidencyCardUI(
+                      title = "Vortex",
+                      meanGrade = 4.5,
+                      location = Location("Lausanne", 46.5197, 6.6323),
+                      latestReview = sampleReview,
+                      fullNameOfPoster = "John Doe"),
+                  ResidencyCardUI(
+                      title = "Atrium",
+                      meanGrade = 2.0,
+                      location = Location("Lausanne", 46.5197, 6.6323),
+                      latestReview = sampleReview,
+                      fullNameOfPoster = "Doe John"),
               ),
       )
   MySwissDormAppTheme {
     BrowseCityScreenUI(
         listingsState = sampleListingUi,
-        reviewsState = sampleReviewUi,
+        residenciesState = sampleResidencyUi,
         onSelectListing = {},
-        onSelectReview = {},
+        onSelectResidency = {},
         location = Location("Lausanne", 46.5197, 6.6323),
         onLocationClick = {})
   }

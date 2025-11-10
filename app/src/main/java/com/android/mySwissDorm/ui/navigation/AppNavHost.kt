@@ -164,9 +164,7 @@ fun AppNavHost(
             onSelectListing = {
               navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
             },
-            onSelectReview = {
-              navActions.navigateTo(Screen.ReviewOverview(reviewUid = it.reviewUid))
-            },
+            onSelectResidency = {}, // Will modify this when the BrowseReviews screen is implemented
             onLocationChange = { newLocation ->
               navActions.navigateTo(Screen.BrowseOverview(newLocation))
             },

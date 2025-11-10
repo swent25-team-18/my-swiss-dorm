@@ -2,12 +2,28 @@ package com.android.mySwissDorm.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import com.android.mySwissDorm.model.rental.RentalListingRepository
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.model.review.Review
+import com.android.mySwissDorm.model.review.ReviewsRepository
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-data class Contribution(val title: String, val description: String)
+enum class ContributionType(val label: String) {
+  LISTING("Listing"),
+  REVIEW("Review")
+}
+
+data class Contribution(
+    val title: String,
+    val description: String,
+    val type: ContributionType = ContributionType.LISTING,
+    val referenceId: String? = null,
+    val postedAtSeconds: Long? = null,
+)
 
 data class ContributionsUiState(
     val items: List<Contribution> = emptyList(),
@@ -15,36 +31,72 @@ data class ContributionsUiState(
     val error: String? = null
 )
 
-class FakeContributionsRepository {
-  suspend fun fetchMyContributions(): List<Contribution> {
-    delay(200) // simulate I/O
-    return listOf(
-        Contribution("Listing l1", "Nice room near EPFL"),
-        Contribution("Request r1", "Student interested in a room"))
-  }
-}
-
 class ProfileContributionsViewModel(
-    private val repo: FakeContributionsRepository = FakeContributionsRepository()
+    private val currentUserId: () -> String? = {
+      com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+    },
+    private val rentalRepo: RentalListingRepository = RentalListingRepositoryProvider.repository,
+    private val reviewsRepo: ReviewsRepository = ReviewsRepositoryProvider.repository
 ) : ViewModel() {
 
-  private val _ui = MutableStateFlow(ContributionsUiState(isLoading = true))
+  private val _ui = MutableStateFlow(ContributionsUiState())
   val ui: StateFlow<ContributionsUiState> = _ui
 
-  fun load() {
-    if (_ui.value.items.isNotEmpty() && !_ui.value.isLoading) return
+  fun load(force: Boolean = false) {
+    if (!force && _ui.value.items.isNotEmpty()) return
+
+    val uid = currentUserId()
+    if (uid.isNullOrBlank()) {
+      _ui.value =
+          ContributionsUiState(
+              items = emptyList(),
+              isLoading = false,
+              error = "You must be signed in to see contributions.")
+      return
+    }
+
     _ui.value = _ui.value.copy(isLoading = true, error = null)
+
     viewModelScope.launch {
       try {
-        _ui.value = ContributionsUiState(items = repo.fetchMyContributions(), isLoading = false)
+        val listingsDeferred = async { rentalRepo.getAllRentalListingsByUser(uid) }
+        val reviewsDeferred = async { reviewsRepo.getAllReviewsByUser(uid) }
+        val listings = listingsDeferred.await()
+        val reviews = reviewsDeferred.await()
+
+        val contributions =
+            buildList {
+                  listings.forEach { listing ->
+                    add(
+                        Contribution(
+                            title = listing.title.ifBlank { "Listing" },
+                            description = listing.description,
+                            type = ContributionType.LISTING,
+                            referenceId = listing.uid,
+                            postedAtSeconds = listing.postedAt.seconds))
+                  }
+                  reviews.forEach { review -> add(review.toContribution()) }
+                }
+                .sortedByDescending { it.postedAtSeconds ?: Long.MIN_VALUE }
+
+        _ui.value = ContributionsUiState(items = contributions, isLoading = false)
       } catch (t: Throwable) {
-        _ui.value = _ui.value.copy(isLoading = false, error = t.message ?: "Unknown error")
+        _ui.value =
+            _ui.value.copy(isLoading = false, error = t.message ?: "Failed to load contributions.")
       }
     }
   }
 
-  /** Helper to support old call-sites that provide a list directly. */
+  /** Helper to support previews/tests that provide a list directly. */
   fun setFromExternal(list: List<Contribution>) {
     _ui.value = ContributionsUiState(items = list, isLoading = false, error = null)
   }
+
+  private fun Review.toContribution(): Contribution =
+      Contribution(
+          title = title.ifBlank { "Review" },
+          description = reviewText,
+          type = ContributionType.REVIEW,
+          referenceId = uid,
+          postedAtSeconds = postedAt.seconds)
 }

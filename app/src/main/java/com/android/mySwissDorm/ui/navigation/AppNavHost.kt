@@ -33,6 +33,9 @@ import com.android.mySwissDorm.ui.homepage.HomePageScreen
 import com.android.mySwissDorm.ui.listing.EditListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
+import com.android.mySwissDorm.ui.profile.ContributionType
+import com.android.mySwissDorm.ui.profile.ProfileContributionsScreen
+import com.android.mySwissDorm.ui.profile.ProfileContributionsViewModel
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
@@ -130,7 +133,8 @@ fun AppNavHost(
           onProfileClick = { navActions.navigateTo(Screen.Profile) },
           navigationActions = navActions,
           onAdminClick = { navActions.navigateTo(Screen.Admin) },
-          isAdmin = isAdmin)
+          isAdmin = isAdmin,
+          onContributionClick = { navActions.navigateTo(Screen.ProfileContributions) })
     }
 
     // --- Secondary destinations ---
@@ -177,6 +181,25 @@ fun AppNavHost(
     composable(Screen.AddReview.route) {
       AddReviewScreen(
           onConfirm = { navActions.navigateTo(Screen.Homepage) }, onBack = { navActions.goBack() })
+    }
+
+    composable(Screen.ProfileContributions.route) {
+      val vm: ProfileContributionsViewModel = viewModel()
+      val ui by vm.ui.collectAsState()
+      LaunchedEffect(Unit) { vm.load(force = true) }
+      ProfileContributionsScreen(
+          contributions = ui.items,
+          onBackClick = { navActions.goBack() },
+          onContributionClick = { contribution ->
+            when (contribution.type) {
+              com.android.mySwissDorm.ui.profile.ContributionType.LISTING ->
+                  contribution.referenceId?.let {
+                    navActions.navigateTo(Screen.ListingOverview(it))
+                  }
+              com.android.mySwissDorm.ui.profile.ContributionType.REVIEW ->
+                  contribution.referenceId?.let { navActions.navigateTo(Screen.ReviewOverview(it)) }
+            }
+          })
     }
 
     composable(Screen.ListingOverview.route) { navBackStackEntry ->

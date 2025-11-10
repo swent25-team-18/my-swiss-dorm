@@ -4,8 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -42,45 +40,81 @@ fun ProfileContributionsScreen(
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = BackGroundColor, titleContentColor = TextColor))
       }) { inner ->
-        LazyColumn( ////
-            modifier = Modifier.padding(inner).fillMaxSize().background(White),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-              itemsIndexed(contributions) { index, c ->
-                Card(
-                    modifier =
-                        Modifier.fillMaxWidth().testTag("card_contrib_$index").clickable {
-                          onContributionClick(c)
-                        },
-                    shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(containerColor = BackGroundColor),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    border = BorderStroke(1.dp, LightGray)) {
-                      Column(Modifier.padding(16.dp)) {
-                        Text(
-                            text = c.title,
-                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
-                            color = TextColor)
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            text = c.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF7A7A7A))
-                        Spacer(Modifier.height(12.dp))
-                        OutlinedButton(
-                            onClick = { onContributionClick(c) },
-                            modifier = Modifier.testTag("btn_contrib_details_$index"),
-                            border = BorderStroke(1.dp, MainColor),
-                            colors =
-                                ButtonDefaults.outlinedButtonColors(
-                                    containerColor = BackGroundColor, contentColor = MainColor),
-                            shape = MaterialTheme.shapes.medium) {
-                              Text("View details")
-                            }
-                      }
-                    }
+        Column(modifier = Modifier.padding(inner).fillMaxSize().background(White).padding(16.dp)) {
+          ProfileContributionsList(
+              contributions = contributions,
+              onContributionClick = onContributionClick,
+              modifier = Modifier.fillMaxWidth().testTag("contributions_list"))
+        }
+      }
+}
+
+@Composable
+fun ProfileContributionsList(
+    contributions: List<Contribution>,
+    onContributionClick: (Contribution) -> Unit,
+    modifier: Modifier = Modifier
+) {
+  if (contributions.isEmpty()) {
+    Text(
+        text = "No contributions yet",
+        style = MaterialTheme.typography.bodyMedium,
+        color = TextColor.copy(alpha = 0.6f),
+        modifier = modifier)
+    return
+  }
+
+  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    contributions.forEachIndexed { index, contribution ->
+      ContributionCard(
+          contribution = contribution,
+          onClick = { onContributionClick(contribution) },
+          index = index)
+    }
+  }
+}
+
+@Composable
+private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, index: Int) {
+  Card(
+      modifier =
+          Modifier.fillMaxWidth().testTag("card_contrib_$index").clickable(onClick = onClick),
+      shape = MaterialTheme.shapes.large,
+      colors = CardDefaults.cardColors(containerColor = BackGroundColor),
+      elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+      border = BorderStroke(1.dp, LightGray)) {
+        Column(Modifier.padding(16.dp)) {
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(
+                    text = contribution.title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                    color = TextColor,
+                    modifier = Modifier.weight(1f, fill = true))
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = contribution.type.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MainColor)
               }
-            }
+          Spacer(Modifier.height(6.dp))
+          Text(
+              text = contribution.description,
+              style = MaterialTheme.typography.bodyMedium,
+              color = Color(0xFF7A7A7A))
+          Spacer(Modifier.height(12.dp))
+          OutlinedButton(
+              onClick = onClick,
+              modifier = Modifier.testTag("btn_contrib_details_$index"),
+              border = BorderStroke(1.dp, MainColor),
+              colors =
+                  ButtonDefaults.outlinedButtonColors(
+                      containerColor = BackGroundColor, contentColor = MainColor),
+              shape = MaterialTheme.shapes.medium) {
+                Text("View details")
+              }
+        }
       }
 }
 

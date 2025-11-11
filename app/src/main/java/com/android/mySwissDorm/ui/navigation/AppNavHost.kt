@@ -36,6 +36,7 @@ import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
+import com.android.mySwissDorm.ui.review.ReviewsByResidencyScreen
 import com.android.mySwissDorm.ui.review.ViewReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -164,7 +165,9 @@ fun AppNavHost(
             onSelectListing = {
               navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
             },
-            onSelectResidency = {}, // Will modify this when the BrowseReviews screen is implemented
+            onSelectResidency = {
+              navActions.navigateTo(Screen.ReviewsByResidencyOverview(it.title))
+            },
             onLocationChange = { newLocation ->
               navActions.navigateTo(Screen.BrowseOverview(newLocation))
             },
@@ -175,6 +178,21 @@ fun AppNavHost(
     composable(Screen.AddReview.route) {
       AddReviewScreen(
           onConfirm = { navActions.navigateTo(Screen.Homepage) }, onBack = { navActions.goBack() })
+    }
+
+    composable(Screen.ReviewsByResidencyOverview.route) { navBackStackEntry ->
+      val residencyName = navBackStackEntry.arguments?.getString("residencyName")
+
+      residencyName?.let {
+        ReviewsByResidencyScreen(
+            residencyName = residencyName,
+            onGoBack = { navActions.goBack() },
+            onSelectReview = { navActions.navigateTo(Screen.ReviewOverview(it.reviewUid)) })
+      }
+          ?: run {
+            Log.e("AppNavHost", "residencyName is null")
+            Toast.makeText(context, "residencyName is null", Toast.LENGTH_SHORT).show()
+          }
     }
 
     composable(Screen.ListingOverview.route) { navBackStackEntry ->

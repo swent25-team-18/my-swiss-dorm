@@ -79,7 +79,7 @@ fun CameraButton(
       }
   Button(
       onClick = {
-        val photo = Photo.createNewPhotoOnCache(context, UUID.randomUUID().toString())
+        val photo = Photo.createNewPhotoOnCache(context, UUID.randomUUID().toString() + ".jpg")
         uriCaptured = photo.image
         photoCaptured = photo
         cameraLauncher.launch(input = photo.image)

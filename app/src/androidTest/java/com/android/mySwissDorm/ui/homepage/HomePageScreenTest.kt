@@ -292,7 +292,7 @@ class HomePageScreenTest : FirestoreTest() {
         try {
           val profile = ProfileRepositoryProvider.repository.getProfile(uid)
           profile.userInfo.location?.name == "Lausanne"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
           false
         }
       }
@@ -377,16 +377,26 @@ class HomePageScreenTest : FirestoreTest() {
             ownerId = uid)
     ProfileRepositoryProvider.repository.createProfile(profile)
 
-    // Wait for cities to load
-    composeTestRule.waitUntil(timeoutMillis = 3_000) {
+    // Wait for cities list to be available
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(HomePageScreenTestTags.CITIES_LIST)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll the cities list to Lausanne's index (first city, index 2) to bring it into view
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+
+    // Wait for Lausanne card to be displayed after scrolling
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
       composeTestRule
           .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    // Scroll to Lausanne card
-    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(0)
+    // Scroll to Lausanne card and wait
     composeTestRule
         .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
         .performScrollTo()
@@ -404,7 +414,7 @@ class HomePageScreenTest : FirestoreTest() {
         try {
           val updatedProfile = ProfileRepositoryProvider.repository.getProfile(uid)
           updatedProfile.userInfo.location?.name == "Lausanne"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
           false
         }
       }
@@ -412,15 +422,13 @@ class HomePageScreenTest : FirestoreTest() {
 
     // Verify location was saved to profile
     val updatedProfile = runBlocking { ProfileRepositoryProvider.repository.getProfile(uid) }
+    val savedLocation = updatedProfile.userInfo.location
+    assertNotNull("Location should not be null", savedLocation)
+    val location = savedLocation!! // Safe to use !! after assertNotNull
     assertEquals(
-        "Location should be saved to profile after clicking city card",
-        "Lausanne",
-        updatedProfile.userInfo.location?.name)
-    assertNotNull("Location should not be null", updatedProfile.userInfo.location)
-    assertEquals(
-        "Latitude should match", 46.5197, updatedProfile.userInfo.location!!.latitude, 0.0001)
-    assertEquals(
-        "Longitude should match", 6.6323, updatedProfile.userInfo.location!!.longitude, 0.0001)
+        "Location should be saved to profile after clicking city card", "Lausanne", location.name)
+    assertEquals("Latitude should match", 46.5197, location.latitude, 0.0001)
+    assertEquals("Longitude should match", 6.6323, location.longitude, 0.0001)
   }
 
   @Test
@@ -444,20 +452,30 @@ class HomePageScreenTest : FirestoreTest() {
     ProfileRepositoryProvider.repository.createProfile(profile)
 
     // Verify initial location
-    var currentProfile = runBlocking { ProfileRepositoryProvider.repository.getProfile(uid) }
+    val currentProfile = runBlocking { ProfileRepositoryProvider.repository.getProfile(uid) }
     assertEquals(
         "Initial location should be Geneva", "Geneva", currentProfile.userInfo.location?.name)
 
-    // Wait for cities to load
-    composeTestRule.waitUntil(timeoutMillis = 3_000) {
+    // Wait for cities list to be available
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(HomePageScreenTestTags.CITIES_LIST)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll the cities list to Zurich's index (third city, index 3) to bring it into view
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(3)
+
+    // Wait for Zurich card to be displayed after scrolling
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
       composeTestRule
           .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Zurich"))
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    // Scroll to Zurich card
-    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+    // Scroll to Zurich card and wait
     composeTestRule
         .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Zurich"))
         .performScrollTo()
@@ -475,7 +493,7 @@ class HomePageScreenTest : FirestoreTest() {
         try {
           val updatedProfile = ProfileRepositoryProvider.repository.getProfile(uid)
           updatedProfile.userInfo.location?.name == "Zürich"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
           false
         }
       }
@@ -483,18 +501,11 @@ class HomePageScreenTest : FirestoreTest() {
 
     // Verify location was updated
     val updatedProfile = runBlocking { ProfileRepositoryProvider.repository.getProfile(uid) }
-    assertEquals(
-        "Location should be updated to Zurich", "Zürich", updatedProfile.userInfo.location?.name)
-    assertNotNull("Location should not be null", updatedProfile.userInfo.location)
-    assertEquals(
-        "Latitude should match Zurich",
-        47.3769,
-        updatedProfile.userInfo.location!!.latitude,
-        0.0001)
-    assertEquals(
-        "Longitude should match Zurich",
-        8.5417,
-        updatedProfile.userInfo.location!!.longitude,
-        0.0001)
+    val savedLocation = updatedProfile.userInfo.location
+    assertNotNull("Location should not be null", savedLocation)
+    val location = savedLocation!! // Safe to use !! after assertNotNull
+    assertEquals("Location should be updated to Zurich", "Zürich", location.name)
+    assertEquals("Latitude should match Zurich", 47.3769, location.latitude, 0.0001)
+    assertEquals("Longitude should match Zurich", 8.5417, location.longitude, 0.0001)
   }
 }

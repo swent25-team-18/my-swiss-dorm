@@ -6,13 +6,12 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlin.collections.get
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
-import java.net.URL
-import kotlin.collections.get
 import kotlinx.coroutines.tasks.await
 
 const val RENTAL_LISTINGS_COLLECTION = "rental_listings"

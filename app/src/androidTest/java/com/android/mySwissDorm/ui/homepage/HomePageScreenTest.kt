@@ -16,11 +16,8 @@ import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
-import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.profile.UserInfo
-import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -257,19 +254,9 @@ class HomePageScreenTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
-    // Create profile without location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = FakeUser.FakeUser1.userName,
-                    lastName = "Test",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "+41001112233",
-                    location = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    // Use profile1 with no location and updated ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
     // Open custom location dialog
     viewModel.onCustomLocationClick()
@@ -309,19 +296,9 @@ class HomePageScreenTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
-    // Create profile without location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = FakeUser.FakeUser1.userName,
-                    lastName = "Test",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "+41001112233",
-                    location = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    // Use profile1 with no location and updated ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
     // Open custom location dialog
     viewModel.onCustomLocationClick()
@@ -363,19 +340,9 @@ class HomePageScreenTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
-    // Create profile without location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = FakeUser.FakeUser1.userName,
-                    lastName = "Test",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "+41001112233",
-                    location = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    // Use profile1 with no location and updated ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
     // Wait for cities list to be available
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
@@ -436,20 +403,11 @@ class HomePageScreenTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
-    // Create profile with existing location
+    // Use profile1 with updated location and ownerId
     val existingLocation = Location("Geneva", 46.2044, 6.1432)
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = FakeUser.FakeUser1.userName,
-                    lastName = "Test",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "+41001112233",
-                    location = existingLocation),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(
+            userInfo = profile1.userInfo.copy(location = existingLocation), ownerId = uid))
 
     // Verify initial location
     val currentProfile = runBlocking { ProfileRepositoryProvider.repository.getProfile(uid) }

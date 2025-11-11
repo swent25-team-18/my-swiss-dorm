@@ -7,11 +7,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.profile.UserInfo
-import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -75,19 +72,9 @@ class NavigationActionsTest : FirestoreTest() {
     val uid = FirebaseEmulator.auth.currentUser!!.uid
     val location = Location("Lausanne", 46.5197, 6.6323)
 
-    // Create profile with location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "Test",
-                    lastName = "User",
-                    email = "test@example.com",
-                    phoneNumber = "+41001112233",
-                    location = location),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    // Use profile1 with updated location and ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = location), ownerId = uid))
 
     // Wait for profile to be created and recreate NavigationActions with updated ViewModel
     composeTestRule.waitForIdle()
@@ -143,19 +130,9 @@ class NavigationActionsTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
-    // Create profile without location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "Test",
-                    lastName = "User",
-                    email = "test@example.com",
-                    phoneNumber = "+41001112233",
-                    location = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    // Use profile1 with no location and updated ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
     composeTestRule.waitForIdle()
     // Recreate NavigationActions with updated ViewModel
@@ -261,19 +238,9 @@ class NavigationActionsTest : FirestoreTest() {
     val uid = FirebaseEmulator.auth.currentUser!!.uid
     val location = Location("Lausanne", 46.5197, 6.6323)
 
-    // Create profile with location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "Test",
-                    lastName = "User",
-                    email = "test@example.com",
-                    phoneNumber = "+41001112233",
-                    location = location),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    // Use profile1 with updated location and ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = location), ownerId = uid))
 
     // Wait for profile to be created and recreate NavigationActions with updated ViewModel
     composeTestRule.waitForIdle()
@@ -335,19 +302,9 @@ class NavigationActionsTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
-    // Create profile without location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "Test",
-                    lastName = "User",
-                    email = "test@example.com",
-                    phoneNumber = "+41001112233",
-                    location = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    // Use profile1 with no location and updated ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
     composeTestRule.waitForIdle()
     composeTestRule.runOnUiThread {

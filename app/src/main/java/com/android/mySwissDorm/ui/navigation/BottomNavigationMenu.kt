@@ -1,7 +1,7 @@
 package com.android.mySwissDorm.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -16,9 +16,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 
 @Composable
 fun BottomNavigationMenu(
-    selectedScreen: Screen,
-    onTabSelected: (Screen) -> Unit = {}, // ← default no-op for tests
     modifier: Modifier = Modifier,
+    selectedScreen: Screen,
+    onTabSelected: (Screen) -> Unit = {} // ← default no-op for test
 ) {
   NavigationBar(modifier = modifier.testTag("bottom_nav")) {
     val tabs = Screen.topLevel
@@ -26,6 +26,7 @@ fun BottomNavigationMenu(
       val (label, icon) =
           when (screen) {
             Screen.Homepage -> screen.name to Icons.Filled.Home
+            Screen.AddHub -> screen.name to Icons.Filled.Add
             Screen.Inbox -> screen.name to Icons.Filled.Chat
             Screen.Settings -> screen.name to Icons.Filled.Settings
             else -> screen.name to Icons.Filled.Home
@@ -57,9 +58,11 @@ fun BottomBarFromNav(navigationActions: NavigationActions?) {
   // Map nested routes to their parent tab
   val selected =
       when {
-        route == Screen.Homepage.route || route == Screen.BrowseOverview.route -> Screen.Homepage
+        route == Screen.Homepage.route || route?.startsWith("browseOverview/") == true ->
+            Screen.Homepage
         route == Screen.Inbox.route -> Screen.Inbox
         route == Screen.Settings.route -> Screen.Settings
+        route == Screen.AddHub.route -> Screen.AddHub
         else -> Screen.Homepage
       }
 

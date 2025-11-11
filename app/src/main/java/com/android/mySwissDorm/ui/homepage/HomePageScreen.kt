@@ -153,7 +153,13 @@ fun HomePageScreen(
                   val city = uiState.cities[index]
                   if (city.name.contains(inputText, ignoreCase = true) ||
                       city.description.contains(inputText, ignoreCase = true)) {
-                    CityCard(city = city, onClick = { onSelectLocation(city.location) })
+                    CityCard(
+                        city = city,
+                        onClick = {
+                          val cityLocation = city.location
+                          homePageViewModel.saveLocationToProfile(cityLocation)
+                          onSelectLocation(cityLocation)
+                        })
                     Spacer(modifier = Modifier.height(16.dp))
                   }
                 }
@@ -169,8 +175,7 @@ fun HomePageScreen(
               remember<(Location) -> Unit> {
                 { location -> homePageViewModel.setCustomLocation(location) }
               }
-          val onDismiss =
-              remember<() -> Unit> { { homePageViewModel.dismissCustomLocationDialog() } }
+          val onDismiss = remember { { homePageViewModel.dismissCustomLocationDialog() } }
           val onConfirm =
               remember<(Location) -> Unit> {
                 { location ->

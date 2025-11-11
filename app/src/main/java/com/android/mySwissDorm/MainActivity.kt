@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
     setContent {
       PhotoRepositoryProvider.initialize(LocalContext.current)
 
-      MySwissDormAppTheme(darkTheme = true) {
+      MySwissDormAppTheme {
         Surface(
             modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
             color = MaterialTheme.colorScheme.background) {

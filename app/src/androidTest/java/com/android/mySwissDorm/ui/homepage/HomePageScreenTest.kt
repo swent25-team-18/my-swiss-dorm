@@ -16,11 +16,8 @@ import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
-import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.profile.UserInfo
-import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -28,6 +25,7 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -256,19 +254,9 @@ class HomePageScreenTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
-    // Create profile without location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = FakeUser.FakeUser1.userName,
-                    lastName = "Test",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "+41001112233",
-                    location = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    // Use profile1 with no location and updated ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
     // Open custom location dialog
     viewModel.onCustomLocationClick()
@@ -291,7 +279,7 @@ class HomePageScreenTest : FirestoreTest() {
         try {
           val profile = ProfileRepositoryProvider.repository.getProfile(uid)
           profile.userInfo.location?.name == "Lausanne"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
           false
         }
       }
@@ -308,19 +296,9 @@ class HomePageScreenTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
-    // Create profile without location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = FakeUser.FakeUser1.userName,
-                    lastName = "Test",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "+41001112233",
-                    location = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    ProfileRepositoryProvider.repository.createProfile(profile)
+    // Use profile1 with no location and updated ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
     // Open custom location dialog
     viewModel.onCustomLocationClick()
@@ -355,5 +333,137 @@ class HomePageScreenTest : FirestoreTest() {
     val updatedProfile = ProfileRepositoryProvider.repository.getProfile(uid)
     assertEquals(
         "Location should be saved to profile", "Geneva", updatedProfile.userInfo.location?.name)
+  }
+
+  @Test
+  fun clickingCityCard_savesLocationToProfile() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Use profile1 with no location and updated ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
+
+    // Wait for cities list to be available
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(HomePageScreenTestTags.CITIES_LIST)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll the cities list to Lausanne's index (first city, index 2) to bring it into view
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+
+    // Wait for Lausanne card to be displayed after scrolling
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll to Lausanne card and wait
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+        .performScrollTo()
+    composeTestRule.waitForIdle()
+
+    // Click on Lausanne city card
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for the save to complete by checking if profile was updated
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      runBlocking {
+        try {
+          val updatedProfile = ProfileRepositoryProvider.repository.getProfile(uid)
+          updatedProfile.userInfo.location?.name == "Lausanne"
+        } catch (_: Exception) {
+          false
+        }
+      }
+    }
+
+    // Verify location was saved to profile
+    val updatedProfile = runBlocking { ProfileRepositoryProvider.repository.getProfile(uid) }
+    val savedLocation = updatedProfile.userInfo.location
+    assertNotNull("Location should not be null", savedLocation)
+    val location = savedLocation!! // Safe to use !! after assertNotNull
+    assertEquals(
+        "Location should be saved to profile after clicking city card", "Lausanne", location.name)
+    assertEquals("Latitude should match", 46.5197, location.latitude, 0.0001)
+    assertEquals("Longitude should match", 6.6323, location.longitude, 0.0001)
+  }
+
+  @Test
+  fun clickingCityCard_updatesExistingLocation() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Use profile1 with updated location and ownerId
+    val existingLocation = Location("Geneva", 46.2044, 6.1432)
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(
+            userInfo = profile1.userInfo.copy(location = existingLocation), ownerId = uid))
+
+    // Verify initial location
+    val currentProfile = runBlocking { ProfileRepositoryProvider.repository.getProfile(uid) }
+    assertEquals(
+        "Initial location should be Geneva", "Geneva", currentProfile.userInfo.location?.name)
+
+    // Wait for cities list to be available
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(HomePageScreenTestTags.CITIES_LIST)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll the cities list to Zurich's index (third city, index 3) to bring it into view
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(3)
+
+    // Wait for Zurich card to be displayed after scrolling
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Zurich"))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll to Zurich card and wait
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Zurich"))
+        .performScrollTo()
+    composeTestRule.waitForIdle()
+
+    // Click on Zurich city card
+    composeTestRule
+        .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Zurich"))
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for the save to complete
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      runBlocking {
+        try {
+          val updatedProfile = ProfileRepositoryProvider.repository.getProfile(uid)
+          updatedProfile.userInfo.location?.name == "Zürich"
+        } catch (_: Exception) {
+          false
+        }
+      }
+    }
+
+    // Verify location was updated
+    val updatedProfile = runBlocking { ProfileRepositoryProvider.repository.getProfile(uid) }
+    val savedLocation = updatedProfile.userInfo.location
+    assertNotNull("Location should not be null", savedLocation)
+    val location = savedLocation!! // Safe to use !! after assertNotNull
+    assertEquals("Location should be updated to Zurich", "Zürich", location.name)
+    assertEquals("Latitude should match Zurich", 47.3769, location.latitude, 0.0001)
+    assertEquals("Longitude should match Zurich", 8.5417, location.longitude, 0.0001)
   }
 }

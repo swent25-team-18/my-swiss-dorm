@@ -102,4 +102,30 @@ class NavigationViewModel(
       }
     }
   }
+
+  /**
+   * Determines the appropriate destination screen when navigating to Homepage. This follows MVVM
+   * principles by keeping business logic (checking user profile) in the ViewModel.
+   *
+   * @return Screen.Homepage if user has no location, or Screen.BrowseOverview with user's location
+   */
+  suspend fun getHomepageDestination(): Screen {
+    return try {
+      val currentUser = auth.currentUser
+      if (currentUser != null) {
+        val profile = profileRepository.getProfile(currentUser.uid)
+        val location = profile.userInfo.location
+        if (location != null) {
+          Screen.BrowseOverview(location)
+        } else {
+          Screen.Homepage
+        }
+      } else {
+        Screen.Homepage
+      }
+    } catch (e: Exception) {
+      Log.e("NavigationViewModel", "Error getting homepage destination, defaulting to Homepage", e)
+      Screen.Homepage
+    }
+  }
 }

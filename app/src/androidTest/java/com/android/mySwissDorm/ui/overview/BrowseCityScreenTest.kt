@@ -8,10 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
-import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.profile.UserInfo
-import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
@@ -329,19 +326,9 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val uid = FirebaseEmulator.auth.currentUser!!.uid
     val initialLocation = Location("Lausanne", 46.5197, 6.6323)
 
-    // Create profile without location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = FakeUser.FakeUser1.userName,
-                    lastName = "Test",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "+41001112233",
-                    location = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    profileRepo.createProfile(profile)
+    // Use profile1 with no location and updated ownerId
+    profileRepo.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
     compose.setContent { BrowseCityScreen(location = initialLocation, onLocationChange = {}) }
     compose.waitForIdle()

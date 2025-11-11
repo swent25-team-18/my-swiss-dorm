@@ -138,7 +138,11 @@ class BrowseCityViewModel(
       try {
         // Fetch all and filter by residency.city value matching the given cityName string
         val all = listingsRepository.getAllRentalListings()
-        val filtered = all.filter { location.distanceTo(it.residency.location) <= 10.0 }
+        val filtered =
+            all.filter {
+              location.distanceTo(residenciesRepository.getResidency(it.residencyName).location) <=
+                  10.0
+            }
         val mapped = filtered.map { it.toCardUI() }
 
         _uiState.update {

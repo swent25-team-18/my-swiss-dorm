@@ -16,6 +16,7 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -41,10 +42,9 @@ class NavigationActionsTest : FirestoreTest() {
   @Before
   override fun setUp() = runTest {
     super.setUp()
-    var controller: NavHostController? = null
     composeTestRule.setContent {
-      controller = rememberNavController()
-      navController = controller!!
+      val controller = rememberNavController()
+      navController = controller
 
       // Create a simple NavHost for testing
       NavHost(navController = navController, startDestination = Screen.Homepage.route) {
@@ -63,7 +63,7 @@ class NavigationActionsTest : FirestoreTest() {
       navActions =
           NavigationActions(
               navController = navController,
-              coroutineScope = CoroutineScope(kotlinx.coroutines.Dispatchers.Main),
+              coroutineScope = CoroutineScope(Dispatchers.Main),
               navigationViewModel = viewModel)
     }
     composeTestRule.waitForIdle()
@@ -96,7 +96,7 @@ class NavigationActionsTest : FirestoreTest() {
       navActions =
           NavigationActions(
               navController = navController,
-              coroutineScope = CoroutineScope(kotlinx.coroutines.Dispatchers.Main),
+              coroutineScope = CoroutineScope(Dispatchers.Main),
               navigationViewModel = viewModel)
     }
     composeTestRule.waitForIdle()
@@ -164,7 +164,7 @@ class NavigationActionsTest : FirestoreTest() {
       navActions =
           NavigationActions(
               navController = navController,
-              coroutineScope = CoroutineScope(kotlinx.coroutines.Dispatchers.Main),
+              coroutineScope = CoroutineScope(Dispatchers.Main),
               navigationViewModel = viewModel)
     }
     composeTestRule.waitForIdle()
@@ -282,7 +282,7 @@ class NavigationActionsTest : FirestoreTest() {
       navActions =
           NavigationActions(
               navController = navController,
-              coroutineScope = CoroutineScope(kotlinx.coroutines.Dispatchers.Main),
+              coroutineScope = CoroutineScope(Dispatchers.Main),
               navigationViewModel = viewModel)
     }
     composeTestRule.waitForIdle()
@@ -355,7 +355,7 @@ class NavigationActionsTest : FirestoreTest() {
       navActions =
           NavigationActions(
               navController = navController,
-              coroutineScope = CoroutineScope(kotlinx.coroutines.Dispatchers.Main),
+              coroutineScope = CoroutineScope(Dispatchers.Main),
               navigationViewModel = viewModel)
     }
     composeTestRule.waitForIdle()

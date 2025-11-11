@@ -6,11 +6,8 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
-import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
@@ -19,8 +16,6 @@ import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.Timestamp
-import java.net.URL
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -43,27 +38,8 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
   private val reviewUid1 = "vortexReview1"
   private val reviewUid2 = "vortexReview2"
-  private lateinit var reviewVortex1: Review
-  private lateinit var reviewVortex2: Review
-
-  private var vortex =
-      Residency(
-          name = "Vortex",
-          description = "description",
-          location = Location("Vortex", 46.5245257, 6.575223),
-          city = "Lausanne",
-          email = null,
-          phone = null,
-          website = URL("https://www.google.com"))
-  private var atrium =
-      Residency(
-          name = "Atrium",
-          description = "description",
-          location = Location("Atrium", 46.5232163, 6.5660033),
-          city = "Lausanne",
-          email = null,
-          phone = null,
-          website = URL("https://www.google.com"))
+  private lateinit var review1: Review
+  private lateinit var review2: Review
 
   override fun createRepositories() {
     runBlocking {
@@ -83,27 +59,13 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
       profileRepo.createProfile(profile1.copy(ownerId = userId))
     }
 
-    reviewVortex1 =
-        Review(
-            uid = reviewUid1,
-            ownerId = userId,
-            postedAt = Timestamp.now(),
-            title = "Vortex Review 1",
-            reviewText = "First review description",
-            grade = 4.5,
-            residencyName = "Vortex",
-            roomType = RoomType.STUDIO,
-            pricePerMonth = 1200.0,
-            areaInM2 = 60,
-            imageUrls = emptyList())
-    reviewVortex2 =
-        reviewVortex1.copy(
-            uid = reviewUid2, title = "Vortex Review 2", reviewText = "Second review description")
+    review1 = reviewVortex1.copy(uid = reviewUid1, ownerId = userId)
+    review2 = reviewVortex2.copy(uid = reviewUid2, ownerId = userId)
 
     runTest {
       switchToUser(FakeUser.FakeUser1)
-      reviewsRepo.addReview(reviewVortex1)
-      reviewsRepo.addReview(reviewVortex2)
+      reviewsRepo.addReview(review1)
+      reviewsRepo.addReview(review2)
     }
 
     vm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
@@ -201,7 +163,7 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
         .assertIsDisplayed()
     compose
         .onNodeWithTag(C.ReviewsByResidencyTag.reviewTitle(reviewUid1), useUnmergedTree = true)
-        .assertTextEquals(reviewVortex1.title)
+        .assertTextEquals(review1.title)
 
     compose
         .onNodeWithTag(
@@ -210,14 +172,14 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
     compose
         .onNodeWithTag(
             C.ReviewsByResidencyTag.reviewDescription(reviewUid1), useUnmergedTree = true)
-        .assertTextEquals(reviewVortex1.reviewText)
+        .assertTextEquals(review1.reviewText)
 
     compose
         .onNodeWithTag(C.ReviewsByResidencyTag.reviewPostDate(reviewUid1), useUnmergedTree = true)
         .assertIsDisplayed()
     compose
         .onNodeWithTag(C.ReviewsByResidencyTag.reviewPostDate(reviewUid1), useUnmergedTree = true)
-        .assertTextEquals(formatDate(reviewVortex1.postedAt))
+        .assertTextEquals(formatDate(review1.postedAt))
 
     compose
         .onNodeWithTag(C.ReviewsByResidencyTag.reviewPosterName(reviewUid1), useUnmergedTree = true)

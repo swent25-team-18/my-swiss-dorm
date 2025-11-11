@@ -15,14 +15,12 @@ import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
-import java.net.URL
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -46,40 +44,6 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private lateinit var listingLaus1: RentalListing
   private lateinit var listingLaus2: RentalListing
   private lateinit var listingZurich: RentalListing
-
-  private var vortex =
-      Residency(
-          name = "Vortex",
-          description = "description",
-          location = Location("Vortex", 46.5245257, 6.575223),
-          city = "Lausanne",
-          email = null,
-          phone = null,
-          website = URL("https://www.google.com"))
-
-  private var atrium =
-      Residency(
-          name = "Atrium",
-          description = "description",
-          location = Location("Atrium", 46.5232163, 6.5660033),
-          city = "Lausanne",
-          email = null,
-          phone = null,
-          website = URL("https://www.google.com"))
-
-  private var woko =
-      Residency(
-          name = "WOKO",
-          description = "description",
-          location = Location("WOKO", 47.3764941, 8.5245912),
-          city = "Zurich",
-          email = null,
-          phone = null,
-          website = URL("https://www.google.com"))
-
-  private lateinit var reviewVortex1: Review
-  private lateinit var reviewVortex2: Review
-  private lateinit var reviewWoko: Review
 
   override fun createRepositories() {
     runBlocking {
@@ -142,37 +106,15 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         listingLaus1.copy(
             uid = "zurich1", ownerId = otherUid, title = "Zurich Room", residency = resZurich)
 
-    reviewVortex1 =
-        Review(
-            uid = "reviewLaus1",
-            ownerId = ownerUid,
-            postedAt = Timestamp.now(),
-            title = "Lausanne Review 1",
-            reviewText = "First review",
-            grade = 4.5,
-            residencyName = "Vortex",
-            roomType = RoomType.STUDIO,
-            pricePerMonth = 1200.0,
-            areaInM2 = 60,
-            imageUrls = emptyList())
-    reviewVortex2 =
-        reviewVortex1.copy(
-            uid = "reviewLaus2",
-            postedAt = Timestamp(Timestamp.now().seconds + 10, 0), // post timestamp 10s later
-            reviewText = "Second review")
-    reviewWoko =
-        reviewVortex1.copy(
-            uid = "reviewZurich", ownerId = otherUid, title = "Zurich Room", residencyName = "WOKO")
-
     runTest {
       switchToUser(FakeUser.FakeUser1)
       listingsRepo.addRentalListing(listingLaus1)
-      reviewsRepo.addReview(reviewVortex1)
-      reviewsRepo.addReview(reviewVortex2)
+      reviewsRepo.addReview(reviewVortex1.copy(ownerId = ownerUid))
+      reviewsRepo.addReview(reviewVortex2.copy(ownerId = ownerUid))
       switchToUser(FakeUser.FakeUser2)
       listingsRepo.addRentalListing(listingLaus2)
       listingsRepo.addRentalListing(listingZurich)
-      reviewsRepo.addReview(reviewWoko)
+      reviewsRepo.addReview(reviewWoko1.copy(ownerId = otherUid))
     }
 
     vm =

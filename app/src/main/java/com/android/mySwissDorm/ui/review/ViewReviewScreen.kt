@@ -244,13 +244,13 @@ private fun BulletRow(text: String) {
 }
 
 @Composable
-fun DisplayGrade(grade: Double, starSize: Dp) {
+fun DisplayGrade(grade: Double, starSize: Dp, testTag: String = "") {
   val maxStars = 5
   val filledStars = floor(grade).toInt()
   val hasHalfStar = grade != floor(grade)
 
   Row(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.fillMaxWidth().testTag(testTag),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.End) {
         for (i in 1..maxStars) {

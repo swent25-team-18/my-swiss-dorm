@@ -110,6 +110,30 @@ object C {
     fun reviewText(reviewUid: String) = "browseCityReviewText_$reviewUid"
   }
 
+  object ReviewsByResidencyTag {
+    const val ROOT = "reviewsByResidencyRoot"
+    const val BACK_BUTTON = "reviewsByResidencyBackButton"
+    const val TOP_BAR_TITLE = "reviewsByResidencyTopBarTitle"
+    const val LOADING = "reviewsByResidencyLoading"
+    const val ERROR = "reviewsByResidencyError"
+    const val EMPTY = "reviewsByResidencyEmpty"
+    const val REVIEW_LIST = "reviewsByResidencyReviewList"
+
+    fun reviewCard(reviewUid: String) = "reviewsByResidencyReviewCard_$reviewUid"
+
+    fun reviewImagePlaceholder(reviewUid: String) = "reviewsByResidencyImagePlaceholder_$reviewUid"
+
+    fun reviewTitle(reviewUid: String) = "reviewsByResidencyReviewTitle_$reviewUid"
+
+    fun reviewDescription(reviewUid: String) = "reviewsByResidencyReviewDescription_$reviewUid"
+
+    fun reviewPosterName(reviewUid: String) = "reviewsByResidencyReviewPosterName_$reviewUid"
+
+    fun reviewPostDate(reviewUid: String) = "reviewsByResidencyReviewPostDate_$reviewUid"
+
+    fun reviewGrade(reviewUid: String) = "reviewsByResidencyGrade_$reviewUid"
+  }
+
   object CameraButtonTag {
     const val TAG = "cameraButtonTag"
   }

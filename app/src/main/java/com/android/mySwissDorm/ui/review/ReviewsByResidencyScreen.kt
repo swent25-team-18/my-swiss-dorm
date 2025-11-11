@@ -34,10 +34,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -65,47 +67,56 @@ fun ReviewsByResidencyScreen(
               Text(
                   text = residencyName,
                   color = MainColor,
-              )
+                  modifier = Modifier.testTag(C.ReviewsByResidencyTag.TOP_BAR_TITLE))
             },
             navigationIcon = {
-              IconButton(onClick = { onGoBack() }) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-              }
+              IconButton(
+                  onClick = { onGoBack() },
+                  modifier = Modifier.testTag(C.ReviewsByResidencyTag.BACK_BUTTON)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back")
+                  }
             })
       }) { pd ->
-        Column(modifier = Modifier.padding(pd).fillMaxSize()) {
-          when {
-            reviewsState.loading -> {
-              Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(modifier = Modifier.size(64.dp))
-              }
-            }
-            reviewsState.error != null -> {
-              Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = reviewsState.error,
-                    color = MaterialTheme.colorScheme.error,
-                )
-              }
-            }
-            reviewsState.items.isEmpty() -> {
-              Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "No reviews yet.",
-                    color = TextColor,
-                )
-              }
-            }
-            else -> {
-              LazyColumn(
-                  modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                  contentPadding = PaddingValues(vertical = 12.dp),
-                  verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items(reviewsState.items) { item -> ReviewCard(item, onSelectReview) }
+        Column(
+            modifier = Modifier.padding(pd).fillMaxSize().testTag(C.ReviewsByResidencyTag.ROOT)) {
+              when {
+                reviewsState.loading -> {
+                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(64.dp).testTag(C.ReviewsByResidencyTag.LOADING))
                   }
+                }
+                reviewsState.error != null -> {
+                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = reviewsState.error,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.testTag(C.ReviewsByResidencyTag.ERROR))
+                  }
+                }
+                reviewsState.items.isEmpty() -> {
+                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "No reviews yet.",
+                        color = TextColor,
+                        modifier = Modifier.testTag(C.ReviewsByResidencyTag.EMPTY))
+                  }
+                }
+                else -> {
+                  LazyColumn(
+                      modifier =
+                          Modifier.fillMaxSize()
+                              .padding(horizontal = 16.dp)
+                              .testTag(C.ReviewsByResidencyTag.REVIEW_LIST),
+                      contentPadding = PaddingValues(vertical = 12.dp),
+                      verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        items(reviewsState.items) { item -> ReviewCard(item, onSelectReview) }
+                      }
+                }
+              }
             }
-          }
-        }
       }
 }
 
@@ -113,7 +124,8 @@ fun ReviewsByResidencyScreen(
 private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
-      modifier = Modifier.fillMaxWidth(),
+      modifier =
+          Modifier.fillMaxWidth().testTag(C.ReviewsByResidencyTag.reviewCard(data.reviewUid)),
       onClick = { onClick(data) }) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
           // Image placeholder (left)
@@ -122,7 +134,8 @@ private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
                   Modifier.height(140.dp)
                       .fillMaxWidth(0.35F)
                       .clip(RoundedCornerShape(12.dp))
-                      .background(LightGray)) {
+                      .background(LightGray)
+                      .testTag(C.ReviewsByResidencyTag.reviewImagePlaceholder(data.reviewUid))) {
                 Text(
                     "IMAGE",
                     modifier = Modifier.align(Alignment.Center),
@@ -145,8 +158,11 @@ private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
                       textAlign = TextAlign.Start,
                       color = TextColor,
                       maxLines = 1,
-                      modifier = Modifier.fillMaxWidth(0.6f))
-                  DisplayGrade(data.grade, 16.dp)
+                      modifier =
+                          Modifier.fillMaxWidth(0.6f)
+                              .testTag(C.ReviewsByResidencyTag.reviewTitle(data.reviewUid)))
+                  DisplayGrade(
+                      data.grade, 16.dp, C.ReviewsByResidencyTag.reviewGrade(data.reviewUid))
                 }
 
             Spacer(Modifier.height(8.dp))
@@ -169,7 +185,9 @@ private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
                               style = MaterialTheme.typography.bodySmall,
                               fontWeight = FontWeight.Light,
                               color = TextColor,
-                          )
+                              modifier =
+                                  Modifier.testTag(
+                                      C.ReviewsByResidencyTag.reviewPostDate(data.reviewUid)))
                         }
                     val truncatedReview = truncateText(data.reviewText, 60)
                     Text( // Review Text
@@ -178,7 +196,9 @@ private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
                         textAlign = TextAlign.Start,
                         color = TextColor,
                         maxLines = 2,
-                    )
+                        modifier =
+                            Modifier.testTag(
+                                C.ReviewsByResidencyTag.reviewDescription(data.reviewUid)))
                   }
                   Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     Text(
@@ -187,7 +207,9 @@ private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
                         fontWeight = FontWeight.Light,
                         color = TextColor,
                         maxLines = 1,
-                    )
+                        modifier =
+                            Modifier.testTag(
+                                C.ReviewsByResidencyTag.reviewPosterName(data.reviewUid)))
                   }
                 }
           }

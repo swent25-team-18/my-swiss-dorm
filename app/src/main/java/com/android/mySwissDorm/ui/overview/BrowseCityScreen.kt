@@ -94,8 +94,8 @@ fun BrowseCityScreen(
       onSelectListing = onSelectListing,
       onSelectReview = onSelectReview,
       onLocationClick = onLocationClick,
-      onAddListingClick = { navigationActions?.navigateTo(Screen.AddReview) },
-      onAddReviewClick = { navigationActions?.navigateTo(Screen.AddListing) },
+      onAddListingClick = { navigationActions?.navigateTo(Screen.AddListing) },
+      onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
       navigationActions = navigationActions)
 
   if (uiState.showCustomLocationDialog) {

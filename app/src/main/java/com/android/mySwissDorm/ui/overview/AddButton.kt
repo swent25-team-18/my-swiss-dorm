@@ -1,3 +1,5 @@
+package com.android.mySwissDorm.ui.overview
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -42,22 +44,17 @@ import com.android.mySwissDorm.ui.theme.White
 /**
  * Speed-dial FAB that shows two actions in a small popup above it.
  *
- * Hook your navigation later via onAddListing() / onAddReview().
- *
- * Usage inside a Scaffold: Scaffold( floatingActionButton = { AddFabMenu(onAddListing = { /* nav to
- * AddListing */ }, onAddReview = { /* nav to AddReview */ }) } ) { padding -> ... }
+ * Implemented with the help of AI
  */
 @Composable
 fun AddFabMenu(
     onAddListing: () -> Unit,
     onAddReview: () -> Unit,
     modifier: Modifier = Modifier,
-    // If you have app colors, you can swap these through theme.
 ) {
   var expanded by remember { mutableStateOf(false) }
 
   Box(modifier = modifier) {
-    // Tap-outside scrim (only when expanded)
     AnimatedVisibility(visible = expanded, enter = fadeIn(), exit = fadeOut()) {
       Box(
           Modifier.fillMaxSize()
@@ -66,12 +63,10 @@ fun AddFabMenu(
               .testTag("fab_scrim"))
     }
 
-    // The column that holds the little popup + the main FAB
     Column(
         modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.End) {
-          // Popup menu
           AnimatedVisibility(
               visible = expanded,
               enter = fadeIn() + expandVertically(),
@@ -102,7 +97,6 @@ fun AddFabMenu(
                     }
               }
 
-          // Main FAB
           FloatingActionButton(
               onClick = { expanded = !expanded },
               elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
@@ -130,7 +124,7 @@ private fun FabMiniAction(
       shape = MaterialTheme.shapes.large,
       tonalElevation = 6.dp,
       shadowElevation = 8.dp,
-      color = MainColor, // make sure it's not transparent
+      color = MainColor,
       contentColor = White,
       modifier = Modifier.shadow(8.dp, MaterialTheme.shapes.large).testTag(tag)) {
         TextButton(

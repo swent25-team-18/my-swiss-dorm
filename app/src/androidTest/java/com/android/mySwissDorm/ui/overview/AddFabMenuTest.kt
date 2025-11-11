@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.overview
 
-import AddFabMenu
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme

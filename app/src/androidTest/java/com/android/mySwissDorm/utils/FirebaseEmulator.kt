@@ -5,6 +5,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.storage
 import io.mockk.InternalPlatformDsl.toArray
 import kotlin.apply
@@ -50,10 +51,6 @@ object FirebaseEmulator {
     "http://${HOST}:$AUTH_PORT/emulator/v1/projects/$projectID/accounts"
   }
 
-  private val storageEndPoint by lazy {
-    "http://${HOST}:$STORAGE_PORT/emulator/v1/projects/$projectID/"
-  }
-
   private val emulatorsEndpoint = "http://$HOST:$EMULATORS_PORT/emulators"
 
   private fun areEmulatorsRunning(): Boolean =
@@ -94,7 +91,13 @@ object FirebaseEmulator {
   }
 
   fun clearStorageEmulator() {
-    clearEmulator(storageEndPoint)
+    fun clearStorageRec(ref: StorageReference = storage.reference) {
+      ref.listAll().addOnSuccessListener { listResult ->
+        listResult.items.forEach { it.delete() }
+        listResult.prefixes.forEach { clearStorageRec(it) }
+      }
+    }
+    clearStorageRec()
   }
 
   /**

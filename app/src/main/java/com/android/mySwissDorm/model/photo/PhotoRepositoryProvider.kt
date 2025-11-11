@@ -12,6 +12,7 @@ import android.content.Context
  */
 object PhotoRepositoryProvider {
   private lateinit var _local_repository: PhotoRepository
+  private lateinit var _cloud_repository: PhotoRepository
   private var initialized = false
 
   /**
@@ -22,10 +23,14 @@ object PhotoRepositoryProvider {
   fun initialize(context: Context) {
     if (!initialized) {
       _local_repository = PhotoRepositoryLocal(context)
+      _cloud_repository = PhotoRepositoryStorage(context)
       initialized = true
     }
   }
 
   val local_repository: PhotoRepository
     get() = _local_repository
+
+  val cloud_repository: PhotoRepository
+    get() = _cloud_repository
 }

@@ -28,6 +28,8 @@ class PhotoRepositoryStorage(
       matchRef.getFile(photo.image).await().let {
         Log.d("PhotoRepositoryStorage", "download ${it.bytesTransferred} bytes")
       }
+      // keep on local repository the downloaded photo
+      super.uploadPhoto(photo)
       return photo
     }
   }
@@ -43,7 +45,7 @@ class PhotoRepositoryStorage(
   }
 
   override suspend fun deletePhoto(uid: String): Boolean {
-    return super.deletePhoto(uid) && findPhotoRef(uid).delete().isSuccessful
+    return super.deletePhoto(uid) || findPhotoRef(uid).delete().isSuccessful
   }
 
   private suspend fun findPhotoRef(uid: String): StorageReference {

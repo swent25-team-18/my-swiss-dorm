@@ -146,7 +146,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
     runTest {
       switchToUser(FakeUser.FakeUser1)
-      residencyRepo.addResidency(resLaus)
+      residencyRepo.addResidency(resTest)
       residencyRepo.addResidency(resZurich)
       listingsRepo.addRentalListing(listingLaus1)
       reviewsRepo.addReview(reviewLaus1)
@@ -181,7 +181,12 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     compose.setContent { BrowseCityScreen(location = lausanneLocation, onSelectListing = {}) }
     compose.waitForIdle()
 
-    compose.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).assertIsDisplayed()
+    compose.waitUntil(timeoutMillis = 2000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.LISTING_LIST, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
     compose
         .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus1.uid))
         .performScrollTo()

@@ -106,10 +106,14 @@ class NavigationActionsTest : FirestoreTest() {
 
     // Wait for navigation to complete and arguments to be available
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
-      val backStackEntry = navController.currentBackStackEntry
-      val route = backStackEntry?.destination?.route
-      val name = backStackEntry?.arguments?.getString("name")
-      route == Screen.BrowseOverview.route && name != null
+      var result = false
+      composeTestRule.runOnUiThread {
+        val backStackEntry = navController.currentBackStackEntry
+        val route = backStackEntry?.destination?.route
+        val name = backStackEntry?.arguments?.getString("name")
+        result = route == Screen.BrowseOverview.route && name != null
+      }
+      result
     }
 
     // Should navigate to BrowseOverview with user's location
@@ -172,10 +176,12 @@ class NavigationActionsTest : FirestoreTest() {
     composeTestRule.waitForIdle()
 
     // Should navigate to Homepage
-    assertEquals(
-        "Should navigate to Homepage when user has no location",
-        Screen.Homepage.route,
-        navController.currentBackStackEntry?.destination?.route)
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should navigate to Homepage when user has no location",
+          Screen.Homepage.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
   }
 
   @Test
@@ -188,10 +194,12 @@ class NavigationActionsTest : FirestoreTest() {
     composeTestRule.waitForIdle()
 
     // Should navigate to Homepage
-    assertEquals(
-        "Should navigate to Homepage when not logged in",
-        Screen.Homepage.route,
-        navController.currentBackStackEntry?.destination?.route)
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should navigate to Homepage when not logged in",
+          Screen.Homepage.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
   }
 
   @Test
@@ -202,10 +210,12 @@ class NavigationActionsTest : FirestoreTest() {
     composeTestRule.runOnUiThread { navActions.navigateTo(Screen.Settings) }
     composeTestRule.waitForIdle()
 
-    assertEquals(
-        "Should navigate to Settings directly",
-        Screen.Settings.route,
-        navController.currentBackStackEntry?.destination?.route)
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should navigate to Settings directly",
+          Screen.Settings.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
   }
 
   @Test
@@ -228,16 +238,146 @@ class NavigationActionsTest : FirestoreTest() {
     // Navigate to Settings
     composeTestRule.runOnUiThread { navActions.navigateTo(Screen.Settings) }
     composeTestRule.waitForIdle()
-    assertEquals(Screen.Settings.route, navController.currentBackStackEntry?.destination?.route)
+    composeTestRule.runOnUiThread {
+      assertEquals(Screen.Settings.route, navController.currentBackStackEntry?.destination?.route)
+    }
 
-    // Go back
+    // Go back - MUST be on UI thread as it directly calls navController.popBackStack()
     composeTestRule.runOnUiThread { navActions.goBack() }
     composeTestRule.waitForIdle()
 
     // Should be back to previous screen
-    assertEquals(
-        "Should go back to previous screen",
-        Screen.Homepage.route,
-        navController.currentBackStackEntry?.destination?.route)
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should go back to previous screen",
+          Screen.Homepage.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+  }
+
+  @Test
+  fun navigateToHomepageDirectly_userWithLocation_alwaysNavigatesToHomepage() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+    val location = Location("Lausanne", 46.5197, 6.6323)
+
+    // Create profile with location
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = "test@example.com",
+                    phoneNumber = "+41001112233",
+                    location = location),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    ProfileRepositoryProvider.repository.createProfile(profile)
+
+    // Wait for profile to be created and recreate NavigationActions with updated ViewModel
+    composeTestRule.waitForIdle()
+    composeTestRule.runOnUiThread {
+      val viewModel = NavigationViewModel(profileRepository = ProfileRepositoryProvider.repository)
+      navActions =
+          NavigationActions(
+              navController = navController,
+              coroutineScope = CoroutineScope(kotlinx.coroutines.Dispatchers.Main),
+              navigationViewModel = viewModel)
+    }
+    composeTestRule.waitForIdle()
+
+    // First, verify that navigateTo(Screen.Homepage) would navigate to BrowseOverview
+    composeTestRule.runOnUiThread { navActions.navigateTo(Screen.Homepage) }
+
+    // Wait for navigation to complete
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      var result = false
+      composeTestRule.runOnUiThread {
+        result =
+            navController.currentBackStackEntry?.destination?.route == Screen.BrowseOverview.route
+      }
+      result
+    }
+
+    // Verify we're on BrowseOverview
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should be on BrowseOverview after navigateTo(Homepage)",
+          Screen.BrowseOverview.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+
+    // Now test navigateToHomepageDirectly - should go to Homepage even though user has location
+    // MUST be on UI thread as it directly calls navController.navigate()
+    composeTestRule.runOnUiThread { navActions.navigateToHomepageDirectly() }
+
+    // Wait for navigation to complete
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      var result = false
+      composeTestRule.runOnUiThread {
+        result = navController.currentBackStackEntry?.destination?.route == Screen.Homepage.route
+      }
+      result
+    }
+
+    // Should navigate to Homepage directly, bypassing the location check
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "navigateToHomepageDirectly should always navigate to Homepage, even when user has location",
+          Screen.Homepage.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+  }
+
+  @Test
+  fun navigateToHomepageDirectly_userWithoutLocation_navigatesToHomepage() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile without location
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = "test@example.com",
+                    phoneNumber = "+41001112233",
+                    location = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    ProfileRepositoryProvider.repository.createProfile(profile)
+
+    composeTestRule.waitForIdle()
+    composeTestRule.runOnUiThread {
+      val viewModel = NavigationViewModel(profileRepository = ProfileRepositoryProvider.repository)
+      navActions =
+          NavigationActions(
+              navController = navController,
+              coroutineScope = CoroutineScope(kotlinx.coroutines.Dispatchers.Main),
+              navigationViewModel = viewModel)
+    }
+    composeTestRule.waitForIdle()
+
+    // Navigate to Settings first to ensure we're not already on Homepage
+    composeTestRule.runOnUiThread { navActions.navigateTo(Screen.Settings) }
+    composeTestRule.waitForIdle()
+    composeTestRule.runOnUiThread {
+      assertEquals(Screen.Settings.route, navController.currentBackStackEntry?.destination?.route)
+    }
+
+    // Now test navigateToHomepageDirectly
+    // MUST be on UI thread as it directly calls navController.navigate()
+    composeTestRule.runOnUiThread { navActions.navigateToHomepageDirectly() }
+    composeTestRule.waitForIdle()
+
+    // Should navigate to Homepage
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "navigateToHomepageDirectly should navigate to Homepage when user has no location",
+          Screen.Homepage.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
   }
 }

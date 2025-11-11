@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
@@ -148,6 +149,16 @@ private fun BrowseCityScreenUI(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = MainColor)
+                  }
+            },
+            navigationIcon = {
+              IconButton(
+                  onClick = { navigationActions?.navigateToHomepageDirectly() },
+                  modifier = Modifier.testTag(C.BrowseCityTags.BACK_BUTTON)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back to Homepage",
+                        tint = MainColor)
                   }
             })
       }) { pd ->

@@ -31,6 +31,28 @@ class NavigationActions(
     navController.popBackStack()
   }
 
+  /**
+   * Navigate directly to the Homepage screen, bypassing the location check. This is useful for back
+   * buttons that should always go to Homepage regardless of user's saved location. Uses explicit
+   * navigation options without restoreState to ensure we always navigate to Homepage, not
+   * BrowseOverview.
+   */
+  fun navigateToHomepageDirectly() {
+    val current = currentRoute()
+
+    // Avoid reselecting if already on Homepage
+    if (current == Screen.Homepage.route) return
+
+    // Navigate directly to Homepage with explicit options that don't restore state
+    // This ensures we go to Homepage even if BrowseOverview state was previously saved
+    navController.navigate(Screen.Homepage.route) {
+      launchSingleTop = true
+      // Don't use restoreState - we want to go to Homepage, not restore BrowseOverview state
+      // Pop up to start destination but don't restore state
+      popUpTo(navController.graph.startDestinationId) { saveState = false }
+    }
+  }
+
   //  Use currentBackStackEntry for reliable route reads during transitions
   fun currentRoute(): String? = navController.currentBackStackEntry?.destination?.route
 

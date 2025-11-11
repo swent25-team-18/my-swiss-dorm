@@ -13,6 +13,8 @@ import androidx.compose.ui.test.performScrollToNode
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
@@ -22,6 +24,7 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
+import java.util.Date
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -33,7 +36,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
   private lateinit var profilesRepo: ProfileRepository
   private lateinit var reviewsRepo: ReviewsRepository
-
+  private lateinit var residenciesRepo: ResidenciesRepository
   private lateinit var ownerId: String
   private lateinit var otherId: String
 
@@ -45,6 +48,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   override fun createRepositories() {
     profilesRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     reviewsRepo = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
+    residenciesRepo = ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
   @Before
@@ -54,10 +58,15 @@ class ViewReviewScreenTest : FirestoreTest() {
     vm = ViewReviewViewModel(reviewsRepo, profilesRepo)
     runTest {
       switchToUser(FakeUser.FakeUser1)
+      residenciesRepo.addResidency(resTest)
+      residenciesRepo.addResidency(resTest2)
+
       ownerId = FirebaseEmulator.auth.currentUser!!.uid
       profilesRepo.createProfile(profile1.copy(ownerId = ownerId))
 
       switchToUser(FakeUser.FakeUser2)
+      residenciesRepo.addResidency(resTest)
+      residenciesRepo.addResidency(resTest2)
       otherId = FirebaseEmulator.auth.currentUser!!.uid
       profilesRepo.createProfile(profile2.copy(ownerId = otherId))
 
@@ -78,7 +87,7 @@ class ViewReviewScreenTest : FirestoreTest() {
           Review(
               uid = reviewsRepo.getNewUid(),
               ownerId = otherId,
-              postedAt = Timestamp.now(),
+              postedAt = Timestamp(Date(1678886400000L)), // AI gave me this date
               title = "Second Title",
               reviewText = "My second review",
               grade = 4.5,

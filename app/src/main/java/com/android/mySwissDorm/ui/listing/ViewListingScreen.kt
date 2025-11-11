@@ -2,7 +2,6 @@ package com.android.mySwissDorm.ui.listing
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.imePadding
@@ -30,20 +29,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +46,9 @@ fun ViewListingScreen(
     onApply: () -> Unit = {},
     onEdit: () -> Unit = {},
     onViewProfile: (ownerId: String) -> Unit = {},
-    onViewMap: (latitude: Double, longitude: Double, title: String) -> Unit = { _, _, _ -> }
+    onViewMap: (latitude: Double, longitude: Double, title: String, name: String) -> Unit =
+        { _, _, _, _ ->
+        }
 ) {
   LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid) }
 
@@ -188,7 +182,7 @@ fun ViewListingScreen(
                     modifier =
                         Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewListingTags.LOCATION),
                     onMapClick = {
-                      onViewMap(location.latitude, location.longitude, listing.title)
+                      onViewMap(location.latitude, location.longitude, listing.title, "Listing")
                     })
               } else {
                 PlaceholderBlock(
@@ -307,38 +301,4 @@ private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
 @Preview
 private fun ViewListingScreenPreview() {
   ViewListingScreen(listingUid = "preview")
-}
-
-@Composable
-private fun MapPreview(
-    location: Location,
-    title: String,
-    modifier: Modifier = Modifier,
-    onMapClick: () -> Unit
-) {
-  val listingLatLng = remember { LatLng(location.latitude, location.longitude) }
-  val cameraPositionState = rememberCameraPositionState {
-    position = CameraPosition.fromLatLngZoom(listingLatLng, 13f)
-  }
-  Box(
-      modifier = modifier.clip(RoundedCornerShape(16.dp)).background(TextBoxColor),
-      contentAlignment = Alignment.Center) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            uiSettings =
-                MapUiSettings(
-                    zoomControlsEnabled = false,
-                    zoomGesturesEnabled = false,
-                    scrollGesturesEnabled = false,
-                    tiltGesturesEnabled = false,
-                    mapToolbarEnabled = false)) {
-              Marker(state = MarkerState(position = listingLatLng), title = title)
-            }
-        Box(
-            modifier =
-                Modifier.matchParentSize()
-                    .background(Color.Transparent)
-                    .clickable(onClick = onMapClick))
-      }
 }

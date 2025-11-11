@@ -151,16 +151,18 @@ fun AppNavHost(
           })
     }
     composable(
-        route = "mapScreen/{lat}/{lng}/{title}",
+        route = "mapScreen/{lat}/{lng}/{title}/{name}",
         arguments =
             listOf(
                 navArgument("lat") { type = NavType.FloatType },
                 navArgument("lng") { type = NavType.FloatType },
-                navArgument("title") { type = NavType.StringType })) { backStackEntry ->
+                navArgument("title") { type = NavType.StringType },
+                navArgument("name") { type = NavType.StringType })) { backStackEntry ->
           MapScreen(
               latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
               longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
               title = backStackEntry.arguments?.getString("title") ?: "Location",
+              name = backStackEntry.arguments?.getString("name") ?: "Location",
               onGoBack = { navController.popBackStack() })
         }
     composable(Screen.BrowseOverview.route) { navBackStackEntry ->
@@ -211,7 +213,9 @@ fun AppNavHost(
                 navActions.navigateTo(Screen.ViewUserProfile(ownerId))
               }
             },
-            onViewMap = { lat, lng, title -> navController.navigate("mapScreen/$lat/$lng/$title") })
+            onViewMap = { lat, lng, title, name ->
+              navController.navigate("mapScreen/$lat/$lng/$title/$name")
+            })
       }
           ?: run {
             Log.e("AppNavHost", "listingUid is null")
@@ -237,7 +241,9 @@ fun AppNavHost(
                 navActions.navigateTo(Screen.ViewUserProfile(ownerId))
               }
             },
-            onViewMap = { lat, lng, title -> navController.navigate("mapScreen/$lat/$lng/$title") })
+            onViewMap = { lat, lng, title, name ->
+              navController.navigate("mapScreen/$lat/$lng/$title/$name")
+            })
       }
           ?: run {
             Log.e("AppNavHost", "reviewUid is null")

@@ -38,17 +38,23 @@ import com.google.maps.android.compose.rememberCameraPositionState
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(latitude: Double, longitude: Double, title: String, onGoBack: () -> Unit) {
+fun MapScreen(
+    latitude: Double,
+    longitude: Double,
+    title: String,
+    onGoBack: () -> Unit,
+    name: String
+) {
   val context = LocalContext.current
-  val listingLocation = remember { LatLng(latitude, longitude) }
+  val location = remember { LatLng(latitude, longitude) }
   val cameraPositionState = rememberCameraPositionState {
-    position = CameraPosition.fromLatLngZoom(listingLocation, 15f)
+    position = CameraPosition.fromLatLngZoom(location, 15f)
   }
 
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Listing Location") },
+            title = { Text("$name Location") },
             navigationIcon = {
               IconButton(onClick = onGoBack) {
                 Icon(
@@ -72,7 +78,7 @@ fun MapScreen(latitude: Double, longitude: Double, title: String, onGoBack: () -
       }) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           GoogleMap(modifier = Modifier.fillMaxSize(), cameraPositionState = cameraPositionState) {
-            Marker(state = MarkerState(position = listingLocation), title = title)
+            Marker(state = MarkerState(position = location), title = title)
           }
         }
       }

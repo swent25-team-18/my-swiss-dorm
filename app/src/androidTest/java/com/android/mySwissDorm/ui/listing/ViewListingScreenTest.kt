@@ -8,10 +8,12 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.*
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.resources.C
@@ -22,6 +24,7 @@ import java.util.UUID
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -289,5 +292,78 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
         .performClick()
 
     assertEquals(otherUid, navigatedToId)
+  }
+
+  @Test
+  fun mapPreview_isDisplayed_whenLocationIsValid() = runTest {
+    compose.setContent {
+      val vm = ViewListingViewModel(listingsRepo, profileRepo)
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+    scrollListTo(C.ViewListingTags.LOCATION)
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION).assertIsDisplayed()
+    compose.onNodeWithText("LOCATION (Not available)").assertDoesNotExist()
+  }
+
+  @Test
+  fun mapPlaceholder_isDisplayed_whenLocationIsInvalid() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+    val invalidLocation = Location(name = "No Location", latitude = 0.0, longitude = 0.0)
+    val invalidResidency = rentalListing2.residency.copy(location = invalidLocation)
+    val listingWithNoLocation =
+        rentalListing2.copy(
+            uid = listingsRepo.getNewUid(),
+            residency = invalidResidency,
+            ownerId = FirebaseEmulator.auth.currentUser!!.uid)
+    listingsRepo.addRentalListing(listingWithNoLocation)
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = listingWithNoLocation.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) {
+      val s = vm.uiState.value
+      s.listing.uid == listingWithNoLocation.uid
+    }
+    scrollListTo(C.ViewListingTags.LOCATION)
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION).assertIsDisplayed()
+    compose.onNodeWithText("LOCATION (Not available)").assertIsDisplayed()
+  }
+
+  @Test
+  fun mapClick_triggers_onViewMapCallback_withCorrectData() = runTest {
+    var callbackCalled = false
+    var capturedLat: Double? = null
+    var capturedLon: Double? = null
+    var capturedTitle: String? = null
+    var capturedName: String? = null
+    val expectedListing = otherListing
+    val expectedLocation = expectedListing.residency.location
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(
+          viewListingViewModel = vm,
+          listingUid = expectedListing.uid,
+          onViewMap = { lat, lon, title, name ->
+            callbackCalled = true
+            capturedLat = lat
+            capturedLon = lon
+            capturedTitle = title
+            capturedName = name
+          })
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) {
+      val s = vm.uiState.value
+      s.listing.uid == expectedListing.uid
+    }
+    scrollListTo(C.ViewListingTags.LOCATION)
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION).performClick()
+    assertTrue("onViewMap callback was not triggered.", callbackCalled)
+    assertEquals(expectedLocation.latitude, capturedLat)
+    assertEquals(expectedLocation.longitude, capturedLon)
+    assertEquals(expectedListing.title, capturedTitle)
+    assertEquals("Listing", capturedName)
   }
 }

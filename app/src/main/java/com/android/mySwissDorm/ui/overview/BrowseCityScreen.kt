@@ -29,6 +29,7 @@ import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
+import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
@@ -94,8 +95,8 @@ fun BrowseCityScreen(
       onSelectListing = onSelectListing,
       onSelectReview = onSelectReview,
       onLocationClick = onLocationClick,
-      onAddListingClick = onAddListingClick,
-      onAddReviewClick = onAddReviewClick,
+      onAddListingClick = { navigationActions?.navigateTo(Screen.AddReview) },
+      onAddReviewClick = { navigationActions?.navigateTo(Screen.AddListing) },
       navigationActions = navigationActions)
 
   if (uiState.showCustomLocationDialog) {

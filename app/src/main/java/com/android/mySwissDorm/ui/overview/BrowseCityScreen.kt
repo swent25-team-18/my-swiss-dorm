@@ -24,7 +24,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RoomType
@@ -33,10 +32,10 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.review.DisplayGrade
+import com.android.mySwissDorm.ui.review.truncateText
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
@@ -357,28 +356,34 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                     ) { // Title, location, and grade
                       Row(
                           modifier = Modifier.fillMaxWidth(),
-                          horizontalArrangement = Arrangement.SpaceBetween) { // Title + location
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          verticalAlignment = Alignment.CenterVertically) { // Title + grade
                             Text( // Title
                                 text = data.title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Start,
                                 color = TextColor,
+                                modifier = Modifier.fillMaxWidth(0.5f),
+                                maxLines = 1,
                             )
                             DisplayGrade(data.meanGrade, 16.dp) // Display the mean grade with stars
                       }
-                      Row { // Location
+                      Row(verticalAlignment = Alignment.Top) { // Location
                         Icon(
                             Icons.Outlined.Place,
                             contentDescription = null,
                             modifier = Modifier.size(12.dp),
                             tint = MainColor)
+                        Spacer(Modifier.width(2.dp))
                         Text(
                             text = data.location,
-                            fontSize = 12.sp,
                             style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Light,
                             textAlign = TextAlign.Start,
-                            color = TextBoxColor)
+                            color = TextColor,
+                            maxLines = 2,
+                        )
                       }
                     }
                     if (data.latestReview == null) { // No latest review => No reviews yet
@@ -396,42 +401,36 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                       Column(
                           modifier = Modifier.fillMaxSize(),
                           verticalArrangement = Arrangement.SpaceBetween) {
-                            Column {
+                            Column(modifier = Modifier.padding(top = 4.dp)) {
                               Row(
                                   modifier = Modifier.fillMaxWidth(),
-                                  horizontalArrangement =
-                                      Arrangement.SpaceBetween) { // Latest review + post date
+                                  horizontalArrangement = Arrangement.SpaceBetween,
+                                  verticalAlignment =
+                                      Alignment.CenterVertically) { // Latest review + post date
                                     Text(
                                         text = "Latest review :",
                                         style = MaterialTheme.typography.bodyMedium,
                                         textAlign = TextAlign.Start,
-                                        color = TextColor)
+                                        color = TextColor,
+                                    )
                                     Text(
                                         text = formatDate(data.latestReview.postedAt),
                                         style = MaterialTheme.typography.bodySmall,
                                         textAlign = TextAlign.End,
-                                        color = TextBoxColor)
+                                        fontWeight = FontWeight.Light,
+                                        color = TextColor,
+                                    )
                                   }
-                              val truncatedReview = // truncate the review if it is too large
-                                  data.latestReview.reviewText.let {
-                                    val maxLength = 64
-                                    if (it.length <= maxLength) {
-                                      it
-                                    } else {
-                                      val truncated = it.take(maxLength)
-                                      val lastSpace = truncated.lastIndexOf(' ')
-                                      if (lastSpace != -1) {
-                                        "${truncated.substring(0, lastSpace)}..."
-                                      } else {
-                                        "$truncated..." // No space, probably unreadable review
-                                      }
-                                    }
-                                  }
+                              val truncatedReview =
+                                  truncateText(
+                                      data.latestReview.reviewText,
+                                      90) // truncate the review if it is too large
                               Text( // Review
                                   text = truncatedReview,
                                   style = MaterialTheme.typography.bodySmall,
                                   textAlign = TextAlign.Justify,
                                   color = TextColor,
+                                  maxLines = 3,
                                   modifier =
                                       Modifier.testTag(
                                           C.BrowseCityTags.reviewText(data.latestReview.uid)))
@@ -442,8 +441,9 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                                   Text(
                                       text = "posted by ${data.fullNameOfPoster}",
                                       style = MaterialTheme.typography.bodySmall,
-                                      textAlign = TextAlign.Justify,
-                                      color = TextColor)
+                                      fontWeight = FontWeight.Light,
+                                      color = TextColor,
+                                  )
                                 }
                           }
                     }

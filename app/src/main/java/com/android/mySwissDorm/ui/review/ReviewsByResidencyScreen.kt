@@ -195,7 +195,7 @@ private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
       }
 }
 
-private fun truncateText(text: String, maxLength: Int): String {
+fun truncateText(text: String, maxLength: Int): String {
   return text.let {
     if (it.length <= maxLength) {
       it

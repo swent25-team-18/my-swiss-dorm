@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.overview
 
+import AddFabMenu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -55,6 +56,8 @@ fun BrowseCityScreen(
     onSelectListing: (ListingCardUI) -> Unit = {},
     onSelectReview: (ReviewCardUI) -> Unit = {},
     onLocationChange: (Location) -> Unit = {},
+    onAddListingClick: () -> Unit = {},
+    onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {
 
@@ -90,6 +93,8 @@ fun BrowseCityScreen(
       onSelectListing = onSelectListing,
       onSelectReview = onSelectReview,
       onLocationClick = onLocationClick,
+      onAddListingClick = onAddListingClick,
+      onAddReviewClick = onAddReviewClick,
       navigationActions = navigationActions)
 
   if (uiState.showCustomLocationDialog) {
@@ -126,6 +131,8 @@ private fun BrowseCityScreenUI(
     onSelectListing: (ListingCardUI) -> Unit,
     onSelectReview: (ReviewCardUI) -> Unit,
     onLocationClick: () -> Unit,
+    onAddListingClick: () -> Unit = {},
+    onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
@@ -150,6 +157,15 @@ private fun BrowseCityScreenUI(
                         color = MainColor)
                   }
             })
+      },
+      floatingActionButtonPosition = FabPosition.End,
+      floatingActionButton = {
+        // lives bottom-right, above bottom bar & nav/gesture insets
+        AddFabMenu(
+            onAddListing = onAddListingClick,
+            onAddReview = onAddReviewClick,
+            modifier =
+                Modifier.navigationBarsPadding().imePadding().testTag("browse_fab_container"))
       }) { pd ->
         Column(modifier = Modifier.padding(pd).fillMaxSize().testTag(C.BrowseCityTags.ROOT)) {
           TabRow(

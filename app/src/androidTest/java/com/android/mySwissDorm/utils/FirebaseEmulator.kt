@@ -13,6 +13,7 @@ import kotlin.runCatching
 import kotlin.text.contains
 import kotlin.text.trimIndent
 import kotlin.toString
+import kotlinx.coroutines.tasks.await
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -90,12 +91,11 @@ object FirebaseEmulator {
     clearEmulator(firestoreEndpoint)
   }
 
-  fun clearStorageEmulator() {
-    fun clearStorageRec(ref: StorageReference = storage.reference) {
-      ref.listAll().addOnSuccessListener { listResult ->
-        listResult.items.forEach { it.delete() }
-        listResult.prefixes.forEach { clearStorageRec(it) }
-      }
+  suspend fun clearStorageEmulator() {
+    suspend fun clearStorageRec(ref: StorageReference = storage.reference) {
+      val list = ref.listAll().await()
+      list.items.forEach { it.delete().await() }
+      list.prefixes.forEach { clearStorageRec(it) }
     }
     clearStorageRec()
   }

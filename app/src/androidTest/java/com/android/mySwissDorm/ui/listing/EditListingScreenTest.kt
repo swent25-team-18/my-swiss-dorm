@@ -71,6 +71,13 @@ class EditListingScreenTest : FirestoreTest() {
 
           override suspend fun getAllResidencies(): List<Residency> = data.toList()
 
+          override suspend fun getAllResidenciesNearLocation(
+              location: Location,
+              radius: Double
+          ): List<Residency> {
+            return data.toList()
+          }
+
           override suspend fun getResidency(residencyName: String): Residency {
             return data.firstOrNull { it.name == residencyName }
                 ?: throw NoSuchElementException("Residency '$residencyName' not found")

@@ -174,7 +174,8 @@ fun ViewListingScreen(
                   modifier = Modifier.testTag(C.ViewListingTags.PHOTOS))
 
               // Location placeholder
-              val location = listing.residency.location
+              viewListingViewModel.setLocationOfListing(listingUid)
+              val location = listingUIState.locationOfListing
               if (location.latitude != 0.0 && location.longitude != 0.0) {
                 MapPreview(
                     location = location,

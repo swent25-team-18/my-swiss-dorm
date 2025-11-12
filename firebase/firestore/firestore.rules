@@ -38,5 +38,8 @@ service cloud.firestore {
         allow update, delete: if request.auth.uid == resource.data.ownerId;
         allow read: if true;
     }
+    match /config/{allPath=**} {
+        allow read, write: if true;
+    }
   }
 }

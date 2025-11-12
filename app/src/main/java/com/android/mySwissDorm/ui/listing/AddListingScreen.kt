@@ -20,7 +20,7 @@ import com.android.mySwissDorm.ui.HousingTypeDropdown
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
 import com.android.mySwissDorm.ui.PriceField
-import com.android.mySwissDorm.ui.ResidencyDropdown
+import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
@@ -98,8 +98,8 @@ fun AddListingScreen(
                   onValueChange = { addListingViewModel.setTitle(it) },
                   modifier = Modifier.testTag("titleField").fillMaxWidth())
 
-              ResidencyDropdown(
-                  selected = ui.residency.name,
+              ResidencyDropdownResID(
+                  selected = ui.residencyName,
                   onSelected = { addListingViewModel.setResidency(it) },
                   residencies = ui.residencies,
                   accentColor = MainColor)

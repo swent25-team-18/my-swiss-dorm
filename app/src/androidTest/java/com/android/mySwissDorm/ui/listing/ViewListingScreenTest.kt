@@ -8,12 +8,16 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.*
 import com.android.mySwissDorm.model.rental.*
+import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -22,6 +26,7 @@ import java.util.UUID
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +40,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   // real repos (created in createRepositories)
   private lateinit var profileRepo: ProfileRepository
   private lateinit var listingsRepo: RentalListingRepository
+  private lateinit var residenciesRepo: ResidenciesRepository
 
   // test data
   private lateinit var ownerUid: String
@@ -45,6 +51,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   override fun createRepositories() {
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     listingsRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+    residenciesRepo = ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
   @Before
@@ -55,10 +62,14 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       switchToUser(FakeUser.FakeUser1)
       ownerUid = FirebaseEmulator.auth.currentUser!!.uid
       profileRepo.createProfile(profile1.copy(ownerId = ownerUid))
+      residenciesRepo.addResidency(resTest)
+      residenciesRepo.addResidency(resTest2)
 
       switchToUser(FakeUser.FakeUser2)
       otherUid = FirebaseEmulator.auth.currentUser!!.uid
       profileRepo.createProfile(profile2.copy(ownerId = otherUid))
+      residenciesRepo.addResidency(resTest)
+      residenciesRepo.addResidency(resTest2)
 
       // back to owner for the rest of set up
       switchToUser(FakeUser.FakeUser1)
@@ -159,7 +170,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     var navigatedBack = false
 
     compose.setContent {
-      val vm = ViewListingViewModel(listingsRepo, profileRepo)
+      val vm = ViewListingViewModel(listingsRepo, profileRepo, residenciesRepo)
       // Pass a non-existing uid so real repo throws
       ViewListingScreen(
           viewListingViewModel = vm,
@@ -289,5 +300,80 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
         .performClick()
 
     assertEquals(otherUid, navigatedToId)
+  }
+
+  @Test
+  fun mapPreview_isDisplayed_whenLocationIsValid() = runTest {
+    compose.setContent {
+      val vm = ViewListingViewModel(listingsRepo, profileRepo)
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+    scrollListTo(C.ViewListingTags.LOCATION)
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION).assertIsDisplayed()
+    compose.onNodeWithText("LOCATION (Not available)").assertDoesNotExist()
+  }
+
+  @Test
+  fun mapPlaceholder_isDisplayed_whenLocationIsInvalid() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+    val resTestInvalid =
+        resTest.copy(name = "invalid name", location = Location("No Location", 0.0, 0.0))
+    residenciesRepo.addResidency(resTestInvalid)
+    val invalidListing =
+        rentalListing2.copy(
+            uid = listingsRepo.getNewUid(),
+            residencyName = resTestInvalid.name,
+            ownerId = FirebaseEmulator.auth.currentUser!!.uid)
+
+    listingsRepo.addRentalListing(invalidListing)
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = invalidListing.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) {
+      val s = vm.uiState.value
+      s.listing.uid == invalidListing.uid
+    }
+    scrollListTo(C.ViewListingTags.LOCATION)
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION).assertIsDisplayed()
+    compose.onNodeWithText("LOCATION (Not available)").assertIsDisplayed()
+  }
+
+  @Test
+  fun mapClick_triggers_onViewMapCallback_withCorrectData() = runTest {
+    var callbackCalled = false
+    var capturedLat: Double? = null
+    var capturedLon: Double? = null
+    var capturedTitle: String? = null
+    var capturedName: String? = null
+    val expectedListing = otherListing
+    val expectedLocation = residenciesRepo.getResidency(otherListing.residencyName).location
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(
+          viewListingViewModel = vm,
+          listingUid = expectedListing.uid,
+          onViewMap = { lat, lon, title, name ->
+            callbackCalled = true
+            capturedLat = lat
+            capturedLon = lon
+            capturedTitle = title
+            capturedName = name
+          })
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) {
+      val s = vm.uiState.value
+      s.listing.uid == expectedListing.uid
+    }
+    scrollListTo(C.ViewListingTags.LOCATION)
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION).performClick()
+    assertTrue("onViewMap callback was not triggered.", callbackCalled)
+    assertEquals(expectedLocation.latitude, capturedLat)
+    assertEquals(expectedLocation.longitude, capturedLon)
+    assertEquals(expectedListing.title, capturedTitle)
+    assertEquals("Listing", capturedName)
   }
 }

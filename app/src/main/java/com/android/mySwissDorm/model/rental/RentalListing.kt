@@ -1,13 +1,12 @@
 package com.android.mySwissDorm.model.rental
 
-import com.android.mySwissDorm.model.residency.Residency
 import com.google.firebase.Timestamp
 
 data class RentalListing(
     val uid: String,
     val ownerId: String,
     val postedAt: Timestamp,
-    val residency: Residency,
+    val residencyName: String,
     val title: String,
     val roomType: RoomType,
     val pricePerMonth: Double,

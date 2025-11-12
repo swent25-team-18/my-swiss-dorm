@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -44,7 +45,10 @@ fun ViewListingScreen(
     onGoBack: () -> Unit = {},
     onApply: () -> Unit = {},
     onEdit: () -> Unit = {},
-    onViewProfile: (ownerId: String) -> Unit = {}
+    onViewProfile: (ownerId: String) -> Unit = {},
+    onViewMap: (latitude: Double, longitude: Double, title: String, name: String) -> Unit =
+        { _, _, _, _ ->
+        }
 ) {
   LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid) }
 
@@ -170,10 +174,23 @@ fun ViewListingScreen(
                   modifier = Modifier.testTag(C.ViewListingTags.PHOTOS))
 
               // Location placeholder
-              PlaceholderBlock(
-                  text = "LOCATION (Not implemented yet)",
-                  height = 180.dp,
-                  modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
+              viewListingViewModel.setLocationOfListing(listingUid)
+              val location = listingUIState.locationOfListing
+              if (location.latitude != 0.0 && location.longitude != 0.0) {
+                MapPreview(
+                    location = location,
+                    title = listing.title,
+                    modifier =
+                        Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewListingTags.LOCATION),
+                    onMapClick = {
+                      onViewMap(location.latitude, location.longitude, listing.title, "Listing")
+                    })
+              } else {
+                PlaceholderBlock(
+                    text = "LOCATION (Not available)",
+                    height = 180.dp,
+                    modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
+              }
 
               if (isOwner) {
                 // Owner sees an Edit button centered, same size as Apply

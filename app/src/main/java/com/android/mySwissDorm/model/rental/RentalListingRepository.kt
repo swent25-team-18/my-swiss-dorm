@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.model.rental
 
+import com.android.mySwissDorm.model.map.Location
+
 interface RentalListingRepository {
 
   /** Generates and returns a new unique identifier for a Rental post. */
@@ -12,6 +14,17 @@ interface RentalListingRepository {
    */
   suspend fun getAllRentalListings(): List<RentalListing>
 
+  /**
+   * Retrieves all Rental listings by specific location from the repository.
+   *
+   * @param location used as centered location.
+   * @param radius used for the whole circle of locations
+   * @return A list of rental listings.
+   */
+  suspend fun getAllRentalListingsByLocation(
+      location: Location,
+      radius: Double
+  ): List<RentalListing>
   /**
    * Retrieves all Rental posts created by a specific user from the repository.
    *

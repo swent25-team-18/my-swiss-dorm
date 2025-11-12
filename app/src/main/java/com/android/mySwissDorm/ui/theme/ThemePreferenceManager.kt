@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -11,17 +12,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.ui.theme.ThemePreferenceManager.Companion.KEY_DARK_MODE
+import com.android.mySwissDorm.ui.theme.ThemePreferenceManager.Companion.PREFS_NAME
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-// All documentation was generated with the help of AI
+// All documentation and comments were generated with the help of AI
 /**
  * Shared state object that holds the dark mode preference across the app.
  *
  * This singleton ensures that updates from SettingsScreen trigger recomposition in Theme.kt and
- * other composables that depend on the theme preference.
+ * other composable that depend on the theme preference.
  *
  * @property darkModePreference The current dark mode preference:
  *     - `null`: Follow system theme
@@ -29,8 +32,7 @@ import kotlinx.coroutines.launch
  *     - `false`: Light mode enabled
  */
 object ThemePreferenceState {
-  var darkModePreference by mutableStateOf<Boolean?>(null)
-    private set
+  val darkModePreference = mutableStateOf<Boolean?>(null)
 
   /**
    * Updates the dark mode preference and triggers recomposition.
@@ -38,7 +40,7 @@ object ThemePreferenceState {
    * @param enabled The new preference value, or null to follow system theme
    */
   fun updatePreference(enabled: Boolean?) {
-    darkModePreference = enabled
+    darkModePreference.value = enabled
   }
 }
 
@@ -100,11 +102,35 @@ class ThemePreferenceManager(
   }
 
   /**
+   * Retrieves the preference from local SharedPreferences storage synchronously.
+   * This is a static helper that can be called before Compose initialization.
+   *
+   * @param context The Android context
+   * @return The stored preference, or null if not set
+   */
+  companion object {
+    const val PREFS_NAME = "theme_preferences"
+    const val KEY_DARK_MODE = "dark_mode_enabled"
+
+    /**
+     * Gets the local dark mode preference from SharedPreferences synchronously.
+     * This can be called before Compose initialization.
+     */
+    fun getLocalPreferenceSync(context: Context): Boolean? {
+      val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+      if (!prefs.contains(KEY_DARK_MODE)) {
+        return null
+      }
+      return prefs.getBoolean(KEY_DARK_MODE, false)
+    }
+  }
+
+  /**
    * Saves the dark mode preference to persistent storage.
    *
-   * Saves to Firebase if the user is logged in and has a profile. Falls back to SharedPreferences
-   * if Firebase is unavailable or if the user is not logged in. Also updates the shared state to
-   * trigger UI recomposition.
+   * ALWAYS saves to SharedPreferences first (so it persists even when logged out), then optionally
+   * syncs to Firebase if the user is logged in. This ensures the theme preference is always
+   * available locally, regardless of login status.
    *
    * @param enabled The preference value:
    *     - `true`: Enable dark mode
@@ -112,6 +138,14 @@ class ThemePreferenceManager(
    *     - `null`: Follow system theme
    */
   suspend fun setDarkModePreference(enabled: Boolean?) {
+    // ALWAYS save to SharedPreferences first - this ensures the preference persists
+    // even when the user is logged out
+    setLocalPreference(enabled)
+    
+    // Update the shared state immediately so the UI reflects the change
+    ThemePreferenceState.updatePreference(enabled)
+    
+    // Optionally sync to Firebase if user is logged in (for cross-device sync)
     val user = auth.currentUser
     if (user != null) {
       try {
@@ -127,17 +161,13 @@ class ThemePreferenceManager(
               existingProfile.copy(
                   userSettings = existingProfile.userSettings.copy(darkMode = enabled))
           profileRepository.editProfile(updatedProfile)
-        } else {
-          setLocalPreference(enabled)
         }
+        // If profile doesn't exist, we've already saved to SharedPreferences, so we're done
       } catch (e: Exception) {
-        setLocalPreference(enabled)
+        // If Firebase sync fails, we've already saved to SharedPreferences, so we're done
+        // The local preference is the source of truth
       }
-    } else {
-      setLocalPreference(enabled)
     }
-
-    ThemePreferenceState.updatePreference(enabled)
   }
 
   /**
@@ -161,16 +191,33 @@ class ThemePreferenceManager(
    *
    * Should be called when the app starts or when the theme preference manager is created. Loads the
    * preference from Firebase or SharedPreferences and updates the shared state.
+   * 
+   * Only updates if the current state is null (not already initialized from SharedPreferences).
    */
   suspend fun initializeState() {
-    val preference = getDarkModePreference()
-    ThemePreferenceState.updatePreference(preference)
+    // Only initialize if not already set (MainActivity should have set it from SharedPreferences)
+    if (ThemePreferenceState.darkModePreference.value == null) {
+      val preference = getDarkModePreference()
+      ThemePreferenceState.updatePreference(preference)
+    } else {
+      // If already initialized, just sync from Firebase if user is logged in
+      // This ensures Firebase preference takes precedence if it exists
+      val user = auth.currentUser
+      if (user != null) {
+        try {
+          val profile = profileRepository.getProfile(user.uid)
+          val firebasePreference = profile.userSettings.darkMode
+          // Only update if Firebase has a different value
+          if (firebasePreference != null && firebasePreference != ThemePreferenceState.darkModePreference.value) {
+            ThemePreferenceState.updatePreference(firebasePreference)
+          }
+        } catch (e: Exception) {
+          // If Firebase fails, keep the SharedPreferences value
+        }
+      }
+    }
   }
 
-  companion object {
-    private const val PREFS_NAME = "theme_preferences"
-    private const val KEY_DARK_MODE = "dark_mode_enabled"
-  }
 }
 
 /**
@@ -186,7 +233,24 @@ fun rememberThemePreferenceManager(): ThemePreferenceManager {
   val context = LocalContext.current
   val manager = remember { ThemePreferenceManager(context) }
 
-  LaunchedEffect(Unit) { manager.initializeState() }
+  // Initialize synchronously from SharedPreferences IMMEDIATELY (not in LaunchedEffect)
+  // This ensures the theme is correct on first render before any async operations
+  // Only initialize if not already set (MainActivity should have already initialized it)
+  // This is a fallback in case MainActivity initialization didn't happen for some reason
+  SideEffect {
+    if (ThemePreferenceState.darkModePreference.value == null) {
+      val savedPreference = ThemePreferenceManager.getLocalPreferenceSync(context)
+      if (savedPreference != null) {
+        ThemePreferenceState.updatePreference(savedPreference)
+      }
+    }
+  }
+
+  // Then update from Firebase asynchronously if user is logged in
+  // This will only update if Firebase has a different value
+  LaunchedEffect(Unit) {
+    manager.initializeState()
+  }
 
   return manager
 }
@@ -207,8 +271,22 @@ fun rememberThemePreferenceManager(): ThemePreferenceManager {
  */
 @Composable
 fun rememberDarkModePreference(): Pair<Boolean?, (Boolean?) -> Unit> {
+  val context = LocalContext.current
   val manager = rememberThemePreferenceManager()
-  val preference = ThemePreferenceState.darkModePreference
+  
+  // Ensure preference is initialized synchronously during composition
+  // This must happen before we read the state to ensure correct theme on first render
+  SideEffect {
+    if (ThemePreferenceState.darkModePreference.value == null) {
+      val savedPreference = ThemePreferenceManager.getLocalPreferenceSync(context)
+      if (savedPreference != null) {
+        ThemePreferenceState.updatePreference(savedPreference)
+      }
+    }
+  }
+  
+  // Read the state using 'by' to properly observe it and trigger recomposition
+  val preference by ThemePreferenceState.darkModePreference
 
   fun updatePreference(enabled: Boolean?) {
     CoroutineScope(Dispatchers.IO).launch { manager.setDarkModePreference(enabled) }

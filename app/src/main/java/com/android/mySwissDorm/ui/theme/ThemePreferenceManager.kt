@@ -102,8 +102,8 @@ class ThemePreferenceManager(
   }
 
   /**
-   * Retrieves the preference from local SharedPreferences storage synchronously.
-   * This is a static helper that can be called before Compose initialization.
+   * Retrieves the preference from local SharedPreferences storage synchronously. This is a static
+   * helper that can be called before Compose initialization.
    *
    * @param context The Android context
    * @return The stored preference, or null if not set
@@ -113,8 +113,8 @@ class ThemePreferenceManager(
     const val KEY_DARK_MODE = "dark_mode_enabled"
 
     /**
-     * Gets the local dark mode preference from SharedPreferences synchronously.
-     * This can be called before Compose initialization.
+     * Gets the local dark mode preference from SharedPreferences synchronously. This can be called
+     * before Compose initialization.
      */
     fun getLocalPreferenceSync(context: Context): Boolean? {
       val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -141,10 +141,10 @@ class ThemePreferenceManager(
     // ALWAYS save to SharedPreferences first - this ensures the preference persists
     // even when the user is logged out
     setLocalPreference(enabled)
-    
+
     // Update the shared state immediately so the UI reflects the change
     ThemePreferenceState.updatePreference(enabled)
-    
+
     // Optionally sync to Firebase if user is logged in (for cross-device sync)
     val user = auth.currentUser
     if (user != null) {
@@ -191,7 +191,7 @@ class ThemePreferenceManager(
    *
    * Should be called when the app starts or when the theme preference manager is created. Loads the
    * preference from Firebase or SharedPreferences and updates the shared state.
-   * 
+   *
    * Only updates if the current state is null (not already initialized from SharedPreferences).
    */
   suspend fun initializeState() {
@@ -208,7 +208,8 @@ class ThemePreferenceManager(
           val profile = profileRepository.getProfile(user.uid)
           val firebasePreference = profile.userSettings.darkMode
           // Only update if Firebase has a different value
-          if (firebasePreference != null && firebasePreference != ThemePreferenceState.darkModePreference.value) {
+          if (firebasePreference != null &&
+              firebasePreference != ThemePreferenceState.darkModePreference.value) {
             ThemePreferenceState.updatePreference(firebasePreference)
           }
         } catch (e: Exception) {
@@ -217,7 +218,6 @@ class ThemePreferenceManager(
       }
     }
   }
-
 }
 
 /**
@@ -248,9 +248,7 @@ fun rememberThemePreferenceManager(): ThemePreferenceManager {
 
   // Then update from Firebase asynchronously if user is logged in
   // This will only update if Firebase has a different value
-  LaunchedEffect(Unit) {
-    manager.initializeState()
-  }
+  LaunchedEffect(Unit) { manager.initializeState() }
 
   return manager
 }
@@ -273,7 +271,7 @@ fun rememberThemePreferenceManager(): ThemePreferenceManager {
 fun rememberDarkModePreference(): Pair<Boolean?, (Boolean?) -> Unit> {
   val context = LocalContext.current
   val manager = rememberThemePreferenceManager()
-  
+
   // Ensure preference is initialized synchronously during composition
   // This must happen before we read the state to ensure correct theme on first render
   SideEffect {
@@ -284,7 +282,7 @@ fun rememberDarkModePreference(): Pair<Boolean?, (Boolean?) -> Unit> {
       }
     }
   }
-  
+
   // Read the state using 'by' to properly observe it and trigger recomposition
   val preference by ThemePreferenceState.darkModePreference
 

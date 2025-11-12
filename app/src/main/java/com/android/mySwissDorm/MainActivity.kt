@@ -1,7 +1,6 @@
 package com.android.mySwissDorm
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -32,7 +31,7 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    
+
     // Initialize theme preference synchronously from SharedPreferences BEFORE setContent
     // This ensures the theme is correct from the very first render, including login screen
     // Always load from SharedPreferences - this persists even after logout
@@ -40,7 +39,7 @@ class MainActivity : ComponentActivity() {
     // Set the preference in global state - this will be used by the theme composable
     // If savedPreference is null, we leave it null to follow system theme
     ThemePreferenceState.updatePreference(savedPreference)
-    
+
     Log.d("", Screen.topLevel.joinToString { it.name })
     setContent {
       PhotoRepositoryProvider.initialize(LocalContext.current)

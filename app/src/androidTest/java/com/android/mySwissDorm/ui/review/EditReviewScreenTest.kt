@@ -171,8 +171,7 @@ class EditReviewScreenTest : FirestoreTest() {
 
   @Test
   fun vm_loads_review_into_state() = runTest {
-    val vm = EditReviewViewModel()
-    vm.loadReview(review1!!.uid)
+    val vm = EditReviewViewModel(reviewId = review1!!.uid)
 
     composeRule.waitUntil(timeoutMillis = 5_000) { vm.uiState.value.title.isNotBlank() }
     assertEquals("title1", vm.uiState.value.title)
@@ -186,8 +185,7 @@ class EditReviewScreenTest : FirestoreTest() {
 
   @Test
   fun vm_rejects_invalid_and_does_not_write() = runTest {
-    val vm = EditReviewViewModel()
-    vm.loadReview(review1!!.uid)
+    val vm = EditReviewViewModel(reviewId = review1!!.uid)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
 
@@ -215,8 +213,7 @@ class EditReviewScreenTest : FirestoreTest() {
             sizeM2 = 18,
             roomType = RoomType.STUDIO)
 
-    val vm = EditReviewViewModel()
-    vm.loadReview(id)
+    val vm = EditReviewViewModel(reviewId = id)
 
     // Wait for review to be loaded using composeRule.waitUntil (advances test dispatcher)
     composeRule.waitUntil(timeoutMillis = 5_000) { vm.uiState.value.title.isNotBlank() }
@@ -269,7 +266,7 @@ class EditReviewScreenTest : FirestoreTest() {
     val before = getAllReviewsByUserCount(Firebase.auth.currentUser!!.uid)
     assertTrue(before >= 1)
 
-    val vm = EditReviewViewModel()
+    val vm = EditReviewViewModel(reviewId = id)
     vm.deleteReview(id)
 
     val after = getAllReviewsByUserCount(Firebase.auth.currentUser!!.uid)
@@ -278,7 +275,7 @@ class EditReviewScreenTest : FirestoreTest() {
 
   @Test
   fun editing_review_saves_to_firestore() = runTest {
-    val vm = EditReviewViewModel()
+    val vm = EditReviewViewModel(reviewId = review1!!.uid)
     setContentFor(vm, review1!!.uid)
 
     composeRule.waitUntil(5_000) {
@@ -306,7 +303,7 @@ class EditReviewScreenTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val id = seedReviewUpsert()
 
-    val vm = EditReviewViewModel()
+    val vm = EditReviewViewModel(reviewId = id)
     var deletedResidencyName: String? = null
     setContentFor(vm, id, onDelete = { deletedResidencyName = it })
 
@@ -333,7 +330,7 @@ class EditReviewScreenTest : FirestoreTest() {
   @Test
   fun invalid_price_disables_save_and_shows_helper() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    val vm = EditReviewViewModel()
+    val vm = EditReviewViewModel(reviewId = review1!!.uid)
     setContentFor(vm, review1!!.uid)
 
     composeRule.waitUntil(5_000) {

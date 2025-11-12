@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.overview
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import junit.framework.Assert.assertEquals
 import org.junit.Rule
@@ -21,34 +22,34 @@ class AddFabMenuTest {
   fun fab_isVisible_initially_menu_isClosed() {
     setUnderTest()
 
-    composeRule.onNodeWithTag("fab_main").assertExists().assertIsDisplayed()
-    composeRule.onNodeWithTag("fab_menu_listing").assertDoesNotExist()
-    composeRule.onNodeWithTag("fab_menu_review").assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENU).assertExists().assertIsDisplayed()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).assertDoesNotExist()
   }
 
   @Test
   fun tapping_fab_opens_menu_and_shows_actions() {
     setUnderTest()
 
-    composeRule.onNodeWithTag("fab_main").performClick()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENU).performClick()
     composeRule.waitForIdle()
 
-    composeRule.onNodeWithTag("fab_menu_listing").assertExists().assertIsDisplayed()
-    composeRule.onNodeWithTag("fab_menu_review").assertExists().assertIsDisplayed()
-    composeRule.onNodeWithTag("fab_scrim").assertExists().assertIsDisplayed()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).assertExists().assertIsDisplayed()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).assertExists().assertIsDisplayed()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABSCRIM).assertExists().assertIsDisplayed()
   }
 
   @Test
   fun tapping_fab_again_closes_menu() {
     setUnderTest()
 
-    composeRule.onNodeWithTag("fab_main").performClick()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENU).performClick()
     composeRule.waitForIdle()
-    composeRule.onNodeWithTag("fab_main").performClick()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENU).performClick()
     composeRule.waitForIdle()
 
-    composeRule.onNodeWithTag("fab_menu_listing").assertDoesNotExist()
-    composeRule.onNodeWithTag("fab_menu_review").assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).assertDoesNotExist()
   }
 
   @Test
@@ -56,14 +57,14 @@ class AddFabMenuTest {
     setUnderTest()
 
     // Open
-    composeRule.onNodeWithTag("fab_main").performClick()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENU).performClick()
     composeRule.waitForIdle()
     // Close via scrim
-    composeRule.onNodeWithTag("fab_scrim").performClick()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABSCRIM).performClick()
     composeRule.waitForIdle()
 
-    composeRule.onNodeWithTag("fab_menu_listing").assertDoesNotExist()
-    composeRule.onNodeWithTag("fab_menu_review").assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).assertDoesNotExist()
   }
 
   @Test
@@ -71,9 +72,9 @@ class AddFabMenuTest {
     var listingClicks = 0
     setUnderTest(onAddListing = { listingClicks++ })
 
-    composeRule.onNodeWithTag("fab_main").performClick()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENU).performClick()
     composeRule.waitForIdle()
-    composeRule.onNodeWithTag("fab_menu_listing").performClick()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).performClick()
     composeRule.waitForIdle()
 
     assertEquals(
@@ -81,8 +82,8 @@ class AddFabMenuTest {
         1,
         listingClicks,
     )
-    composeRule.onNodeWithTag("fab_menu_listing").assertDoesNotExist()
-    composeRule.onNodeWithTag("fab_menu_review").assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).assertDoesNotExist()
   }
 
   @Test
@@ -90,9 +91,9 @@ class AddFabMenuTest {
     var reviewClicks = 0
     setUnderTest(onAddReview = { reviewClicks++ })
 
-    composeRule.onNodeWithTag("fab_main").performClick()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENU).performClick()
     composeRule.waitForIdle()
-    composeRule.onNodeWithTag("fab_menu_review").performClick()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).performClick()
     composeRule.waitForIdle()
 
     assertEquals(
@@ -100,7 +101,7 @@ class AddFabMenuTest {
         1,
         reviewClicks,
     )
-    composeRule.onNodeWithTag("fab_menu_listing").assertDoesNotExist()
-    composeRule.onNodeWithTag("fab_menu_review").assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).assertDoesNotExist()
   }
 }

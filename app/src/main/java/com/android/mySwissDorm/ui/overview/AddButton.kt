@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.White
 
@@ -56,7 +57,7 @@ fun AddFabMenu(modifier: Modifier = Modifier, onAddListing: () -> Unit, onAddRev
           Modifier.fillMaxSize()
               .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.12f))
               .clickable { expanded = false }
-              .testTag("fab_scrim"))
+              .testTag(C.BrowseCityTags.FABSCRIM))
     }
 
     Column(
@@ -79,7 +80,7 @@ fun AddFabMenu(modifier: Modifier = Modifier, onAddListing: () -> Unit, onAddRev
                             expanded = false
                             onAddListing()
                           },
-                          tag = "fab_menu_listing")
+                          tag = C.BrowseCityTags.FABMENULISTING)
                       FabMiniAction(
                           text = "Add review",
                           icon = {
@@ -89,7 +90,7 @@ fun AddFabMenu(modifier: Modifier = Modifier, onAddListing: () -> Unit, onAddRev
                             expanded = false
                             onAddReview()
                           },
-                          tag = "fab_menu_review")
+                          tag = C.BrowseCityTags.FABMENUREVIEW)
                     }
               }
 
@@ -98,7 +99,7 @@ fun AddFabMenu(modifier: Modifier = Modifier, onAddListing: () -> Unit, onAddRev
               elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
               shape = CircleShape,
               containerColor = MainColor,
-              modifier = Modifier.size(64.dp).testTag("fab_main")) {
+              modifier = Modifier.size(64.dp).testTag(C.BrowseCityTags.FABMENU)) {
                 Icon(
                     imageVector = Icons.Filled.Add,
                     tint = White,

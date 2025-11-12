@@ -2,6 +2,7 @@ package com.android.mySwissDorm.model.residency
 
 import android.util.Log
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.distanceTo
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import java.net.URL
@@ -19,6 +20,14 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
       Log.e("ResidenciesRepositoryFirestore", "Error fetching all residencies", e)
       return emptyList()
     }
+  }
+
+  override suspend fun getAllResidenciesNearLocation(
+      location: Location,
+      radius: Double
+  ): List<Residency> {
+    val all = getAllResidencies()
+    return all.filter { location.distanceTo(it.location) <= radius }
   }
 
   override suspend fun getResidency(residencyName: String): Residency {

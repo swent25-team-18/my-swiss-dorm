@@ -11,6 +11,7 @@ const val REVIEWS_COLLECTION_PATH = "reviews"
 class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRepository {
 
   private val ownerAttributeName = "ownerId"
+  private val residencyAttributeName = "residencyName"
 
   override fun getNewUid(): String {
     return db.collection(REVIEWS_COLLECTION_PATH).document().id
@@ -25,6 +26,15 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
     val snapshot =
         db.collection(REVIEWS_COLLECTION_PATH)
             .whereEqualTo(ownerAttributeName, userId)
+            .get()
+            .await()
+    return snapshot.mapNotNull { documentToReview(it) }
+  }
+
+  override suspend fun getAllReviewsByResidency(residencyName: String): List<Review> {
+    val snapshot =
+        db.collection(REVIEWS_COLLECTION_PATH)
+            .whereEqualTo(residencyAttributeName, residencyName)
             .get()
             .await()
     return snapshot.mapNotNull { documentToReview(it) }

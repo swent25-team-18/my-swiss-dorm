@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.model.residency
 
+import com.android.mySwissDorm.model.map.Location
+
 /** Represents a repository that manages Residency items. */
 interface ResidenciesRepository {
   /**
@@ -8,6 +10,15 @@ interface ResidenciesRepository {
    * @return A list of all Residency items.
    */
   suspend fun getAllResidencies(): List<Residency>
+
+  /**
+   * Retrieves all Residency located within a given radius from a specified location.
+   *
+   * @param location The reference location from which distances are calculated.
+   * @param radius The maximum distance (in kilometers) within which residencies should be included.
+   * @return A list of all Residency items located within the specified radius.
+   */
+  suspend fun getAllResidenciesNearLocation(location: Location, radius: Double): List<Residency>
 
   /**
    * Retrieves a specific Residency item by its unique identifier.

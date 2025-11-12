@@ -130,6 +130,27 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun getAllReviewsByResidencyWorks() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val firstUserId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val firstReview = review1.copy(ownerId = firstUserId)
+    val secondReview = review2.copy(ownerId = firstUserId)
+    repo.addReview(firstReview)
+    repo.addReview(secondReview)
+
+    switchToUser(FakeUser.FakeUser2)
+    val secondUserId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val thirdReview = review3.copy(ownerId = secondUserId)
+    repo.addReview(thirdReview)
+
+    switchToUser(FakeUser.FakeUser1)
+    assertEquals(
+        listOf(firstReview, thirdReview).toSet(), repo.getAllReviewsByResidency("Vortex").toSet())
+  }
+
+  @Test
   fun editReviewWorks() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val review =

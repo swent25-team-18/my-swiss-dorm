@@ -32,6 +32,7 @@ import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
+import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.review.DisplayGrade
 import com.android.mySwissDorm.ui.review.truncateText
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -66,6 +67,8 @@ fun BrowseCityScreen(
     onSelectListing: (ListingCardUI) -> Unit = {},
     onSelectResidency: (ResidencyCardUI) -> Unit = {},
     onLocationChange: (Location) -> Unit = {},
+    onAddListingClick: () -> Unit = {},
+    onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {
 
@@ -101,6 +104,8 @@ fun BrowseCityScreen(
       onSelectListing = onSelectListing,
       onSelectResidency = onSelectResidency,
       onLocationClick = onLocationClick,
+      onAddListingClick = { navigationActions?.navigateTo(Screen.AddListing) },
+      onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
       navigationActions = navigationActions)
 
   if (uiState.showCustomLocationDialog) {
@@ -139,12 +144,20 @@ private fun BrowseCityScreenUI(
     onSelectListing: (ListingCardUI) -> Unit,
     onSelectResidency: (ResidencyCardUI) -> Unit,
     onLocationClick: () -> Unit,
+    onAddListingClick: () -> Unit = {},
+    onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
 
   Scaffold(
       bottomBar = { BottomBarFromNav(navigationActions) },
+      floatingActionButton = {
+        AddFabMenu(
+            onAddListing = onAddListingClick,
+            onAddReview = onAddReviewClick,
+            modifier = Modifier.navigationBarsPadding().imePadding())
+      },
       topBar = {
         CenterAlignedTopAppBar(
             title = {

@@ -28,7 +28,6 @@ import androidx.navigation.navArgument
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.ui.add.AddHubScreen
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
@@ -119,13 +118,6 @@ fun AppNavHost(
           navigationActions = navActions)
     }
 
-    composable(Screen.AddHub.route) {
-      AddHubScreen(
-          onBack = { navActions.goBack() },
-          onAddReview = { navActions.navigateTo(Screen.AddReview) },
-          onAddListing = { navActions.navigateTo(Screen.AddListing) })
-    }
-
     composable(Screen.Inbox.route) {
       Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
       navActions.navigateTo(Screen.Homepage)
@@ -154,7 +146,7 @@ fun AppNavHost(
             navController.navigate(Screen.ListingOverview(created.uid).route) {
               // Remove AddListing so back from overview goes to whatever was before it (Homepage
               // here)
-              popUpTo(Screen.AddHub.route) { inclusive = true }
+              popUpTo(Screen.AddListing.route) { inclusive = true }
               launchSingleTop = true
             }
           })

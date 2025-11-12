@@ -113,7 +113,7 @@ fun AppNavHost(
           onBack = { navActions.goBack() })
     }
 
-    // these are strictly the Bottom bar destinations
+    // --- Bottom bar destinations ---
 
     composable(Screen.Homepage.route) {
       HomePageScreen(
@@ -133,6 +133,7 @@ fun AppNavHost(
       Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
       navActions.navigateTo(Screen.Homepage)
     }
+
     composable(Screen.Settings.route) {
       val adminRepo = remember { AdminRepository() }
       var isAdmin by remember { mutableStateOf(false) }
@@ -150,6 +151,7 @@ fun AppNavHost(
     }
 
     // --- Secondary destinations ---
+
     composable(Screen.AddListing.route) {
       AddListingScreen(
           onOpenMap = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
@@ -163,6 +165,7 @@ fun AppNavHost(
             }
           })
     }
+
     composable(
         route = "mapScreen/{lat}/{lng}/{title}/{name}",
         arguments =
@@ -178,6 +181,7 @@ fun AppNavHost(
               name = backStackEntry.arguments?.getString("name") ?: "Location",
               onGoBack = { navController.popBackStack() })
         }
+
     composable(Screen.BrowseOverview.route) { navBackStackEntry ->
       val name = navBackStackEntry.arguments?.getString("name")
       val latString = navBackStackEntry.arguments?.getString("lat")
@@ -226,6 +230,8 @@ fun AppNavHost(
                   contribution.referenceId?.let { navActions.navigateTo(Screen.ReviewOverview(it)) }
             }
           })
+    }
+
     composable(Screen.ReviewsByResidencyOverview.route) { navBackStackEntry ->
       val residencyName = navBackStackEntry.arguments?.getString("residencyName")
 
@@ -334,9 +340,11 @@ fun AppNavHost(
             Toast.makeText(context, "Listing deleted", Toast.LENGTH_SHORT).show()
           })
     }
+
     composable(Screen.Admin.route) {
       AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })
     }
+
     composable(Screen.Profile.route) {
       ProfileScreen(
           onBack = { navActions.goBack() },

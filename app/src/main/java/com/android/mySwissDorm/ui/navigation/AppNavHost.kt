@@ -192,11 +192,11 @@ fun AppNavHost(
           onBackClick = { navActions.goBack() },
           onContributionClick = { contribution ->
             when (contribution.type) {
-              com.android.mySwissDorm.ui.profile.ContributionType.LISTING ->
+              ContributionType.LISTING ->
                   contribution.referenceId?.let {
                     navActions.navigateTo(Screen.ListingOverview(it))
                   }
-              com.android.mySwissDorm.ui.profile.ContributionType.REVIEW ->
+              ContributionType.REVIEW ->
                   contribution.referenceId?.let { navActions.navigateTo(Screen.ReviewOverview(it)) }
             }
           })

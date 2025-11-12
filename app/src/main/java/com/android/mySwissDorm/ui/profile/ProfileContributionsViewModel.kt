@@ -2,11 +2,13 @@ package com.android.mySwissDorm.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +24,7 @@ data class Contribution(
     val description: String,
     val type: ContributionType = ContributionType.LISTING,
     val referenceId: String? = null,
-    val postedAtSeconds: Long? = null,
+    val postedAt: Timestamp? = null,
 )
 
 data class ContributionsUiState(
@@ -66,18 +68,10 @@ class ProfileContributionsViewModel(
 
         val contributions =
             buildList {
-                  listings.forEach { listing ->
-                    add(
-                        Contribution(
-                            title = listing.title.ifBlank { "Listing" },
-                            description = listing.description,
-                            type = ContributionType.LISTING,
-                            referenceId = listing.uid,
-                            postedAtSeconds = listing.postedAt.seconds))
-                  }
+                  listings.forEach { listing -> add(listing.toContribution()) }
                   reviews.forEach { review -> add(review.toContribution()) }
                 }
-                .sortedByDescending { it.postedAtSeconds ?: Long.MIN_VALUE }
+                .sortedByDescending { it.postedAt?.seconds ?: Long.MIN_VALUE }
 
         _ui.value = ContributionsUiState(items = contributions, isLoading = false)
       } catch (t: Throwable) {
@@ -92,11 +86,19 @@ class ProfileContributionsViewModel(
     _ui.value = ContributionsUiState(items = list, isLoading = false, error = null)
   }
 
+  private fun RentalListing.toContribution(): Contribution =
+      Contribution(
+          title = title.ifBlank { "Listing" },
+          description = description,
+          type = ContributionType.LISTING,
+          referenceId = uid,
+          postedAt = postedAt)
+
   private fun Review.toContribution(): Contribution =
       Contribution(
           title = title.ifBlank { "Review" },
           description = reviewText,
           type = ContributionType.REVIEW,
           referenceId = uid,
-          postedAtSeconds = postedAt.seconds)
+          postedAt = postedAt)
 }

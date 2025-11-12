@@ -1,15 +1,14 @@
 package com.android.mySwissDorm.ui.profile
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,12 +39,13 @@ fun ProfileContributionsScreen(
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = BackGroundColor, titleContentColor = TextColor))
       }) { inner ->
-        Column(modifier = Modifier.padding(inner).fillMaxSize().background(White).padding(16.dp)) {
-          ProfileContributionsList(
-              contributions = contributions,
-              onContributionClick = onContributionClick,
-              modifier = Modifier.fillMaxWidth().testTag("contributions_list"))
-        }
+        ProfileContributionsList(
+            contributions = contributions,
+            onContributionClick = onContributionClick,
+            modifier =
+                Modifier.padding(inner)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 16.dp))
       }
 }
 
@@ -55,30 +55,33 @@ fun ProfileContributionsList(
     onContributionClick: (Contribution) -> Unit,
     modifier: Modifier = Modifier
 ) {
-  if (contributions.isEmpty()) {
-    Text(
-        text = "No contributions yet",
-        style = MaterialTheme.typography.bodyMedium,
-        color = TextColor.copy(alpha = 0.6f),
-        modifier = modifier)
-    return
-  }
-
-  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    contributions.forEachIndexed { index, contribution ->
-      ContributionCard(
-          contribution = contribution,
-          onClick = { onContributionClick(contribution) },
-          index = index)
-    }
-  }
+  LazyColumn(
+      modifier = modifier.testTag("contributions_list"),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+      contentPadding = PaddingValues(bottom = 24.dp)) {
+        if (contributions.isEmpty()) {
+          item {
+            Text(
+                text = "No contributions yet",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextColor.copy(alpha = 0.6f))
+          }
+        } else {
+          itemsIndexed(contributions) { index, contribution ->
+            ContributionCard(
+                contribution = contribution,
+                onClick = { onContributionClick(contribution) },
+                index = index)
+          }
+        }
+      }
 }
 
 @Composable
 private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, index: Int) {
   Card(
       modifier =
-          Modifier.fillMaxWidth().testTag("card_contrib_$index").clickable(onClick = onClick),
+          Modifier.fillMaxWidth().testTag("card_contrib_$index"),
       shape = MaterialTheme.shapes.large,
       colors = CardDefaults.cardColors(containerColor = BackGroundColor),
       elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -102,7 +105,7 @@ private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, in
           Text(
               text = contribution.description,
               style = MaterialTheme.typography.bodyMedium,
-              color = Color(0xFF7A7A7A))
+              color = MaterialTheme.colorScheme.onSurfaceVariant)
           Spacer(Modifier.height(12.dp))
           OutlinedButton(
               onClick = onClick,

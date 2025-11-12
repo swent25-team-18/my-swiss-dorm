@@ -22,8 +22,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.StarHalf
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -58,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -74,7 +73,10 @@ fun ViewReviewScreen(
     reviewUid: String,
     onGoBack: () -> Unit = {},
     onEdit: () -> Unit = {},
-    onViewProfile: (ownerId: String) -> Unit = {}
+    onViewProfile: (ownerId: String) -> Unit = {},
+    onViewMap: (latitude: Double, longitude: Double, title: String, name: String) -> Unit =
+        { _, _, _, _ ->
+        }
 ) {
   LaunchedEffect(reviewUid) { viewReviewViewModel.loadReview(reviewUid) }
 
@@ -173,7 +175,7 @@ fun ViewReviewScreen(
                 BulletRow("${review.roomType}")
                 BulletRow("${review.pricePerMonth}.-/month")
                 BulletRow("${review.areaInM2}m²")
-                DisplayGrade(review.grade)
+                DisplayGrade(review.grade, 24.dp)
               }
 
               // Actual review
@@ -188,12 +190,24 @@ fun ViewReviewScreen(
                   text = "PHOTOS (Not implemented yet)",
                   height = 220.dp,
                   modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
-
               // Location placeholder
-              PlaceholderBlock(
-                  text = "LOCATION (Not implemented yet)",
-                  height = 180.dp,
-                  modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
+              viewReviewViewModel.setLocationOfReview(reviewUid)
+              val location = uiState.locationOfReview
+              if (location.latitude != 0.0 && location.longitude != 0.0) {
+                MapPreview(
+                    location = location,
+                    title = review.title,
+                    modifier =
+                        Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewReviewTags.LOCATION),
+                    onMapClick = {
+                      onViewMap(location.latitude, location.longitude, review.title, "Review")
+                    })
+              } else {
+                PlaceholderBlock(
+                    text = "LOCATION (Not available)",
+                    height = 180.dp,
+                    modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
+              }
 
               if (isOwner) {
                 // Owner sees an Edit button centered
@@ -246,43 +260,41 @@ private fun BulletRow(text: String) {
 }
 
 @Composable
-private fun DisplayGrade(grade: Double) {
-  Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-    val maxStars = 5
-    val filledStars = floor(grade).toInt()
-    val hasHalfStar = grade != floor(grade)
+fun DisplayGrade(grade: Double, starSize: Dp, testTag: String = "") {
+  val maxStars = 5
+  val filledStars = floor(grade).toInt()
+  val hasHalfStar = grade != floor(grade)
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start) {
-          for (i in 1..maxStars) {
-            when {
-              i <= filledStars -> { // Draw a filled star
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = MainColor,
-                    modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.FILLED_STAR))
-              }
-              i == filledStars + 1 && hasHalfStar -> { // Draw a half filled star
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.StarHalf,
-                    contentDescription = null,
-                    tint = MainColor,
-                    modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.HALF_STAR))
-              }
-              else -> { // Draw a star's border only (not filled)
-                Icon(
-                    imageVector = Icons.Default.StarBorder,
-                    contentDescription = null,
-                    tint = MainColor,
-                    modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.EMPTY_STAR))
-              }
+  Row(
+      modifier = Modifier.fillMaxWidth().testTag(testTag),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.End) {
+        for (i in 1..maxStars) {
+          when {
+            i <= filledStars -> { // Draw a filled star
+              Icon(
+                  imageVector = Icons.Filled.Star,
+                  contentDescription = null,
+                  tint = MainColor,
+                  modifier = Modifier.size(starSize).testTag(C.ViewReviewTags.FILLED_STAR))
+            }
+            i == filledStars + 1 && hasHalfStar -> { // Draw a half filled star
+              Icon(
+                  imageVector = Icons.AutoMirrored.Filled.StarHalf,
+                  contentDescription = null,
+                  tint = MainColor,
+                  modifier = Modifier.size(starSize).testTag(C.ViewReviewTags.HALF_STAR))
+            }
+            else -> { // Draw a star's border only (not filled)
+              Icon(
+                  imageVector = Icons.Default.StarBorder,
+                  contentDescription = null,
+                  tint = MainColor,
+                  modifier = Modifier.size(starSize).testTag(C.ViewReviewTags.EMPTY_STAR))
             }
           }
         }
-  }
+      }
 }
 
 @Composable

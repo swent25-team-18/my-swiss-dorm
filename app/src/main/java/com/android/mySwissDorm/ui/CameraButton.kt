@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui
 
-import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -28,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,7 +48,6 @@ import java.util.UUID
  * @param onSave called when an image is successfully taken. Not called if the process is cancelled
  *   by the user.
  * @param modifier the [Modifier] applied to this button
- * @param context the [Context] with which the image is created
  */
 @Composable
 fun CameraButton(
@@ -63,7 +60,6 @@ fun CameraButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
-    context: Context = LocalContext.current,
     takePictureContract: ActivityResultContract<Uri, Boolean> =
         ActivityResultContracts.TakePicture(),
     content: @Composable (RowScope.() -> Unit) = {}
@@ -79,7 +75,7 @@ fun CameraButton(
       }
   Button(
       onClick = {
-        val photo = Photo.createNewPhotoOnCache(context, UUID.randomUUID().toString())
+        val photo = Photo.createNewTempPhoto(UUID.randomUUID().toString() + ".jpg")
         uriCaptured = photo.image
         photoCaptured = photo
         cameraLauncher.launch(input = photo.image)
@@ -112,14 +108,12 @@ fun DefaultCameraButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
-    context: Context = LocalContext.current,
     takePictureContract: ActivityResultContract<Uri, Boolean> =
         ActivityResultContracts.TakePicture(),
 ) {
   CameraButton(
       onSave = onSave,
       modifier = modifier,
-      context = context,
       takePictureContract = takePictureContract,
       enabled = enabled,
       shape = shape,

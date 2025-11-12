@@ -11,11 +11,13 @@ import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.residency.RESIDENCIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.review.REVIEWS_COLLECTION_PATH
+import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.utils.FirebaseEmulator.auth
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import java.lang.NullPointerException
+import java.net.URL
 import kotlinx.coroutines.tasks.await
 import org.junit.After
 import org.junit.Before
@@ -46,6 +48,10 @@ abstract class FirestoreTest : TestCase() {
 
   suspend fun getProfileCount(): Int {
     return FirebaseEmulator.firestore.collection(PROFILE_COLLECTION_PATH).get().await().size()
+  }
+
+  suspend fun getAllRentalListingsByUserCount(ownerId: String): Int {
+    return RentalListingRepositoryProvider.repository.getAllRentalListingsByUser(ownerId).size
   }
 
   suspend fun getRentalListingCount(): Int {
@@ -157,6 +163,37 @@ abstract class FirestoreTest : TestCase() {
           ownerId = "",
       )
 
+  val vortex =
+      Residency(
+          name = "Vortex",
+          description = "description for Vortex",
+          location =
+              Location("Rte de Praz Véguey 29, 1022 Chavannes-près-Renens", 46.5245257, 6.575223),
+          city = "Lausanne",
+          email = null,
+          phone = null,
+          website = URL("https://www.fmel.ch/maison/vortex"))
+
+  val atrium =
+      Residency(
+          name = "Atrium",
+          description = "description for Atrium",
+          location = Location("Rte Louis Favre 4, 1024 Ecublens", 46.5232163, 6.5660033),
+          city = "Lausanne",
+          email = null,
+          phone = null,
+          website = URL("https://www.fmel.ch/maison/atrium"))
+
+  val woko =
+      Residency(
+          name = "WOKO",
+          description = "description for WOKO",
+          location = Location("Stauffacherstrasse 101, 8004 Zürich", 47.3764941, 8.5245912),
+          city = "Zurich",
+          email = null,
+          phone = "+41 44 256 68 00",
+          website = URL("https://www.woko.ch/"))
+
   var resTest =
       Residency(
           name = "Vortex",
@@ -166,12 +203,21 @@ abstract class FirestoreTest : TestCase() {
           email = "info@example.com",
           phone = "+41220000000",
           website = null)
+  var resTest2 =
+      Residency(
+          name = "Atrium",
+          description = "Student housing located in the Atrium building at EPFL.",
+          location = Location(name = "Atrium", latitude = 46.5232163, longitude = 6.5660033),
+          city = "Lausanne",
+          email = "info@example.com",
+          phone = "+41220000000",
+          website = null)
   var rentalListing1 =
       RentalListing(
           uid = "rental1",
           ownerId = "",
           postedAt = Timestamp.now(),
-          residency = resTest,
+          residencyName = "Vortex",
           title = "title1",
           roomType = RoomType.STUDIO,
           pricePerMonth = 1200.0,
@@ -185,7 +231,7 @@ abstract class FirestoreTest : TestCase() {
           uid = "rental2",
           ownerId = "",
           postedAt = Timestamp.now(),
-          residency = resTest,
+          residencyName = "Vortex",
           title = "title2",
           roomType = RoomType.STUDIO,
           pricePerMonth = 1500.0,
@@ -199,7 +245,7 @@ abstract class FirestoreTest : TestCase() {
           uid = "rental3",
           ownerId = "",
           postedAt = Timestamp.now(),
-          residency = resTest,
+          residencyName = "Vortex",
           title = "title3",
           roomType = RoomType.STUDIO,
           pricePerMonth = 900.0,
@@ -208,4 +254,28 @@ abstract class FirestoreTest : TestCase() {
           description = "A good studio close to the campus but a bit small.",
           imageUrls = emptyList(),
           status = RentalStatus.POSTED)
+
+  val reviewVortex1 =
+      Review(
+          uid = "reviewVortex1",
+          ownerId = "",
+          postedAt = Timestamp.now(),
+          title = "Vortex Review 1",
+          reviewText = "First review",
+          grade = 4.5,
+          residencyName = "Vortex",
+          roomType = RoomType.STUDIO,
+          pricePerMonth = 1200.0,
+          areaInM2 = 60,
+          imageUrls = emptyList())
+
+  val reviewVortex2 =
+      reviewVortex1.copy(
+          uid = "reviewVortex2",
+          title = "Vortex Review 2",
+          postedAt = Timestamp(Timestamp.now().seconds + 10, 0), // post timestamp 10s later
+          reviewText = "Second review")
+
+  val reviewWoko1 =
+      reviewVortex1.copy(uid = "reviewWoko1", title = "Woko Room", residencyName = "WOKO")
 }

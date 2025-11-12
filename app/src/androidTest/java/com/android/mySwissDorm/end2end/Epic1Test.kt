@@ -23,6 +23,7 @@ import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
@@ -86,11 +87,21 @@ class Epic1Test : FirestoreTest() {
             description = "Fribourg is a bilingual city famous for its medieval architecture.",
             location = Location(name = "Fribourg", latitude = 46.8065, longitude = 7.16197),
             imageId = R.drawable.fribourg)
+    val resLaus =
+        Residency(
+            name = "Vortex",
+            description = "Vortex",
+            location = Location("Vortex", 46.52, 6.57),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null)
 
     val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
     runTest {
       switchToUser(FakeUser.FakeUser1)
       cities.forEach { CitiesRepositoryProvider.repository.addCity(it) }
+      ResidenciesRepositoryProvider.repository.addResidency(resLaus)
 
       rentalListing1 =
           rentalListing1.copy(

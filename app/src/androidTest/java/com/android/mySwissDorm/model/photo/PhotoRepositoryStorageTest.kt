@@ -1,10 +1,8 @@
 package com.android.mySwissDorm.model.photo
 
-import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -23,7 +21,6 @@ import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class PhotoRepositoryStorageTest : FirestoreTest() {
-  private lateinit var context: Context
   private lateinit var storageRepository: PhotoRepositoryStorage
   private val dir: String = "photos"
   private val name: String = "testFile"
@@ -38,9 +35,7 @@ class PhotoRepositoryStorageTest : FirestoreTest() {
   private val localRepository: PhotoRepository = mock()
 
   override fun createRepositories() {
-    context = InstrumentationRegistry.getInstrumentation().targetContext
-    storageRepository =
-        PhotoRepositoryStorage(context, FirebaseEmulator.storage.reference, localRepository)
+    storageRepository = PhotoRepositoryStorage(FirebaseEmulator.storage.reference, localRepository)
   }
 
   @Before

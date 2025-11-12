@@ -1,6 +1,8 @@
-package com.android.mySwissDorm.model.rental
+package com.android.mySwissDorm.model.rentalListing
 
-import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -224,8 +226,7 @@ class RentalListingRepositoryFirestoreAndroidTest : FirestoreTest() {
             title = "Edited Title",
             description = "Edited Description",
             status = RentalStatus.ARCHIVED,
-            residency =
-                rentalListing2.residency.copy(location = Location("edited location", 1.0, 1.0)))
+            residencyName = "Atrium")
     repo.editRentalListing(rentalListing2.uid, rentalListing2Edited)
     assertEquals(2, getRentalListingCount())
     val rentalListingsAfterEdit = repo.getAllRentalListings()

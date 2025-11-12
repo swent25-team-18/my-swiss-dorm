@@ -5,6 +5,7 @@ import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.utils.FakeUser
@@ -22,7 +23,8 @@ import org.junit.runner.RunWith
 class NavigationViewModelTest : FirestoreTest() {
 
   override fun createRepositories() {
-    /* none */
+    ProfileRepositoryProvider.repository =
+        ProfileRepositoryFirestore(db = FirebaseEmulator.firestore)
   }
 
   @Before
@@ -33,7 +35,7 @@ class NavigationViewModelTest : FirestoreTest() {
 
   private fun createViewModel(
       auth: com.google.firebase.auth.FirebaseAuth = FirebaseEmulator.auth,
-      profileRepository: ProfileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+      profileRepository: ProfileRepository = ProfileRepositoryProvider.repository
   ): NavigationViewModel {
     return NavigationViewModel(auth = auth, profileRepository = profileRepository)
   }
@@ -83,10 +85,9 @@ class NavigationViewModelTest : FirestoreTest() {
                     location = location),
             userSettings = UserSettings(),
             ownerId = uid)
-    val profileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    profileRepository.createProfile(profile)
+    ProfileRepositoryProvider.repository.createProfile(profile)
 
-    val viewModel = createViewModel(profileRepository = profileRepository)
+    val viewModel = createViewModel()
 
     val state = waitForNavigationState(viewModel)
 
@@ -115,10 +116,9 @@ class NavigationViewModelTest : FirestoreTest() {
                     location = null),
             userSettings = UserSettings(),
             ownerId = uid)
-    val profileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    profileRepository.createProfile(profile)
+    ProfileRepositoryProvider.repository.createProfile(profile)
 
-    val viewModel = createViewModel(profileRepository = profileRepository)
+    val viewModel = createViewModel()
 
     val state = waitForNavigationState(viewModel)
 
@@ -219,16 +219,139 @@ class NavigationViewModelTest : FirestoreTest() {
                     location = null),
             userSettings = UserSettings(),
             ownerId = uid)
-    val profileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    profileRepository.createProfile(profile)
+    ProfileRepositoryProvider.repository.createProfile(profile)
 
     // Create a new ViewModel after sign in (to get updated auth state)
-    val viewModel2 = createViewModel(profileRepository = profileRepository)
+    val viewModel2 = createViewModel()
     state = waitForNavigationState(viewModel2)
 
     assertEquals(
         "Should navigate to Homepage after sign in",
         Screen.Homepage.route,
         state.initialDestination)
+  }
+
+  @Test
+  fun getHomepageDestination_userWithLocation_returnsBrowseOverview() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+    val location = Location("Lausanne", 46.5197, 6.6323)
+
+    // Create profile with location
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = "test@example.com",
+                    phoneNumber = "+41001112233",
+                    location = location),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    ProfileRepositoryProvider.repository.createProfile(profile)
+
+    val viewModel = createViewModel()
+
+    val destination = viewModel.getHomepageDestination()
+
+    assertEquals(
+        "Should return BrowseOverview when user has location",
+        Screen.BrowseOverview(location).route,
+        destination.route)
+    assertTrue("Destination should be BrowseOverview", destination is Screen.BrowseOverview)
+  }
+
+  @Test
+  fun getHomepageDestination_userWithoutLocation_returnsHomepage() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile without location
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = "test@example.com",
+                    phoneNumber = "+41001112233",
+                    location = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    ProfileRepositoryProvider.repository.createProfile(profile)
+
+    val viewModel = createViewModel()
+
+    val destination = viewModel.getHomepageDestination()
+
+    assertEquals(
+        "Should return Homepage when user has no location",
+        Screen.Homepage.route,
+        destination.route)
+    assertEquals("Destination should be Homepage", Screen.Homepage, destination)
+  }
+
+  @Test
+  fun getHomepageDestination_notLoggedIn_returnsHomepage() = runTest {
+    FirebaseEmulator.auth.signOut()
+    val viewModel = createViewModel()
+
+    val destination = viewModel.getHomepageDestination()
+
+    assertEquals(
+        "Should return Homepage when not logged in", Screen.Homepage.route, destination.route)
+    assertEquals("Destination should be Homepage", Screen.Homepage, destination)
+  }
+
+  @Test
+  fun getHomepageDestination_profileError_returnsHomepage() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Create a mock repository that throws exception
+    val throwingRepository =
+        object : ProfileRepository {
+          override suspend fun createProfile(profile: Profile) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun getProfile(ownerId: String): Profile {
+            throw NoSuchElementException("Profile not found")
+          }
+
+          override suspend fun getAllProfile(): List<Profile> {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun editProfile(profile: Profile) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun deleteProfile(ownerId: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun getBlockedUserIds(ownerId: String): List<String> {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
+            throw UnsupportedOperationException()
+          }
+        }
+
+    val viewModel = createViewModel(profileRepository = throwingRepository)
+
+    val destination = viewModel.getHomepageDestination()
+
+    assertEquals(
+        "Should default to Homepage when profile fetch fails",
+        Screen.Homepage.route,
+        destination.route)
+    assertEquals("Destination should be Homepage", Screen.Homepage, destination)
   }
 }

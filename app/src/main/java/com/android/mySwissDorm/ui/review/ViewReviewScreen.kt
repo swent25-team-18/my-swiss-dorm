@@ -175,7 +175,7 @@ fun ViewReviewScreen(
                 BulletRow("${review.roomType}")
                 BulletRow("${review.pricePerMonth}.-/month")
                 BulletRow("${review.areaInM2}m²")
-                DisplayGrade(review.grade)
+                DisplayGrade(review.grade, 24.dp)
               }
 
               // Actual review
@@ -260,43 +260,41 @@ private fun BulletRow(text: String) {
 }
 
 @Composable
-private fun DisplayGrade(grade: Double) {
-  Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-    val maxStars = 5
-    val filledStars = floor(grade).toInt()
-    val hasHalfStar = grade != floor(grade)
+fun DisplayGrade(grade: Double, starSize: Dp, testTag: String = "") {
+  val maxStars = 5
+  val filledStars = floor(grade).toInt()
+  val hasHalfStar = grade != floor(grade)
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start) {
-          for (i in 1..maxStars) {
-            when {
-              i <= filledStars -> { // Draw a filled star
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = MainColor,
-                    modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.FILLED_STAR))
-              }
-              i == filledStars + 1 && hasHalfStar -> { // Draw a half filled star
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.StarHalf,
-                    contentDescription = null,
-                    tint = MainColor,
-                    modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.HALF_STAR))
-              }
-              else -> { // Draw a star's border only (not filled)
-                Icon(
-                    imageVector = Icons.Default.StarBorder,
-                    contentDescription = null,
-                    tint = MainColor,
-                    modifier = Modifier.size(24.dp).testTag(C.ViewReviewTags.EMPTY_STAR))
-              }
+  Row(
+      modifier = Modifier.fillMaxWidth().testTag(testTag),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.End) {
+        for (i in 1..maxStars) {
+          when {
+            i <= filledStars -> { // Draw a filled star
+              Icon(
+                  imageVector = Icons.Filled.Star,
+                  contentDescription = null,
+                  tint = MainColor,
+                  modifier = Modifier.size(starSize).testTag(C.ViewReviewTags.FILLED_STAR))
+            }
+            i == filledStars + 1 && hasHalfStar -> { // Draw a half filled star
+              Icon(
+                  imageVector = Icons.AutoMirrored.Filled.StarHalf,
+                  contentDescription = null,
+                  tint = MainColor,
+                  modifier = Modifier.size(starSize).testTag(C.ViewReviewTags.HALF_STAR))
+            }
+            else -> { // Draw a star's border only (not filled)
+              Icon(
+                  imageVector = Icons.Default.StarBorder,
+                  contentDescription = null,
+                  tint = MainColor,
+                  modifier = Modifier.size(starSize).testTag(C.ViewReviewTags.EMPTY_STAR))
             }
           }
         }
-  }
+      }
 }
 
 @Composable

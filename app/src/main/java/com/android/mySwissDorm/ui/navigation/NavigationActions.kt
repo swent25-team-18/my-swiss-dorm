@@ -38,7 +38,7 @@ class NavigationActions(private val navController: NavHostController) {
         screen.isTopLevelDestination -> {
           launchSingleTop = true
           restoreState = true
-          popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+          popUpTo(navController.graph.startDestinationId) { saveState = true }
         }
 
         // Secondary destinations

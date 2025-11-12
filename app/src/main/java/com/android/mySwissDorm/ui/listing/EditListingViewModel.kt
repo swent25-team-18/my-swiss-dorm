@@ -134,6 +134,7 @@ class EditListingViewModel(
     viewModelScope.launch {
       try {
         val listing = rentalListingRepository.getRentalListing(rentalPostID)
+        val currentResidencies = _uiState.value.residencies
         _uiState.value =
             EditListingUIState(
                 title = listing.title,
@@ -147,7 +148,11 @@ class EditListingViewModel(
                 mapLat = listing.residency.location.latitude,
                 mapLng = listing.residency.location.longitude,
                 errorMsg = null,
-                residencies = listOf())
+                residencies = currentResidencies)
+        // If residencies haven't been loaded yet, load them now
+        if (currentResidencies.isEmpty()) {
+          loadResidencies()
+        }
       } catch (e: Exception) {
         Log.e("EditListingViewModel", "Error loading listing by ID: $rentalPostID", e)
         setErrorMsg("Failed to load listing: ${e.message}")
@@ -201,7 +206,6 @@ class EditListingViewModel(
                 title = state.title,
                 roomType = state.housingType,
                 pricePerMonth = state.price.toDouble(),
-                // ⬇️ FIX: sizeSqm may be "25.0", so parse as Double then toInt()
                 areaInM2 = state.sizeSqm.toDouble().toInt(),
                 startDate = state.startDate,
                 description = state.description,

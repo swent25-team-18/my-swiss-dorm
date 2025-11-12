@@ -272,16 +272,8 @@ fun AppNavHost(
             Toast.makeText(context, "Review saved", Toast.LENGTH_SHORT).show()
           },
           onDelete = { residencyName ->
-            // Get location from the residency name
-            val location = editReviewViewModel.getResidencyLocation()
-            if (location != null) {
-              // Navigate to BrowseOverview with reviews tab (startTab = 0)
-              navActions.navigateTo(Screen.BrowseOverview(location, startTab = 0))
-            } else {
-              // Fallback: use residency name as location name with default coordinates
-              val defaultLocation = Location(name = residencyName, latitude = 0.0, longitude = 0.0)
-              navActions.navigateTo(Screen.BrowseOverview(defaultLocation, startTab = 0))
-            }
+            navActions.navigateTo(Screen.ReviewsByResidencyOverview(residencyName))
+            navController.popBackStack(Screen.EditReview.route, inclusive = true)
             Toast.makeText(context, "Review deleted", Toast.LENGTH_SHORT).show()
           })
     }
@@ -315,10 +307,12 @@ fun AppNavHost(
           onBack = navActions::goBack,
           onConfirm = {
             navActions.navigateTo(Screen.ListingOverview(id))
+            navController.popBackStack(Screen.EditListing.route, inclusive = true)
             Toast.makeText(context, "Listing saved", Toast.LENGTH_SHORT).show()
           },
           onDelete = {
             navActions.navigateTo(Screen.Homepage)
+            navController.popBackStack(Screen.EditListing.route, inclusive = true)
             Toast.makeText(context, "Listing deleted", Toast.LENGTH_SHORT).show()
           })
     }

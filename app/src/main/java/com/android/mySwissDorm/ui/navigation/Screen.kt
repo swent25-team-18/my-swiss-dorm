@@ -76,13 +76,6 @@ sealed class Screen(
     }
   }
 
-  data class ReviewsByResidencyOverview(val residencyName: String) :
-      Screen(route = "reviewsByResidency/${residencyName}", name = "Reviews by Residency") {
-    companion object {
-      const val route = "reviewsByResidency/{residencyName}"
-    }
-  }
-
   data class ViewUserProfile(val userId: String) :
       Screen(route = "viewProfile/${userId}", name = "View Profile") {
     companion object {

@@ -315,16 +315,6 @@ class EditReviewViewModel(
     return true
   }
 
-  /**
-   * Gets the location of the currently selected residency.
-   *
-   * @return The location of the residency matching the current residencyName, or null if not found.
-   */
-  fun getResidencyLocation(): com.android.mySwissDorm.model.map.Location? {
-    val state = _uiState.value
-    return state.residencies.find { it.name == state.residencyName }?.location
-  }
-
   init {
     loadResidencies()
   }

@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.math.max
 
 /**
  * Represents the UI state of a single listing.
@@ -144,9 +143,17 @@ class BrowseCityViewModel(
         // Fetch all and filter by residency.city value matching the given cityName string
         val all = listingsRepository.getAllRentalListings()
         val filtered =
-            all.filter {
-              location.distanceTo(residenciesRepository.getResidency(it.residencyName).location) <=
-                      maxDistanceToDisplay
+            all.filter { listing ->
+              try {
+                val residency = residenciesRepository.getResidency(listing.residencyName)
+                location.distanceTo(residency.location) <= maxDistanceToDisplay
+              } catch (e: Exception) {
+                Log.w(
+                    "BrowseCityViewModel",
+                    "Could not find residency ${listing.residencyName} for listing ${listing.uid}",
+                    e)
+                false
+              }
             }
         val mapped = filtered.map { it.toCardUI() }
 

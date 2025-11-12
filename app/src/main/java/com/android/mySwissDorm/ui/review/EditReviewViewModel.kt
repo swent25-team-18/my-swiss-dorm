@@ -91,10 +91,12 @@ data class EditReviewUiState(
  * The ViewModel automatically loads the review and available residencies on initialization and
  * provides methods to update individual form fields with input normalization.
  *
+ * @property reviewId The unique identifier of the review to edit.
  * @property reviewRepository The repository for accessing and updating reviews.
  * @property residenciesRepository The repository for accessing available residencies.
  */
 class EditReviewViewModel(
+    private val reviewId: String,
     private val reviewRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository
@@ -317,5 +319,6 @@ class EditReviewViewModel(
 
   init {
     loadResidencies()
+    loadReview(reviewId)
   }
 }

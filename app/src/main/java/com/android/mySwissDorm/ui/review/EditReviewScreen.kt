@@ -73,7 +73,6 @@ fun EditReviewScreen(
 ) {
   val editReviewUIState by editReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
-  LaunchedEffect(reviewID) { editReviewViewModel.loadReview(reviewID) }
 
   Scaffold(
       topBar = {

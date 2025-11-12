@@ -38,6 +38,7 @@ import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewScreen
+import com.android.mySwissDorm.ui.review.EditReviewViewModel
 import com.android.mySwissDorm.ui.review.ReviewsByResidencyScreen
 import com.android.mySwissDorm.ui.review.ViewReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
@@ -260,7 +261,9 @@ fun AppNavHost(
 
     composable(Screen.EditReview.route) { entry ->
       val id = requireNotNull(entry.arguments?.getString("reviewUid"))
-      val editReviewViewModel: com.android.mySwissDorm.ui.review.EditReviewViewModel = viewModel()
+      val editReviewViewModel: EditReviewViewModel = viewModel {
+        EditReviewViewModel(reviewId = id)
+      }
 
       EditReviewScreen(
           reviewID = id,

@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.model.photo
 
-import android.content.Context
 import android.util.Log
 import androidx.core.net.toFile
 import com.google.firebase.Firebase
@@ -14,7 +13,6 @@ const val DIR = "photos"
 
 /** This is an implementation of a [PhotoRepositoryCloud] using the storage service of Firebase. */
 class PhotoRepositoryStorage(
-    private val context: Context,
     storageRef: StorageReference = Firebase.storage.reference,
     localRepository: PhotoRepository = PhotoRepositoryProvider.local_repository
 ) : PhotoRepositoryCloud(localRepository) {
@@ -71,7 +69,7 @@ class PhotoRepositoryStorage(
     return del1 || del2
   }
 
-  private suspend fun findPhotoRef(uid: String): StorageReference {
+  private fun findPhotoRef(uid: String): StorageReference {
     return dirRef.child(uid)
   }
 }

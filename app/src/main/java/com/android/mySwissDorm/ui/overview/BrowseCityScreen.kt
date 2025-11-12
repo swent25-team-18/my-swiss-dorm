@@ -261,7 +261,10 @@ private fun BrowseCityScreenUI(
                 }
                 listingsState.items.isEmpty() -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No listings yet.", modifier = Modifier.testTag(C.BrowseCityTags.EMPTY))
+                    Text(
+                        "No listings yet.",
+                        modifier = Modifier.testTag(C.BrowseCityTags.EMPTY),
+                        color = TextColor)
                   }
                 }
                 else -> {

@@ -153,4 +153,11 @@ object C {
 
     const val MORE_OPTION = "customLocationDialogMoreOption"
   }
+
+  object AddPhotoButtonTags {
+    const val BUTTON = "addPhotoButton"
+    const val DIALOG = "addPhotoDialog"
+    const val CAMERA_BUTTON_TEXT = "addPhotoCameraButtonText"
+    const val GALLERY_BUTTON_TEXT = "addPhotoGalleryButtonText"
+  }
 }

@@ -3,7 +3,6 @@ package com.android.mySwissDorm.ui.listing
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -17,7 +16,6 @@ import com.android.mySwissDorm.ui.InputSanitizers.FieldType
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
-import java.net.URL
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,7 +29,7 @@ import kotlinx.coroutines.launch
  * by the composables.
  *
  * @property title Listing title shown in the header and cards.
- * @property residency Selected [Residency] to which the listing belongs.
+ * @property residencyName Selected [Residency] to which the listing belongs.
  * @property residencies Available list of residencies for the dropdown.
  * @property price Monthly price as a user-typed string (normalized while typing).
  * @property housingType Selected [RoomType] (e.g., STUDIO, ROOM, etc.).
@@ -46,7 +44,7 @@ import kotlinx.coroutines.launch
  */
 data class EditListingUIState(
     val title: String = "",
-    val residency: Residency,
+    val residencyName: String = "",
     val residencies: List<Residency>,
     val price: String = "",
     val housingType: RoomType,
@@ -99,18 +97,7 @@ class EditListingViewModel(
   private val _uiState =
       MutableStateFlow(
           EditListingUIState(
-              residency =
-                  Residency(
-                      name = "",
-                      description = "",
-                      location = Location(name = "Vortex", latitude = 46.5191, longitude = 6.5668),
-                      city = "",
-                      email = "",
-                      phone = "",
-                      website = URL("https://www.google.com")),
-              residencies = listOf(),
-              startDate = Timestamp.now(),
-              housingType = RoomType.STUDIO))
+              residencies = listOf(), startDate = Timestamp.now(), housingType = RoomType.STUDIO))
 
   /** Public, read-only view of the current UI state. */
   val uiState: StateFlow<EditListingUIState> = _uiState.asStateFlow()
@@ -134,18 +121,19 @@ class EditListingViewModel(
     viewModelScope.launch {
       try {
         val listing = rentalListingRepository.getRentalListing(rentalPostID)
+        val residency = residenciesRepository.getResidency(listing.residencyName)
         _uiState.value =
             EditListingUIState(
                 title = listing.title,
-                residency = listing.residency,
+                residencyName = listing.residencyName,
                 price = listing.pricePerMonth.toString(),
                 housingType = listing.roomType,
                 sizeSqm = listing.areaInM2.toString(),
                 startDate = listing.startDate,
                 description = listing.description,
                 pickedImages = listing.imageUrls,
-                mapLat = listing.residency.location.latitude,
-                mapLng = listing.residency.location.longitude,
+                mapLat = residency.location.latitude,
+                mapLng = residency.location.longitude,
                 errorMsg = null,
                 residencies = listOf())
       } catch (e: Exception) {
@@ -169,8 +157,8 @@ class EditListingViewModel(
       try {
         rentalListingRepository.editRentalListing(rentalPostId = id, newValue = listing)
       } catch (e: Exception) {
-        Log.e("AddToDoViewModel", "Error adding ToDo", e)
-        setErrorMsg("Failed to add ToDo: ${e.message}")
+        Log.e("EditListingViewModel", "Error editing listing", e)
+        setErrorMsg("Failed to edit rental listing: ${e.message}")
       }
     }
   }
@@ -197,11 +185,10 @@ class EditListingViewModel(
                 uid = id,
                 ownerId = uid,
                 postedAt = Timestamp.now(),
-                residency = state.residency,
+                residencyName = state.residencyName,
                 title = state.title,
                 roomType = state.housingType,
                 pricePerMonth = state.price.toDouble(),
-                // ⬇️ FIX: sizeSqm may be "25.0", so parse as Double then toInt()
                 areaInM2 = state.sizeSqm.toDouble().toInt(),
                 startDate = state.startDate,
                 description = state.description,
@@ -214,7 +201,6 @@ class EditListingViewModel(
   init {
     loadResidencies()
   }
-
   /**
    * Deletes a listing document by its ID.
    *
@@ -262,10 +248,14 @@ class EditListingViewModel(
   /**
    * Updates the selected [Residency].
    *
-   * @param residency The new residency.
+   * @param String The new residency.
    */
-  fun setResidency(residency: Residency) {
-    _uiState.value = _uiState.value.copy(residency = residency)
+  fun setResidency(residencyName: String) {
+    _uiState.value = _uiState.value.copy(residencyName = residencyName)
+  }
+
+  fun getCityName(residencyName: String): String {
+    return _uiState.value.residencies.find { it.name == residencyName }?.city ?: "Unknown"
   }
 
   /**

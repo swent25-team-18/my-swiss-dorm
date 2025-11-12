@@ -363,46 +363,6 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResidencyDropdown(
-    selected: String?,
-    onSelected: (Residency) -> Unit,
-    accentColor: Color,
-    residencies: List<Residency>,
-) {
-  var expanded by remember { mutableStateOf(false) }
-  val label = selected?.toString() ?: "Select residency"
-
-  ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-    OutlinedTextField(
-        value = label,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text("Residency Name") },
-        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-        leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(coralColor)) },
-        colors =
-            OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(coralColor),
-                unfocusedBorderColor = Color(coralColor),
-                focusedLabelColor = Color(coralColor),
-                unfocusedLabelColor = Color.Gray),
-        modifier = Modifier.menuAnchor().fillMaxWidth(),
-    )
-    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-      residencies.forEach { residency ->
-        DropdownMenuItem(
-            text = { Text(residency.name) },
-            onClick = {
-              onSelected(residency)
-              expanded = false
-            })
-      }
-    }
-  }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 fun ResidencyDropdownResID(
     selected: String?,
     onSelected: (String) -> Unit,

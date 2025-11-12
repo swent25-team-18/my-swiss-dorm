@@ -2,17 +2,21 @@ package com.android.mySwissDorm.model.rental
 
 import android.util.Log
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.model.map.distanceTo
+import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import java.net.URL
 import kotlin.collections.get
 import kotlinx.coroutines.tasks.await
 
 const val RENTAL_LISTINGS_COLLECTION = "rental_listings"
 
-class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFirestore) :
-    RentalListingRepository {
+class RentalListingRepositoryFirestore(
+    private val rentalListingDb: FirebaseFirestore,
+    private val residenciesRepository: ResidenciesRepository =
+        ResidenciesRepositoryProvider.repository
+) : RentalListingRepository {
   private val ownerAttributeName = "ownerId"
 
   override fun getNewUid(): String {
@@ -33,6 +37,28 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
             .get()
             .await()
     return snapshot.mapNotNull { documentToRentalListing(it) }
+  }
+
+  override suspend fun getAllRentalListingsByLocation(
+      location: Location,
+      radius: Double
+  ): List<RentalListing> {
+    val allListings = getAllRentalListings()
+    return allListings.filter { listing ->
+      val listingLocation =
+          try {
+            residenciesRepository.getResidency(listing.residencyName).location
+          } catch (e: Exception) {
+            // AI helped me return the correct value in case of error
+            Log.e(
+                "RentalListingRepoFirestore",
+                "Error fetching residency for listing ${listing.uid}",
+                e)
+            return@filter false
+          }
+      val distance = location.distanceTo(listingLocation)
+      distance <= radius
+    }
   }
 
   override suspend fun getRentalListing(rentalPostId: String): RentalListing {
@@ -87,39 +113,13 @@ class RentalListingRepositoryFirestore(private val rentalListingDb: FirebaseFire
       val ownerId = document.getString("ownerId") ?: return null
       val imageUrls =
           (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
-      val resMap = document.get("residency") as? Map<*, *> ?: return null
+      val residencyName = document.getString("residencyName") ?: return null
 
-      val resName = resMap["name"] as? String ?: return null
-
-      val resDesc = resMap["description"] as? String ?: ""
-      val resCity = resMap["city"] as? String ?: return null
-
-      val resEmail = resMap["email"] as? String
-      val resPhone = resMap["phone"] as? String
-      val resWebsiteStr = resMap["website"] as? String
-      val resWebsite = resWebsiteStr?.let { runCatching { URL(it) }.getOrNull() }
-      val locationData = resMap["location"] as? Map<*, *>
-      val location =
-          locationData?.let { map2 ->
-            Location(
-                name = map2["name"] as? String ?: return null,
-                latitude = (map2["latitude"] as? Number)?.toDouble() ?: 0.0,
-                longitude = (map2["longitude"] as? Number)?.toDouble() ?: 0.0)
-          } ?: return null
-      val residency =
-          Residency(
-              name = resName,
-              description = resDesc,
-              location = location,
-              city = resCity,
-              email = resEmail,
-              phone = resPhone,
-              website = resWebsite)
       RentalListing(
           uid = uid,
           ownerId = ownerId,
           postedAt = postedAt,
-          residency = residency,
+          residencyName = residencyName,
           title = title,
           roomType = roomType,
           description = description,

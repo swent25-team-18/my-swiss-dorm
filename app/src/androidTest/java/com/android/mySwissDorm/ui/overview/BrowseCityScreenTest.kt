@@ -8,21 +8,16 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
-import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.profile.UserInfo
-import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
-import java.net.URL
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -40,8 +35,6 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private val residenciesRepo = ResidenciesRepositoryProvider.repository
   private lateinit var vm: BrowseCityViewModel
 
-  private val residencyRepo = ResidenciesRepositoryProvider.repository
-
   private lateinit var ownerUid: String
   private lateinit var otherUid: String
 
@@ -49,27 +42,11 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private lateinit var listingLaus2: RentalListing
   private lateinit var listingZurich: RentalListing
 
-  private lateinit var reviewLaus1: Review
-  private lateinit var reviewLaus2: Review
-  private lateinit var reviewZurich: Review
-
   override fun createRepositories() {
-    val vortex =
-        Residency(
-            name = "Vortex",
-            description = "description",
-            location = Location("Vortex", 46.5245257, 6.575223),
-            city = "Lausanne",
-            email = null,
-            phone = null,
-            website = URL("https://www.google.com"))
-    val woko =
-        vortex.copy(
-            name = "WOKO", location = Location("WOKO", 47.3765118, 8.5224785), city = "Zurich")
-
     runBlocking {
       residenciesRepo.addResidency(vortex)
       residenciesRepo.addResidency(woko)
+      residenciesRepo.addResidency(atrium)
     }
   }
 
@@ -110,7 +87,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             uid = "laus1",
             ownerId = ownerUid,
             postedAt = Timestamp.now(),
-            residencyName = "Vortex",
+            residencyName = resLaus.name,
             title = "Lausanne Studio 1",
             roomType = RoomType.STUDIO,
             pricePerMonth = 1200.0,
@@ -124,39 +101,17 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             uid = "laus2", ownerId = otherUid, title = "Lausanne Studio 2", areaInM2 = 22)
     listingZurich =
         listingLaus1.copy(
-            uid = "zurich1", ownerId = otherUid, title = "Zurich Room", residencyName = "CUG")
-    reviewLaus1 =
-        Review(
-            uid = "reviewLaus1",
-            ownerId = ownerUid,
-            postedAt = Timestamp.now(),
-            title = "Lausanne Review 1",
-            reviewText = "First review",
-            grade = 4.5,
-            residencyName = "Vortex",
-            roomType = RoomType.STUDIO,
-            pricePerMonth = 1200.0,
-            areaInM2 = 60,
-            imageUrls = emptyList())
-    reviewLaus2 =
-        reviewLaus1.copy(uid = "reviewLaus2", ownerId = otherUid, title = "Lausanne Review 2")
-    reviewZurich =
-        reviewLaus1.copy(
-            uid = "reviewZurich", ownerId = otherUid, title = "Zurich Room", residencyName = "WOKO")
+            uid = "zurich1", ownerId = otherUid, title = "Zurich Room", residencyName= resZurich.name)
 
     runTest {
       switchToUser(FakeUser.FakeUser1)
-      residencyRepo.addResidency(resLaus)
-      residencyRepo.addResidency(resZurich)
       listingsRepo.addRentalListing(listingLaus1)
-      reviewsRepo.addReview(reviewLaus1)
+      reviewsRepo.addReview(reviewVortex1.copy(ownerId = ownerUid))
+      reviewsRepo.addReview(reviewVortex2.copy(ownerId = ownerUid))
       switchToUser(FakeUser.FakeUser2)
-      residencyRepo.addResidency(resLaus)
-      residencyRepo.addResidency(resZurich)
       listingsRepo.addRentalListing(listingLaus2)
       listingsRepo.addRentalListing(listingZurich)
-      reviewsRepo.addReview(reviewLaus2)
-      reviewsRepo.addReview(reviewZurich)
+      reviewsRepo.addReview(reviewWoko1.copy(ownerId = otherUid))
     }
 
     vm =
@@ -194,7 +149,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun onlyLausanneReviewsAreDisplayed() {
+  fun onlyLausanneResidenciesAreDisplayed() {
     compose.setContent {
       BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
     }
@@ -202,18 +157,67 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
     compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
 
-    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.isNotEmpty() }
+    compose.waitUntil(5_000) { vm.uiState.value.residencies.items.isNotEmpty() }
 
-    compose.onNodeWithTag(C.BrowseCityTags.REVIEW_LIST).assertIsDisplayed()
+    compose.onNodeWithTag(C.BrowseCityTags.RESIDENCY_LIST).assertIsDisplayed()
     compose
-        .onNodeWithTag(C.BrowseCityTags.reviewCard(reviewLaus1.uid))
+        .onNodeWithTag(C.BrowseCityTags.residencyCard(vortex.name))
         .performScrollTo()
         .assertIsDisplayed()
     compose
-        .onNodeWithTag(C.BrowseCityTags.reviewCard(reviewLaus2.uid))
+        .onNodeWithTag(C.BrowseCityTags.residencyCard(atrium.name))
         .performScrollTo()
         .assertIsDisplayed()
-    compose.onNodeWithTag(C.BrowseCityTags.reviewCard(reviewZurich.uid)).assertIsNotDisplayed()
+    compose.onNodeWithTag(C.BrowseCityTags.residencyCard(woko.name)).assertIsNotDisplayed()
+  }
+
+  @Test
+  fun noReviewForResidencyShowsNoReviewsYet() {
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
+    }
+
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+
+    compose.waitUntil(5_000) { vm.uiState.value.residencies.items.isNotEmpty() }
+
+    compose.onNodeWithTag(C.BrowseCityTags.RESIDENCY_LIST).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.residencyCard(atrium.name))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    compose
+        .onNodeWithTag(
+            C.BrowseCityTags.residencyCardEmptyReview(atrium.name), useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun showsLatestReviewForResidency() {
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
+    }
+
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+
+    compose.waitUntil(5_000) { vm.uiState.value.residencies.items.isNotEmpty() }
+
+    compose.onNodeWithTag(C.BrowseCityTags.RESIDENCY_LIST).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.residencyCard(vortex.name))
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewText(reviewVortex2.uid), useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewText(reviewVortex2.uid), useUnmergedTree = true)
+        .assertTextEquals(reviewVortex2.reviewText)
   }
 
   @Test
@@ -240,7 +244,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun emptyState_showsNoReviewsYet() {
+  fun emptyState_showsNoResidenciesYet() {
     compose.setContent {
       BrowseCityScreen(location = Location("Geneva", 46.2044, 6.1432))
     } // no Geneva data
@@ -261,7 +265,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     }
 
     compose.onNodeWithTag(C.BrowseCityTags.EMPTY, useUnmergedTree = true).assertIsDisplayed()
-    compose.onNodeWithText("No reviews yet.", useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("No residencies yet.", useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
@@ -339,19 +343,9 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val uid = FirebaseEmulator.auth.currentUser!!.uid
     val initialLocation = Location("Lausanne", 46.5197, 6.6323)
 
-    // Create profile without location
-    val profile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = FakeUser.FakeUser1.userName,
-                    lastName = "Test",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "+41001112233",
-                    location = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    profileRepo.createProfile(profile)
+    // Use profile1 with no location and updated ownerId
+    profileRepo.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
     compose.setContent { BrowseCityScreen(location = initialLocation, onLocationChange = {}) }
     compose.waitForIdle()

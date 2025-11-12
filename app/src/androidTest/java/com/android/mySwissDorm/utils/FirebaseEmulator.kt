@@ -5,12 +5,15 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.storage
 import io.mockk.InternalPlatformDsl.toArray
 import kotlin.apply
 import kotlin.runCatching
 import kotlin.text.contains
 import kotlin.text.trimIndent
 import kotlin.toString
+import kotlinx.coroutines.tasks.await
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -29,10 +32,14 @@ object FirebaseEmulator {
   val firestore
     get() = Firebase.firestore
 
+  val storage
+    get() = Firebase.storage
+
   const val HOST = "10.0.2.2"
   const val EMULATORS_PORT = 4400
   const val FIRESTORE_PORT = 8080
   const val AUTH_PORT = 9099
+  const val STORAGE_PORT = 9199
 
   val projectID by lazy { FirebaseApp.getInstance().options.projectId }
 
@@ -61,6 +68,7 @@ object FirebaseEmulator {
     if (isRunning) {
       auth.useEmulator(HOST, AUTH_PORT)
       firestore.useEmulator(HOST, FIRESTORE_PORT)
+      storage.useEmulator(HOST, STORAGE_PORT)
       assert(Firebase.firestore.firestoreSettings.host.contains(HOST)) {
         "Failed to connect to Firebase Firestore Emulator."
       }
@@ -81,6 +89,15 @@ object FirebaseEmulator {
 
   fun clearFirestoreEmulator() {
     clearEmulator(firestoreEndpoint)
+  }
+
+  suspend fun clearStorageEmulator() {
+    suspend fun clearStorageRec(ref: StorageReference = storage.reference) {
+      val list = ref.listAll().await()
+      list.items.forEach { it.delete().await() }
+      list.prefixes.forEach { clearStorageRec(it) }
+    }
+    clearStorageRec()
   }
 
   /**

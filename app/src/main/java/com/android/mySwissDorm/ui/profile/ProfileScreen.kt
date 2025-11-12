@@ -29,8 +29,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.AddPhotoDialog
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
@@ -51,7 +53,7 @@ import com.android.mySwissDorm.ui.theme.TextColor
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
-    onChangeProfilePicture: () -> Unit,
+    onChangeProfilePicture: (Photo) -> Unit,
     onBack: () -> Unit,
     viewModel: ProfileScreenViewModel = viewModel()
 ) {
@@ -104,7 +106,7 @@ private fun ProfileScreenContent(
     onLanguageChange: (String) -> Unit,
     onResidenceChange: (String) -> Unit,
     onLogout: () -> Unit,
-    onChangeProfilePicture: () -> Unit,
+    onChangeProfilePicture: (Photo) -> Unit,
     onBack: () -> Unit,
     onToggleEditing: () -> Unit,
     onSave: () -> Unit
@@ -114,6 +116,7 @@ private fun ProfileScreenContent(
   var lastLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.lastName) }
   var languageLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.language) }
   var residenceLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.residence) }
+  var displayPhotoDialog by remember { mutableStateOf(false) }
 
   // When entering edit mode, snapshot current VM values into locals to start from latest persisted
   // values
@@ -183,7 +186,7 @@ private fun ProfileScreenContent(
                                 .clip(CircleShape)
                                 .border(2.dp, MainColor, CircleShape)
                                 .background(BackGroundColor)
-                                .clickable(enabled = state.isEditing) { onChangeProfilePicture() }
+                                .clickable(enabled = state.isEditing) { displayPhotoDialog = true }
                                 .testTag("profile_picture_box"),
                         contentAlignment = Alignment.Center) {
                           Icon(
@@ -289,6 +292,11 @@ private fun ProfileScreenContent(
                     modifier = Modifier.testTag("profile_error_text"))
               }
             }
+        if (displayPhotoDialog) {
+          AddPhotoDialog(
+              onSelectPhoto = onChangeProfilePicture,
+              onDismissRequest = { displayPhotoDialog = false })
+        }
       }
 }
 

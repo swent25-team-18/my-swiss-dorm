@@ -8,7 +8,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.StarHalf
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
@@ -23,6 +22,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.review.Review
+import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
 import com.android.mySwissDorm.ui.InputSanitizers
@@ -177,17 +177,8 @@ fun AddReviewScreen(
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FilledTonalButton(
-                        onClick = { /* not yet implemented */},
-                        colors =
-                            ButtonDefaults.filledTonalButtonColors(
-                                containerColor = TextBoxColor, contentColor = MainColor),
-                        shape = RoundedCornerShape(14.dp)) {
-                          Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
-                          Spacer(Modifier.width(8.dp))
-                          Text("Add pictures")
-                        }
-                  }
+                    DefaultAddPhotoButton(onSelectPhoto = {}) // TODO display the photo
+              }
             }
       }
 }

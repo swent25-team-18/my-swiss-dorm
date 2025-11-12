@@ -33,13 +33,15 @@ class PhotoRepositoryStorage(
         }
         // keep on local repository the downloaded photo
         super.uploadPhoto(photo)
+        return photo
       } catch (_: StorageException) {
         Log.d("PhotoRepositoryStorage", " Fail to download $uid on cloud")
-        throw NoSuchElementException("Error during the cloud retrieving")
-      } finally {
         photo.image.toFile().delete()
+        throw NoSuchElementException("Error during the cloud retrieving")
+      } catch (e: Exception) {
+        photo.image.toFile().delete()
+        throw e
       }
-      return photo
     }
   }
 

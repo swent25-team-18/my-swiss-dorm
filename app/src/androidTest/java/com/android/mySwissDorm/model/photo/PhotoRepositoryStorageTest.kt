@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.model.photo
 
 import android.net.Uri
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.utils.FakeUser
@@ -14,6 +15,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -76,6 +78,7 @@ class PhotoRepositoryStorageTest : FirestoreTest() {
       val res = storageRepository.retrievePhoto(fileName)
       assertEquals(photo1.fileName, res.fileName)
       verify(localRepository, times(1)).retrievePhoto(fileName)
+      assertEquals(file1.readText(), res.image.toFile().readText())
     }
   }
 
@@ -91,15 +94,30 @@ class PhotoRepositoryStorageTest : FirestoreTest() {
   fun retrieveFromLocalAfterCloud() {
     runTest {
       whenever(localRepository.retrievePhoto(fileName)).thenThrow(NoSuchElementException())
+      whenever(localRepository.uploadPhoto(any())).thenReturn(Unit)
       val fileRef = FirebaseEmulator.storage.reference.child(dir).child(fileName)
       fileRef.putFile(photo1.image).await()
       val res1 = storageRepository.retrievePhoto(fileName)
       verify(localRepository, times(1)).retrievePhoto(fileName)
+      // verify that we can retrieve from local after from cloud
+      verify(localRepository).uploadPhoto(any())
       assertEquals(photo1.fileName, res1.fileName)
+      res1.image.toString()
     }
   }
 
-  @Test fun retrieveAfterCloudDoesNotUploadToCloud() {}
+  @Test
+  fun retrieveAfterCloudDoesNotUploadToCloud() {
+    runTest {
+      whenever(localRepository.retrievePhoto(fileName)).thenThrow(NoSuchElementException())
+      whenever(localRepository.uploadPhoto(any())).thenReturn(Unit)
+      val fileRef = FirebaseEmulator.storage.reference.child(dir).child(fileName)
+      fileRef.putFile(photo1.image).await()
+      storageRepository.retrievePhoto(fileName)
+      // Only 1 call too upload
+      verify(localRepository, times(1)).uploadPhoto(any())
+    }
+  }
 
   @Test
   fun uploadPhotoWorksOnLocal() {

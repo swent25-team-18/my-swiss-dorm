@@ -203,6 +203,15 @@ abstract class FirestoreTest : TestCase() {
           email = "info@example.com",
           phone = "+41220000000",
           website = null)
+  var resTest2 =
+      Residency(
+          name = "Atrium",
+          description = "Student housing located in the Atrium building at EPFL.",
+          location = Location(name = "Atrium", latitude = 46.5232163, longitude = 6.5660033),
+          city = "Lausanne",
+          email = "info@example.com",
+          phone = "+41220000000",
+          website = null)
   var rentalListing1 =
       RentalListing(
           uid = "rental1",

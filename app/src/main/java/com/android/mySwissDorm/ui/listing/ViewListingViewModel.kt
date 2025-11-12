@@ -3,6 +3,7 @@ package com.android.mySwissDorm.ui.listing
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
@@ -10,6 +11,8 @@ import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -41,12 +44,15 @@ data class ViewListingUIState(
     val contactMessage: String = "",
     val isOwner: Boolean = false,
     val isBlockedByOwner: Boolean = false,
+    val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0)
 )
 
 class ViewListingViewModel(
     private val rentalListingRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val residenciesRepository: ResidenciesRepository =
+        ResidenciesRepositoryProvider.repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
@@ -61,6 +67,20 @@ class ViewListingViewModel(
     _uiState.value = _uiState.value.copy(errorMsg = errorMsg)
   }
 
+  fun setLocationOfListing(rentalUid: String) {
+    viewModelScope.launch {
+      try {
+        val listing = rentalListingRepository.getRentalListing(rentalUid)
+        val residency = residenciesRepository.getResidency(listing.residencyName)
+        _uiState.value = _uiState.value.copy(locationOfListing = residency.location)
+      } catch (e: Exception) {
+        Log.e(
+            "MyViewModel",
+            "Failed to load location, this is expected if listing is new or missing.",
+            e)
+      }
+    }
+  }
   /**
    * Loads a RentalListing by its ID and updates the UI state.
    *

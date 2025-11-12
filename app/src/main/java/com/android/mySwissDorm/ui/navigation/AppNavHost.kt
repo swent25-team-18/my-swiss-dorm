@@ -20,9 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
@@ -33,6 +35,7 @@ import com.android.mySwissDorm.ui.authentification.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
 import com.android.mySwissDorm.ui.listing.EditListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingScreen
+import com.android.mySwissDorm.ui.map.MapScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
@@ -156,7 +159,21 @@ fun AppNavHost(
             }
           })
     }
-
+    composable(
+        route = "mapScreen/{lat}/{lng}/{title}/{name}",
+        arguments =
+            listOf(
+                navArgument("lat") { type = NavType.FloatType },
+                navArgument("lng") { type = NavType.FloatType },
+                navArgument("title") { type = NavType.StringType },
+                navArgument("name") { type = NavType.StringType })) { backStackEntry ->
+          MapScreen(
+              latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
+              longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
+              title = backStackEntry.arguments?.getString("title") ?: "Location",
+              name = backStackEntry.arguments?.getString("name") ?: "Location",
+              onGoBack = { navController.popBackStack() })
+        }
     composable(Screen.BrowseOverview.route) { navBackStackEntry ->
       val name = navBackStackEntry.arguments?.getString("name")
       val latString = navBackStackEntry.arguments?.getString("lat")
@@ -215,12 +232,13 @@ fun AppNavHost(
             onViewProfile = { ownerId ->
               val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
               if (ownerId == currentUserId) {
-                // It's the current user, go to their editable profile
                 navActions.navigateTo(Screen.Profile)
               } else {
-                // It's another user, go to the read-only profile screen
                 navActions.navigateTo(Screen.ViewUserProfile(ownerId))
               }
+            },
+            onViewMap = { lat, lng, title, name ->
+              navController.navigate("mapScreen/$lat/$lng/$title/$name")
             })
       }
           ?: run {
@@ -246,6 +264,9 @@ fun AppNavHost(
                 // It's another user, go to the read-only profile screen
                 navActions.navigateTo(Screen.ViewUserProfile(ownerId))
               }
+            },
+            onViewMap = { lat, lng, title, name ->
+              navController.navigate("mapScreen/$lat/$lng/$title/$name")
             })
       }
           ?: run {

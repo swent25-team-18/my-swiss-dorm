@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -72,7 +73,10 @@ fun ViewReviewScreen(
     reviewUid: String,
     onGoBack: () -> Unit = {},
     onEdit: () -> Unit = {},
-    onViewProfile: (ownerId: String) -> Unit = {}
+    onViewProfile: (ownerId: String) -> Unit = {},
+    onViewMap: (latitude: Double, longitude: Double, title: String, name: String) -> Unit =
+        { _, _, _, _ ->
+        }
 ) {
   LaunchedEffect(reviewUid) { viewReviewViewModel.loadReview(reviewUid) }
 
@@ -186,12 +190,24 @@ fun ViewReviewScreen(
                   text = "PHOTOS (Not implemented yet)",
                   height = 220.dp,
                   modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
-
               // Location placeholder
-              PlaceholderBlock(
-                  text = "LOCATION (Not implemented yet)",
-                  height = 180.dp,
-                  modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
+              viewReviewViewModel.setLocationOfReview(reviewUid)
+              val location = uiState.locationOfReview
+              if (location.latitude != 0.0 && location.longitude != 0.0) {
+                MapPreview(
+                    location = location,
+                    title = review.title,
+                    modifier =
+                        Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewReviewTags.LOCATION),
+                    onMapClick = {
+                      onViewMap(location.latitude, location.longitude, review.title, "Review")
+                    })
+              } else {
+                PlaceholderBlock(
+                    text = "LOCATION (Not available)",
+                    height = 180.dp,
+                    modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
+              }
 
               if (isOwner) {
                 // Owner sees an Edit button centered

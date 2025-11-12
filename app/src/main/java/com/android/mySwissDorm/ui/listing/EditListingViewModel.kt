@@ -181,7 +181,9 @@ class EditListingViewModel(
       return false
     }
 
-    val uid = Firebase.auth.currentUser?.uid ?: "Non existing user"
+    val uid =
+        Firebase.auth.currentUser?.uid
+            ?: throw IllegalStateException("User must be authenticated to edit a listing")
 
     editRentalListingToRepository(
         id = id,

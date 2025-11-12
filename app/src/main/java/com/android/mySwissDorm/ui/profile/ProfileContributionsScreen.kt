@@ -43,9 +43,7 @@ fun ProfileContributionsScreen(
             contributions = contributions,
             onContributionClick = onContributionClick,
             modifier =
-                Modifier.padding(inner)
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 16.dp))
+                Modifier.padding(inner).fillMaxSize().padding(horizontal = 16.dp, vertical = 16.dp))
       }
 }
 
@@ -80,8 +78,7 @@ fun ProfileContributionsList(
 @Composable
 private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, index: Int) {
   Card(
-      modifier =
-          Modifier.fillMaxWidth().testTag("card_contrib_$index"),
+      modifier = Modifier.fillMaxWidth().testTag("card_contrib_$index"),
       shape = MaterialTheme.shapes.large,
       colors = CardDefaults.cardColors(containerColor = BackGroundColor),
       elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),

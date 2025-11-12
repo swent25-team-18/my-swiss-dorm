@@ -48,7 +48,6 @@ class NavigationActionsTest : FirestoreTest() {
         composable(Screen.Homepage.route) {}
         composable(Screen.BrowseOverview.route) {}
         composable(Screen.Settings.route) {}
-        composable(Screen.AddHub.route) {}
         composable(Screen.Inbox.route) {}
       }
     }

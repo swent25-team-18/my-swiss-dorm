@@ -32,6 +32,7 @@ import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
+import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.review.DisplayGrade
 import com.android.mySwissDorm.ui.review.truncateText
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -66,8 +67,10 @@ fun BrowseCityScreen(
     onSelectListing: (ListingCardUI) -> Unit = {},
     onSelectResidency: (ResidencyCardUI) -> Unit = {},
     onLocationChange: (Location) -> Unit = {},
-    navigationActions: NavigationActions? = null,
-    startTab: Int = 1
+    startTab: Int = 1,
+    onAddListingClick: () -> Unit = {},
+    onAddReviewClick: () -> Unit = {},
+    navigationActions: NavigationActions? = null
 ) {
 
   LaunchedEffect(location) {
@@ -102,8 +105,10 @@ fun BrowseCityScreen(
       onSelectListing = onSelectListing,
       onSelectResidency = onSelectResidency,
       onLocationClick = onLocationClick,
-      navigationActions = navigationActions,
-      startTab = startTab)
+      startTab = startTab,
+      onAddListingClick = { navigationActions?.navigateTo(Screen.AddListing) },
+      onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
+      navigationActions = navigationActions)
 
   if (uiState.showCustomLocationDialog) {
     CustomLocationDialog(
@@ -141,6 +146,8 @@ private fun BrowseCityScreenUI(
     onSelectListing: (ListingCardUI) -> Unit,
     onSelectResidency: (ResidencyCardUI) -> Unit,
     onLocationClick: () -> Unit,
+    onAddListingClick: () -> Unit = {},
+    onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
     startTab: Int = 1
 ) {
@@ -148,6 +155,12 @@ private fun BrowseCityScreenUI(
 
   Scaffold(
       bottomBar = { BottomBarFromNav(navigationActions) },
+      floatingActionButton = {
+        AddFabMenu(
+            onAddListing = onAddListingClick,
+            onAddReview = onAddReviewClick,
+            modifier = Modifier.navigationBarsPadding().imePadding())
+      },
       topBar = {
         CenterAlignedTopAppBar(
             title = {

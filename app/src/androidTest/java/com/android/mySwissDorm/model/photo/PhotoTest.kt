@@ -14,10 +14,10 @@ class PhotoTest {
   fun testCreateNewEmptyPhoto() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val uid = UUID.randomUUID().toString() + ".jpg"
-    val photo = Photo.createNewPhotoOnCache(context = context, fileName = uid)
+    val photo = Photo.createNewTempPhoto(fileName = uid)
     assertEquals(photo.fileName, uid)
 
-    val file = File(context.externalCacheDir, Uri.parse(photo.image.toString()).lastPathSegment!!)
+    val file = File(context.cacheDir, Uri.parse(photo.image.toString()).lastPathSegment!!)
 
     assertTrue(file.exists())
     assertEquals(0L, file.length())

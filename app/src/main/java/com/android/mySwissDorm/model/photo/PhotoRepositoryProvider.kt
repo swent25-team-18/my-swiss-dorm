@@ -23,7 +23,7 @@ object PhotoRepositoryProvider {
   fun initialize(context: Context) {
     if (!initialized) {
       _local_repository = PhotoRepositoryLocal(context)
-      _cloud_repository = PhotoRepositoryStorage(context)
+      _cloud_repository = PhotoRepositoryStorage()
       initialized = true
     }
   }

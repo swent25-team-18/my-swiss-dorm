@@ -100,6 +100,14 @@ object C {
     const val ERROR = "browseCityError"
     const val EMPTY = "browseCityEmpty"
 
+    const val FABmenu = "fab_main"
+
+    const val FABMenuReview = "fab_menu_review"
+
+    const val FABMenuListing = "fab_menu_listing"
+
+    const val FABScrim = "fab_scrim"
+
     fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
 
     fun reviewCard(reviewUid: String) = "browseCityReviewCard_$reviewUid"

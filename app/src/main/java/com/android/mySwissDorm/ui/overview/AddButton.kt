@@ -47,11 +47,7 @@ import com.android.mySwissDorm.ui.theme.White
  * Implemented with the help of AI
  */
 @Composable
-fun AddFabMenu(
-    onAddListing: () -> Unit,
-    onAddReview: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun AddFabMenu(modifier: Modifier = Modifier, onAddListing: () -> Unit, onAddReview: () -> Unit) {
   var expanded by remember { mutableStateOf(false) }
 
   Box(modifier = modifier) {

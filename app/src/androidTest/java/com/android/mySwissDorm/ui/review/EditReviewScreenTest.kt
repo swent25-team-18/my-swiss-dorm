@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -21,6 +22,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -43,6 +45,8 @@ import org.junit.runner.RunWith
  * End-to-end UI+VM tests for EditReviewScreen using Firestore emulator. Seeding uses
  * editReview(upsert) because create API is not available. All tests are made with the help of AI
  */
+@get:Rule val composeTestRule = createComposeRule()
+
 @RunWith(AndroidJUnit4::class)
 class EditReviewScreenTest : FirestoreTest() {
 
@@ -168,7 +172,7 @@ class EditReviewScreenTest : FirestoreTest() {
   @Test
   fun vm_loads_review_into_state() = runTest {
     val vm = EditReviewViewModel()
-    vm.getReview(review1!!.uid)
+    vm.loadReview(review1!!.uid)
 
     composeRule.waitUntil(timeoutMillis = 5_000) { vm.uiState.value.title.isNotBlank() }
     assertEquals("title1", vm.uiState.value.title)
@@ -183,7 +187,7 @@ class EditReviewScreenTest : FirestoreTest() {
   @Test
   fun vm_rejects_invalid_and_does_not_write() = runTest {
     val vm = EditReviewViewModel()
-    vm.getReview(review1!!.uid)
+    vm.loadReview(review1!!.uid)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
 
@@ -212,7 +216,7 @@ class EditReviewScreenTest : FirestoreTest() {
             roomType = RoomType.STUDIO)
 
     val vm = EditReviewViewModel()
-    vm.getReview(id)
+    vm.loadReview(id)
 
     // Wait for review to be loaded using composeRule.waitUntil (advances test dispatcher)
     composeRule.waitUntil(timeoutMillis = 5_000) { vm.uiState.value.title.isNotBlank() }
@@ -279,7 +283,9 @@ class EditReviewScreenTest : FirestoreTest() {
 
     composeRule.waitUntil(5_000) {
       composeRule
-          .onAllNodes(hasTestTag("reviewTitleField") and hasSetTextAction(), useUnmergedTree = true)
+          .onAllNodes(
+              hasTestTag(C.EditReviewTags.REVIEW_TITLE) and hasSetTextAction(),
+              useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
@@ -332,15 +338,19 @@ class EditReviewScreenTest : FirestoreTest() {
 
     composeRule.waitUntil(5_000) {
       composeRule
-          .onAllNodes(hasTestTag("priceField") and hasSetTextAction(), useUnmergedTree = true)
+          .onAllNodes(
+              hasTestTag(C.EditReviewTags.PRICE_FIELD) and hasSetTextAction(),
+              useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
-    editable("priceField").performTextClearance()
-    editable("priceField").performTextInput("abc")
+    editable(C.EditReviewTags.PRICE_FIELD).performTextClearance()
+    editable(C.EditReviewTags.PRICE_FIELD).performTextInput("abc")
     composeRule.waitUntil(5_000) { !vm.uiState.value.isFormValid }
     composeRule.waitForIdle()
-    composeRule.onNodeWithTag("saveButton", useUnmergedTree = true).assertIsNotEnabled()
+    composeRule
+        .onNodeWithTag(C.EditReviewTags.SAVE_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
     composeRule
         .onNodeWithText(
             "Please complete all required fields (valid size, price, and starting date).",

@@ -1,26 +1,19 @@
 package com.android.mySwissDorm.ui.review
 
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.DescriptionField
@@ -34,41 +27,39 @@ import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
-import kotlin.math.roundToInt
+import com.android.mySwissDorm.ui.utils.StarRatingBar
 
 /**
  * Edit screen for an existing review.
  *
  * All documentation was made with the help of AI
  *
- * This composable provides a form interface for editing an existing review. It loads the review
- * data when first composed or when [reviewID] changes, displays all review fields in a validated
+ * This composable provides a form interface for editing an existing review. The ViewModel
+ * automatically loads the review data on initialization, displays all review fields in a validated
  * form bound to [EditReviewViewModel.uiState], and handles saving or deleting the review.
  *
  * Responsibilities:
- * - Loads the target review (via [EditReviewViewModel.getReview]) when the composable is first
- *   composed or when [reviewID] changes.
  * - Displays a validated form bound to [EditReviewViewModel.uiState] with fields for title,
  *   residency, room type, price, area, review text, and rating.
  * - Exposes three navigation callbacks to the host:
  *     - [onBack]: Invoked by the top-left back arrow and the "Cancel" button.
  *     - [onConfirm]: Invoked after a successful save (only when the form is valid).
- *     - [onDelete]: Invoked after deletion; receives the residency name of the review to let the
- *       host decide navigation.
+ *     - [onDelete]: Invoked after deletion.
  *
  * Notes:
+ * - The ViewModel automatically loads the review data on initialization via its init block.
  * - Input fields are normalized and validated using centralized [InputSanitizers].
  * - Error helper texts under Size/Price are shown only when the user has typed something invalid.
  * - The rating is displayed as an interactive star rating bar that supports half-star ratings.
  * - Photo upload functionality is not yet implemented.
  *
  * @param modifier Standard Compose [Modifier] for styling the screen.
- * @param editReviewViewModel ViewModel that owns the edit state and repository calls. Defaults to a
- *   viewModel instance scoped to the composition.
  * @param onConfirm Called after a successful save of the edited review.
  * @param onBack Called when the user wants to cancel editing (back arrow or Cancel button).
- * @param reviewID The unique identifier of the review to edit.
- * @param onDelete Called after deletion with the residency name (used by host for navigation).
+ * @param reviewID The unique identifier of the review to edit. Used to create the ViewModel.
+ * @param onDelete Called after deletion.
+ * @param editReviewViewModel ViewModel that owns the edit state and repository calls. Created
+ *   automatically with the [reviewID] parameter, but can be provided for testing purposes.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +73,7 @@ fun EditReviewScreen(
 ) {
   val editReviewUIState by editReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
-  LaunchedEffect(reviewID) { editReviewViewModel.getReview(reviewID) }
+  LaunchedEffect(reviewID) { editReviewViewModel.loadReview(reviewID) }
 
   Scaffold(
       topBar = {
@@ -255,62 +246,5 @@ fun EditReviewScreen(
                         }
                   }
             }
-      }
-}
-
-/**
- * A custom, dependency-free Composable for star ratings.
- *
- * This component displays a 5-star rating bar that supports both full and half-star ratings. Users
- * can tap anywhere on the bar to set a rating, and the component will calculate the appropriate
- * star value (0.5, 1.0, 1.5, ..., 5.0) based on the tap position.
- *
- * The rating is visually displayed using filled stars, half-filled stars, and outlined stars to
- * represent the current rating value. The minimum rating that can be set is 0.5.
- *
- * @param modifier Standard Compose [Modifier] for styling the rating bar.
- * @param rating The current rating value (0.0 to 5.0, in 0.5 increments).
- * @param onRatingChange Callback invoked when the user taps to change the rating.
- * @param activeColor The color for filled and half-filled stars.
- * @param inactiveColor The color for empty/outlined stars.
- */
-@Composable
-private fun StarRatingBar(
-    modifier: Modifier = Modifier,
-    rating: Double,
-    onRatingChange: (Double) -> Unit,
-    activeColor: Color,
-    inactiveColor: Color
-) {
-  var rowSize by remember { mutableStateOf(IntSize.Zero) }
-  Row(
-      modifier =
-          modifier
-              .width(160.dp)
-              .onSizeChanged { rowSize = it }
-              .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                  val widthInPx = rowSize.width.toFloat()
-                  if (widthInPx <= 0) return@detectTapGestures
-                  val xFraction = (offset.x / widthInPx).coerceIn(0f, 1f)
-                  val rawRating = xFraction * 5
-                  val newRating = (rawRating * 2).roundToInt() / 2.0
-                  onRatingChange(newRating.coerceAtLeast(0.5))
-                }
-              }) {
-        // For the rating stars
-        for (i in 1..5) {
-          val icon =
-              when {
-                i <= rating -> Icons.Filled.Star
-                i - 0.5 <= rating -> Icons.AutoMirrored.Filled.StarHalf
-                else -> Icons.Outlined.StarOutline
-              }
-          Icon(
-              imageVector = icon,
-              contentDescription = null,
-              tint = if (i - 0.5 <= rating) activeColor else inactiveColor,
-              modifier = Modifier.weight(1f).height(30.dp))
-        }
       }
 }

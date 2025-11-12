@@ -1,25 +1,18 @@
 package com.android.mySwissDorm.ui.review
 
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.review.Review
@@ -34,13 +27,13 @@ import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
-import kotlin.math.roundToInt
+import com.android.mySwissDorm.ui.utils.StarRatingBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddReviewScreen(
-    addReviewViewModel: AddReviewViewModel = viewModel(),
     modifier: Modifier = Modifier,
+    addReviewViewModel: AddReviewViewModel = viewModel(),
     onConfirm: (Review) -> Unit,
     onBack: () -> Unit
 ) {
@@ -189,51 +182,5 @@ fun AddReviewScreen(
                         }
                   }
             }
-      }
-}
-
-/**
- * A custom, dependency-free Composable for star ratings. Supports half-star display and updates on
- * tap.
- */
-// Did this function using AI
-@Composable
-private fun StarRatingBar(
-    modifier: Modifier = Modifier,
-    rating: Double,
-    onRatingChange: (Double) -> Unit,
-    activeColor: Color,
-    inactiveColor: Color
-) {
-  var rowSize by remember { mutableStateOf(IntSize.Zero) }
-  Row(
-      modifier =
-          modifier
-              .width(160.dp)
-              .onSizeChanged { rowSize = it }
-              .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                  val widthInPx = rowSize.width.toFloat()
-                  if (widthInPx <= 0) return@detectTapGestures
-                  val xFraction = (offset.x / widthInPx).coerceIn(0f, 1f)
-                  val rawRating = xFraction * 5
-                  val newRating = (rawRating * 2).roundToInt() / 2.0
-                  onRatingChange(newRating.coerceAtLeast(0.5))
-                }
-              }) {
-        // For the rating stars
-        for (i in 1..5) {
-          val icon =
-              when {
-                i <= rating -> Icons.Filled.Star
-                i - 0.5 <= rating -> Icons.AutoMirrored.Filled.StarHalf
-                else -> Icons.Outlined.StarOutline
-              }
-          Icon(
-              imageVector = icon,
-              contentDescription = null,
-              tint = if (i - 0.5 <= rating) activeColor else inactiveColor,
-              modifier = Modifier.weight(1f).height(30.dp))
-        }
       }
 }

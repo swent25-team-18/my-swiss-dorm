@@ -70,7 +70,7 @@ data class EditReviewUiState(
    */
   val isFormValid: Boolean
     get() {
-      val isGradeOK = grade in 1.0..5.0
+      val isGradeOK = grade in 0.5..5.0
       val isTitleOk = InputSanitizers.validateFinal<String>(FieldType.Title, title).isValid
       val isAreaOk = InputSanitizers.validateFinal<Double>(FieldType.RoomSize, areaInM2).isValid
       val isPriceOk = InputSanitizers.validateFinal<Int>(FieldType.Price, pricePerMonth).isValid
@@ -88,8 +88,8 @@ data class EditReviewUiState(
  * loading review data, updating form fields, validating input, and persisting changes to the
  * repository.
  *
- * The ViewModel automatically loads available residencies on initialization and provides methods to
- * update individual form fields with input normalization.
+ * The ViewModel automatically loads the review and available residencies on initialization and
+ * provides methods to update individual form fields with input normalization.
  *
  * @property reviewRepository The repository for accessing and updating reviews.
  * @property residenciesRepository The repository for accessing available residencies.
@@ -191,10 +191,8 @@ class EditReviewViewModel(
    *
    * Note: This method preserves the existing residencies list when loading the review to avoid
    * clearing residencies that were loaded during initialization.
-   *
-   * @param reviewId The unique identifier of the review to load.
    */
-  fun getReview(reviewId: String) {
+  fun loadReview(reviewId: String) {
     viewModelScope.launch {
       try {
         val review = reviewRepository.getReview(reviewId)
@@ -242,8 +240,6 @@ class EditReviewViewModel(
    *
    * This method asynchronously deletes the review with the specified ID. Errors are logged but not
    * exposed to the UI.
-   *
-   * @param reviewID The unique identifier of the review to delete.
    */
   fun deleteReview(reviewID: String) {
     viewModelScope.launch {
@@ -287,7 +283,6 @@ class EditReviewViewModel(
    * decision, as residency name comes from a dropdown selection and is assumed to be valid when
    * selected.
    *
-   * @param reviewId The unique identifier of the review to update.
    * @return `true` if the review was successfully validated and saved, `false` if validation failed
    *   or the form is invalid.
    */
@@ -297,7 +292,9 @@ class EditReviewViewModel(
     if (!state.isFormValid) {
       return false
     }
-    val uid = Firebase.auth.currentUser?.uid ?: "Non existing user"
+    val uid =
+        Firebase.auth.currentUser?.uid
+            ?: throw IllegalStateException("User must be authenticated to edit a review")
 
     editReviewToRepository(
         id = reviewId,
@@ -316,6 +313,16 @@ class EditReviewViewModel(
                 imageUrls = state.imageUrls))
 
     return true
+  }
+
+  /**
+   * Gets the location of the currently selected residency.
+   *
+   * @return The location of the residency matching the current residencyName, or null if not found.
+   */
+  fun getResidencyLocation(): com.android.mySwissDorm.model.map.Location? {
+    val state = _uiState.value
+    return state.residencies.find { it.name == state.residencyName }?.location
   }
 
   init {

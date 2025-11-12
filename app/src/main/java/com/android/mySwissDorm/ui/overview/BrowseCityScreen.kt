@@ -56,7 +56,8 @@ fun BrowseCityScreen(
     onSelectListing: (ListingCardUI) -> Unit = {},
     onSelectReview: (ReviewCardUI) -> Unit = {},
     onLocationChange: (Location) -> Unit = {},
-    navigationActions: NavigationActions? = null
+    navigationActions: NavigationActions? = null,
+    startTab: Int = 1
 ) {
 
   LaunchedEffect(location) {
@@ -91,7 +92,8 @@ fun BrowseCityScreen(
       onSelectListing = onSelectListing,
       onSelectReview = onSelectReview,
       onLocationClick = onLocationClick,
-      navigationActions = navigationActions)
+      navigationActions = navigationActions,
+      startTab = startTab)
 
   if (uiState.showCustomLocationDialog) {
     CustomLocationDialog(
@@ -128,8 +130,9 @@ private fun BrowseCityScreenUI(
     onSelectReview: (ReviewCardUI) -> Unit,
     onLocationClick: () -> Unit,
     navigationActions: NavigationActions? = null,
+    startTab: Int = 1
 ) {
-  var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
+  var selectedTab by rememberSaveable { mutableIntStateOf(startTab) } // 0 Reviews, 1 Listings
 
   Scaffold(
       bottomBar = { BottomBarFromNav(navigationActions) },

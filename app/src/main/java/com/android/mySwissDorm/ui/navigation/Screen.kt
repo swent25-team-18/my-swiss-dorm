@@ -28,13 +28,14 @@ sealed class Screen(
 
   data object Admin : Screen("admin", "Admin")
 
-  data class BrowseOverview(private val location: Location) :
+  data class BrowseOverview(private val location: Location, private val startTab: Int = 1) :
       Screen(
-          route = "browseOverview/${location.name}/${location.latitude}/${location.longitude}",
+          route =
+              "browseOverview/${location.name}/${location.latitude}/${location.longitude}/$startTab",
           name = "Location") {
 
     companion object {
-      const val route = "browseOverview/{name}/{lat}/{lng}"
+      const val route = "browseOverview/{name}/{lat}/{lng}/{startTab}"
     }
   }
 
@@ -64,6 +65,13 @@ sealed class Screen(
       Screen(route = "reviewOverview/${reviewUid}", name = "Review") {
     companion object {
       const val route = "reviewOverview/{reviewUid}"
+    }
+  }
+
+  data class ReviewsByResidencyOverview(val residencyName: String) :
+      Screen(route = "reviewsByResidency/${residencyName}", name = "Reviews by Residency") {
+    companion object {
+      const val route = "reviewsByResidency/{residencyName}"
     }
   }
 

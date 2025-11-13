@@ -41,9 +41,8 @@ import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.OutlineColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
-import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 
 /**
  * A generic button that displays a dialog allowing the user to either take a new photo or choose a
@@ -105,8 +104,7 @@ fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit)
             Modifier.fillMaxWidth()
                 .testTag(C.AddPhotoButtonTags.DIALOG)
                 .clip(RoundedCornerShape(16.dp))
-                .background(BackGroundColor)
-                .border(2.dp, OutlineColor, shape = RoundedCornerShape(16.dp)),
+                .background(BackGroundColor),
         elevation = CardDefaults.cardElevation(8.dp),
     ) {
       Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -119,7 +117,7 @@ fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit)
                   modifier = Modifier.fillMaxWidth(0.9f),
                   colors =
                       ButtonDefaults.filledTonalButtonColors(
-                          containerColor = MainColor, contentColor = TextColor),
+                          containerColor = MainColor, contentColor = White),
                   shape = RoundedCornerShape(14.dp),
               ) {
                 Text(
@@ -132,7 +130,7 @@ fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit)
                   modifier = Modifier.fillMaxWidth(0.9f),
                   colors =
                       ButtonDefaults.filledTonalButtonColors(
-                          containerColor = MainColor, contentColor = TextColor),
+                          containerColor = MainColor, contentColor = White),
                   shape = RoundedCornerShape(14.dp),
               ) {
                 Text(

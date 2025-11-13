@@ -163,6 +163,29 @@ object C {
     const val MORE_OPTION = "customLocationDialogMoreOption"
   }
 
+  object CustomDatePickerDialogTags {
+    const val OK_BUTTON = "customDatePickerDialogOkButton"
+    const val CANCEL_BUTTON = "customDatePickerDialogCancelButton"
+  }
+
+  object AddListingScreenTags {
+    const val TITLE_FIELD = "titleField"
+    const val SIZE_FIELD = "sizeField"
+    const val PRICE_FIELD = "priceField"
+    const val START_DATE_FIELD = "startDateField"
+    const val DESC_FIELD = "descField"
+  }
+
+  object EditListingScreenTags {
+    const val TITLE_FIELD = "titleField"
+    const val SIZE_FIELD = "sizeField"
+    const val PRICE_FIELD = "priceField"
+    const val START_DATE_FIELD = "startDateField"
+    const val DESC_FIELD = "descField"
+    const val DELETE_BUTTON = "deleteButton"
+    const val SAVE_BUTTON = "saveButton"
+  }
+
   object AdminPageTags {
     const val CHIP_CITY = "adminPageChipCity"
     const val CHIP_RESIDENCY = "adminPageChipResidency"

@@ -146,7 +146,6 @@ fun AppNavHost(
 
     composable(Screen.AddListing.route) {
       AddListingScreen(
-          onOpenMap = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
           onBack = { navActions.goBack() },
           onConfirm = { created ->
             navController.navigate(Screen.ListingOverview(created.uid).route) {

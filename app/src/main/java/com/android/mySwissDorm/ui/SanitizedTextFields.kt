@@ -32,8 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
-import com.android.mySwissDorm.ui.theme.* // if you have one; otherwise remove
-import coralColor
+import com.android.mySwissDorm.ui.theme.*
 
 /**
  * Uniform, sanitized text fields for MySwissDorm.
@@ -338,13 +337,12 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
         readOnly = true,
         label = { Text("Housing type") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-        leadingIcon = { Icon(Icons.Default.Apartment, null, tint = Color(coralColor)) },
+        leadingIcon = { Icon(Icons.Default.Apartment, null, tint = MainColor) },
         colors =
             androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(coralColor), // Focused outline color (Red)
-                unfocusedBorderColor =
-                    Color(coralColor), // Remove the default border when not focused
-                focusedLabelColor = Color(coralColor), // Optional: Change label color when focused
+                focusedBorderColor = MainColor, // Focused outline color (Red)
+                unfocusedBorderColor = MainColor, // Remove the default border when not focused
+                focusedLabelColor = MainColor, // Optional: Change label color when focused
                 unfocusedLabelColor = Color.Gray // Optional: Change label color when not focused
                 ),
         modifier = Modifier.menuAnchor().fillMaxWidth(),
@@ -381,12 +379,12 @@ fun ResidencyDropdownResID(
         readOnly = true,
         label = { Text("Residency Name") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-        leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(coralColor)) },
+        leadingIcon = { Icon(Icons.Default.Home, null, tint = MainColor) },
         colors =
             OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(coralColor),
-                unfocusedBorderColor = Color(coralColor),
-                focusedLabelColor = Color(coralColor),
+                focusedBorderColor = MainColor,
+                unfocusedBorderColor = MainColor,
+                focusedLabelColor = MainColor,
                 unfocusedLabelColor = Color.Gray),
         modifier = Modifier.menuAnchor().fillMaxWidth(),
     )

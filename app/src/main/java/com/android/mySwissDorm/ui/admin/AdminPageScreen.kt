@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.admin
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,13 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -30,17 +35,24 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.ui.InputSanitizers
+import com.android.mySwissDorm.ui.SanitizedOutlinedTextField
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
-import coralColor
-
-@OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
+import com.android.mySwissDorm.ui.theme.White
+import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +80,8 @@ fun AdminPageScreen(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color(coralColor))
+                    tint = MainColor
+                )
               }
             })
       },
@@ -78,9 +91,9 @@ fun AdminPageScreen(
             Button(
                 onClick = vm::submit,
                 enabled = !ui.isSubmitting,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(coralColor)),
+                colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(16.dp)) {
+                shape = RoundedCornerShape(24.dp)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
@@ -120,146 +133,198 @@ fun AdminPageScreen(
                 }
               }
 
-              OutlinedTextField(
-                  value = ui.name,
-                  onValueChange = vm::onName,
-                  label = { Text("Name") },
-                  singleLine = true,
-                  colors = coloring(),
-                  modifier = Modifier.fillMaxWidth())
-              OutlinedTextField(
-                  value = ui.latitude,
-                  onValueChange = vm::onLatitude,
-                  label = { Text("Latitude") },
-                  singleLine = true,
-                  colors = coloring(),
-                  modifier = Modifier.fillMaxWidth())
-              OutlinedTextField(
-                  value = ui.longitude,
-                  onValueChange = vm::onLongitude,
-                  label = { Text("Longitude") },
-                  singleLine = true,
-                  colors = coloring(),
-                  modifier = Modifier.fillMaxWidth())
-              OutlinedTextField(
-                  value = ui.locName,
-                  onValueChange = vm::onLocName,
-                  label = { Text("Location Name") },
-                  singleLine = true,
-                  colors = coloring(),
-                  modifier = Modifier.fillMaxWidth())
+            SanitizedOutlinedTextField(
+                value = ui.name,
+                onValueChange = vm::onName,
+                label = "Name",
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                fieldType = InputSanitizers.FieldType.FirstName,
+                placeholder = "Name",
+                imeAction = ImeAction.Next
+            )
 
               // Entity-specific fields
               when (ui.selected) {
                 // City fields
                 AdminPageViewModel.EntityType.CITY -> {
-                  OutlinedTextField(
-                      value = ui.description,
-                      onValueChange = vm::onDescription,
-                      colors = coloring(),
-                      label = { Text("Description") },
-                      modifier = Modifier.fillMaxWidth())
-                  OutlinedTextField(
-                      value = ui.imageId,
-                      onValueChange = vm::onImageId,
-                      colors = coloring(),
-                      label = { Text("Image ID") },
-                      singleLine = true,
-                      modifier = Modifier.fillMaxWidth())
+                    SanitizedOutlinedTextField(
+                        value = ui.description,
+                        onValueChange = vm::onDescription,
+                        label = "Description",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.Description,
+                        placeholder = "Description",
+                        imeAction = ImeAction.Next
+                    )
+                    SanitizedOutlinedTextField(
+                        value = ui.imageId,
+                        onValueChange = vm::onImageId,
+                        label = "Image ID",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.Website, //for now
+                        placeholder = "Image ID",
+                        imeAction = ImeAction.Next
+                    )
                 }
                 // Residency fields
                 AdminPageViewModel.EntityType.RESIDENCY -> {
-                  OutlinedTextField(
-                      value = ui.description,
-                      onValueChange = vm::onDescription,
-                      colors = coloring(),
-                      label = { Text("Description") },
-                      modifier = Modifier.fillMaxWidth())
-                  OutlinedTextField(
-                      value = ui.city,
-                      onValueChange = vm::onCity,
-                      label = { Text("City") },
-                      colors = coloring(),
-                      singleLine = true,
-                      modifier = Modifier.fillMaxWidth())
-                  OutlinedTextField(
-                      value = ui.email,
-                      colors = coloring(),
-                      onValueChange = vm::onEmail,
-                      label = { Text("Email (optional)") },
-                      singleLine = true,
-                      modifier = Modifier.fillMaxWidth())
-                  OutlinedTextField(
-                      value = ui.phone,
-                      colors = coloring(),
-                      onValueChange = vm::onPhone,
-                      label = { Text("Phone (optional)") },
-                      singleLine = true,
-                      modifier = Modifier.fillMaxWidth())
-                  OutlinedTextField(
-                      value = ui.website,
-                      colors = coloring(),
-                      onValueChange = vm::onWebsite,
-                      label = { Text("Website (optional)") },
-                      singleLine = true,
-                      modifier = Modifier.fillMaxWidth())
+                    SanitizedOutlinedTextField(
+                        value = ui.description,
+                        onValueChange = vm::onDescription,
+                        label = "Description",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.Description,
+                        placeholder = "Description",
+                        imeAction = ImeAction.Next
+                    )
+                    SanitizedOutlinedTextField(
+                        value = ui.city,
+                        onValueChange = vm::onCity,
+                        label = "City",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.City,
+                        placeholder = "City",
+                        imeAction = ImeAction.Next
+                    )
+                    SanitizedOutlinedTextField(
+                        value = ui.email,
+                        onValueChange = vm::onEmail,
+                        label = "Email",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.City,
+                        placeholder = "Email (optional)",
+                        imeAction = ImeAction.Next
+                    )
+                    SanitizedOutlinedTextField(
+                        value = ui.phone,
+                        onValueChange = vm::onPhone,
+                        label = "Phone",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.Phone,
+                        placeholder = "Phone (optional)",
+                        imeAction = ImeAction.Next
+                    )
+                    SanitizedOutlinedTextField(
+                        value = ui.website,
+                        onValueChange = vm::onWebsite,
+                        label = "Website",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.Website,
+                        placeholder = "Website (optional)",
+                        imeAction = ImeAction.Next
+                    )
                 }
                 // University fields
                 AdminPageViewModel.EntityType.UNIVERSITY -> {
-                  OutlinedTextField(
-                      value = ui.city,
-                      onValueChange = vm::onCity,
-                      label = { Text("City") },
-                      singleLine = true,
-                      colors = coloring(),
-                      modifier = Modifier.fillMaxWidth())
-                  OutlinedTextField(
-                      value = ui.email,
-                      onValueChange = vm::onEmail,
-                      label = { Text("Email") },
-                      singleLine = true,
-                      colors = coloring(),
-                      modifier = Modifier.fillMaxWidth())
-                  OutlinedTextField(
-                      value = ui.phone,
-                      onValueChange = vm::onPhone,
-                      label = { Text("Phone") },
-                      singleLine = true,
-                      colors = coloring(),
-                      modifier = Modifier.fillMaxWidth())
-                  OutlinedTextField(
-                      value = ui.website,
-                      onValueChange = vm::onWebsite,
-                      label = { Text("Website URL") },
-                      singleLine = true,
-                      colors = coloring(),
-                      modifier = Modifier.fillMaxWidth())
+                    SanitizedOutlinedTextField(
+                        value = ui.city,
+                        onValueChange = vm::onCity,
+                        label = "City",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.City,
+                        placeholder = "City",
+                        imeAction = ImeAction.Next
+                    )
+                    SanitizedOutlinedTextField(
+                        value = ui.email,
+                        onValueChange = vm::onEmail,
+                        label = "Email",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.Email,
+                        placeholder = "Email",
+                        imeAction = ImeAction.Next
+                    )
+                    SanitizedOutlinedTextField(
+                        value = ui.phone,
+                        onValueChange = vm::onPhone,
+                        label = "Phone",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.Phone,
+                        placeholder = "Phone",
+                        imeAction = ImeAction.Next
+                    )
+                    SanitizedOutlinedTextField(
+                        value = ui.website,
+                        onValueChange = vm::onWebsite,
+                        label = "Website",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldType = InputSanitizers.FieldType.Website,
+                        placeholder = "Website URL",
+                        imeAction = ImeAction.Next
+                    )
                 }
               }
+
+              // Location picker button
+              TextButton(
+                  onClick = { vm.onCustomLocationClick() },
+                  modifier = Modifier.fillMaxWidth(),
+                  shape = RoundedCornerShape(16.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Place,
+                        contentDescription = "Location",
+                        tint = MainColor)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = ui.location?.name ?: "Select Location",
+                        color = if (ui.location != null) TextColor else MainColor)
+                  }
+
               Spacer(Modifier.height(16.dp))
             }
-      }
-}
 
-@Composable
-private fun coloring(): androidx.compose.material3.TextFieldColors {
-  return OutlinedTextFieldDefaults.colors(
-      focusedBorderColor = Color(coralColor),
-      unfocusedBorderColor = Color(coralColor),
-      focusedLabelColor = Color(coralColor),
-      unfocusedLabelColor = Color.Gray)
+        // Custom Location Dialog
+        if (ui.showCustomLocationDialog) {
+          val onValueChange = remember<(String) -> Unit> {
+            { query -> vm.setCustomLocationQuery(query) }
+          }
+          val onDropDownLocationSelect = remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+            { location -> vm.setCustomLocation(location) }
+          }
+          val onDismiss = remember { { vm.dismissCustomLocationDialog() } }
+          val onConfirm = remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+            { location -> vm.onLocationConfirm(location) }
+          }
+
+          CustomLocationDialog(
+              value = ui.customLocationQuery,
+              currentLocation = ui.customLocation,
+              locationSuggestions = ui.locationSuggestions,
+              onValueChange = onValueChange,
+              onDropDownLocationSelect = onDropDownLocationSelect,
+              onDismiss = onDismiss,
+              onConfirm = onConfirm)
+        }
+      }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EntityChip(text: String, selected: Boolean, onClick: () -> Unit) {
-  // This helper was implemented using AI
-  AssistChip(
-      onClick = onClick,
-      label = { Text(text) },
-      leadingIcon =
-          if (selected) {
-            { Icon(Icons.Default.Check, contentDescription = null, tint = TextColor) }
-          } else null,
-      modifier = Modifier.testTag("Chip_$text"))
-}
+  // This helper was implemented using AI {
+    AssistChip(
+        onClick = onClick,
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = if (selected) MainColor else TextBoxColor,
+            labelColor = if (selected) White else TextColor,
+            leadingIconContentColor = if (selected) White else TextColor
+        ),
+        label = { Text(text) },
+        leadingIcon =
+            if (selected) {
+                { Icon(Icons.Default.Check, contentDescription = null, tint = White) }
+            } else null)
+  }
+

@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.admin
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -9,6 +10,8 @@ import com.android.mySwissDorm.model.city.CitiesRepository
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
@@ -23,6 +26,7 @@ class AdminPageViewModel(
     private val residenciesRepo: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
     private val universitiesRepo: UniversitiesRepository =
         UniversitiesRepositoryProvider.repository,
+    private val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
 ) : ViewModel() {
 
   enum class EntityType {
@@ -34,9 +38,7 @@ class AdminPageViewModel(
   data class UiState(
       val selected: EntityType = EntityType.CITY,
       val name: String = "",
-      val locName: String = "",
-      val longitude: String = "",
-      val latitude: String = "",
+      val location: Location? = null,
       val description: String = "",
       val imageId: String = "",
       val city: String = "",
@@ -44,7 +46,11 @@ class AdminPageViewModel(
       val phone: String = "",
       val website: String = "",
       val isSubmitting: Boolean = false,
-      val message: String? = null
+      val message: String? = null,
+      val customLocationQuery: String = "",
+      val customLocation: Location? = null,
+      val locationSuggestions: List<Location> = emptyList(),
+      val showCustomLocationDialog: Boolean = false
   )
 
   var uiState by mutableStateOf(UiState())
@@ -59,16 +65,40 @@ class AdminPageViewModel(
     uiState = uiState.copy(name = v)
   }
 
-  fun onLocName(v: String) {
-    uiState = uiState.copy(locName = v)
+  fun setCustomLocationQuery(query: String) {
+    uiState = uiState.copy(customLocationQuery = query, locationSuggestions = emptyList())
+    if (query.isNotEmpty()) {
+      viewModelScope.launch {
+        try {
+          val results = locationRepository.search(query)
+          uiState = uiState.copy(locationSuggestions = results)
+        } catch (e: Exception) {
+          Log.e("AdminPageViewModel", "Error fetching location suggestions", e)
+          uiState = uiState.copy(locationSuggestions = emptyList())
+        }
+      }
+    }
   }
 
-  fun onLongitude(v: String) {
-    uiState = uiState.copy(longitude = v)
+  fun setCustomLocation(location: Location) {
+    uiState = uiState.copy(customLocation = location, customLocationQuery = location.name)
   }
 
-  fun onLatitude(v: String) {
-    uiState = uiState.copy(latitude = v)
+  fun onCustomLocationClick() {
+    uiState = uiState.copy(
+        showCustomLocationDialog = true,
+        customLocationQuery = uiState.location?.name ?: "",
+        customLocation = uiState.location)
+  }
+
+  fun dismissCustomLocationDialog() {
+    uiState = uiState.copy(
+        showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
+  }
+
+  fun onLocationConfirm(location: Location) {
+    uiState = uiState.copy(location = location)
+    dismissCustomLocationDialog()
   }
 
   fun onDescription(v: String) {
@@ -95,17 +125,9 @@ class AdminPageViewModel(
     uiState = uiState.copy(website = v)
   }
 
-  private fun parseLocation(): Location? {
-    val name = uiState.locName.trim()
-    val lon = uiState.longitude.trim().toDoubleOrNull()
-    val lat = uiState.latitude.trim().toDoubleOrNull()
-    if (name.isBlank() || lon == null || lat == null) return null
-    return Location(name = name, longitude = lon, latitude = lat)
-  }
-
   private fun validate(): String? {
     if (uiState.name.isBlank()) return "Name is required."
-    if (parseLocation() == null) return "Location (name, longitude, latitude) is required."
+    if (uiState.location == null) return "Location is required."
 
     return when (uiState.selected) {
       EntityType.CITY -> {
@@ -136,8 +158,8 @@ class AdminPageViewModel(
       uiState = uiState.copy(message = error)
       return
     }
-    // Parse location after validation and make sure to not return a null value with "!!"
-    val location = parseLocation()!!
+    // Location is validated to be non-null
+    val location = uiState.location!!
 
     viewModelScope.launch {
       uiState = uiState.copy(isSubmitting = true, message = null)

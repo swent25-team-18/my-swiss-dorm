@@ -67,6 +67,7 @@ fun BrowseCityScreen(
     onSelectListing: (ListingCardUI) -> Unit = {},
     onSelectResidency: (ResidencyCardUI) -> Unit = {},
     onLocationChange: (Location) -> Unit = {},
+    startTab: Int = 1,
     onAddListingClick: () -> Unit = {},
     onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null
@@ -104,6 +105,7 @@ fun BrowseCityScreen(
       onSelectListing = onSelectListing,
       onSelectResidency = onSelectResidency,
       onLocationClick = onLocationClick,
+      startTab = startTab,
       onAddListingClick = { navigationActions?.navigateTo(Screen.AddListing) },
       onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
       navigationActions = navigationActions)
@@ -147,8 +149,9 @@ private fun BrowseCityScreenUI(
     onAddListingClick: () -> Unit = {},
     onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
+    startTab: Int = 1
 ) {
-  var selectedTab by rememberSaveable { mutableIntStateOf(1) } // 0 Reviews, 1 Listings
+  var selectedTab by rememberSaveable { mutableIntStateOf(startTab) } // 0 Reviews, 1 Listings
 
   Scaffold(
       bottomBar = { BottomBarFromNav(navigationActions) },

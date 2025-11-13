@@ -42,6 +42,8 @@ import com.android.mySwissDorm.ui.profile.ProfileContributionsViewModel
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
+import com.android.mySwissDorm.ui.review.EditReviewScreen
+import com.android.mySwissDorm.ui.review.EditReviewViewModel
 import com.android.mySwissDorm.ui.review.ReviewsByResidencyScreen
 import com.android.mySwissDorm.ui.review.ViewReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
@@ -177,6 +179,8 @@ fun AppNavHost(
       val name = navBackStackEntry.arguments?.getString("name")
       val latString = navBackStackEntry.arguments?.getString("lat")
       val lngString = navBackStackEntry.arguments?.getString("lng")
+      val startTabString = navBackStackEntry.arguments?.getString("startTab")
+      val startTab = startTabString?.toIntOrNull() ?: 1 // Default to 1 (Listings) if not provided
 
       val latitude = latString?.toDoubleOrNull()
       val longitude = lngString?.toDoubleOrNull()
@@ -195,7 +199,8 @@ fun AppNavHost(
             onLocationChange = { newLocation ->
               navActions.navigateTo(Screen.BrowseOverview(newLocation))
             },
-            navigationActions = navActions)
+            navigationActions = navActions,
+            startTab = startTab)
       }
     }
 
@@ -272,7 +277,7 @@ fun AppNavHost(
         ViewReviewScreen(
             reviewUid = it,
             onGoBack = { navActions.goBack() },
-            onEdit = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
+            onEdit = { navActions.navigateTo(Screen.EditReview(it)) },
             onViewProfile = { ownerId ->
               val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
               if (ownerId == currentUserId) {
@@ -291,6 +296,28 @@ fun AppNavHost(
             Log.e("AppNavHost", "reviewUid is null")
             Toast.makeText(context, "reviewUid is null", Toast.LENGTH_SHORT).show()
           }
+    }
+
+    composable(Screen.EditReview.route) { entry ->
+      val id = requireNotNull(entry.arguments?.getString("reviewUid"))
+      val editReviewViewModel: EditReviewViewModel = viewModel {
+        EditReviewViewModel(reviewId = id)
+      }
+
+      EditReviewScreen(
+          reviewID = id,
+          editReviewViewModel = editReviewViewModel,
+          onBack = navActions::goBack,
+          onConfirm = {
+            navActions.navigateTo(Screen.ReviewOverview(id))
+            navController.popBackStack(Screen.EditReview.route, inclusive = true)
+            Toast.makeText(context, "Review saved", Toast.LENGTH_SHORT).show()
+          },
+          onDelete = { residencyName ->
+            navActions.navigateTo(Screen.ReviewsByResidencyOverview(residencyName))
+            navController.popBackStack(Screen.EditReview.route, inclusive = true)
+            Toast.makeText(context, "Review deleted", Toast.LENGTH_SHORT).show()
+          })
     }
 
     composable(Screen.ViewUserProfile.route) { navBackStackEntry ->

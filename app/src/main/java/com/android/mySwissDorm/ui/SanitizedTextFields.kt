@@ -416,8 +416,8 @@ private fun defaultTestTag(type: FieldType): String =
       FieldType.RoomSize -> "MSD_Text_RoomSize"
       FieldType.Description -> "MSD_Text_Description"
       FieldType.Price -> "MSD_Text_Price"
-        FieldType.City -> "MSD_Text_City"
-        FieldType.Website -> "MSD_Text_Website"
+      FieldType.City -> "MSD_Text_City"
+      FieldType.Website -> "MSD_Text_Website"
     }
 
 /** Map your error keys to human text (or delegate to string resources). */

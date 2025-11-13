@@ -35,7 +35,6 @@ object InputSanitizers {
 
     data object Website : FieldType()
 
-
     // Listing
     data object Title : FieldType() // Listing title
 
@@ -58,7 +57,7 @@ object InputSanitizers {
         FieldType.FirstName -> normalizeNameTyping(raw, NAME_MAX)
         FieldType.LastName -> normalizeNameTyping(raw, NAME_MAX)
         FieldType.City -> normalizeNameTyping(raw, NAME_MAX)
-        FieldType.Website -> normalizeNameTyping(raw, RESIDENCY_MAX) //for now
+        FieldType.Website -> normalizeNameTyping(raw, RESIDENCY_MAX) // for now
         FieldType.Phone -> normalizePhoneTyping(raw)
         FieldType.Email -> normalizeEmailTyping(raw)
         FieldType.SearchQuery -> normalizeSearchTyping(raw)
@@ -75,7 +74,8 @@ object InputSanitizers {
         FieldType.FirstName -> validateNameFinal(raw, "error.firstname") as ValidationResult<T>
         FieldType.LastName -> validateNameFinal(raw, "error.lastname") as ValidationResult<T>
         FieldType.City -> validateNameFinal(raw, "error.city") as ValidationResult<T>
-        FieldType.Website -> validateNameFinal(raw, "error.website") as ValidationResult<T> //for now
+        FieldType.Website ->
+            validateNameFinal(raw, "error.website") as ValidationResult<T> // for now
         FieldType.Phone -> validatePhoneFinal(raw) as ValidationResult<T>
         FieldType.Email -> validateEmailFinal(raw) as ValidationResult<T>
         FieldType.SearchQuery -> validateSearchFinal(raw) as ValidationResult<T>

@@ -39,7 +39,6 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
-import com.google.firebase.database.collection.LLRBNode
 
 /**
  * A dialog for entering a custom location, with autocomplete suggestions.
@@ -69,94 +68,99 @@ fun CustomLocationDialog(
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = BackGroundColor)) {
-      Box {
-        Column(
-            modifier = Modifier.padding(top = 48.dp, bottom = 24.dp, start = 24.dp, end = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)) {
-              Text(
-                  "Enter Custom Location",
-                  color = TextColor,
-                  fontSize = 20.sp,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.testTag(C.CustomLocationDialogTags.DIALOG_TITLE,))
-              ExposedDropdownMenuBox(
-                  expanded = showDropdown && locationSuggestions.isNotEmpty(),
-                  onExpandedChange = { showDropdown = it },
-                  modifier = Modifier.testTag(C.CustomLocationDialogTags.DROPDOWN_MENU)) {
-                    OutlinedTextField(
-                        value = value,
-                        onValueChange = {
-                          onValueChange(it)
-                          showDropdown = true
-                        },
-                        label = { Text("Location") },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MainColor,
-                            unfocusedBorderColor = TextBoxColor,
-                            focusedLabelColor = MainColor,
-                            cursorColor = TextColor,
-                            unfocusedLabelColor = TextColor.copy(alpha = 0.6f)
-                        ),
-                        modifier =
-                            Modifier.menuAnchor()
-                                .fillMaxWidth()
-                                .testTag(C.CustomLocationDialogTags.LOCATION_TEXT_FIELD),
-                        singleLine = true)
+          Box {
+            Column(
+                modifier =
+                    Modifier.padding(top = 48.dp, bottom = 24.dp, start = 24.dp, end = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                  Text(
+                      "Enter Custom Location",
+                      color = TextColor,
+                      fontSize = 20.sp,
+                      fontWeight = FontWeight.Bold,
+                      modifier =
+                          Modifier.testTag(
+                              C.CustomLocationDialogTags.DIALOG_TITLE,
+                          ))
+                  ExposedDropdownMenuBox(
+                      expanded = showDropdown && locationSuggestions.isNotEmpty(),
+                      onExpandedChange = { showDropdown = it },
+                      modifier = Modifier.testTag(C.CustomLocationDialogTags.DROPDOWN_MENU)) {
+                        OutlinedTextField(
+                            value = value,
+                            onValueChange = {
+                              onValueChange(it)
+                              showDropdown = true
+                            },
+                            label = { Text("Location") },
+                            colors =
+                                OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MainColor,
+                                    unfocusedBorderColor = TextBoxColor,
+                                    focusedLabelColor = MainColor,
+                                    cursorColor = TextColor,
+                                    unfocusedLabelColor = TextColor.copy(alpha = 0.6f)),
+                            modifier =
+                                Modifier.menuAnchor()
+                                    .fillMaxWidth()
+                                    .testTag(C.CustomLocationDialogTags.LOCATION_TEXT_FIELD),
+                            singleLine = true)
 
-                    ExposedDropdownMenu(
-                        expanded = showDropdown && locationSuggestions.isNotEmpty(),
-                        onDismissRequest = { showDropdown = false }) {
-                          locationSuggestions.filterNotNull().take(3).forEachIndexed {
-                              index,
-                              location ->
-                            DropdownMenuItem(
-                                text = {
-                                  Text(
-                                      text =
-                                          location.name.take(30) +
-                                              if (location.name.length > 30) "..." else "",
-                                      maxLines = 1)
-                                },
-                                onClick = {
-                                  onValueChange(location.name)
-                                  onDropDownLocationSelect(location)
-                                  showDropdown = false
-                                },
-                                modifier =
-                                    Modifier.testTag(
-                                        C.CustomLocationDialogTags.locationSuggestion(index)))
-                          }
+                        ExposedDropdownMenu(
+                            expanded = showDropdown && locationSuggestions.isNotEmpty(),
+                            onDismissRequest = { showDropdown = false }) {
+                              locationSuggestions.filterNotNull().take(3).forEachIndexed {
+                                  index,
+                                  location ->
+                                DropdownMenuItem(
+                                    text = {
+                                      Text(
+                                          text =
+                                              location.name.take(30) +
+                                                  if (location.name.length > 30) "..." else "",
+                                          maxLines = 1)
+                                    },
+                                    onClick = {
+                                      onValueChange(location.name)
+                                      onDropDownLocationSelect(location)
+                                      showDropdown = false
+                                    },
+                                    modifier =
+                                        Modifier.testTag(
+                                            C.CustomLocationDialogTags.locationSuggestion(index)))
+                              }
 
-                          if (locationSuggestions.size > 3) {
-                            DropdownMenuItem(
-                                text = { Text("More...") },
-                                onClick = { /* Optionally show more results */}, // TODO
-                                modifier = Modifier.testTag(C.CustomLocationDialogTags.MORE_OPTION))
-                          }
+                              if (locationSuggestions.size > 3) {
+                                DropdownMenuItem(
+                                    text = { Text("More...") },
+                                    onClick = { /* Optionally show more results */}, // TODO
+                                    modifier =
+                                        Modifier.testTag(C.CustomLocationDialogTags.MORE_OPTION))
+                              }
+                            }
+                      }
+                  Button(
+                      onClick = {
+                        currentLocation?.let {
+                          onConfirm(it)
+                          onDismiss()
                         }
-                  }
-              Button(
-                  onClick = {
-                    currentLocation?.let {
-                      onConfirm(it)
-                      onDismiss()
-                    }
-                  },
-                  enabled = currentLocation != null,
-                  colors = ButtonDefaults.buttonColors(containerColor = MainColor),
-                  modifier = Modifier.testTag(C.CustomLocationDialogTags.CONFIRM_BUTTON)) {
-                    Text("Confirm", color = White)
-                  }
-            }
-        IconButton(
-            onClick = onDismiss,
-            modifier =
-                Modifier.align(Alignment.TopStart)
-                    .testTag(C.CustomLocationDialogTags.CLOSE_BUTTON)) {
-              Icon(Icons.Default.Close, contentDescription = "Close", tint = MainColor)
-            }
-      }
-    }
+                      },
+                      enabled = currentLocation != null,
+                      colors = ButtonDefaults.buttonColors(containerColor = MainColor),
+                      modifier = Modifier.testTag(C.CustomLocationDialogTags.CONFIRM_BUTTON)) {
+                        Text("Confirm", color = White)
+                      }
+                }
+            IconButton(
+                onClick = onDismiss,
+                modifier =
+                    Modifier.align(Alignment.TopStart)
+                        .testTag(C.CustomLocationDialogTags.CLOSE_BUTTON)) {
+                  Icon(Icons.Default.Close, contentDescription = "Close", tint = MainColor)
+                }
+          }
+        }
   }
 }

@@ -6,14 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 /**
  * Immutable UI state for the View User Profile screen.
@@ -46,8 +42,7 @@ data class ViewProfileUiState(
  */
 class ViewProfileScreenViewModel(
     private val repo: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
   // Backing mutable state; UI observes the exposed read-only StateFlow.
@@ -87,16 +82,12 @@ class ViewProfileScreenViewModel(
         val currentUid = auth.currentUser?.uid
         val isBlocked =
             if (currentUid != null) {
-              try {
-                val currentUserDoc = db.collection("profiles").document(currentUid).get().await()
-                @Suppress("UNCHECKED_CAST")
-                val blockedIds =
-                    currentUserDoc.get("blockedUserIds") as? List<String> ?: emptyList()
-                ownerId in blockedIds
-              } catch (e: Exception) {
-                Log.e("ViewUserProfileViewModel", "Error checking blocked status", e)
-                false
-              }
+              runCatching { repo.getBlockedUserIds(currentUid) }
+                  .onFailure {
+                    Log.e("ViewUserProfileViewModel", "Error checking blocked status", it)
+                  }
+                  .getOrDefault(emptyList())
+                  .contains(ownerId)
             } else {
               false
             }
@@ -141,14 +132,7 @@ class ViewProfileScreenViewModel(
     viewModelScope.launch {
       try {
         // Ensure ownerId is set, then add to blocked list
-        db.collection("profiles")
-            .document(uid)
-            .set(mapOf("ownerId" to uid), SetOptions.merge())
-            .await()
-        db.collection("profiles")
-            .document(uid)
-            .update("blockedUserIds", FieldValue.arrayUnion(targetUid))
-            .await()
+        repo.addBlockedUser(ownerId = uid, targetUid = targetUid)
         // Update UI state to show blocked status
         _ui.value = _ui.value.copy(isBlocked = true)
       } catch (e: Exception) {
@@ -174,14 +158,7 @@ class ViewProfileScreenViewModel(
 
     viewModelScope.launch {
       try {
-        db.collection("profiles")
-            .document(uid)
-            .set(mapOf("ownerId" to uid), SetOptions.merge())
-            .await()
-        db.collection("profiles")
-            .document(uid)
-            .update("blockedUserIds", FieldValue.arrayRemove(targetUid))
-            .await()
+        repo.removeBlockedUser(ownerId = uid, targetUid = targetUid)
         _ui.value = _ui.value.copy(isBlocked = false)
       } catch (e: Exception) {
         Log.e("ViewProfileScreenViewModel", "Error unblocking user", e)

@@ -163,10 +163,31 @@ object C {
     const val MORE_OPTION = "customLocationDialogMoreOption"
   }
 
+  object AdminPageTags {
+    const val CHIP_CITY = "adminPageChipCity"
+    const val CHIP_RESIDENCY = "adminPageChipResidency"
+    const val CHIP_UNIVERSITY = "adminPageChipUniversity"
+    const val LOCATION_BUTTON = "adminPageLocationButton"
+    const val SAVE_BUTTON = "adminPageSaveButton"
+  }
+
   object AddPhotoButtonTags {
     const val BUTTON = "addPhotoButton"
     const val DIALOG = "addPhotoDialog"
     const val CAMERA_BUTTON_TEXT = "addPhotoCameraButtonText"
     const val GALLERY_BUTTON_TEXT = "addPhotoGalleryButtonText"
+  }
+
+  object SettingsTags {
+    const val SETTINGS_SCROLL = "SettingsScroll"
+    const val PROFILE_BUTTON = "ProfileButton"
+    const val EMAIL_FIELD = "EmailField"
+    const val DELETE_ACCOUNT_BUTTON = "DeleteAccountButton"
+    const val BLOCKED_CONTACTS_TOGGLE = "BlockedContactsToggle"
+    const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
+    const val BOTTOM_BAR = "bottom_nav"
+    const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
+
+    fun switch(label: String): String = "SettingSwitch_$label"
   }
 }

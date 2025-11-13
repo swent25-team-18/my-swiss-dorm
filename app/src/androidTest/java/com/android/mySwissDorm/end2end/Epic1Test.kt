@@ -31,7 +31,6 @@ import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.screen.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
 import com.android.mySwissDorm.ui.navigation.Screen
-import com.android.mySwissDorm.ui.settings.SettingsTestTags
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator
 import com.android.mySwissDorm.utils.FakeUser
@@ -203,13 +202,13 @@ class Epic1Test : FirestoreTest() {
         // Wait until Settings screen is shown (use Profile button which exists there)
         composeTestRule.waitUntil(5_000) {
           composeTestRule
-              .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+              .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
               .isDisplayed()
         }
 
         // Go to profile screen from settings
         composeTestRule
-            .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+            .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
             .performClick()
 
         // Wait for profile screen title
@@ -226,7 +225,7 @@ class Epic1Test : FirestoreTest() {
         // Now we're back on Settings; assert again via Profile button visibility
         composeTestRule.waitUntil(5_000) {
           composeTestRule
-              .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+              .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
               .isDisplayed()
         }
 

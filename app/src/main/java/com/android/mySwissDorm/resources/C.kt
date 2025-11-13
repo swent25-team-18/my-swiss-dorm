@@ -184,4 +184,11 @@ object C {
     const val DELETE_BUTTON = "deleteButton"
     const val SAVE_BUTTON = "saveButton"
   }
+
+  object AddPhotoButtonTags {
+    const val BUTTON = "addPhotoButton"
+    const val DIALOG = "addPhotoDialog"
+    const val CAMERA_BUTTON_TEXT = "addPhotoCameraButtonText"
+    const val GALLERY_BUTTON_TEXT = "addPhotoGalleryButtonText"
+  }
 }

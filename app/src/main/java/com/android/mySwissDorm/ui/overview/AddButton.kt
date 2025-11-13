@@ -5,7 +5,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,11 +52,7 @@ fun AddFabMenu(modifier: Modifier = Modifier, onAddListing: () -> Unit, onAddRev
 
   Box(modifier = modifier) {
     AnimatedVisibility(visible = expanded, enter = fadeIn(), exit = fadeOut()) {
-      Box(
-          Modifier.fillMaxSize()
-              .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.12f))
-              .clickable { expanded = false }
-              .testTag(C.BrowseCityTags.FABSCRIM))
+      Box(Modifier.fillMaxSize().clickable { expanded = false }.testTag(C.BrowseCityTags.FABSCRIM))
     }
 
     Column(

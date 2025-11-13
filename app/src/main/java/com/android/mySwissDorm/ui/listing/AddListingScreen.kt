@@ -4,7 +4,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
 import com.android.mySwissDorm.ui.InputSanitizers
@@ -25,7 +25,6 @@ import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
@@ -184,20 +183,8 @@ fun AddListingScreen(
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FilledTonalButton(
-                        onClick = { /* TODO: implement image selection */},
-                        colors =
-                            ButtonColors(
-                                containerColor = TextBoxColor,
-                                contentColor = MainColor,
-                                disabledContentColor = TextBoxColor,
-                                disabledContainerColor = TextBoxColor),
-                        shape = RoundedCornerShape(14.dp)) {
-                          Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
-                          Spacer(Modifier.width(8.dp))
-                          Text("Add pictures")
-                        }
-                  }
+                    DefaultAddPhotoButton(onSelectPhoto = {}) // TODO display photo
+              }
             }
 
         // Date Picker Dialog

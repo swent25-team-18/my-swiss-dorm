@@ -37,10 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
-import coralColor
-
-@OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +66,7 @@ fun AdminPageScreen(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color(coralColor))
+                    tint = MainColor)
               }
             })
       },
@@ -78,7 +76,7 @@ fun AdminPageScreen(
             Button(
                 onClick = vm::submit,
                 enabled = !ui.isSubmitting,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(coralColor)),
+                colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(16.dp)) {
                   if (ui.isSubmitting) {
@@ -244,9 +242,9 @@ fun AdminPageScreen(
 @Composable
 private fun coloring(): androidx.compose.material3.TextFieldColors {
   return OutlinedTextFieldDefaults.colors(
-      focusedBorderColor = Color(coralColor),
-      unfocusedBorderColor = Color(coralColor),
-      focusedLabelColor = Color(coralColor),
+      focusedBorderColor = MainColor,
+      unfocusedBorderColor = MainColor,
+      focusedLabelColor = MainColor,
       unfocusedLabelColor = Color.Gray)
 }
 

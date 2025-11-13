@@ -1,4 +1,3 @@
-// ⬇️ NEW: central sanitizers
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,20 +25,21 @@ import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
-
-@OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
+import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
+import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddListingScreen(
-    addListingViewModel: AddListingViewModel = viewModel(),
     modifier: Modifier = Modifier,
-    onOpenMap: () -> Unit,
+    addListingViewModel: AddListingViewModel = viewModel(),
     onConfirm: (RentalListing) -> Unit,
     onBack: () -> Unit
 ) {
   val listingUIState by addListingViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  var showDatePicker by remember { mutableStateOf(false) }
 
   Scaffold(
       topBar = {
@@ -152,6 +152,24 @@ fun AddListingScreen(
                     style = MaterialTheme.typography.bodySmall)
               }
 
+              // Start Date Field
+              OutlinedButton(
+                  onClick = { showDatePicker = true },
+                  modifier = Modifier.testTag("startDateField").fillMaxWidth().height(56.dp),
+                  shape = RoundedCornerShape(16.dp),
+                  colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically) {
+                          Text("Start Date", color = TextColor)
+                          Text(
+                              formatDate(ui.startDate),
+                              color = TextColor,
+                              style = MaterialTheme.typography.bodyMedium)
+                        }
+                  }
+
               DescriptionField(
                   value = ui.description,
                   onValueChange = { addListingViewModel.setDescription(it) },
@@ -177,5 +195,12 @@ fun AddListingScreen(
                         }
                   }
             }
+
+        // Date Picker Dialog
+        CustomDatePickerDialog(
+            showDialog = showDatePicker,
+            initialDate = ui.startDate,
+            onDismiss = { showDatePicker = false },
+            onDateSelected = { timestamp -> addListingViewModel.setStartDate(timestamp) })
       }
 }

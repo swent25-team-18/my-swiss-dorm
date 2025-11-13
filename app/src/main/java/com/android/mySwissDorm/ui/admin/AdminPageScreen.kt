@@ -50,6 +50,31 @@ import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 
+// Documentation was made with the help of AI
+/**
+ * Admin page screen for creating and managing entities (Cities, Residencies, Universities).
+ *
+ * This screen provides a form-based interface for administrators to add new entities to the system.
+ * It supports three entity types:
+ * - **City**: Requires name, description, image ID, and location
+ * - **Residency**: Requires name, description, city, location, and optional email, phone, website
+ * - **University**: Requires name, city, email, phone, website URL, and location
+ *
+ * The screen features:
+ * - Entity type selection chips (City, Residency, University)
+ * - Dynamic form fields based on selected entity type
+ * - Custom location picker with autocomplete search
+ * - Input sanitization and validation via [SanitizedOutlinedTextField]
+ * - Save button with loading state and success/error messages
+ *
+ * @param vm The [AdminPageViewModel] that manages the form state and submission logic. Defaults to
+ *   a new instance created via [viewModel].
+ * @param canAccess Whether the current user has admin access. If false, displays "Admins only."
+ *   message and returns early.
+ * @param onBack Callback invoked when the back button is clicked to navigate away from the screen.
+ * @see AdminPageViewModel for state management and validation logic
+ * @see CustomLocationDialog for location selection functionality
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPageScreen(
@@ -304,10 +329,21 @@ fun AdminPageScreen(
       }
 }
 
+/**
+ * A chip component for selecting entity types in the admin page.
+ *
+ * Displays an [AssistChip] with customizable styling based on selection state. When selected, the
+ * chip displays a check icon and uses MainColor background with white text. When unselected, it
+ * uses TextBoxColor background with TextColor text.
+ *
+ * @param text The label text to display on the chip (e.g., "City", "Residency", "University").
+ * @param selected Whether this chip is currently selected.
+ * @param testTag The test tag identifier for UI testing. Should be from [C.AdminPageTags].
+ * @param onClick Callback invoked when the chip is clicked to change the entity type.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EntityChip(text: String, selected: Boolean, testTag: String, onClick: () -> Unit) {
-  // This helper was implemented using AI
   AssistChip(
       onClick = onClick,
       colors =

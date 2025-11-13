@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -128,6 +129,14 @@ class AddListingScreenTest : FirestoreTest() {
     runTest { switchToUser(FakeUser.FakeUser1) }
     setContentWith {}
 
+    // Wait for the field to appear (CI may be slower)
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
     composeRule
         .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
         .assertIsDisplayed()
@@ -139,10 +148,26 @@ class AddListingScreenTest : FirestoreTest() {
     runTest { switchToUser(FakeUser.FakeUser1) }
     setContentWith {}
 
+    // Wait for the field to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
     composeRule
         .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
         .performClick()
     composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
     // Date picker dialog should be displayed
     composeRule
@@ -158,20 +183,39 @@ class AddListingScreenTest : FirestoreTest() {
     runTest { switchToUser(FakeUser.FakeUser1) }
     setContentWith {}
 
+    // Wait for the field to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
     composeRule
         .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
         .performClick()
     composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
     composeRule
         .onNodeWithTag(C.CustomDatePickerDialogTags.CANCEL_BUTTON, useUnmergedTree = true)
         .performClick()
     composeRule.waitForIdle()
 
-    // Date picker should be dismissed
-    composeRule
-        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
-        .assertDoesNotExist()
+    // Wait for date picker to be dismissed
+    composeRule.waitUntil(2_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
   }
 
   @Test
@@ -190,11 +234,28 @@ class AddListingScreenTest : FirestoreTest() {
         .performTextInput("1200")
     composeRule.onNode(hasText("Description") and hasSetTextAction()).performTextInput("Near EPFL")
 
+    // Wait for the start date field to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
     // Open date picker and select a date
     composeRule
         .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
         .performClick()
     composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
     composeRule
         .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
         .performClick()

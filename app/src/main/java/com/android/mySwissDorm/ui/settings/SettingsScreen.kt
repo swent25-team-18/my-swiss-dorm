@@ -353,9 +353,13 @@ fun SettingsScreenContent(
                                                   overflow = TextOverflow.Ellipsis,
                                                   modifier =
                                                       Modifier.weight(1f).padding(end = 12.dp))
-                                              TextButton(onClick = { onUnblockUser(contact.uid) }) {
-                                                Text("Unblock")
-                                              }
+                                              TextButton(
+                                                  onClick = { onUnblockUser(contact.uid) },
+                                                  colors =
+                                                      ButtonDefaults.textButtonColors(
+                                                          contentColor = MainColor)) {
+                                                    Text("Unblock")
+                                                  }
                                             }
                                       }
                                     }

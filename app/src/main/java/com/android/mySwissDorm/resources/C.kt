@@ -81,6 +81,7 @@ object C {
     const val AVATAR_BOX = "view_user_profile_avatar"
     const val RESIDENCE_CHIP = "view_user_profile_residence_chip"
     const val SEND_MESSAGE = "view_user_profile_send_message"
+    const val BLOCK_BUTTON = "view_user_profile_block_button"
     const val RETRY_BTN = "view_user_profile_retry"
     const val ERROR_TEXT = "view_user_profile_error"
     const val LOADING = "view_user_profile_loading"

@@ -142,18 +142,43 @@ class BrowseCityViewModel(
       try {
         // Fetch all and filter by residency.city value matching the given cityName string
         val all = listingsRepository.getAllRentalListings()
+        val currentUid = auth.currentUser?.uid
+
+        val blockedCache = mutableMapOf<String, Boolean>()
+
         val filtered =
             all.filter { listing ->
-              try {
-                val residency = residenciesRepository.getResidency(listing.residencyName)
-                location.distanceTo(residency.location) <= maxDistanceToDisplay
-              } catch (e: Exception) {
-                Log.w(
-                    "BrowseCityViewModel",
-                    "Could not find residency ${listing.residencyName} for listing ${listing.uid}",
-                    e)
-                false
-              }
+              val matchesLocation =
+                  try {
+                    val residency = residenciesRepository.getResidency(listing.residencyName)
+                    location.distanceTo(residency.location) <= maxDistanceToDisplay
+                  } catch (e: Exception) {
+                    Log.w(
+                        "BrowseCityViewModel",
+                        "Could not find residency ${listing.residencyName} for listing ${listing.uid}",
+                        e)
+                    false
+                  }
+
+              if (!matchesLocation) return@filter false
+
+              if (currentUid == null || currentUid == listing.ownerId) return@filter true
+
+              val ownerId = listing.ownerId
+              val hasBlocked =
+                  blockedCache.getOrPut(ownerId) {
+                    runCatching { profileRepository.getBlockedUserIds(ownerId) }
+                        .onFailure {
+                          Log.w(
+                              "BrowseCityViewModel",
+                              "Failed to fetch blocked list for owner $ownerId",
+                              it)
+                        }
+                        .getOrDefault(emptyList())
+                        .contains(currentUid)
+                  }
+
+              !hasBlocked
             }
         val mapped = filtered.map { it.toCardUI() }
 

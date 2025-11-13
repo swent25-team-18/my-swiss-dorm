@@ -153,6 +153,32 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun listingFromOwnerWhoBlockedUser_isHidden() = runTest {
+    // Owner of listingLaus2 (FakeUser2) blocks current user (FakeUser1)
+    switchToUser(FakeUser.FakeUser2)
+    profileRepo.addBlockedUser(otherUid, ownerUid)
+
+    // Current user tries to browse listings again
+    switchToUser(FakeUser.FakeUser1)
+
+    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation, onSelectListing = {})
+    }
+
+    compose.waitUntil(5_000) { vm.uiState.value.listings.items.isNotEmpty() }
+
+    // User should still see their own listing
+    compose
+        .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus1.uid))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // Listing owned by blocker must be hidden
+    compose.onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus2.uid)).assertDoesNotExist()
+  }
+
+  @Test
   fun onlyLausanneResidenciesAreDisplayed() {
     compose.setContent {
       BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))

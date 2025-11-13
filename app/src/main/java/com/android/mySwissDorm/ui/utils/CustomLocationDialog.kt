@@ -11,12 +11,14 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,7 +34,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
+import com.google.firebase.database.collection.LLRBNode
 
 /**
  * A dialog for entering a custom location, with autocomplete suggestions.
@@ -59,7 +66,9 @@ fun CustomLocationDialog(
   var showDropdown by remember { mutableStateOf(false) }
 
   Dialog(onDismissRequest = onDismiss) {
-    Card(shape = RoundedCornerShape(16.dp)) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = BackGroundColor)) {
       Box {
         Column(
             modifier = Modifier.padding(top = 48.dp, bottom = 24.dp, start = 24.dp, end = 24.dp),
@@ -67,9 +76,10 @@ fun CustomLocationDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
                   "Enter Custom Location",
+                  color = TextColor,
                   fontSize = 20.sp,
                   fontWeight = FontWeight.Bold,
-                  modifier = Modifier.testTag(C.CustomLocationDialogTags.DIALOG_TITLE))
+                  modifier = Modifier.testTag(C.CustomLocationDialogTags.DIALOG_TITLE,))
               ExposedDropdownMenuBox(
                   expanded = showDropdown && locationSuggestions.isNotEmpty(),
                   onExpandedChange = { showDropdown = it },
@@ -81,6 +91,13 @@ fun CustomLocationDialog(
                           showDropdown = true
                         },
                         label = { Text("Location") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MainColor,
+                            unfocusedBorderColor = TextBoxColor,
+                            focusedLabelColor = MainColor,
+                            cursorColor = TextColor,
+                            unfocusedLabelColor = TextColor.copy(alpha = 0.6f)
+                        ),
                         modifier =
                             Modifier.menuAnchor()
                                 .fillMaxWidth()
@@ -129,7 +146,7 @@ fun CustomLocationDialog(
                   enabled = currentLocation != null,
                   colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                   modifier = Modifier.testTag(C.CustomLocationDialogTags.CONFIRM_BUTTON)) {
-                    Text("Confirm")
+                    Text("Confirm", color = White)
                   }
             }
         IconButton(

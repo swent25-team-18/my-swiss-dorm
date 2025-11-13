@@ -18,6 +18,7 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
+import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -176,6 +177,80 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
     // Listing owned by blocker must be hidden
     compose.onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus2.uid)).assertDoesNotExist()
+  }
+
+  @Test
+  fun reviewFromUserWhoBlockedViewer_isHidden() = runTest {
+    // Reviewer (FakeUser2) blocks current user (FakeUser1)
+    switchToUser(FakeUser.FakeUser2)
+    profileRepo.addBlockedUser(otherUid, ownerUid)
+
+    // Current user browses reviews
+    switchToUser(FakeUser.FakeUser1)
+
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
+    }
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+
+    compose.waitUntil(5_000) { vm.uiState.value.residencies.items.isNotEmpty() }
+
+    // Reviews from blocker should not appear
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.reviewText(reviewWoko1.uid), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
+    compose.onNodeWithTag(C.BrowseCityTags.reviewText(reviewWoko1.uid)).assertDoesNotExist()
+
+    compose.waitUntil(5_000) {
+      vm.uiState.value.residencies.items.any {
+        it.title == vortex.name && it.latestReview?.ownerId == ownerUid
+      }
+    }
+    val vortexItem =
+        vm.uiState.value.residencies.items.first {
+          it.title == vortex.name && it.latestReview != null
+        }
+    assertEquals(ownerUid, vortexItem.latestReview?.ownerId)
+    val latestReviewUid = vortexItem.latestReview!!.uid
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewText(latestReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun reviewFromBlockedUser_doesNotAffectDisplayedMeanGrade() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+    profileRepo.addBlockedUser(otherUid, ownerUid)
+
+    switchToUser(FakeUser.FakeUser1)
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
+    }
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+    compose.waitUntil(5_000) { vm.uiState.value.residencies.items.isNotEmpty() }
+
+    val vortexCardTag = C.BrowseCityTags.residencyCard(vortex.name)
+    compose.onNodeWithTag(vortexCardTag).performScrollTo().assertIsDisplayed()
+
+    compose.waitUntil(5_000) {
+      vm.uiState.value.residencies.items.any {
+        it.title == vortex.name && it.latestReview?.ownerId == ownerUid
+      }
+    }
+    val vortexItem =
+        vm.uiState.value.residencies.items.first {
+          it.title == vortex.name && it.latestReview != null
+        }
+    val latestReviewUid = vortexItem.latestReview!!.uid
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewText(latestReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+    assertEquals(reviewVortex1.grade, vortexItem.meanGrade, 0.001)
   }
 
   @Test

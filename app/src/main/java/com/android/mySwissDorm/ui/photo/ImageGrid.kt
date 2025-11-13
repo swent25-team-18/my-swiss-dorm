@@ -29,6 +29,18 @@ import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 
+/**
+ * An image grid is a scrollable row which displays a list of images.
+ *
+ * @param imageUris the images uri to be displayed
+ * @param isEditingMode indicate if an option to remove the image is available
+ * @param onRemove the action on removing an image of the grid
+ * @param modifier the modifier of the grid
+ * @param imageSize the size of an image
+ *
+ * Note: onRemove should update the list of images given to the function in order the displays only
+ * the non deleted images.
+ */
 @Composable
 fun ImageGrid(
     imageUris: List<Uri>,

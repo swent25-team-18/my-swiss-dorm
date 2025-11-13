@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
-import com.android.mySwissDorm.ui.theme.*
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
@@ -62,6 +61,7 @@ object SettingsTestTags {
   const val BlockedContactsToggle = "BlockedContactsToggle"
   const val BlockedContactsList = "BlockedContactsList"
   const val BottomBar = "bottom_nav"
+  const val ContributionsButton = "ContributionsButton"
 
   fun switch(label: String) = "SettingSwitch_$label"
 }
@@ -74,7 +74,8 @@ fun SettingsScreen(
     navigationActions: NavigationActions? = null,
     vm: SettingsViewModel = viewModel(),
     isAdmin: Boolean = false,
-    onAdminClick: () -> Unit = {}
+    onAdminClick: () -> Unit = {},
+    onContributionClick: () -> Unit = {}
 ) {
   val ui by vm.uiState.collectAsState()
 
@@ -96,6 +97,7 @@ fun SettingsScreen(
       },
       onProfileClick = onProfileClick,
       onDeleteAccount = { vm.deleteAccount { _, _ -> } },
+      onContributionClick = onContributionClick,
       onUnblockUser = { uid -> vm.unblockUser(uid) },
       navigationActions = navigationActions,
       isAdmin = isAdmin,
@@ -117,6 +119,7 @@ fun SettingsScreenContent(
     onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
     onDeleteAccount: () -> Unit = {},
+    onContributionClick: () -> Unit = {},
     onUnblockUser: (String) -> Unit = {},
     navigationActions: NavigationActions? = null,
     isAdmin: Boolean = false,
@@ -260,6 +263,18 @@ fun SettingsScreenContent(
                                       disabledContainerColor = MaterialTheme.colorScheme.surface),
                               modifier =
                                   Modifier.fillMaxWidth().testTag(SettingsTestTags.EmailField))
+                          Spacer(Modifier.height(12.dp))
+                          Button(
+                              onClick = onContributionClick,
+                              modifier =
+                                  Modifier.fillMaxWidth()
+                                      .testTag(SettingsTestTags.ContributionsButton),
+                              shape = RoundedCornerShape(16.dp),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = MainColor, contentColor = White)) {
+                                Text("View my contributions")
+                              }
                         }
 
                         // ---- Privacy ---------------------------------------------------------

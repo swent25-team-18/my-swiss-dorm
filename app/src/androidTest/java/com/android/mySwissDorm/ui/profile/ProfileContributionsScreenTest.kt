@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.profile
 
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -51,25 +52,19 @@ class ProfileContributionsScreenTest {
   }
 
   @Test
-  fun cardClick_triggersCallback_forFirstItem() {
+  fun card_isNotClickable() {
     val items =
         listOf(
             Contribution("Listing l1", "Nice room near EPFL"),
             Contribution("Request r1", "Student interested in a room"))
-    var clickedTitle: String? = null
-
     rule.setContent {
       MySwissDormAppTheme {
         ProfileContributionsScreen(
-            contributions = items,
-            onBackClick = {},
-            onContributionClick = { clickedTitle = it.title })
+            contributions = items, onBackClick = {}, onContributionClick = {})
       }
     }
 
-    // Click the clickable Card (using the new stable tag)
-    rule.onNodeWithTag("card_contrib_0", useUnmergedTree = true).performClick()
-    assertEquals("Listing l1", clickedTitle)
+    rule.onNodeWithTag("card_contrib_0", useUnmergedTree = true).assertHasNoClickAction()
   }
 
   @Test

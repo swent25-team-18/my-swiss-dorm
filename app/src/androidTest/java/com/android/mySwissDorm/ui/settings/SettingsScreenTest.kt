@@ -39,9 +39,11 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   /** Set content with our explicit VM. */
-  private fun setContentWithVm() {
+  private fun setContentWithVm(onContributionClick: () -> Unit = {}) {
     val vm = makeVm()
-    compose.setContent { MySwissDormAppTheme { SettingsScreen(vm = vm) } }
+    compose.setContent {
+      MySwissDormAppTheme { SettingsScreen(vm = vm, onContributionClick = onContributionClick) }
+    }
   }
 
   override fun createRepositories() {
@@ -249,6 +251,21 @@ class SettingsScreenTest : FirestoreTest() {
     compose.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
     compose.waitUntilTagGone(listTag)
     compose.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
+  }
+
+  @Test
+  fun contributionsButton_triggersCallback() = runTest {
+    var clicked = false
+    setContentWithVm(onContributionClick = { clicked = true })
+    compose.waitForIdle()
+
+    val scrollTag = SettingsTestTags.SettingsScroll
+    val buttonTag = SettingsTestTags.ContributionsButton
+
+    compose.scrollUntilDisplayed(scrollTag, buttonTag)
+    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    assert(clicked)
   }
 
   @Test

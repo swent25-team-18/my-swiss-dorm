@@ -161,4 +161,12 @@ object C {
 
     const val MORE_OPTION = "customLocationDialogMoreOption"
   }
+
+  object AdminPageTags {
+    const val CHIP_CITY = "adminPageChipCity"
+    const val CHIP_RESIDENCY = "adminPageChipResidency"
+    const val CHIP_UNIVERSITY = "adminPageChipUniversity"
+    const val LOCATION_BUTTON = "adminPageLocationButton"
+    const val SAVE_BUTTON = "adminPageSaveButton"
+  }
 }

@@ -37,9 +37,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.SanitizedOutlinedTextField
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -85,7 +87,8 @@ fun AdminPageScreen(
                 onClick = vm::submit,
                 enabled = !ui.isSubmitting,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier =
+                    Modifier.fillMaxWidth().height(52.dp).testTag(C.AdminPageTags.SAVE_BUTTON),
                 shape = RoundedCornerShape(24.dp)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
@@ -115,15 +118,24 @@ fun AdminPageScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                EntityChip("City", ui.selected == AdminPageViewModel.EntityType.CITY) {
-                  vm.onTypeChange(AdminPageViewModel.EntityType.CITY)
-                }
-                EntityChip("Residency", ui.selected == AdminPageViewModel.EntityType.RESIDENCY) {
-                  vm.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
-                }
-                EntityChip("University", ui.selected == AdminPageViewModel.EntityType.UNIVERSITY) {
-                  vm.onTypeChange(AdminPageViewModel.EntityType.UNIVERSITY)
-                }
+                EntityChip(
+                    text = "City",
+                    selected = ui.selected == AdminPageViewModel.EntityType.CITY,
+                    testTag = C.AdminPageTags.CHIP_CITY) {
+                      vm.onTypeChange(AdminPageViewModel.EntityType.CITY)
+                    }
+                EntityChip(
+                    text = "Residency",
+                    selected = ui.selected == AdminPageViewModel.EntityType.RESIDENCY,
+                    testTag = C.AdminPageTags.CHIP_RESIDENCY) {
+                      vm.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
+                    }
+                EntityChip(
+                    text = "University",
+                    selected = ui.selected == AdminPageViewModel.EntityType.UNIVERSITY,
+                    testTag = C.AdminPageTags.CHIP_UNIVERSITY) {
+                      vm.onTypeChange(AdminPageViewModel.EntityType.UNIVERSITY)
+                    }
               }
 
               SanitizedOutlinedTextField(
@@ -251,7 +263,7 @@ fun AdminPageScreen(
               // Location picker button
               TextButton(
                   onClick = { vm.onCustomLocationClick() },
-                  modifier = Modifier.fillMaxWidth(),
+                  modifier = Modifier.fillMaxWidth().testTag(C.AdminPageTags.LOCATION_BUTTON),
                   shape = RoundedCornerShape(16.dp)) {
                     Icon(
                         imageVector = Icons.Default.Place,
@@ -294,8 +306,8 @@ fun AdminPageScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EntityChip(text: String, selected: Boolean, onClick: () -> Unit) {
-  // This helper was implemented using AI {
+private fun EntityChip(text: String, selected: Boolean, testTag: String, onClick: () -> Unit) {
+  // This helper was implemented using AI
   AssistChip(
       onClick = onClick,
       colors =
@@ -307,5 +319,6 @@ private fun EntityChip(text: String, selected: Boolean, onClick: () -> Unit) {
       leadingIcon =
           if (selected) {
             { Icon(Icons.Default.Check, contentDescription = null, tint = White) }
-          } else null)
+          } else null,
+      modifier = Modifier.testTag(testTag))
 }

@@ -116,7 +116,7 @@ private fun ProfileScreenContent(
   var lastLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.lastName) }
   var languageLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.language) }
   var residenceLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.residence) }
-  var displayPhotoDialog by remember { mutableStateOf(false) }
+  var displayPhotoDialog by rememberSaveable(state.isEditing) { mutableStateOf(false) }
 
   // When entering edit mode, snapshot current VM values into locals to start from latest persisted
   // values
@@ -126,6 +126,7 @@ private fun ProfileScreenContent(
       lastLocal = state.lastName
       languageLocal = state.language
       residenceLocal = state.residence
+      displayPhotoDialog = false
     }
   }
 
@@ -294,7 +295,10 @@ private fun ProfileScreenContent(
             }
         if (displayPhotoDialog) {
           AddPhotoDialog(
-              onSelectPhoto = onChangeProfilePicture,
+              onSelectPhoto = {
+                displayPhotoDialog = false
+                onChangeProfilePicture(it)
+              },
               onDismissRequest = { displayPhotoDialog = false })
         }
       }

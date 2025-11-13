@@ -14,15 +14,23 @@ import org.junit.Test
 
 class AddPhotoButtonTest {
 
-  val simpleTestTag = "simpleTestTag"
+  private val simpleTestTag = "simpleTestTag"
 
   @get:Rule val compose = createComposeRule()
 
-  @Test
-  fun buttonIsDisplayed() {
+  private fun setContentButton() {
     compose.setContent {
       AddPhotoButton({}) { Text("Add photo", modifier = Modifier.testTag(simpleTestTag)) }
     }
+  }
+
+  private fun setContentDialog() {
+    compose.setContent { AddPhotoDialog({}, {}) }
+  }
+
+  @Test
+  fun buttonIsDisplayed() {
+    setContentButton()
 
     compose.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).assertIsDisplayed()
     compose.onNodeWithTag(simpleTestTag, useUnmergedTree = true).assertIsDisplayed()
@@ -30,7 +38,7 @@ class AddPhotoButtonTest {
 
   @Test
   fun dialogIsDisplayed() {
-    compose.setContent { AddPhotoDialog({}, {}) }
+    setContentDialog()
 
     compose.onNodeWithTag(C.AddPhotoButtonTags.DIALOG).assertIsDisplayed()
     compose.onNodeWithTag(C.CameraButtonTag.TAG).assertIsDisplayed()
@@ -45,12 +53,14 @@ class AddPhotoButtonTest {
 
   @Test
   fun clickOnButtonDisplaysDialog() {
-    compose.setContent { AddPhotoButton({}) {} }
+    setContentButton()
 
     compose.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).assertIsDisplayed()
     compose.onNodeWithTag(C.AddPhotoButtonTags.DIALOG).assertIsNotDisplayed()
 
     compose.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).performClick()
+
+    compose.waitForIdle()
 
     compose.onNodeWithTag(C.AddPhotoButtonTags.DIALOG).assertIsDisplayed()
   }

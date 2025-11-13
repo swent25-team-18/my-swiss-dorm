@@ -81,7 +81,11 @@ fun AddPhotoButton(
 
   if (displayDialog) {
     AddPhotoDialog(
-        onSelectPhoto = { onSelectPhoto(it) }, onDismissRequest = { displayDialog = false })
+        onSelectPhoto = {
+          displayDialog = false
+          onSelectPhoto(it)
+        },
+        onDismissRequest = { displayDialog = false })
   }
 }
 
@@ -90,7 +94,8 @@ fun AddPhotoButton(
  * from his gallery.
  *
  * @param onSelectPhoto Function called when a Photo is selected.
- * @param onDismissRequest Function called when the dialog should be closed.
+ * @param onDismissRequest Function called when the dialog is dismissed (e.g. tapping outside or
+ *   pressing back). This should be considered a cancel action, make sure to handle cleanup.
  */
 @Composable
 fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit) {
@@ -110,10 +115,7 @@ fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit)
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
               CameraButton(
-                  onSave = {
-                    onSelectPhoto(it)
-                    onDismissRequest()
-                  },
+                  onSave = { onSelectPhoto(it) },
                   modifier = Modifier.fillMaxWidth(0.9f),
                   colors =
                       ButtonDefaults.filledTonalButtonColors(
@@ -126,10 +128,7 @@ fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit)
                     modifier = Modifier.testTag(C.AddPhotoButtonTags.CAMERA_BUTTON_TEXT))
               }
               GalleryButton(
-                  onSelect = {
-                    onSelectPhoto(it)
-                    onDismissRequest()
-                  },
+                  onSelect = { onSelectPhoto(it) },
                   modifier = Modifier.fillMaxWidth(0.9f),
                   colors =
                       ButtonDefaults.filledTonalButtonColors(

@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -129,7 +130,7 @@ class AddListingScreenTest : FirestoreTest() {
     runTest { switchToUser(FakeUser.FakeUser1) }
     setContentWith {}
 
-    // Wait for the field to appear (CI may be slower)
+    // Wait for the field to exist in the tree, then scroll to it (it may be below the fold)
     composeRule.waitUntil(5_000) {
       composeRule
           .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
@@ -137,8 +138,10 @@ class AddListingScreenTest : FirestoreTest() {
           .isNotEmpty()
     }
 
+    // Scroll to the field and assert it's displayed (performScrollTo waits internally)
     composeRule
         .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performScrollTo()
         .assertIsDisplayed()
     composeRule.onNodeWithText("Start Date", useUnmergedTree = true).assertIsDisplayed()
   }
@@ -148,7 +151,7 @@ class AddListingScreenTest : FirestoreTest() {
     runTest { switchToUser(FakeUser.FakeUser1) }
     setContentWith {}
 
-    // Wait for the field to appear
+    // Wait for the field to exist, then scroll to it
     composeRule.waitUntil(5_000) {
       composeRule
           .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
@@ -156,8 +159,10 @@ class AddListingScreenTest : FirestoreTest() {
           .isNotEmpty()
     }
 
+    // Scroll to the field and click it (performScrollTo waits internally)
     composeRule
         .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performScrollTo()
         .performClick()
     composeRule.waitForIdle()
 
@@ -183,7 +188,7 @@ class AddListingScreenTest : FirestoreTest() {
     runTest { switchToUser(FakeUser.FakeUser1) }
     setContentWith {}
 
-    // Wait for the field to appear
+    // Wait for the field to exist, then scroll to it
     composeRule.waitUntil(5_000) {
       composeRule
           .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
@@ -191,8 +196,10 @@ class AddListingScreenTest : FirestoreTest() {
           .isNotEmpty()
     }
 
+    // Scroll to the field and click it (performScrollTo waits internally)
     composeRule
         .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performScrollTo()
         .performClick()
     composeRule.waitForIdle()
 
@@ -234,7 +241,7 @@ class AddListingScreenTest : FirestoreTest() {
         .performTextInput("1200")
     composeRule.onNode(hasText("Description") and hasSetTextAction()).performTextInput("Near EPFL")
 
-    // Wait for the start date field to appear
+    // Wait for the start date field to exist, then scroll to it
     composeRule.waitUntil(5_000) {
       composeRule
           .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
@@ -242,9 +249,10 @@ class AddListingScreenTest : FirestoreTest() {
           .isNotEmpty()
     }
 
-    // Open date picker and select a date
+    // Scroll to the field and click it to open date picker
     composeRule
         .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performScrollTo()
         .performClick()
     composeRule.waitForIdle()
 

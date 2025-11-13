@@ -26,6 +26,8 @@ sealed class Screen(
 
   data object Admin : Screen("admin", "Admin")
 
+  data object ProfileContributions : Screen("profileContributions", "Profile Contributions")
+
   data class BrowseOverview(private val location: Location, private val startTab: Int = 1) :
       Screen(
           route =

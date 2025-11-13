@@ -3,14 +3,19 @@ package com.android.mySwissDorm.ui.utils
 import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.TimeZone
+
+private val SWITZERLAND_TIMEZONE = TimeZone.getTimeZone("Europe/Zurich")
 
 /** UI-friendly date/time helpers for listing screens. */
 object DateTimeUi {
 
-  /** Format a Timestamp as dd/MM/yyyy, or "—" if null. */
+  /** Format a Timestamp as DD/MM/yyyy in Switzerland timezone, or "—" if null. */
   fun formatDate(ts: Timestamp?): String {
     return ts?.toDate()?.let { date ->
-      SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
+      val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+      formatter.timeZone = SWITZERLAND_TIMEZONE
+      formatter.format(date)
     } ?: "—"
   }
 

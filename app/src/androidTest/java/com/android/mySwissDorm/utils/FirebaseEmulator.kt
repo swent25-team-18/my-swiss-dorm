@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.utils
 
 import android.util.Log
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.auth
@@ -26,6 +27,13 @@ import org.json.JSONObject
  * This object will automatically use the emulators if they are running when the tests start.
  */
 object FirebaseEmulator {
+  private fun ensureFirebaseAppInitialized() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    if (FirebaseApp.getApps(context).isEmpty()) {
+      FirebaseApp.initializeApp(context)
+    }
+  }
+
   val auth
     get() = Firebase.auth
 
@@ -65,6 +73,7 @@ object FirebaseEmulator {
   val isRunning = areEmulatorsRunning()
 
   init {
+    ensureFirebaseAppInitialized()
     if (isRunning) {
       auth.useEmulator(HOST, AUTH_PORT)
       firestore.useEmulator(HOST, FIRESTORE_PORT)

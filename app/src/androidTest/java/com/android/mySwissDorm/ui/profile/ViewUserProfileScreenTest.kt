@@ -62,9 +62,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     // Switch back to FakeUser1 to view FakeUser2's profile
     switchToUser(FakeUser.FakeUser1)
 
-    val vm =
-        ViewProfileScreenViewModel(
-            repo = profileRepo, auth = FirebaseEmulator.auth, db = FirebaseEmulator.firestore)
+    val vm = ViewProfileScreenViewModel(repo = profileRepo, auth = FirebaseEmulator.auth)
 
     compose.setContent {
       ViewUserProfileScreen(
@@ -129,9 +127,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     // Switch to FakeUser1 to view FakeUser2's profile (so send message button appears)
     switchToUser(FakeUser.FakeUser1)
 
-    val vm =
-        ViewProfileScreenViewModel(
-            repo = profileRepo, auth = FirebaseEmulator.auth, db = FirebaseEmulator.firestore)
+    val vm = ViewProfileScreenViewModel(repo = profileRepo, auth = FirebaseEmulator.auth)
 
     compose.setContent {
       ViewUserProfileScreen(
@@ -202,9 +198,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     var back = false
 
     compose.setContent {
-      val vm =
-          ViewProfileScreenViewModel(
-              repo = profileRepo, auth = FirebaseEmulator.auth, db = FirebaseEmulator.firestore)
+      val vm = ViewProfileScreenViewModel(repo = profileRepo, auth = FirebaseEmulator.auth)
       ViewUserProfileScreen(
           viewModel = vm, ownerId = ownerUid, onBack = { back = true }, onSendMessage = {})
     }
@@ -223,9 +217,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     compose.setContent {
       val vm =
           ViewProfileScreenViewModel(
-              repo = profileRepo,
-              auth = FirebaseEmulator.auth,
-              db = FirebaseEmulator.firestore) // ignored because previewUi != null
+              repo = profileRepo, auth = FirebaseEmulator.auth) // ignored because previewUi != null
       ViewUserProfileScreen(
           viewModel = vm,
           ownerId = null, // null ownerId means no send message button appears
@@ -286,9 +278,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     val missingId = "missing-" + java.util.UUID.randomUUID().toString()
 
     compose.setContent {
-      val vm =
-          ViewProfileScreenViewModel(
-              repo = profileRepo, auth = FirebaseEmulator.auth, db = FirebaseEmulator.firestore)
+      val vm = ViewProfileScreenViewModel(repo = profileRepo, auth = FirebaseEmulator.auth)
       ViewUserProfileScreen(
           viewModel = vm,
           ownerId = missingId, // not created in repo

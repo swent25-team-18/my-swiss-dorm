@@ -31,6 +31,10 @@ object InputSanitizers {
     // Search
     data object SearchQuery : FieldType()
 
+    data object City : FieldType()
+
+    data object Website : FieldType()
+
     // Listing
     data object Title : FieldType() // Listing title
 
@@ -52,6 +56,8 @@ object InputSanitizers {
       when (type) {
         FieldType.FirstName -> normalizeNameTyping(raw, NAME_MAX)
         FieldType.LastName -> normalizeNameTyping(raw, NAME_MAX)
+        FieldType.City -> normalizeNameTyping(raw, NAME_MAX)
+        FieldType.Website -> normalizeNameTyping(raw, RESIDENCY_MAX) // for now
         FieldType.Phone -> normalizePhoneTyping(raw)
         FieldType.Email -> normalizeEmailTyping(raw)
         FieldType.SearchQuery -> normalizeSearchTyping(raw)
@@ -67,6 +73,9 @@ object InputSanitizers {
       when (type) {
         FieldType.FirstName -> validateNameFinal(raw, "error.firstname") as ValidationResult<T>
         FieldType.LastName -> validateNameFinal(raw, "error.lastname") as ValidationResult<T>
+        FieldType.City -> validateNameFinal(raw, "error.city") as ValidationResult<T>
+        FieldType.Website ->
+            validateNameFinal(raw, "error.website") as ValidationResult<T> // for now
         FieldType.Phone -> validatePhoneFinal(raw) as ValidationResult<T>
         FieldType.Email -> validateEmailFinal(raw) as ValidationResult<T>
         FieldType.SearchQuery -> validateSearchFinal(raw) as ValidationResult<T>
@@ -113,10 +122,10 @@ object InputSanitizers {
   private val CONTROL_REGEX = Regex("\\p{C}+")
   private val WHITESPACE_REGEX = Regex("\\s+")
   private val NAME_FINAL_REGEX =
-      Regex("^[\\p{L}](?:[\\p{L}\\s\\-']*[\\p{L}])?$") // starts & ends with letter
+      Regex("^\\p{L}(?:[\\p{L}\\s\\-']*\\p{L})?$") // starts & ends with letter
   private val RES_ALLOWED_CHARS = Regex("[^\\p{L}\\p{N}\\s.,'()\\-/&]") // remove disallowed
   private val TITLE_ALLOWED_CHARS =
-      Regex("[^\\p{L}\\p{N}\\s.,'()\\-\\/&:+]") // broader than residency
+      Regex("[^\\p{L}\\p{N}\\s.,'()\\-/&:+]") // broader than residency
   private val DECIMAL_ONE_PLACE = Regex("^\\d{1,4}\\.\\d$") // up to 4 int digits + '.' + 1 frac
 
   private val EMAIL_REGEX = Regex("^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
@@ -148,7 +157,7 @@ object InputSanitizers {
     val digits = raw.filter(Char::isDigit)
     if (digits.isEmpty()) return ""
     val noLeading = digits.dropWhile { it == '0' }
-    val trimmed = if (noLeading.isEmpty()) "" else noLeading
+    val trimmed = noLeading.ifEmpty { "" }
     return trimmed.take(PHONE_LEN)
   }
 

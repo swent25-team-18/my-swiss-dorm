@@ -41,6 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -52,20 +53,40 @@ import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.theme.rememberDarkModePreference
 
-/** Centralized test tags for the Settings screen. */
-object SettingsTestTags {
-  const val SettingsScroll = "SettingsScroll"
-  const val ProfileButton = "ProfileButton"
-  const val EmailField = "EmailField"
-  const val DeleteAccountButton = "DeleteAccountButton"
-  const val BlockedContactsToggle = "BlockedContactsToggle"
-  const val BlockedContactsList = "BlockedContactsList"
-  const val BottomBar = "bottom_nav"
-  const val ContributionsButton = "ContributionsButton"
-
-  fun switch(label: String) = "SettingSwitch_$label"
-}
-
+// Documentation was made with the help of AI
+/**
+ * Settings screen for user preferences and account management.
+ *
+ * This screen provides a comprehensive interface for users to manage their app settings, account
+ * information, and preferences. It includes:
+ * - **Profile Section**: Displays user name and avatar with navigation to profile screen
+ * - **Notifications**: Toggle switches for message and listing notifications
+ * - **Account**: Email display and contributions button
+ * - **Privacy**: Read receipts toggle and blocked contacts management
+ * - **Accessibility**: Dark mode preference and anonymous mode toggle
+ * - **Admin Section**: Admin page access (only visible to admins)
+ * - **Delete Account**: Button to permanently delete the user account
+ *
+ * The screen features:
+ * - Responsive layout that adapts to tablet and compact screen sizes
+ * - Dark mode preference that persists across app restarts
+ * - Blocked contacts expandable list with unblock functionality
+ * - Input sanitization and validation
+ * - Loading states and error handling
+ *
+ * @param onItemClick Callback invoked when a settings item is clicked (currently not implemented).
+ * @param onProfileClick Callback invoked when the profile button is clicked to navigate to profile
+ *   screen.
+ * @param navigationActions Optional [NavigationActions] for bottom bar navigation. If null, bottom
+ *   bar is hidden.
+ * @param vm The [SettingsViewModel] that manages the settings state and user data. Defaults to a
+ *   new instance created via [viewModel].
+ * @param isAdmin Whether the current user has admin access. If true, displays Admin section.
+ * @param onAdminClick Callback invoked when the admin page button is clicked.
+ * @param onContributionClick Callback invoked when the contributions button is clicked.
+ * @see SettingsViewModel for state management and user data handling
+ * @see SettingsScreenContent for the actual UI implementation
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -112,6 +133,23 @@ private val previewUiState =
         topItems = emptyList(),
         accountItems = emptyList())
 
+/**
+ * Content composable for the Settings screen UI.
+ *
+ * This is the actual implementation of the settings screen UI, separated from the state management
+ * logic in [SettingsScreen]. It displays all settings sections, handles user interactions, and
+ * manages local UI state (toggles, expanded states).
+ *
+ * @param ui The [SettingsUiState] containing user data and blocked contacts.
+ * @param onItemClick Callback invoked when a settings item is clicked.
+ * @param onProfileClick Callback invoked when the profile button is clicked.
+ * @param onDeleteAccount Callback invoked when the delete account button is confirmed.
+ * @param onContributionClick Callback invoked when the contributions button is clicked.
+ * @param onUnblockUser Callback invoked when a blocked user is unblocked.
+ * @param navigationActions Optional [NavigationActions] for bottom bar navigation.
+ * @param isAdmin Whether to display the Admin section.
+ * @param onAdminClick Callback invoked when the admin page button is clicked.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun SettingsScreenContent(
@@ -170,7 +208,7 @@ fun SettingsScreenContent(
               val contentWidthCap = if (isTablet) 600.dp else maxW
 
               LazyColumn(
-                  modifier = Modifier.fillMaxSize().testTag(SettingsTestTags.SettingsScroll),
+                  modifier = Modifier.fillMaxSize().testTag(C.SettingsTags.SETTINGS_SCROLL),
                   horizontalAlignment = Alignment.CenterHorizontally,
                   contentPadding =
                       PaddingValues(
@@ -218,7 +256,7 @@ fun SettingsScreenContent(
 
                                 IconButton(
                                     onClick = onProfileClick,
-                                    modifier = Modifier.testTag(SettingsTestTags.ProfileButton)) {
+                                    modifier = Modifier.testTag(C.SettingsTags.PROFILE_BUTTON)) {
                                       Icon(
                                           imageVector = Icons.Filled.ChevronRight,
                                           contentDescription = "Open profile",
@@ -262,13 +300,13 @@ fun SettingsScreenContent(
                                           MaterialTheme.colorScheme.onSurfaceVariant,
                                       disabledContainerColor = MaterialTheme.colorScheme.surface),
                               modifier =
-                                  Modifier.fillMaxWidth().testTag(SettingsTestTags.EmailField))
+                                  Modifier.fillMaxWidth().testTag(C.SettingsTags.EMAIL_FIELD))
                           Spacer(Modifier.height(12.dp))
                           Button(
                               onClick = onContributionClick,
                               modifier =
                                   Modifier.fillMaxWidth()
-                                      .testTag(SettingsTestTags.ContributionsButton),
+                                      .testTag(C.SettingsTags.CONTRIBUTIONS_BUTTON),
                               shape = RoundedCornerShape(16.dp),
                               colors =
                                   ButtonDefaults.buttonColors(
@@ -305,7 +343,7 @@ fun SettingsScreenContent(
                                 IconButton(
                                     onClick = { blockedExpanded = !blockedExpanded },
                                     modifier =
-                                        Modifier.testTag(SettingsTestTags.BlockedContactsToggle)) {
+                                        Modifier.testTag(C.SettingsTags.BLOCKED_CONTACTS_TOGGLE)) {
                                       Icon(
                                           imageVector =
                                               Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -330,7 +368,7 @@ fun SettingsScreenContent(
                                 modifier =
                                     Modifier.fillMaxWidth()
                                         .bringIntoViewRequester(blockedBringIntoView)
-                                        .testTag(SettingsTestTags.BlockedContactsList)) {
+                                        .testTag(C.SettingsTags.BLOCKED_CONTACTS_LIST)) {
                                   Column(Modifier.padding(12.dp)) {
                                     if (blockedContacts.isEmpty()) {
                                       Text(
@@ -353,9 +391,13 @@ fun SettingsScreenContent(
                                                   overflow = TextOverflow.Ellipsis,
                                                   modifier =
                                                       Modifier.weight(1f).padding(end = 12.dp))
-                                              TextButton(onClick = { onUnblockUser(contact.uid) }) {
-                                                Text("Unblock")
-                                              }
+                                              TextButton(
+                                                  onClick = { onUnblockUser(contact.uid) },
+                                                  colors =
+                                                      ButtonDefaults.textButtonColors(
+                                                          contentColor = MainColor)) {
+                                                    Text("Unblock")
+                                                  }
                                             }
                                       }
                                     }
@@ -377,28 +419,31 @@ fun SettingsScreenContent(
                               checked = anonymous,
                               onCheckedChange = { anonymous = it })
                         }
-                      }
-                    }
-                    item {
-                      if (isAdmin) {
-                        SectionLabel("Admin")
-                        CardBlock {
-                          Row(
-                              modifier =
-                                  Modifier.fillMaxWidth()
-                                      .padding(horizontal = 16.dp, vertical = 10.dp)
-                                      .clickable(onClick = onAdminClick),
-                              verticalAlignment = Alignment.CenterVertically,
-                              horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(
-                                    "Admin page",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = TextColor,
-                                )
-                                Icon(
-                                    imageVector = Icons.Filled.ChevronRight,
-                                    contentDescription = "Open admin page")
-                              }
+
+                        // ---- Admin ------------------------------------------------------------
+                        if (isAdmin) {
+                          SectionLabel("Admin")
+                          CardBlock {
+                            Row(
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable(onClick = onAdminClick),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween) {
+                                  Text(
+                                      "Admin page",
+                                      style = MaterialTheme.typography.bodyLarge,
+                                      color = TextColor,
+                                      maxLines = 2,
+                                      overflow = TextOverflow.Ellipsis,
+                                      modifier = Modifier.weight(1f).padding(end = 12.dp))
+                                  Icon(
+                                      imageVector = Icons.Filled.ChevronRight,
+                                      contentDescription = "Open admin page",
+                                      tint = TextColor)
+                                }
+                          }
                         }
                       }
                     }
@@ -423,7 +468,7 @@ fun SettingsScreenContent(
                                 modifier =
                                     Modifier.fillMaxWidth()
                                         .padding(top = 8.dp)
-                                        .testTag(SettingsTestTags.DeleteAccountButton)
+                                        .testTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
                                         .navigationBarsPadding()) {
                                   Text(if (ui.isDeleting) "DELETING…" else "DELETE MY ACCOUNT")
                                 }
@@ -507,7 +552,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
               modifier = Modifier.weight(1f).padding(end = 12.dp))
           Switch(
               modifier =
-                  Modifier.testTag(SettingsTestTags.switch(label)).semantics(
+                  Modifier.testTag(C.SettingsTags.switch(label)).semantics(
                       mergeDescendants = true) {
                         role = Role.Switch
                         stateDescription = if (checked) "On" else "Off"
@@ -530,7 +575,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
           horizontalArrangement = Arrangement.End) {
             Switch(
                 modifier =
-                    Modifier.testTag(SettingsTestTags.switch(label)).semantics(
+                    Modifier.testTag(C.SettingsTags.switch(label)).semantics(
                         mergeDescendants = true) {
                           role = Role.Switch
                           stateDescription = if (checked) "On" else "Off"

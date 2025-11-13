@@ -15,6 +15,7 @@ import java.util.Calendar
 import java.util.TimeZone
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -177,5 +178,202 @@ class CustomDatePickerDialogTest {
     assert(hour == 0 && minute == 0 && second == 0) {
       "Selected date should be at midnight in Switzerland timezone, but was $hour:$minute:$second"
     }
+  }
+
+  @Test
+  fun selected_date_is_not_in_past() = runTest {
+    var selectedDate: Timestamp? = null
+
+    composeRule.setContent {
+      MySwissDormAppTheme {
+        CustomDatePickerDialog(
+            showDialog = true,
+            initialDate = null,
+            onDismiss = {},
+            onDateSelected = { selectedDate = it })
+      }
+    }
+
+    composeRule.waitForIdle()
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    // Verify the selected date is not in the past
+    val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    todaySwiss.set(Calendar.HOUR_OF_DAY, 0)
+    todaySwiss.set(Calendar.MINUTE, 0)
+    todaySwiss.set(Calendar.SECOND, 0)
+    todaySwiss.set(Calendar.MILLISECOND, 0)
+    val todayMidnight = todaySwiss.timeInMillis
+
+    val selectedSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    selectedSwiss.time = selectedDate!!.toDate()
+    selectedSwiss.set(Calendar.HOUR_OF_DAY, 0)
+    selectedSwiss.set(Calendar.MINUTE, 0)
+    selectedSwiss.set(Calendar.SECOND, 0)
+    selectedSwiss.set(Calendar.MILLISECOND, 0)
+    val selectedMidnight = selectedSwiss.timeInMillis
+
+    assertTrue(
+        "Selected date should be today or in the future, but was before today",
+        selectedMidnight >= todayMidnight)
+  }
+
+  @Test
+  fun today_date_can_be_selected() = runTest {
+    var selectedDate: Timestamp? = null
+
+    // Set initial date to today
+    val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    todaySwiss.set(Calendar.HOUR_OF_DAY, 12)
+    todaySwiss.set(Calendar.MINUTE, 0)
+    todaySwiss.set(Calendar.SECOND, 0)
+    todaySwiss.set(Calendar.MILLISECOND, 0)
+    val todayTimestamp = Timestamp(todaySwiss.time)
+
+    composeRule.setContent {
+      MySwissDormAppTheme {
+        CustomDatePickerDialog(
+            showDialog = true,
+            initialDate = todayTimestamp,
+            onDismiss = {},
+            onDateSelected = { selectedDate = it })
+      }
+    }
+
+    composeRule.waitForIdle()
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    // Verify the selected date is today (at midnight)
+    val selectedSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    selectedSwiss.time = selectedDate!!.toDate()
+    val selectedYear = selectedSwiss.get(Calendar.YEAR)
+    val selectedMonth = selectedSwiss.get(Calendar.MONTH)
+    val selectedDay = selectedSwiss.get(Calendar.DAY_OF_MONTH)
+
+    val currentYear = todaySwiss.get(Calendar.YEAR)
+    val currentMonth = todaySwiss.get(Calendar.MONTH)
+    val currentDay = todaySwiss.get(Calendar.DAY_OF_MONTH)
+
+    assertTrue(
+        "Selected date should be today",
+        selectedYear == currentYear && selectedMonth == currentMonth && selectedDay == currentDay)
+  }
+
+  @Test
+  fun future_date_can_be_selected() = runTest {
+    var selectedDate: Timestamp? = null
+
+    // Set initial date to a future date (30 days from now)
+    val futureSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    futureSwiss.add(Calendar.DAY_OF_YEAR, 30)
+    futureSwiss.set(Calendar.HOUR_OF_DAY, 12)
+    futureSwiss.set(Calendar.MINUTE, 0)
+    futureSwiss.set(Calendar.SECOND, 0)
+    futureSwiss.set(Calendar.MILLISECOND, 0)
+    val futureTimestamp = Timestamp(futureSwiss.time)
+
+    composeRule.setContent {
+      MySwissDormAppTheme {
+        CustomDatePickerDialog(
+            showDialog = true,
+            initialDate = futureTimestamp,
+            onDismiss = {},
+            onDateSelected = { selectedDate = it })
+      }
+    }
+
+    composeRule.waitForIdle()
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    // Verify the selected date is in the future (at least today)
+    val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    todaySwiss.set(Calendar.HOUR_OF_DAY, 0)
+    todaySwiss.set(Calendar.MINUTE, 0)
+    todaySwiss.set(Calendar.SECOND, 0)
+    todaySwiss.set(Calendar.MILLISECOND, 0)
+    val todayMidnight = todaySwiss.timeInMillis
+
+    val selectedSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    selectedSwiss.time = selectedDate!!.toDate()
+    selectedSwiss.set(Calendar.HOUR_OF_DAY, 0)
+    selectedSwiss.set(Calendar.MINUTE, 0)
+    selectedSwiss.set(Calendar.SECOND, 0)
+    selectedSwiss.set(Calendar.MILLISECOND, 0)
+    val selectedMidnight = selectedSwiss.timeInMillis
+
+    assertTrue("Selected date should be today or in the future", selectedMidnight >= todayMidnight)
+  }
+
+  @Test
+  fun past_date_as_initial_is_adjusted_to_today() {
+    // Create a past date (30 days ago)
+    val pastSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    pastSwiss.add(Calendar.DAY_OF_YEAR, -30)
+    pastSwiss.set(Calendar.HOUR_OF_DAY, 12)
+    pastSwiss.set(Calendar.MINUTE, 0)
+    pastSwiss.set(Calendar.SECOND, 0)
+    pastSwiss.set(Calendar.MILLISECOND, 0)
+    val pastTimestamp = Timestamp(pastSwiss.time)
+
+    var selectedDate: Timestamp? = null
+
+    composeRule.setContent {
+      MySwissDormAppTheme {
+        CustomDatePickerDialog(
+            showDialog = true,
+            initialDate = pastTimestamp,
+            onDismiss = {},
+            onDateSelected = { selectedDate = it })
+      }
+    }
+
+    composeRule.waitForIdle()
+    // Dialog should still be displayed (the picker will show today's date instead of the past date)
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // When OK is clicked, the selected date should be today or later
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    // Verify the selected date is not in the past
+    val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    todaySwiss.set(Calendar.HOUR_OF_DAY, 0)
+    todaySwiss.set(Calendar.MINUTE, 0)
+    todaySwiss.set(Calendar.SECOND, 0)
+    todaySwiss.set(Calendar.MILLISECOND, 0)
+    val todayMidnight = todaySwiss.timeInMillis
+
+    val selectedSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    selectedSwiss.time = selectedDate!!.toDate()
+    selectedSwiss.set(Calendar.HOUR_OF_DAY, 0)
+    selectedSwiss.set(Calendar.MINUTE, 0)
+    selectedSwiss.set(Calendar.SECOND, 0)
+    selectedSwiss.set(Calendar.MILLISECOND, 0)
+    val selectedMidnight = selectedSwiss.timeInMillis
+
+    assertTrue(
+        "Selected date should be today or in the future, even if initial date was in the past",
+        selectedMidnight >= todayMidnight)
   }
 }

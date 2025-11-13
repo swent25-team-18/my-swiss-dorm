@@ -1,8 +1,10 @@
 package com.android.mySwissDorm.ui.utils
 
+import android.content.res.Configuration
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -45,8 +47,6 @@ fun CustomDatePickerDialog(
         }
       }
 
-  // Create DatePickerState - only recreate when initialMillis changes
-  // This ensures the state is stable when the dialog is open
   val datePickerState =
       remember(initialMillis) {
         DatePickerState(
@@ -75,11 +75,7 @@ fun CustomDatePickerDialog(
                   swissCal.set(year, month, day, 0, 0, 0)
                   swissCal.set(Calendar.MILLISECOND, 0)
 
-                  // Convert to UTC
-                  val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-                  utcCal.timeInMillis = swissCal.timeInMillis
-
-                  onDateSelected(Timestamp(utcCal.time))
+                  onDateSelected(Timestamp(swissCal.time))
                 }
                 onDismiss()
               },
@@ -94,15 +90,35 @@ fun CustomDatePickerDialog(
                 Text("Cancel")
               }
         }) {
-          DatePicker(
-              state = datePickerState,
-              colors =
-                  DatePickerDefaults.colors(
-                      containerColor = BackGroundColor,
-                      selectedDayContainerColor = MainColor,
-                      selectedDayContentColor = Color.White,
-                      todayDateBorderColor = MainColor,
-                      todayContentColor = MainColor))
+          val currentConfig = LocalConfiguration.current
+          val swissConfig =
+              remember(currentConfig) {
+                Configuration(currentConfig).apply { setLocale(SWITZERLAND_LOCALE) }
+              }
+
+          CompositionLocalProvider(LocalConfiguration provides swissConfig) {
+            DatePicker(
+                state = datePickerState,
+                colors =
+                    DatePickerDefaults.colors(
+                        containerColor = BackGroundColor,
+                        selectedDayContainerColor = MainColor,
+                        selectedDayContentColor = Color.White,
+                        todayDateBorderColor = MainColor,
+                        todayContentColor = MainColor,
+                        dateTextFieldColors =
+                            TextFieldDefaults.colors(
+                                focusedContainerColor = BackGroundColor,
+                                unfocusedContainerColor = BackGroundColor,
+                                focusedIndicatorColor = MainColor,
+                                unfocusedIndicatorColor = TextColor,
+                                errorIndicatorColor = Color.Red,
+                                focusedTextColor = TextColor,
+                                unfocusedTextColor = TextColor,
+                                focusedLabelColor = TextColor,
+                                unfocusedLabelColor = TextColor,
+                                cursorColor = MainColor)))
+          }
         }
   }
 }

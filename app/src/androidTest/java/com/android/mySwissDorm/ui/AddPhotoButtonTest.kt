@@ -25,7 +25,7 @@ class AddPhotoButtonTest {
     }
 
     compose.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).assertIsDisplayed()
-    compose.onNodeWithTag(simpleTestTag).assertIsDisplayed()
+    compose.onNodeWithTag(simpleTestTag, useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
@@ -35,8 +35,12 @@ class AddPhotoButtonTest {
     compose.onNodeWithTag(C.AddPhotoButtonTags.DIALOG).assertIsDisplayed()
     compose.onNodeWithTag(C.CameraButtonTag.TAG).assertIsDisplayed()
     compose.onNodeWithTag(C.GalleryButtonTag.TAG).assertIsDisplayed()
-    compose.onNodeWithTag(C.AddPhotoButtonTags.CAMERA_BUTTON_TEXT).assertIsDisplayed()
-    compose.onNodeWithTag(C.AddPhotoButtonTags.GALLERY_BUTTON_TEXT).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.AddPhotoButtonTags.CAMERA_BUTTON_TEXT, useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.AddPhotoButtonTags.GALLERY_BUTTON_TEXT, useUnmergedTree = true)
+        .assertIsDisplayed()
   }
 
   @Test

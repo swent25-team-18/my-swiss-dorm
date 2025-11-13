@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.rental.RentalListing
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
 import com.android.mySwissDorm.ui.InputSanitizers
@@ -96,7 +97,7 @@ fun AddListingScreen(
               TitleField(
                   value = ui.title,
                   onValueChange = { addListingViewModel.setTitle(it) },
-                  modifier = Modifier.testTag("titleField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddListingScreenTags.TITLE_FIELD).fillMaxWidth())
 
               ResidencyDropdownResID(
                   selected = ui.residencyName,
@@ -130,7 +131,7 @@ fun AddListingScreen(
                   value = ui.sizeSqm,
                   onValueChange = { addListingViewModel.setSizeSqm(it) },
                   externalErrorKey = sizeErrKey,
-                  modifier = Modifier.testTag("sizeField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddListingScreenTags.SIZE_FIELD).fillMaxWidth())
 
               if (sizeInvalid) {
                 Text(
@@ -143,7 +144,7 @@ fun AddListingScreen(
                   value = ui.price,
                   onValueChange = { addListingViewModel.setPrice(it) },
                   externalErrorKey = priceErrKey,
-                  modifier = Modifier.testTag("priceField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddListingScreenTags.PRICE_FIELD).fillMaxWidth())
 
               if (priceInvalid) {
                 Text(
@@ -155,7 +156,10 @@ fun AddListingScreen(
               // Start Date Field
               OutlinedButton(
                   onClick = { showDatePicker = true },
-                  modifier = Modifier.testTag("startDateField").fillMaxWidth().height(56.dp),
+                  modifier =
+                      Modifier.testTag(C.AddListingScreenTags.START_DATE_FIELD)
+                          .fillMaxWidth()
+                          .height(56.dp),
                   shape = RoundedCornerShape(16.dp),
                   colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
                     Row(
@@ -174,7 +178,7 @@ fun AddListingScreen(
                   value = ui.description,
                   onValueChange = { addListingViewModel.setDescription(it) },
                   maxLines = 6,
-                  modifier = Modifier.testTag("descField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddListingScreenTags.DESC_FIELD).fillMaxWidth())
 
               Text("Photos", style = MaterialTheme.typography.titleMedium)
               Row(

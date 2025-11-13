@@ -3,8 +3,11 @@ package com.android.mySwissDorm.ui.utils
 import android.content.res.Configuration
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -79,6 +82,7 @@ fun CustomDatePickerDialog(
                 }
                 onDismiss()
               },
+              modifier = Modifier.testTag(C.CustomDatePickerDialogTags.OK_BUTTON),
               colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
                 Text("OK")
               }
@@ -86,6 +90,7 @@ fun CustomDatePickerDialog(
         dismissButton = {
           TextButton(
               onClick = onDismiss,
+              modifier = Modifier.testTag(C.CustomDatePickerDialogTags.CANCEL_BUTTON),
               colors = ButtonDefaults.textButtonColors(contentColor = TextColor)) {
                 Text("Cancel")
               }

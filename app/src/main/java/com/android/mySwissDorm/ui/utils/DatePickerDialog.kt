@@ -20,8 +20,8 @@ private val SWITZERLAND_TIMEZONE = TimeZone.getTimeZone("Europe/Zurich")
 private val SWITZERLAND_LOCALE = Locale("fr", "CH")
 
 /**
- * SelectableDates implementation that prevents selecting past dates. Only dates from today onwards
- * (in Switzerland timezone) are selectable.
+ * [SelectableDates] implementation that prevents selecting past dates. Only dates from today
+ * onwards (in Switzerland timezone) are selectable.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 private class FutureSelectableDates : SelectableDates {
@@ -60,7 +60,24 @@ private class FutureSelectableDates : SelectableDates {
   }
 }
 
-/** A reusable date picker dialog component. */
+/**
+ * A reusable date picker dialog component with Switzerland timezone support and past date
+ * prevention.
+ *
+ * Features:
+ * - All dates are interpreted in Switzerland timezone (Europe/Zurich)
+ * - Past dates cannot be selected (automatically disabled in UI)
+ * - Selected dates are normalized to midnight in Switzerland timezone
+ * - If [initialDate] is in the past, today's date is used instead
+ *
+ * @param showDialog Controls dialog visibility
+ * @param initialDate Initial date to display (null = current date). Past dates are adjusted to
+ *   today
+ * @param onDismiss Callback when dialog is dismissed
+ * @param onDateSelected Callback with selected date as [Timestamp] at midnight in Switzerland
+ *   timezone
+ * @param yearRange Available year range (default: 2025-3000)
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomDatePickerDialog(

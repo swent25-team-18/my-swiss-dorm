@@ -26,6 +26,9 @@ import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
+import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 
 /**
  * Edit screen for an existing rental listing.
@@ -68,6 +71,7 @@ fun EditListingScreen(
   // Reactive UI state for the form.
   val listingUIState by editListingViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  var showDatePicker by remember { mutableStateOf(false) }
 
   Scaffold(
       topBar = {
@@ -210,6 +214,24 @@ fun EditListingScreen(
                     style = MaterialTheme.typography.bodySmall)
               }
 
+              // Start Date Field
+              OutlinedButton(
+                  onClick = { showDatePicker = true },
+                  modifier = Modifier.testTag("startDateField").fillMaxWidth().height(56.dp),
+                  shape = RoundedCornerShape(16.dp),
+                  colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically) {
+                          Text("Start Date", color = TextColor)
+                          Text(
+                              formatDate(ui.startDate),
+                              color = TextColor,
+                              style = MaterialTheme.typography.bodyMedium)
+                        }
+                  }
+
               DescriptionField(
                   value = ui.description,
                   onValueChange = { editListingViewModel.setDescription(it) },
@@ -235,5 +257,12 @@ fun EditListingScreen(
                         }
                   }
             }
+
+        // Date Picker Dialog
+        CustomDatePickerDialog(
+            showDialog = showDatePicker,
+            initialDate = ui.startDate,
+            onDismiss = { showDatePicker = false },
+            onDateSelected = { timestamp -> editListingViewModel.setStartDate(timestamp) })
       }
 }

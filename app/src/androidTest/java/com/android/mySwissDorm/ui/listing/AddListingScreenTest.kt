@@ -40,9 +40,7 @@ class AddListingScreenTest : FirestoreTest() {
   private fun setContentWith(onConfirmCapture: (String) -> Unit = {}) {
     composeRule.setContent {
       AddListingScreen(
-          onConfirm = { added -> onConfirmCapture(added.uid) },
-          onOpenMap = {},
-          onBack = { /* no-op */})
+          onConfirm = { added -> onConfirmCapture(added.uid) }, onBack = { /* no-op */})
     }
   }
 

@@ -85,15 +85,17 @@ class AdminPageViewModel(
   }
 
   fun onCustomLocationClick() {
-    uiState = uiState.copy(
-        showCustomLocationDialog = true,
-        customLocationQuery = uiState.location?.name ?: "",
-        customLocation = uiState.location)
+    uiState =
+        uiState.copy(
+            showCustomLocationDialog = true,
+            customLocationQuery = uiState.location?.name ?: "",
+            customLocation = uiState.location)
   }
 
   fun dismissCustomLocationDialog() {
-    uiState = uiState.copy(
-        showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
+    uiState =
+        uiState.copy(
+            showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
   }
 
   fun onLocationConfirm(location: Location) {

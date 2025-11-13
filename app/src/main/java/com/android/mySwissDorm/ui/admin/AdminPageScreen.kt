@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.admin
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -30,19 +28,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -80,8 +74,7 @@ fun AdminPageScreen(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = MainColor
-                )
+                    tint = MainColor)
               }
             })
       },
@@ -133,137 +126,125 @@ fun AdminPageScreen(
                 }
               }
 
-            SanitizedOutlinedTextField(
-                value = ui.name,
-                onValueChange = vm::onName,
-                label = "Name",
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                fieldType = InputSanitizers.FieldType.FirstName,
-                placeholder = "Name",
-                imeAction = ImeAction.Next
-            )
+              SanitizedOutlinedTextField(
+                  value = ui.name,
+                  onValueChange = vm::onName,
+                  label = "Name",
+                  singleLine = true,
+                  modifier = Modifier.fillMaxWidth(),
+                  fieldType = InputSanitizers.FieldType.FirstName,
+                  placeholder = "Name",
+                  imeAction = ImeAction.Next)
 
               // Entity-specific fields
               when (ui.selected) {
                 // City fields
                 AdminPageViewModel.EntityType.CITY -> {
-                    SanitizedOutlinedTextField(
-                        value = ui.description,
-                        onValueChange = vm::onDescription,
-                        label = "Description",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.Description,
-                        placeholder = "Description",
-                        imeAction = ImeAction.Next
-                    )
-                    SanitizedOutlinedTextField(
-                        value = ui.imageId,
-                        onValueChange = vm::onImageId,
-                        label = "Image ID",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.Website, //for now
-                        placeholder = "Image ID",
-                        imeAction = ImeAction.Next
-                    )
+                  SanitizedOutlinedTextField(
+                      value = ui.description,
+                      onValueChange = vm::onDescription,
+                      label = "Description",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.Description,
+                      placeholder = "Description",
+                      imeAction = ImeAction.Next)
+                  SanitizedOutlinedTextField(
+                      value = ui.imageId,
+                      onValueChange = vm::onImageId,
+                      label = "Image ID",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.Website, // for now
+                      placeholder = "Image ID",
+                      imeAction = ImeAction.Next)
                 }
                 // Residency fields
                 AdminPageViewModel.EntityType.RESIDENCY -> {
-                    SanitizedOutlinedTextField(
-                        value = ui.description,
-                        onValueChange = vm::onDescription,
-                        label = "Description",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.Description,
-                        placeholder = "Description",
-                        imeAction = ImeAction.Next
-                    )
-                    SanitizedOutlinedTextField(
-                        value = ui.city,
-                        onValueChange = vm::onCity,
-                        label = "City",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.City,
-                        placeholder = "City",
-                        imeAction = ImeAction.Next
-                    )
-                    SanitizedOutlinedTextField(
-                        value = ui.email,
-                        onValueChange = vm::onEmail,
-                        label = "Email",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.City,
-                        placeholder = "Email (optional)",
-                        imeAction = ImeAction.Next
-                    )
-                    SanitizedOutlinedTextField(
-                        value = ui.phone,
-                        onValueChange = vm::onPhone,
-                        label = "Phone",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.Phone,
-                        placeholder = "Phone (optional)",
-                        imeAction = ImeAction.Next
-                    )
-                    SanitizedOutlinedTextField(
-                        value = ui.website,
-                        onValueChange = vm::onWebsite,
-                        label = "Website",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.Website,
-                        placeholder = "Website (optional)",
-                        imeAction = ImeAction.Next
-                    )
+                  SanitizedOutlinedTextField(
+                      value = ui.description,
+                      onValueChange = vm::onDescription,
+                      label = "Description",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.Description,
+                      placeholder = "Description",
+                      imeAction = ImeAction.Next)
+                  SanitizedOutlinedTextField(
+                      value = ui.city,
+                      onValueChange = vm::onCity,
+                      label = "City",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.City,
+                      placeholder = "City",
+                      imeAction = ImeAction.Next)
+                  SanitizedOutlinedTextField(
+                      value = ui.email,
+                      onValueChange = vm::onEmail,
+                      label = "Email",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.City,
+                      placeholder = "Email (optional)",
+                      imeAction = ImeAction.Next)
+                  SanitizedOutlinedTextField(
+                      value = ui.phone,
+                      onValueChange = vm::onPhone,
+                      label = "Phone",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.Phone,
+                      placeholder = "Phone (optional)",
+                      imeAction = ImeAction.Next)
+                  SanitizedOutlinedTextField(
+                      value = ui.website,
+                      onValueChange = vm::onWebsite,
+                      label = "Website",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.Website,
+                      placeholder = "Website (optional)",
+                      imeAction = ImeAction.Next)
                 }
                 // University fields
                 AdminPageViewModel.EntityType.UNIVERSITY -> {
-                    SanitizedOutlinedTextField(
-                        value = ui.city,
-                        onValueChange = vm::onCity,
-                        label = "City",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.City,
-                        placeholder = "City",
-                        imeAction = ImeAction.Next
-                    )
-                    SanitizedOutlinedTextField(
-                        value = ui.email,
-                        onValueChange = vm::onEmail,
-                        label = "Email",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.Email,
-                        placeholder = "Email",
-                        imeAction = ImeAction.Next
-                    )
-                    SanitizedOutlinedTextField(
-                        value = ui.phone,
-                        onValueChange = vm::onPhone,
-                        label = "Phone",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.Phone,
-                        placeholder = "Phone",
-                        imeAction = ImeAction.Next
-                    )
-                    SanitizedOutlinedTextField(
-                        value = ui.website,
-                        onValueChange = vm::onWebsite,
-                        label = "Website",
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        fieldType = InputSanitizers.FieldType.Website,
-                        placeholder = "Website URL",
-                        imeAction = ImeAction.Next
-                    )
+                  SanitizedOutlinedTextField(
+                      value = ui.city,
+                      onValueChange = vm::onCity,
+                      label = "City",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.City,
+                      placeholder = "City",
+                      imeAction = ImeAction.Next)
+                  SanitizedOutlinedTextField(
+                      value = ui.email,
+                      onValueChange = vm::onEmail,
+                      label = "Email",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.Email,
+                      placeholder = "Email",
+                      imeAction = ImeAction.Next)
+                  SanitizedOutlinedTextField(
+                      value = ui.phone,
+                      onValueChange = vm::onPhone,
+                      label = "Phone",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.Phone,
+                      placeholder = "Phone",
+                      imeAction = ImeAction.Next)
+                  SanitizedOutlinedTextField(
+                      value = ui.website,
+                      onValueChange = vm::onWebsite,
+                      label = "Website",
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.Website,
+                      placeholder = "Website URL",
+                      imeAction = ImeAction.Next)
                 }
               }
 
@@ -287,16 +268,17 @@ fun AdminPageScreen(
 
         // Custom Location Dialog
         if (ui.showCustomLocationDialog) {
-          val onValueChange = remember<(String) -> Unit> {
-            { query -> vm.setCustomLocationQuery(query) }
-          }
-          val onDropDownLocationSelect = remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
-            { location -> vm.setCustomLocation(location) }
-          }
+          val onValueChange =
+              remember<(String) -> Unit> { { query -> vm.setCustomLocationQuery(query) } }
+          val onDropDownLocationSelect =
+              remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+                { location -> vm.setCustomLocation(location) }
+              }
           val onDismiss = remember { { vm.dismissCustomLocationDialog() } }
-          val onConfirm = remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
-            { location -> vm.onLocationConfirm(location) }
-          }
+          val onConfirm =
+              remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+                { location -> vm.onLocationConfirm(location) }
+              }
 
           CustomLocationDialog(
               value = ui.customLocationQuery,
@@ -314,17 +296,16 @@ fun AdminPageScreen(
 @Composable
 private fun EntityChip(text: String, selected: Boolean, onClick: () -> Unit) {
   // This helper was implemented using AI {
-    AssistChip(
-        onClick = onClick,
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = if (selected) MainColor else TextBoxColor,
-            labelColor = if (selected) White else TextColor,
-            leadingIconContentColor = if (selected) White else TextColor
-        ),
-        label = { Text(text) },
-        leadingIcon =
-            if (selected) {
-                { Icon(Icons.Default.Check, contentDescription = null, tint = White) }
-            } else null)
-  }
-
+  AssistChip(
+      onClick = onClick,
+      colors =
+          AssistChipDefaults.assistChipColors(
+              containerColor = if (selected) MainColor else TextBoxColor,
+              labelColor = if (selected) White else TextColor,
+              leadingIconContentColor = if (selected) White else TextColor),
+      label = { Text(text) },
+      leadingIcon =
+          if (selected) {
+            { Icon(Icons.Default.Check, contentDescription = null, tint = White) }
+          } else null)
+}

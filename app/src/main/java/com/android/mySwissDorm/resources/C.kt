@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.resources
 
+import android.net.Uri
 import com.android.mySwissDorm.ui.navigation.Screen
 
 // Like R, but C
@@ -189,5 +190,11 @@ object C {
     const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
 
     fun switch(label: String): String = "SettingSwitch_$label"
+  }
+
+  object ImageGridTags {
+    fun imageTag(uri: Uri): String = "ImageGridImage$uri"
+
+    fun deleteButtonTag(uri: Uri): String = "ImageGridDeleteButton$uri"
   }
 }

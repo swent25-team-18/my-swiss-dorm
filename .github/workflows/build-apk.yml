@@ -1,7 +1,9 @@
 name: Build APK Artifact
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -43,7 +45,9 @@ jobs:
         uses: android-actions/setup-android@v2.0.10
 
       - name: Build with Gradle
-        run: ./gradlew assembleRelease lint --parallel
+        env:
+          MAPS_API_KEY: ${{secrets.MAPS_API_KEY }}
+        run: ./gradlew assembleRelease -PMAPS_API_KEY="$MAPS_API_KEY" lint --parallel
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

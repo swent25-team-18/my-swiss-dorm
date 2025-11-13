@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -26,7 +25,6 @@ fun BottomNavigationMenu(
       val (label, icon) =
           when (screen) {
             Screen.Homepage -> screen.name to Icons.Filled.Home
-            Screen.AddHub -> screen.name to Icons.Filled.Add
             Screen.Inbox -> screen.name to Icons.Filled.Chat
             Screen.Settings -> screen.name to Icons.Filled.Settings
             else -> screen.name to Icons.Filled.Home
@@ -62,7 +60,6 @@ fun BottomBarFromNav(navigationActions: NavigationActions?) {
             Screen.Homepage
         route == Screen.Inbox.route -> Screen.Inbox
         route == Screen.Settings.route -> Screen.Settings
-        route == Screen.AddHub.route -> Screen.AddHub
         else -> Screen.Homepage
       }
 

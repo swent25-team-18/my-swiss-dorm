@@ -16,16 +16,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
 import com.android.mySwissDorm.ui.PriceField
-import com.android.mySwissDorm.ui.ResidencyDropdown
+import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
+import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
+import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 
 /**
  * Edit screen for an existing rental listing.
@@ -68,6 +72,7 @@ fun EditListingScreen(
   // Reactive UI state for the form.
   val listingUIState by editListingViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  var showDatePicker by remember { mutableStateOf(false) }
 
   Scaffold(
       topBar = {
@@ -84,12 +89,11 @@ fun EditListingScreen(
             actions = {
               IconButton(
                   onClick = {
-                    val cityName = listingUIState.residency.city
+                    val cityName = editListingViewModel.getCityName(listingUIState.residencyName)
                     editListingViewModel.deleteRentalListing(rentalListingID)
                     onDelete(cityName)
                   },
-                  modifier = Modifier.testTag("deleteButton") // ← add this
-                  ) {
+                  modifier = Modifier.testTag(C.EditListingScreenTags.DELETE_BUTTON)) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MainColor)
                   }
             })
@@ -121,7 +125,9 @@ fun EditListingScreen(
                               containerColor = MainColor,
                               disabledContainerColor = MainColor.copy(alpha = 0.3f)),
                       modifier =
-                          Modifier.weight(1f).height(52.dp).testTag("saveButton"), // ← add this
+                          Modifier.weight(1f)
+                              .height(52.dp)
+                              .testTag(C.EditListingScreenTags.SAVE_BUTTON),
                       shape = RoundedCornerShape(16.dp)) {
                         Text("Save", color = Color.White)
                       }
@@ -155,10 +161,10 @@ fun EditListingScreen(
               TitleField(
                   value = ui.title,
                   onValueChange = { editListingViewModel.setTitle(it) },
-                  modifier = Modifier.testTag("titleField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.EditListingScreenTags.TITLE_FIELD).fillMaxWidth())
 
-              ResidencyDropdown(
-                  selected = ui.residency.name,
+              ResidencyDropdownResID(
+                  selected = ui.residencyName,
                   onSelected = { editListingViewModel.setResidency(it) },
                   residencies = ui.residencies,
                   accentColor = MainColor)
@@ -188,7 +194,7 @@ fun EditListingScreen(
                   value = ui.sizeSqm,
                   onValueChange = { editListingViewModel.setSizeSqm(it) },
                   externalErrorKey = sizeErrKey,
-                  modifier = Modifier.testTag("sizeField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.EditListingScreenTags.SIZE_FIELD).fillMaxWidth())
 
               if (sizeInvalid) {
                 Text(
@@ -201,7 +207,7 @@ fun EditListingScreen(
                   value = ui.price,
                   onValueChange = { editListingViewModel.setPrice(it) },
                   externalErrorKey = priceErrKey,
-                  modifier = Modifier.testTag("priceField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.EditListingScreenTags.PRICE_FIELD).fillMaxWidth())
 
               if (priceInvalid) {
                 Text(
@@ -210,11 +216,32 @@ fun EditListingScreen(
                     style = MaterialTheme.typography.bodySmall)
               }
 
+              // Start Date Field
+              OutlinedButton(
+                  onClick = { showDatePicker = true },
+                  modifier =
+                      Modifier.testTag(C.EditListingScreenTags.START_DATE_FIELD)
+                          .fillMaxWidth()
+                          .height(56.dp),
+                  shape = RoundedCornerShape(16.dp),
+                  colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically) {
+                          Text("Start Date", color = TextColor)
+                          Text(
+                              formatDate(ui.startDate),
+                              color = TextColor,
+                              style = MaterialTheme.typography.bodyMedium)
+                        }
+                  }
+
               DescriptionField(
                   value = ui.description,
                   onValueChange = { editListingViewModel.setDescription(it) },
                   maxLines = 6,
-                  modifier = Modifier.testTag("descField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.EditListingScreenTags.DESC_FIELD).fillMaxWidth())
 
               Text("Photos", style = MaterialTheme.typography.titleMedium)
               Row(
@@ -235,5 +262,12 @@ fun EditListingScreen(
                         }
                   }
             }
+
+        // Date Picker Dialog
+        CustomDatePickerDialog(
+            showDialog = showDatePicker,
+            initialDate = ui.startDate,
+            onDismiss = { showDatePicker = false },
+            onDateSelected = { timestamp -> editListingViewModel.setStartDate(timestamp) })
       }
 }

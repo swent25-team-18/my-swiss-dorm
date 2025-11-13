@@ -211,16 +211,23 @@ fun ViewUserProfileScreen(
                 if (!isCurrentUser && ownerId != null && realVm != null) {
                   item {
                     Spacer(Modifier.height(12.dp))
-                    val buttonColor = if (ui.isBlocked) Color(0xFFFF4444) else TextBoxColor
-                    val textColor = if (ui.isBlocked) Color.White else TextColor
-                    val iconColor = if (ui.isBlocked) Color.White else TextColor
-                    val buttonText = if (ui.isBlocked) "Blocked" else "Block user"
+                    val isBlocked = ui.isBlocked
+                    val buttonColor = if (isBlocked) MainColor else Color(0xFFFF4444)
+                    val textColor = if (isBlocked) BackGroundColor else Color.White
+                    val iconColor = textColor
+                    val buttonText = if (isBlocked) "Unblock user" else "Block user"
 
                     Surface(
                         onClick = {
-                          if (!ui.isBlocked) {
-                            ownerId?.let { targetUid ->
-                              realVm?.blockUser(
+                          ownerId?.let { targetUid ->
+                            if (isBlocked) {
+                              realVm.unblockUser(
+                                  targetUid,
+                                  onError = { errorMsg ->
+                                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                  })
+                            } else {
+                              realVm.blockUser(
                                   targetUid,
                                   onError = { errorMsg ->
                                     Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
@@ -230,7 +237,8 @@ fun ViewUserProfileScreen(
                         },
                         shape = RoundedCornerShape(12.dp),
                         color = buttonColor,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        modifier =
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(T.BLOCK_BUTTON)) {
                           Row(
                               verticalAlignment = Alignment.CenterVertically,
                               modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {

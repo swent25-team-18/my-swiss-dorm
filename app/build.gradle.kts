@@ -23,6 +23,15 @@ keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 android {
     namespace = "com.android.mySwissDorm"
     compileSdk = 34
+    // Load the API key from local.properties (took it from bootcamp)
+    val mapsApiKeyFromCi = project.findProperty("MAPS_API_KEY") as? String
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(FileInputStream(localPropertiesFile))
+    }
+    val mapsApiKeyFromLocal = localProperties.getProperty("MAPS_API_KEY")
+    val mapsApiKey: String = mapsApiKeyFromCi ?: mapsApiKeyFromLocal ?: ""
 
     signingConfigs {
         create("release") {
@@ -43,6 +52,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
@@ -158,6 +168,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.storage)
 
     // Credential Manager (for Google Sign-In)
     implementation(libs.credentials)
@@ -202,6 +213,7 @@ dependencies {
 
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation(kotlin("test"))
+    implementation("com.google.maps.android:maps-compose:4.3.3")
 }
 
 tasks.withType<Test> {

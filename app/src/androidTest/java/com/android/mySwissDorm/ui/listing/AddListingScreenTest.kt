@@ -2,16 +2,21 @@ package com.android.mySwissDorm.ui.listing
 
 import AddListingScreen
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -40,9 +45,7 @@ class AddListingScreenTest : FirestoreTest() {
   private fun setContentWith(onConfirmCapture: (String) -> Unit = {}) {
     composeRule.setContent {
       AddListingScreen(
-          onConfirm = { added -> onConfirmCapture(added.uid) },
-          onOpenMap = {},
-          onBack = { /* no-op */})
+          onConfirm = { added -> onConfirmCapture(added.uid) }, onBack = { /* no-op */})
     }
   }
 
@@ -120,5 +123,153 @@ class AddListingScreenTest : FirestoreTest() {
 
     // Still disabled because size invalid (no decimal) and description empty
     composeRule.onNodeWithText("Confirm listing").assertIsEnabled()
+  }
+
+  @Test
+  fun start_date_field_is_displayed() = run {
+    runTest { switchToUser(FakeUser.FakeUser1) }
+    setContentWith {}
+
+    // Wait for the field to exist in the tree, then scroll to it (it may be below the fold)
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll to the field and assert it's displayed (performScrollTo waits internally)
+    composeRule
+        .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performScrollTo()
+        .assertIsDisplayed()
+    composeRule.onNodeWithText("Start Date", useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun clicking_start_date_opens_date_picker() = run {
+    runTest { switchToUser(FakeUser.FakeUser1) }
+    setContentWith {}
+
+    // Wait for the field to exist, then scroll to it
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll to the field and click it (performScrollTo waits internally)
+    composeRule
+        .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Date picker dialog should be displayed
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.CANCEL_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun date_picker_can_be_dismissed() = run {
+    runTest { switchToUser(FakeUser.FakeUser1) }
+    setContentWith {}
+
+    // Wait for the field to exist, then scroll to it
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll to the field and click it (performScrollTo waits internally)
+    composeRule
+        .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.CANCEL_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for date picker to be dismissed
+    composeRule.waitUntil(2_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
+  }
+
+  @Test
+  fun selecting_date_updates_start_date_and_enables_submit() = run {
+    runTest { switchToUser(FakeUser.FakeUser1) }
+    setContentWith {}
+
+    val confirmBtn = composeRule.onNodeWithText("Confirm listing").assertExists()
+    confirmBtn.assertIsNotEnabled()
+
+    // Fill required fields
+    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("Cozy studio")
+    composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("25.0")
+    composeRule
+        .onNode(hasText("Price (CHF / month)") and hasSetTextAction())
+        .performTextInput("1200")
+    composeRule.onNode(hasText("Description") and hasSetTextAction()).performTextInput("Near EPFL")
+
+    // Wait for the start date field to exist, then scroll to it
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.AddListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll to the field and click it to open date picker
+    composeRule
+        .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Button should now be enabled with all fields including date filled
+    confirmBtn.assertIsEnabled()
   }
 }

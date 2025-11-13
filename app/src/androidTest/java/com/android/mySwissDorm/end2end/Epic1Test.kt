@@ -23,6 +23,7 @@ import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
@@ -30,7 +31,6 @@ import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.screen.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
 import com.android.mySwissDorm.ui.navigation.Screen
-import com.android.mySwissDorm.ui.settings.SettingsTestTags
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator
 import com.android.mySwissDorm.utils.FakeUser
@@ -86,11 +86,21 @@ class Epic1Test : FirestoreTest() {
             description = "Fribourg is a bilingual city famous for its medieval architecture.",
             location = Location(name = "Fribourg", latitude = 46.8065, longitude = 7.16197),
             imageId = R.drawable.fribourg)
+    val resLaus =
+        Residency(
+            name = "Vortex",
+            description = "Vortex",
+            location = Location("Vortex", 46.52, 6.57),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null)
 
     val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
     runTest {
       switchToUser(FakeUser.FakeUser1)
       cities.forEach { CitiesRepositoryProvider.repository.addCity(it) }
+      ResidenciesRepositoryProvider.repository.addResidency(resLaus)
 
       rentalListing1 =
           rentalListing1.copy(
@@ -192,13 +202,13 @@ class Epic1Test : FirestoreTest() {
         // Wait until Settings screen is shown (use Profile button which exists there)
         composeTestRule.waitUntil(5_000) {
           composeTestRule
-              .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+              .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
               .isDisplayed()
         }
 
         // Go to profile screen from settings
         composeTestRule
-            .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+            .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
             .performClick()
 
         // Wait for profile screen title
@@ -215,7 +225,7 @@ class Epic1Test : FirestoreTest() {
         // Now we're back on Settings; assert again via Profile button visibility
         composeTestRule.waitUntil(5_000) {
           composeTestRule
-              .onNodeWithTag(SettingsTestTags.ProfileButton, useUnmergedTree = true)
+              .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
               .isDisplayed()
         }
 

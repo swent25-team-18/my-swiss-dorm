@@ -1,11 +1,9 @@
-// ⬇️ NEW: central sanitizers
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,31 +13,33 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.rental.RentalListing
+import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
 import com.android.mySwissDorm.ui.PriceField
-import com.android.mySwissDorm.ui.ResidencyDropdown
+import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.TextBoxColor
-
-@OptIn(ExperimentalMaterial3Api::class) val coralColor: Long = 0xFFFF6666
+import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
+import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddListingScreen(
-    addListingViewModel: AddListingViewModel = viewModel(),
     modifier: Modifier = Modifier,
-    onOpenMap: () -> Unit,
+    addListingViewModel: AddListingViewModel = viewModel(),
     onConfirm: (RentalListing) -> Unit,
     onBack: () -> Unit
 ) {
   val listingUIState by addListingViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  var showDatePicker by remember { mutableStateOf(false) }
 
   Scaffold(
       topBar = {
@@ -96,10 +96,10 @@ fun AddListingScreen(
               TitleField(
                   value = ui.title,
                   onValueChange = { addListingViewModel.setTitle(it) },
-                  modifier = Modifier.testTag("titleField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddListingScreenTags.TITLE_FIELD).fillMaxWidth())
 
-              ResidencyDropdown(
-                  selected = ui.residency.name,
+              ResidencyDropdownResID(
+                  selected = ui.residencyName,
                   onSelected = { addListingViewModel.setResidency(it) },
                   residencies = ui.residencies,
                   accentColor = MainColor)
@@ -130,7 +130,7 @@ fun AddListingScreen(
                   value = ui.sizeSqm,
                   onValueChange = { addListingViewModel.setSizeSqm(it) },
                   externalErrorKey = sizeErrKey,
-                  modifier = Modifier.testTag("sizeField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddListingScreenTags.SIZE_FIELD).fillMaxWidth())
 
               if (sizeInvalid) {
                 Text(
@@ -143,7 +143,7 @@ fun AddListingScreen(
                   value = ui.price,
                   onValueChange = { addListingViewModel.setPrice(it) },
                   externalErrorKey = priceErrKey,
-                  modifier = Modifier.testTag("priceField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddListingScreenTags.PRICE_FIELD).fillMaxWidth())
 
               if (priceInvalid) {
                 Text(
@@ -152,30 +152,46 @@ fun AddListingScreen(
                     style = MaterialTheme.typography.bodySmall)
               }
 
+              // Start Date Field
+              OutlinedButton(
+                  onClick = { showDatePicker = true },
+                  modifier =
+                      Modifier.testTag(C.AddListingScreenTags.START_DATE_FIELD)
+                          .fillMaxWidth()
+                          .height(56.dp),
+                  shape = RoundedCornerShape(16.dp),
+                  colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically) {
+                          Text("Start Date", color = TextColor)
+                          Text(
+                              formatDate(ui.startDate),
+                              color = TextColor,
+                              style = MaterialTheme.typography.bodyMedium)
+                        }
+                  }
+
               DescriptionField(
                   value = ui.description,
                   onValueChange = { addListingViewModel.setDescription(it) },
                   maxLines = 6,
-                  modifier = Modifier.testTag("descField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddListingScreenTags.DESC_FIELD).fillMaxWidth())
 
               Text("Photos", style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FilledTonalButton(
-                        onClick = { /* TODO: implement image selection */},
-                        colors =
-                            ButtonColors(
-                                containerColor = TextBoxColor,
-                                contentColor = MainColor,
-                                disabledContentColor = TextBoxColor,
-                                disabledContainerColor = TextBoxColor),
-                        shape = RoundedCornerShape(14.dp)) {
-                          Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
-                          Spacer(Modifier.width(8.dp))
-                          Text("Add pictures")
-                        }
-                  }
+                    DefaultAddPhotoButton(onSelectPhoto = {}) // TODO display photo
+              }
             }
+
+        // Date Picker Dialog
+        CustomDatePickerDialog(
+            showDialog = showDatePicker,
+            initialDate = ui.startDate,
+            onDismiss = { showDatePicker = false },
+            onDateSelected = { timestamp -> addListingViewModel.setStartDate(timestamp) })
       }
 }

@@ -20,20 +20,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.ui.add.AddHubScreen
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
 import com.android.mySwissDorm.ui.listing.EditListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingScreen
+import com.android.mySwissDorm.ui.map.MapScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
+import com.android.mySwissDorm.ui.profile.ContributionType
+import com.android.mySwissDorm.ui.profile.ProfileContributionsScreen
+import com.android.mySwissDorm.ui.profile.ProfileContributionsViewModel
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
@@ -107,7 +112,7 @@ fun AppNavHost(
           onBack = { navActions.goBack() })
     }
 
-    // these are strictly the Bottom bar destinations
+    // --- Bottom bar destinations ---
 
     composable(Screen.Homepage.route) {
       HomePageScreen(
@@ -116,17 +121,11 @@ fun AppNavHost(
           navigationActions = navActions)
     }
 
-    composable(Screen.AddHub.route) {
-      AddHubScreen(
-          onBack = { navActions.goBack() },
-          onAddReview = { navActions.navigateTo(Screen.AddReview) },
-          onAddListing = { navActions.navigateTo(Screen.AddListing) })
-    }
-
     composable(Screen.Inbox.route) {
       Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
       navActions.navigateTo(Screen.Homepage)
     }
+
     composable(Screen.Settings.route) {
       val adminRepo = remember { AdminRepository() }
       var isAdmin by remember { mutableStateOf(false) }
@@ -139,23 +138,40 @@ fun AppNavHost(
           onProfileClick = { navActions.navigateTo(Screen.Profile) },
           navigationActions = navActions,
           onAdminClick = { navActions.navigateTo(Screen.Admin) },
-          isAdmin = isAdmin)
+          isAdmin = isAdmin,
+          onContributionClick = { navActions.navigateTo(Screen.ProfileContributions) })
     }
 
     // --- Secondary destinations ---
+
     composable(Screen.AddListing.route) {
       AddListingScreen(
-          onOpenMap = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
           onBack = { navActions.goBack() },
           onConfirm = { created ->
             navController.navigate(Screen.ListingOverview(created.uid).route) {
               // Remove AddListing so back from overview goes to whatever was before it (Homepage
               // here)
-              popUpTo(Screen.AddHub.route) { inclusive = true }
+              popUpTo(Screen.AddListing.route) { inclusive = true }
               launchSingleTop = true
             }
           })
     }
+
+    composable(
+        route = "mapScreen/{lat}/{lng}/{title}/{name}",
+        arguments =
+            listOf(
+                navArgument("lat") { type = NavType.FloatType },
+                navArgument("lng") { type = NavType.FloatType },
+                navArgument("title") { type = NavType.StringType },
+                navArgument("name") { type = NavType.StringType })) { backStackEntry ->
+          MapScreen(
+              latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
+              longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
+              title = backStackEntry.arguments?.getString("title") ?: "Location",
+              name = backStackEntry.arguments?.getString("name") ?: "Location",
+              onGoBack = { navController.popBackStack() })
+        }
 
     composable(Screen.BrowseOverview.route) { navBackStackEntry ->
       val name = navBackStackEntry.arguments?.getString("name")
@@ -188,6 +204,25 @@ fun AppNavHost(
           onConfirm = { navActions.navigateTo(Screen.Homepage) }, onBack = { navActions.goBack() })
     }
 
+    composable(Screen.ProfileContributions.route) {
+      val vm: ProfileContributionsViewModel = viewModel()
+      val ui by vm.ui.collectAsState()
+      LaunchedEffect(Unit) { vm.load(force = true) }
+      ProfileContributionsScreen(
+          contributions = ui.items,
+          onBackClick = { navActions.goBack() },
+          onContributionClick = { contribution ->
+            when (contribution.type) {
+              ContributionType.LISTING ->
+                  contribution.referenceId?.let {
+                    navActions.navigateTo(Screen.ListingOverview(it))
+                  }
+              ContributionType.REVIEW ->
+                  contribution.referenceId?.let { navActions.navigateTo(Screen.ReviewOverview(it)) }
+            }
+          })
+    }
+
     composable(Screen.ReviewsByResidencyOverview.route) { navBackStackEntry ->
       val residencyName = navBackStackEntry.arguments?.getString("residencyName")
 
@@ -215,12 +250,13 @@ fun AppNavHost(
             onViewProfile = { ownerId ->
               val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
               if (ownerId == currentUserId) {
-                // It's the current user, go to their editable profile
                 navActions.navigateTo(Screen.Profile)
               } else {
-                // It's another user, go to the read-only profile screen
                 navActions.navigateTo(Screen.ViewUserProfile(ownerId))
               }
+            },
+            onViewMap = { lat, lng, title, name ->
+              navController.navigate("mapScreen/$lat/$lng/$title/$name")
             })
       }
           ?: run {
@@ -246,6 +282,9 @@ fun AppNavHost(
                 // It's another user, go to the read-only profile screen
                 navActions.navigateTo(Screen.ViewUserProfile(ownerId))
               }
+            },
+            onViewMap = { lat, lng, title, name ->
+              navController.navigate("mapScreen/$lat/$lng/$title/$name")
             })
       }
           ?: run {
@@ -292,9 +331,11 @@ fun AppNavHost(
             Toast.makeText(context, "Listing deleted", Toast.LENGTH_SHORT).show()
           })
     }
+
     composable(Screen.Admin.route) {
       AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })
     }
+
     composable(Screen.Profile.route) {
       ProfileScreen(
           onBack = { navActions.goBack() },

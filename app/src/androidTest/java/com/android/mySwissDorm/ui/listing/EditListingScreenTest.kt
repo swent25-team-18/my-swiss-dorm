@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.listing
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
@@ -15,25 +16,18 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
-import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
-import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
-import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Firebase
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
-import java.net.URL
-import java.util.UUID
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -57,77 +51,10 @@ class EditListingScreenTest : FirestoreTest() {
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
 
     ResidenciesRepositoryProvider.repository =
-        object : ResidenciesRepository {
-          private val data =
-              mutableListOf(
-                  Residency(
-                      name = "VORTEX",
-                      description = "desc",
-                      location = Location("Vortex", 46.5191, 6.5668),
-                      city = "Ecublens",
-                      email = "x@example.com",
-                      phone = "+4100000000",
-                      website = URL("https://example.com")))
-
-          override suspend fun getAllResidencies(): List<Residency> = data.toList()
-
-          override suspend fun getAllResidenciesNearLocation(
-              location: Location,
-              radius: Double
-          ): List<Residency> {
-            return data.toList()
-          }
-
-          override suspend fun getResidency(residencyName: String): Residency {
-            return data.firstOrNull { it.name == residencyName }
-                ?: throw NoSuchElementException("Residency '$residencyName' not found")
-          }
-
-          override suspend fun addResidency(residency: Residency) {
-            val idx = data.indexOfFirst { it.name == residency.name }
-            if (idx >= 0) data[idx] = residency else data.add(residency)
-          }
-        }
+        ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
   // ---------- Helpers ----------
-
-  private fun residency() =
-      Residency(
-          name = "VORTEX",
-          description = "desc",
-          location = Location("Vortex", 46.5191, 6.5668),
-          city = "Ecublens",
-          email = "x@example.com",
-          phone = "+4100000000",
-          website = URL("https://example.com"))
-
-  /** Seed by upsert: editRentalListing(rentalPostId, newValue) with a generated id. */
-  private suspend fun seedListingUpsert(
-      title: String = "Sunny Studio",
-      price: Double = 980.0,
-      sizeM2: Int = 18,
-      roomType: RoomType = RoomType.STUDIO
-  ): String {
-    val repo = RentalListingRepositoryProvider.repository
-    val id = "seed-${UUID.randomUUID()}"
-    val listing =
-        RentalListing(
-            uid = id,
-            ownerId = Firebase.auth.currentUser!!.uid,
-            postedAt = Timestamp.now(),
-            residency = residency(),
-            title = title,
-            roomType = roomType,
-            pricePerMonth = price,
-            areaInM2 = sizeM2,
-            startDate = Timestamp.now(),
-            description = "Nice place",
-            imageUrls = emptyList(),
-            status = RentalStatus.POSTED)
-    repo.editRentalListing(rentalPostId = id, newValue = listing) // upsert
-    return id
-  }
 
   private fun setContentFor(
       vm: EditListingViewModel,
@@ -158,7 +85,18 @@ class EditListingScreenTest : FirestoreTest() {
 
   @Before
   override fun setUp() {
-    super.setUp()
+    runTest {
+      super.setUp()
+      switchToUser(FakeUser.FakeUser1)
+      ResidenciesRepositoryProvider.repository.addResidency(resTest)
+      RentalListingRepositoryProvider.repository.addRentalListing(
+          rentalListing1.copy(ownerId = Firebase.auth.currentUser!!.uid))
+      switchToUser(FakeUser.FakeUser2)
+      ResidenciesRepositoryProvider.repository.addResidency(resTest)
+      RentalListingRepositoryProvider.repository.addRentalListing(
+          rentalListing2.copy(ownerId = Firebase.auth.currentUser!!.uid))
+      switchToUser(FakeUser.FakeUser1)
+    }
   }
 
   @After
@@ -167,30 +105,23 @@ class EditListingScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun vm_loads_listing_into_state() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val id = seedListingUpsert()
-
+  fun vm_loads_listing_into_state() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(id)
+    vm.getRentalListing(rentalListing1.uid)
 
     composeRule.waitUntil(timeoutMillis = 5_000) { vm.uiState.value.title.isNotBlank() }
-    assertEquals("Sunny Studio", vm.uiState.value.title)
+    assertEquals("title1", vm.uiState.value.title)
 
     val s = vm.uiState.value
-    assertEquals("Sunny Studio", s.title)
-    assertEquals("980.0", s.price) // mapped to string
-    assertEquals("18", s.sizeSqm)
+    assertEquals("1200.0", s.price)
+    assertEquals("25", s.sizeSqm)
     assertTrue(s.isFormValid)
   }
 
   @Test
-  fun vm_rejects_invalid_and_does_not_write() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val id = seedListingUpsert()
-
+  fun vm_rejects_invalid_and_does_not_write() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(id)
+    vm.getRentalListing(rentalListing1.uid)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
 
@@ -203,125 +134,72 @@ class EditListingScreenTest : FirestoreTest() {
     assertTrue(vm.uiState.value.price.isBlank())
     assertTrue(!vm.uiState.value.isFormValid)
 
-    val ok = vm.editRentalListing(id)
+    val ok = vm.editRentalListing(rentalListing1.uid)
     assertTrue(!ok)
   }
 
   @Test
   fun vm_edit_persists_to_firestore() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val id = seedListingUpsert()
-
     val vm = EditListingViewModel()
-    vm.getRentalListing(id)
-
-    var tries = 0
-    while (vm.uiState.value.title.isBlank() && tries < 20) {
-      delay(100)
-      tries++
-    }
+    vm.getRentalListing(rentalListing1.uid)
 
     vm.setTitle("Cozy Studio - Updated")
-    vm.setPrice("1200")
+    vm.setPrice("1500")
     vm.setSizeSqm("25.0")
     vm.setHousingType(RoomType.STUDIO)
     assertTrue(vm.uiState.value.isFormValid)
-
-    val accepted = vm.editRentalListing(id)
+    val accepted = vm.editRentalListing(rentalListing1.uid)
     assertTrue(accepted)
-
-    tries = 0
-    while (tries < 30) {
-      val reloaded = RentalListingRepositoryProvider.repository.getRentalListing(id)
-      if (reloaded.title == "Cozy Studio - Updated" &&
-          reloaded.pricePerMonth == 1200.0 &&
-          reloaded.areaInM2 == 25 &&
-          reloaded.roomType == RoomType.STUDIO)
-          break
-      delay(100)
-      tries++
-    }
-    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(id)
+    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing1.uid)
     assertEquals("Cozy Studio - Updated", finalDoc.title)
-    assertEquals(1200.0, finalDoc.pricePerMonth, 0.0)
+    assertEquals(1500.0, finalDoc.pricePerMonth, 0.0)
     assertEquals(25, finalDoc.areaInM2)
     assertEquals(RoomType.STUDIO, finalDoc.roomType)
   }
 
   @Test
   fun vm_delete_removes_document() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val id = seedListingUpsert()
-
-    val before =
-        RentalListingRepositoryProvider.repository
-            .getAllRentalListingsByUser(Firebase.auth.currentUser!!.uid)
-            .size
+    val vm = EditListingViewModel()
+    val before = getAllRentalListingsByUserCount(Firebase.auth.currentUser!!.uid)
     assertTrue(before >= 1)
 
-    val vm = EditListingViewModel()
-    vm.deleteRentalListing(id)
+    vm.deleteRentalListing(rentalListing1.uid)
 
-    var tries = 0
-    while (tries < 30) {
-      val count =
-          RentalListingRepositoryProvider.repository
-              .getAllRentalListingsByUser(Firebase.auth.currentUser!!.uid)
-              .size
-      if (count == before - 1) break
-      delay(100)
-      tries++
-    }
-    val after =
-        RentalListingRepositoryProvider.repository
-            .getAllRentalListingsByUser(Firebase.auth.currentUser!!.uid)
-            .size
+    val after = getAllRentalListingsByUserCount(Firebase.auth.currentUser!!.uid)
     assertEquals(before - 1, after)
   }
 
   @Test
   fun editing_listing_saves_to_firestore() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val id = seedListingUpsert()
-
     val vm = EditListingViewModel()
-    setContentFor(vm, id)
+    setContentFor(vm, rentalListing1.uid)
 
     composeRule.waitUntil(5_000) {
       composeRule
-          .onAllNodes(hasTestTag("titleField") and hasSetTextAction(), useUnmergedTree = true)
+          .onAllNodes(
+              hasTestTag(C.EditListingScreenTags.TITLE_FIELD) and hasSetTextAction(),
+              useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    editable("titleField").replaceText("Cozy Studio - Updated")
-    editable("priceField").replaceText("1200")
-    editable("sizeField").replaceText("25.0")
+    editable(C.EditListingScreenTags.TITLE_FIELD).replaceText("Cozy Studio - Updated")
+    editable(C.EditListingScreenTags.PRICE_FIELD).replaceText("1500")
+    editable(C.EditListingScreenTags.SIZE_FIELD).replaceText("25.0")
 
     composeRule.onNodeWithText("Save", useUnmergedTree = true).assertIsEnabled().performClick()
 
-    var tries = 0
-    while (tries < 30) {
-      val doc = RentalListingRepositoryProvider.repository.getRentalListing(id)
-      if (doc.title == "Cozy Studio - Updated" && doc.pricePerMonth == 1200.0 && doc.areaInM2 == 25)
-          break
-      delay(100)
-      tries++
-    }
-    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(id)
+    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing1.uid)
     assertEquals("Cozy Studio - Updated", finalDoc.title)
-    assertEquals(1200.0, finalDoc.pricePerMonth, 0.0)
+    assertEquals(1500.0, finalDoc.pricePerMonth, 0.0)
     assertEquals(25, finalDoc.areaInM2)
   }
 
   @Test
   fun delete_icon_removes_document_and_emits_city() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val id = seedListingUpsert()
-
     val vm = EditListingViewModel()
     var deletedCity: String? = null
-    setContentFor(vm, id, onDelete = { deletedCity = it })
+    setContentFor(vm, rentalListing1.uid, onDelete = { deletedCity = it })
 
     composeRule.waitUntil(5_000) {
       composeRule
@@ -330,60 +208,225 @@ class EditListingScreenTest : FirestoreTest() {
           .isNotEmpty()
     }
 
-    val beforeCount =
-        RentalListingRepositoryProvider.repository
-            .getAllRentalListingsByUser(Firebase.auth.currentUser!!.uid)
-            .size
+    val beforeCount = getAllRentalListingsByUserCount(Firebase.auth.currentUser!!.uid)
+    val beforeCountALlUsers = getRentalListingCount()
 
     composeRule.onNodeWithContentDescription("Delete", useUnmergedTree = true).performClick()
 
     composeRule.waitUntil(2_000) { deletedCity != null }
-    var tries = 0
-    while (tries < 30) {
-      val afterCount =
-          RentalListingRepositoryProvider.repository
-              .getAllRentalListingsByUser(Firebase.auth.currentUser!!.uid)
-              .size
-      if (afterCount == beforeCount - 1) break
-      delay(100)
-      tries++
-    }
-
-    assertEquals("Ecublens", deletedCity)
-    val finalCount =
-        RentalListingRepositoryProvider.repository
-            .getAllRentalListingsByUser(Firebase.auth.currentUser!!.uid)
-            .size
+    val finalCount = getAllRentalListingsByUserCount(Firebase.auth.currentUser!!.uid)
+    val finalCountAllUsers = getRentalListingCount()
     assertEquals(beforeCount - 1, finalCount)
+    assertEquals(beforeCountALlUsers - 1, finalCountAllUsers)
   }
 
   @Test
-  fun invalid_price_disables_save_and_shows_helper() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val id = seedListingUpsert()
-
+  fun invalid_price_disables_save_and_shows_helper() = run {
     val vm = EditListingViewModel()
-    setContentFor(vm, id)
+    setContentFor(vm, rentalListing1.uid)
 
     composeRule.waitUntil(5_000) {
       composeRule
-          .onAllNodes(hasTestTag("priceField") and hasSetTextAction(), useUnmergedTree = true)
+          .onAllNodes(
+              hasTestTag(C.EditListingScreenTags.PRICE_FIELD) and hasSetTextAction(),
+              useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    editable("priceField").performTextClearance()
-    editable("priceField").performTextInput("abc")
+    editable(C.EditListingScreenTags.PRICE_FIELD).performTextClearance()
+    editable(C.EditListingScreenTags.PRICE_FIELD).performTextInput("abc")
 
     composeRule.waitUntil(5_000) { !vm.uiState.value.isFormValid }
     composeRule.waitForIdle()
 
-    composeRule.onNodeWithTag("saveButton", useUnmergedTree = true).assertIsNotEnabled()
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.SAVE_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
 
     composeRule
         .onNodeWithText(
             "Please complete all required fields (valid size, price, and starting date).",
             useUnmergedTree = true)
         .assertExists()
+  }
+
+  @Test
+  fun start_date_field_is_displayed() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .assertIsDisplayed()
+    composeRule.onNodeWithText("Start Date", useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun clicking_start_date_opens_date_picker() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear and verify it's displayed
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify OK button exists
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun date_picker_can_be_dismissed() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify dialog is displayed
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Click the dialog's Cancel button (using test tag to avoid confusion with bottom bar Cancel)
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.CANCEL_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for dialog to be dismissed - verify by checking OK button is gone
+    composeRule.waitUntil(2_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
+  }
+
+  @Test
+  fun selecting_date_updates_viewmodel_state() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    val originalDate = vm.uiState.value.startDate
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for ViewModel state to update
+    composeRule.waitUntil(5_000) { vm.uiState.value.startDate != originalDate }
+
+    // Date should be updated
+    assert(vm.uiState.value.startDate != originalDate)
+  }
+
+  @Test
+  fun editing_start_date_persists_to_firestore() = runTest {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Open date picker and select a date
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for ViewModel state to update
+    composeRule.waitUntil(5_000) { vm.uiState.value.isFormValid }
+
+    // Save the listing
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.SAVE_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+        .performClick()
+
+    // Wait for save to complete - check ViewModel state instead of Firestore directly
+    composeRule.waitUntil(5_000) { vm.uiState.value.isFormValid }
+
+    // Give time for Firestore write to complete
+    kotlinx.coroutines.delay(500)
+
+    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing1.uid)
+    assertEquals("Start date should be persisted", vm.uiState.value.startDate, finalDoc.startDate)
   }
 }

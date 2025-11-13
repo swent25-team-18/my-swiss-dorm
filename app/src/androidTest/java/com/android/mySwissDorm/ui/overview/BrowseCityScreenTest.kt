@@ -87,7 +87,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             uid = "laus1",
             ownerId = ownerUid,
             postedAt = Timestamp.now(),
-            residency = resLaus,
+            residencyName = resLaus.name,
             title = "Lausanne Studio 1",
             roomType = RoomType.STUDIO,
             pricePerMonth = 1200.0,
@@ -101,7 +101,10 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             uid = "laus2", ownerId = otherUid, title = "Lausanne Studio 2", areaInM2 = 22)
     listingZurich =
         listingLaus1.copy(
-            uid = "zurich1", ownerId = otherUid, title = "Zurich Room", residency = resZurich)
+            uid = "zurich1",
+            ownerId = otherUid,
+            title = "Zurich Room",
+            residencyName = resZurich.name)
 
     runTest {
       switchToUser(FakeUser.FakeUser1)
@@ -133,9 +136,10 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
 
     val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
-    compose.setContent { BrowseCityScreen(location = lausanneLocation, onSelectListing = {}) }
-    compose.waitForIdle()
-
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation, onSelectListing = {})
+    }
+    compose.waitUntil(5_000) { vm.uiState.value.listings.items.isNotEmpty() }
     compose.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).assertIsDisplayed()
     compose
         .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus1.uid))
@@ -229,7 +233,12 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     compose.setContent {
       BrowseCityScreen(location = lausanneLocation, onSelectListing = { clicked.value = it })
     }
-    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 2000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.LISTING_LIST, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
     compose
         .onNodeWithTag(C.BrowseCityTags.listingCard(listingLaus1.uid))
@@ -372,6 +381,13 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
       }
 
       override suspend fun getAllRentalListingsByUser(userId: String): List<RentalListing> {
+        error("unused")
+      }
+
+      override suspend fun getAllRentalListingsByLocation(
+          location: Location,
+          radius: Double
+      ): List<RentalListing> {
         error("unused")
       }
 

@@ -3,9 +3,12 @@ package com.android.mySwissDorm.ui.review
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
@@ -37,11 +40,14 @@ data class ViewReviewUIState(
     val fullNameOfPoster: String = "",
     val errorMsg: String? = null,
     val isOwner: Boolean = false,
+    val locationOfReview: Location = Location(name = "", latitude = 0.0, longitude = 0.0)
 )
 
 class ViewReviewViewModel(
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
-    private val profilesRepository: ProfileRepository = ProfileRepositoryProvider.repository
+    private val profilesRepository: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val residencyRepository: ResidenciesRepository =
+        ResidenciesRepositoryProvider.repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewReviewUIState())
   val uiState: StateFlow<ViewReviewUIState> = _uiState.asStateFlow()
@@ -56,6 +62,17 @@ class ViewReviewViewModel(
     _uiState.update { it.copy(errorMsg = errorMsg) }
   }
 
+  fun setLocationOfReview(reviewUid: String) {
+    try {
+      viewModelScope.launch {
+        val review = reviewsRepository.getReview(reviewUid)
+        val residency = residencyRepository.getResidency(review.residencyName)
+        _uiState.value = _uiState.value.copy(locationOfReview = residency.location)
+      }
+    } catch (e: Exception) {
+      Log.e("MyViewModel", "Failed to load location", e)
+    }
+  }
   /**
    * Loads a Review by its ID and updates the UI state.
    *

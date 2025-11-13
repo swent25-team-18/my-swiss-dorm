@@ -178,7 +178,18 @@ class BrowseCityViewModel(
         // Fetch all and filter by distance
         val all = listingsRepository.getAllRentalListings()
         var filtered =
-            all.filter { location.distanceTo(it.residency.location) <= maxDistanceToDisplay }
+            all.filter { listing ->
+              try {
+                val residency = residenciesRepository.getResidency(listing.residencyName)
+                location.distanceTo(residency.location) <= maxDistanceToDisplay
+              } catch (e: Exception) {
+                Log.w(
+                    "BrowseCityViewModel",
+                    "Could not find residency ${listing.residencyName} for listing ${listing.uid}",
+                    e)
+                false
+              }
+            }
 
         // Apply room type filter
         if (state.filterState.selectedRoomTypes.isNotEmpty()) {
@@ -433,7 +444,7 @@ private fun RentalListing.toCardUI(): ListingCardUI {
   val price = String.format(Locale.getDefault(), "%.0f.-/month", pricePerMonth)
   val area = "${areaInM2}m²"
   val start = "Starting ${formatDate(startDate)}"
-  val resName = residency.name
+  val resName = residencyName
 
   return ListingCardUI(
       title = title,

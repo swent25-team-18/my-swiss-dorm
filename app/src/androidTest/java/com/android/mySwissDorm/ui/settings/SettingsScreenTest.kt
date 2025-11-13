@@ -10,6 +10,7 @@ import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -39,9 +40,11 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   /** Set content with our explicit VM. */
-  private fun setContentWithVm() {
+  private fun setContentWithVm(onContributionClick: () -> Unit = {}) {
     val vm = makeVm()
-    compose.setContent { MySwissDormAppTheme { SettingsScreen(vm = vm) } }
+    compose.setContent {
+      MySwissDormAppTheme { SettingsScreen(vm = vm, onContributionClick = onContributionClick) }
+    }
   }
 
   override fun createRepositories() {
@@ -162,8 +165,8 @@ class SettingsScreenTest : FirestoreTest() {
     setContentWithVm()
     compose.waitForIdle()
 
-    val messagesTag = SettingsTestTags.switch("Show notifications for messages")
-    val listingsTag = SettingsTestTags.switch("Show notifications for new listings")
+    val messagesTag = C.SettingsTags.switch("Show notifications for messages")
+    val listingsTag = C.SettingsTags.switch("Show notifications for new listings")
 
     compose
         .onNodeWithTag(messagesTag, useUnmergedTree = true)
@@ -219,14 +222,14 @@ class SettingsScreenTest : FirestoreTest() {
     // Wait for ViewModel to refresh and load blocked contacts
     compose.waitUntil(5_000) {
       compose
-          .onAllNodesWithTag(SettingsTestTags.BlockedContactsToggle, useUnmergedTree = true)
+          .onAllNodesWithTag(C.SettingsTags.BLOCKED_CONTACTS_TOGGLE, useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    val scrollTag = SettingsTestTags.SettingsScroll
-    val listTag = SettingsTestTags.BlockedContactsList
-    val toggleTag = SettingsTestTags.BlockedContactsToggle
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val listTag = C.SettingsTags.BLOCKED_CONTACTS_LIST
+    val toggleTag = C.SettingsTags.BLOCKED_CONTACTS_TOGGLE
 
     compose.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
 
@@ -252,10 +255,25 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   @Test
+  fun contributionsButton_triggersCallback() = runTest {
+    var clicked = false
+    setContentWithVm(onContributionClick = { clicked = true })
+    compose.waitForIdle()
+
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val buttonTag = C.SettingsTags.CONTRIBUTIONS_BUTTON
+
+    compose.scrollUntilDisplayed(scrollTag, buttonTag)
+    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    assert(clicked)
+  }
+
+  @Test
   fun emailField_isDisabledAndReadOnly() {
     setContentWithVm()
     compose.waitForIdle()
-    compose.onNodeWithTag(SettingsTestTags.EmailField, useUnmergedTree = true).assertIsNotEnabled()
+    compose.onNodeWithTag(C.SettingsTags.EMAIL_FIELD, useUnmergedTree = true).assertIsNotEnabled()
   }
 
   @Test
@@ -263,13 +281,13 @@ class SettingsScreenTest : FirestoreTest() {
     setContentWithVm()
     compose.waitForIdle()
 
-    val scrollTag = SettingsTestTags.SettingsScroll
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
-    compose.scrollUntilDisplayed(scrollTag, SettingsTestTags.DeleteAccountButton)
-    compose.waitUntilTagExists(SettingsTestTags.DeleteAccountButton)
+    compose.scrollUntilDisplayed(scrollTag, C.SettingsTags.DELETE_ACCOUNT_BUTTON)
+    compose.waitUntilTagExists(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
 
     compose
-        .onNodeWithTag(SettingsTestTags.DeleteAccountButton, useUnmergedTree = true)
+        .onNodeWithTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON, useUnmergedTree = true)
         .assertIsDisplayed()
         .performClick()
 
@@ -283,9 +301,9 @@ class SettingsScreenTest : FirestoreTest() {
     setContentWithVm()
     compose.waitForIdle()
 
-    val scrollTag = SettingsTestTags.SettingsScroll
-    val nightShiftTag = SettingsTestTags.switch("Dark mode")
-    val anonymousTag = SettingsTestTags.switch("Anonymous")
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val nightShiftTag = C.SettingsTags.switch("Dark mode")
+    val anonymousTag = C.SettingsTags.switch("Anonymous")
 
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
     compose.waitUntilTagExists(nightShiftTag)
@@ -340,8 +358,8 @@ class SettingsScreenTest : FirestoreTest() {
     setContentWithVm()
     compose.waitForIdle()
 
-    val scrollTag = SettingsTestTags.SettingsScroll
-    val darkModeTag = SettingsTestTags.switch("Dark mode")
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val darkModeTag = C.SettingsTags.switch("Dark mode")
 
     // Scroll to dark mode toggle
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
@@ -402,8 +420,8 @@ class SettingsScreenTest : FirestoreTest() {
     setContentWithVm()
     compose.waitForIdle()
 
-    val scrollTag = SettingsTestTags.SettingsScroll
-    val darkModeTag = SettingsTestTags.switch("Dark mode")
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val darkModeTag = C.SettingsTags.switch("Dark mode")
 
     // Scroll to dark mode toggle
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")

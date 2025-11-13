@@ -55,6 +55,10 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
   override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
     db.collection(PROFILE_COLLECTION_PATH)
         .document(ownerId)
+        .set(mapOf("ownerId" to ownerId), SetOptions.merge())
+        .await()
+    db.collection(PROFILE_COLLECTION_PATH)
+        .document(ownerId)
         .update("blockedUserIds", FieldValue.arrayRemove(targetUid))
         .await()
   }

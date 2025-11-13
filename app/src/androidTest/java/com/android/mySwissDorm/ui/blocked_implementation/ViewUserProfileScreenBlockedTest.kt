@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.*
@@ -213,5 +214,61 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     vm.loadProfile(targetUserUid)
     waitUntil { vm.uiState.value.isBlocked }
     assertTrue(vm.uiState.value.isBlocked)
+  }
+
+  @Test
+  fun unblockUser_removesUserFromBlockedListInFirestore() = runTest {
+    // Pre-block the user
+    FirebaseEmulator.firestore
+        .collection("profiles")
+        .document(currentUserUid)
+        .update("blockedUserIds", FieldValue.arrayUnion(targetUserUid))
+        .await()
+
+    val vm = ViewProfileScreenViewModel(profileRepo)
+    vm.loadProfile(targetUserUid)
+    waitUntil { vm.uiState.value.isBlocked }
+    assertTrue(vm.uiState.value.isBlocked)
+
+    vm.unblockUser(targetUserUid, onError = {})
+    waitUntil { !vm.uiState.value.isBlocked }
+
+    val doc =
+        FirebaseEmulator.firestore.collection("profiles").document(currentUserUid).get().await()
+    @Suppress("UNCHECKED_CAST")
+    val blockedIds = doc.get("blockedUserIds") as? List<String> ?: emptyList()
+    assertFalse("User should be unblocked after unblockUser call", targetUserUid in blockedIds)
+  }
+
+  @Test
+  fun blockButton_allowsUnblockingFromUi() = runTest {
+    // Pre-block the user
+    FirebaseEmulator.firestore
+        .collection("profiles")
+        .document(currentUserUid)
+        .update("blockedUserIds", FieldValue.arrayUnion(targetUserUid))
+        .await()
+
+    val vm = ViewProfileScreenViewModel(profileRepo)
+
+    compose.setContent {
+      MySwissDormAppTheme {
+        ViewUserProfileScreen(
+            viewModel = vm, ownerId = targetUserUid, onBack = {}, onSendMessage = {})
+      }
+    }
+
+    // Wait for profile to load and reflect blocked state
+    waitUntil { vm.uiState.value.isBlocked }
+    compose.onNodeWithTag(T.ROOT).performScrollToNode(hasTestTag(T.BLOCK_BUTTON))
+    compose.onNodeWithTag(T.BLOCK_BUTTON).assertIsDisplayed().performClick()
+
+    waitUntil { !vm.uiState.value.isBlocked }
+
+    val doc =
+        FirebaseEmulator.firestore.collection("profiles").document(currentUserUid).get().await()
+    @Suppress("UNCHECKED_CAST")
+    val blockedIds = doc.get("blockedUserIds") as? List<String> ?: emptyList()
+    assertFalse(targetUserUid in blockedIds)
   }
 }

@@ -157,4 +157,36 @@ class ViewProfileScreenViewModel(
       }
     }
   }
+
+  /**
+   * Unblocks a user by removing their UID from the current user's blocked list in Firestore.
+   * Updates the UI state accordingly.
+   *
+   * @param targetUid The UID of the user to unblock.
+   * @param onError Callback invoked when unblocking fails, receives an error message.
+   */
+  fun unblockUser(targetUid: String, onError: (String) -> Unit = {}) {
+    val uid = auth.currentUser?.uid
+    if (uid == null) {
+      onError("Not signed in")
+      return
+    }
+
+    viewModelScope.launch {
+      try {
+        db.collection("profiles")
+            .document(uid)
+            .set(mapOf("ownerId" to uid), SetOptions.merge())
+            .await()
+        db.collection("profiles")
+            .document(uid)
+            .update("blockedUserIds", FieldValue.arrayRemove(targetUid))
+            .await()
+        _ui.value = _ui.value.copy(isBlocked = false)
+      } catch (e: Exception) {
+        Log.e("ViewProfileScreenViewModel", "Error unblocking user", e)
+        onError("Failed to unblock user: ${e.message}")
+      }
+    }
+  }
 }

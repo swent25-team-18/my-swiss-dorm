@@ -271,4 +271,48 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     val blockedIds = doc.get("blockedUserIds") as? List<String> ?: emptyList()
     assertFalse(targetUserUid in blockedIds)
   }
+
+  @Test
+  fun blockButton_blocksUserWhenNotBlocked() = runTest {
+    val vm = ViewProfileScreenViewModel(profileRepo)
+
+    compose.setContent {
+      MySwissDormAppTheme {
+        ViewUserProfileScreen(
+            viewModel = vm, ownerId = targetUserUid, onBack = {}, onSendMessage = {})
+      }
+    }
+
+    // Wait for profile load in non-blocked state
+    waitUntil { !vm.uiState.value.isBlocked && vm.uiState.value.name.isNotEmpty() }
+
+    compose.onNodeWithTag(T.ROOT).performScrollToNode(hasTestTag(T.BLOCK_BUTTON))
+    compose.onNodeWithTag(T.BLOCK_BUTTON).assertIsDisplayed().performClick()
+
+    waitUntil { vm.uiState.value.isBlocked }
+
+    val doc =
+        FirebaseEmulator.firestore.collection("profiles").document(currentUserUid).get().await()
+    @Suppress("UNCHECKED_CAST")
+    val blockedIds = doc.get("blockedUserIds") as? List<String> ?: emptyList()
+    assertTrue(targetUserUid in blockedIds)
+  }
+
+  @Test
+  fun unblockUser_withoutSignedInUser_invokesOnErrorCallback() = runTest {
+    // Sign out to simulate missing user
+    FirebaseEmulator.auth.signOut()
+
+    val vm = ViewProfileScreenViewModel(profileRepo)
+
+    var errorMessage: String? = null
+    vm.unblockUser("anyTarget") { errorMessage = it }
+
+    // Error callback should be invoked immediately
+    waitUntil { errorMessage != null }
+    assertTrue(errorMessage!!.contains("Not signed in"))
+
+    // Restore auth state for subsequent tests
+    switchToUser(FakeUser.FakeUser1)
+  }
 }

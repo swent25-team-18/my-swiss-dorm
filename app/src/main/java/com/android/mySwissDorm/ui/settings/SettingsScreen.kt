@@ -179,260 +179,231 @@ fun SettingsScreenContent(
                           top = 12.dp,
                           bottom = 24.dp)) {
                     item {
-                        Column(modifier = Modifier.fillMaxWidth().widthIn(max = contentWidthCap)) {
+                      Column(modifier = Modifier.fillMaxWidth().widthIn(max = contentWidthCap)) {
 
-                            // ---- Profile card ----------------------------------------------------
-                            CardBlock {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    val avatarSize = if (isTablet) 64.dp else 56.dp
-                                    val initial =
-                                        (ui.userName.firstOrNull()?.uppercaseChar()
-                                            ?: 'A').toString()
+                        // ---- Profile card ----------------------------------------------------
+                        CardBlock {
+                          Row(
+                              modifier = Modifier.fillMaxWidth(),
+                              verticalAlignment = Alignment.CenterVertically,
+                              horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                val avatarSize = if (isTablet) 64.dp else 56.dp
+                                val initial =
+                                    (ui.userName.firstOrNull()?.uppercaseChar() ?: 'A').toString()
 
-                                    // Avatar background = PalePink, hardcoded as requested
-                                    Box(
-                                        modifier =
-                                            Modifier.size(avatarSize)
-                                                .clip(CircleShape)
-                                                .background(PalePink.copy(alpha = 0.16f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            initial,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MainColor
-                                        )
+                                // Avatar background = PalePink, hardcoded as requested
+                                Box(
+                                    modifier =
+                                        Modifier.size(avatarSize)
+                                            .clip(CircleShape)
+                                            .background(PalePink.copy(alpha = 0.16f)),
+                                    contentAlignment = Alignment.Center) {
+                                      Text(initial, fontWeight = FontWeight.Bold, color = MainColor)
                                     }
 
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            ui.userName.ifBlank { "User" },
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = TextColor,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            "View profile",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-
-                                    IconButton(
-                                        onClick = onProfileClick,
-                                        modifier = Modifier.testTag(SettingsTestTags.ProfileButton)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.ChevronRight,
-                                            contentDescription = "Open profile",
-                                            tint = TextColor
-                                        )
-                                    }
+                                Column(modifier = Modifier.weight(1f)) {
+                                  Text(
+                                      ui.userName.ifBlank { "User" },
+                                      style = MaterialTheme.typography.titleMedium,
+                                      color = TextColor,
+                                      maxLines = 1,
+                                      overflow = TextOverflow.Ellipsis)
+                                  Text(
+                                      "View profile",
+                                      style = MaterialTheme.typography.bodySmall,
+                                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                      maxLines = 1,
+                                      overflow = TextOverflow.Ellipsis)
                                 }
-                            }
 
-                            // ---- Notifications ---------------------------------------------------
-                            SectionLabel("Notifications")
-                            CardBlock {
-                                SettingSwitchRow(
-                                    label = "Show notifications for messages",
-                                    checked = notificationsMessages,
-                                    onCheckedChange = { notificationsMessages = it })
-                                SoftDivider()
-                                SettingSwitchRow(
-                                    label = "Show notifications for new listings",
-                                    checked = notificationsListings,
-                                    onCheckedChange = { notificationsListings = it })
-                            }
+                                IconButton(
+                                    onClick = onProfileClick,
+                                    modifier = Modifier.testTag(SettingsTestTags.ProfileButton)) {
+                                      Icon(
+                                          imageVector = Icons.Filled.ChevronRight,
+                                          contentDescription = "Open profile",
+                                          tint = TextColor)
+                                    }
+                              }
+                        }
 
-                            // ---- Account ---------------------------------------------------------
-                            SectionLabel("Account")
-                            CardBlock {
-                                OutlinedTextField(
-                                    value = ui.email,
-                                    onValueChange = {},
-                                    label = { Text("Email address") },
-                                    singleLine = true,
-                                    readOnly = true,
-                                    enabled = false,
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                    keyboardActions =
-                                        KeyboardActions(onDone = { focusManager.clearFocus() }),
-                                    colors =
-                                        OutlinedTextFieldDefaults.colors(
-                                            disabledTextColor = TextColor.copy(alpha = 0.9f),
-                                            disabledBorderColor = TextBoxColor,
-                                            disabledLabelColor =
-                                                MaterialTheme.colorScheme.onSurfaceVariant,
-                                            disabledContainerColor = MaterialTheme.colorScheme.surface
-                                        ),
-                                    modifier =
-                                        Modifier.fillMaxWidth().testTag(SettingsTestTags.EmailField)
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                Button(
-                                    onClick = onContributionClick,
-                                    modifier =
-                                        Modifier.fillMaxWidth()
-                                            .testTag(SettingsTestTags.ContributionsButton),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors =
-                                        ButtonDefaults.buttonColors(
-                                            containerColor = MainColor, contentColor = White
-                                        )
-                                ) {
-                                    Text("View my contributions")
-                                }
-                            }
+                        // ---- Notifications ---------------------------------------------------
+                        SectionLabel("Notifications")
+                        CardBlock {
+                          SettingSwitchRow(
+                              label = "Show notifications for messages",
+                              checked = notificationsMessages,
+                              onCheckedChange = { notificationsMessages = it })
+                          SoftDivider()
+                          SettingSwitchRow(
+                              label = "Show notifications for new listings",
+                              checked = notificationsListings,
+                              onCheckedChange = { notificationsListings = it })
+                        }
 
-                            // ---- Privacy ---------------------------------------------------------
-                            SectionLabel("Privacy")
-                            CardBlock {
-                                SettingSwitchRow(
-                                    label = "Read receipts",
-                                    checked = readReceipts,
-                                    onCheckedChange = { readReceipts = it })
-                                SoftDivider()
+                        // ---- Account ---------------------------------------------------------
+                        SectionLabel("Account")
+                        CardBlock {
+                          OutlinedTextField(
+                              value = ui.email,
+                              onValueChange = {},
+                              label = { Text("Email address") },
+                              singleLine = true,
+                              readOnly = true,
+                              enabled = false,
+                              keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                              keyboardActions =
+                                  KeyboardActions(onDone = { focusManager.clearFocus() }),
+                              colors =
+                                  OutlinedTextFieldDefaults.colors(
+                                      disabledTextColor = TextColor.copy(alpha = 0.9f),
+                                      disabledBorderColor = TextBoxColor,
+                                      disabledLabelColor =
+                                          MaterialTheme.colorScheme.onSurfaceVariant,
+                                      disabledContainerColor = MaterialTheme.colorScheme.surface),
+                              modifier =
+                                  Modifier.fillMaxWidth().testTag(SettingsTestTags.EmailField))
+                          Spacer(Modifier.height(12.dp))
+                          Button(
+                              onClick = onContributionClick,
+                              modifier =
+                                  Modifier.fillMaxWidth()
+                                      .testTag(SettingsTestTags.ContributionsButton),
+                              shape = RoundedCornerShape(16.dp),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = MainColor, contentColor = White)) {
+                                Text("View my contributions")
+                              }
+                        }
 
-                                Row(
-                                    modifier =
-                                        Modifier.fillMaxWidth()
-                                            .padding(horizontal = 4.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "Blocked contacts (${blockedContacts.size})",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = TextColor,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    val rotation by
+                        // ---- Privacy ---------------------------------------------------------
+                        SectionLabel("Privacy")
+                        CardBlock {
+                          SettingSwitchRow(
+                              label = "Read receipts",
+                              checked = readReceipts,
+                              onCheckedChange = { readReceipts = it })
+                          SoftDivider()
+
+                          Row(
+                              modifier =
+                                  Modifier.fillMaxWidth()
+                                      .padding(horizontal = 4.dp, vertical = 10.dp),
+                              verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "Blocked contacts (${blockedContacts.size})",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = TextColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f))
+                                val rotation by
                                     animateFloatAsState(
                                         targetValue = if (blockedExpanded) 90f else 0f,
-                                        label = "blockedArrowRotation"
-                                    )
-                                    IconButton(
-                                        onClick = { blockedExpanded = !blockedExpanded },
-                                        modifier =
-                                            Modifier.testTag(SettingsTestTags.BlockedContactsToggle)
-                                    ) {
-                                        Icon(
-                                            imageVector =
-                                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                            contentDescription =
-                                                if (blockedExpanded) "Hide blocked"
-                                                else "Show blocked",
-                                            modifier = Modifier.rotate(rotation),
-                                            tint = TextColor
-                                        )
+                                        label = "blockedArrowRotation")
+                                IconButton(
+                                    onClick = { blockedExpanded = !blockedExpanded },
+                                    modifier =
+                                        Modifier.testTag(SettingsTestTags.BlockedContactsToggle)) {
+                                      Icon(
+                                          imageVector =
+                                              Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                          contentDescription =
+                                              if (blockedExpanded) "Hide blocked"
+                                              else "Show blocked",
+                                          modifier = Modifier.rotate(rotation),
+                                          tint = TextColor)
                                     }
-                                }
+                              }
 
-                                val blockedBringIntoView = remember { BringIntoViewRequester() }
-                                LaunchedEffect(blockedExpanded) {
-                                    if (blockedExpanded) blockedBringIntoView.bringIntoView()
-                                }
+                          val blockedBringIntoView = remember { BringIntoViewRequester() }
+                          LaunchedEffect(blockedExpanded) {
+                            if (blockedExpanded) blockedBringIntoView.bringIntoView()
+                          }
 
-                                if (blockedExpanded) {
-                                    Surface(
-                                        color = BackGroundColor,
-                                        shape = MaterialTheme.shapes.medium,
-                                        border = BorderStroke(1.dp, TextBoxColor),
-                                        modifier =
-                                            Modifier.fillMaxWidth()
-                                                .bringIntoViewRequester(blockedBringIntoView)
-                                                .testTag(SettingsTestTags.BlockedContactsList)
-                                    ) {
-                                        Column(Modifier.padding(12.dp)) {
-                                            if (blockedContacts.isEmpty()) {
-                                                Text(
-                                                    text = "No blocked contacts",
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = TextColor.copy(alpha = 0.6f),
-                                                    modifier = Modifier.padding(vertical = 4.dp)
-                                                )
-                                            } else {
-                                                blockedContacts.forEach { contact ->
-                                                    Row(
-                                                        modifier =
-                                                            Modifier.fillMaxWidth()
-                                                                .padding(vertical = 4.dp),
-                                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Text(
-                                                            text = contact.displayName,
-                                                            style = MaterialTheme.typography.bodyMedium,
-                                                            color = TextColor,
-                                                            maxLines = 1,
-                                                            overflow = TextOverflow.Ellipsis,
-                                                            modifier =
-                                                                Modifier.weight(1f)
-                                                                    .padding(end = 12.dp)
-                                                        )
-                                                        TextButton(onClick = { onUnblockUser(contact.uid) }) {
-                                                            Text("Unblock")
-                                                        }
-                                                    }
-                                                }
+                          if (blockedExpanded) {
+                            Surface(
+                                color = BackGroundColor,
+                                shape = MaterialTheme.shapes.medium,
+                                border = BorderStroke(1.dp, TextBoxColor),
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .bringIntoViewRequester(blockedBringIntoView)
+                                        .testTag(SettingsTestTags.BlockedContactsList)) {
+                                  Column(Modifier.padding(12.dp)) {
+                                    if (blockedContacts.isEmpty()) {
+                                      Text(
+                                          text = "No blocked contacts",
+                                          style = MaterialTheme.typography.bodyMedium,
+                                          color = TextColor.copy(alpha = 0.6f),
+                                          modifier = Modifier.padding(vertical = 4.dp))
+                                    } else {
+                                      blockedContacts.forEach { contact ->
+                                        Row(
+                                            modifier =
+                                                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically) {
+                                              Text(
+                                                  text = contact.displayName,
+                                                  style = MaterialTheme.typography.bodyMedium,
+                                                  color = TextColor,
+                                                  maxLines = 1,
+                                                  overflow = TextOverflow.Ellipsis,
+                                                  modifier =
+                                                      Modifier.weight(1f).padding(end = 12.dp))
+                                              TextButton(onClick = { onUnblockUser(contact.uid) }) {
+                                                Text("Unblock")
+                                              }
                                             }
-                                        }
+                                      }
                                     }
+                                  }
                                 }
-                            }
-
-                            // ---- Accessibility ---------------------------------------------------
-                            SectionLabel("Accessibility")
-                            CardBlock {
-                                SettingSwitchRow(
-                                    label = "Dark mode",
-                                    checked = nightShift,
-                                    onCheckedChange = { enabled -> setDarkModePreference(enabled) })
-                                SoftDivider()
-                                SettingSwitchRow(
-                                    label = "Anonymous",
-                                    checked = anonymous,
-                                    onCheckedChange = { anonymous = it })
-                            }
-
-                            // ---- Admin ------------------------------------------------------------
-                            if (isAdmin) {
-                                SectionLabel("Admin")
-                                CardBlock {
-                                    Row(
-                                        modifier =
-                                            Modifier.fillMaxWidth()
-                                                .padding(vertical = 4.dp)
-                                                .clickable(onClick = onAdminClick),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            "Admin page",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = TextColor,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.weight(1f).padding(end = 12.dp)
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Filled.ChevronRight,
-                                            contentDescription = "Open admin page",
-                                            tint = TextColor
-                                        )
-                                    }
-                                }
-                            }
+                          }
                         }
+
+                        // ---- Accessibility ---------------------------------------------------
+                        SectionLabel("Accessibility")
+                        CardBlock {
+                          SettingSwitchRow(
+                              label = "Dark mode",
+                              checked = nightShift,
+                              onCheckedChange = { enabled -> setDarkModePreference(enabled) })
+                          SoftDivider()
+                          SettingSwitchRow(
+                              label = "Anonymous",
+                              checked = anonymous,
+                              onCheckedChange = { anonymous = it })
+                        }
+
+                        // ---- Admin ------------------------------------------------------------
+                        if (isAdmin) {
+                          SectionLabel("Admin")
+                          CardBlock {
+                            Row(
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable(onClick = onAdminClick),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween) {
+                                  Text(
+                                      "Admin page",
+                                      style = MaterialTheme.typography.bodyLarge,
+                                      color = TextColor,
+                                      maxLines = 2,
+                                      overflow = TextOverflow.Ellipsis,
+                                      modifier = Modifier.weight(1f).padding(end = 12.dp))
+                                  Icon(
+                                      imageVector = Icons.Filled.ChevronRight,
+                                      contentDescription = "Open admin page",
+                                      tint = TextColor)
+                                }
+                          }
+                        }
+                      }
                     }
 
                     item {

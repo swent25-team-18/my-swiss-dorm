@@ -1,14 +1,13 @@
 package com.android.mySwissDorm.ui.profile
 
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
-import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.google.firebase.Timestamp
-import java.net.URL
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -68,22 +67,18 @@ class ProfileContributionsViewModelTest {
 
                   override suspend fun getAllRentalListings() = emptyList<RentalListing>()
 
+                  override suspend fun getAllRentalListingsByLocation(
+                      location: Location,
+                      radius: Double
+                  ) = emptyList<RentalListing>()
+
                   override suspend fun getAllRentalListingsByUser(userId: String) =
                       listOf(
                           RentalListing(
                               uid = "listing-1",
                               ownerId = userId,
                               postedAt = listingTime,
-                              residency =
-                                  Residency(
-                                      name = "Res",
-                                      description = "",
-                                      location =
-                                          com.android.mySwissDorm.model.map.Location("", 0.0, 0.0),
-                                      city = "Lausanne",
-                                      email = null,
-                                      phone = null,
-                                      website = URL("https://example.com")),
+                              residencyName = "Res",
                               title = "Listing title",
                               roomType = RoomType.STUDIO,
                               pricePerMonth = 1200.0,
@@ -112,6 +107,9 @@ class ProfileContributionsViewModelTest {
                   override fun getNewUid() = "new"
 
                   override suspend fun getAllReviews() = emptyList<Review>()
+
+                  override suspend fun getAllReviewsByResidency(residencyName: String) =
+                      emptyList<Review>()
 
                   override suspend fun getAllReviewsByUser(userId: String) =
                       listOf(

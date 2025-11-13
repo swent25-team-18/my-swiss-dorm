@@ -169,4 +169,11 @@ object C {
     const val LOCATION_BUTTON = "adminPageLocationButton"
     const val SAVE_BUTTON = "adminPageSaveButton"
   }
+  
+  object AddPhotoButtonTags {
+    const val BUTTON = "addPhotoButton"
+    const val DIALOG = "addPhotoDialog"
+    const val CAMERA_BUTTON_TEXT = "addPhotoCameraButtonText"
+    const val GALLERY_BUTTON_TEXT = "addPhotoGalleryButtonText"
+  }
 }

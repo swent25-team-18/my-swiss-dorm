@@ -1,13 +1,12 @@
 package com.android.mySwissDorm.ui.blocked_implementation
 
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -105,7 +104,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
   }
 
   @Test
-  fun blockedUser_seesWarningMessage_whenTypingContactMessage() = runTest {
+  fun blockedUser_seesBlockedNotice_andListingHidden() = runTest {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
       ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
@@ -118,107 +117,30 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     // Verify blocked status is set
     assertTrue("User should be blocked by owner", vm.uiState.value.isBlockedByOwner)
 
-    // Scroll to contact field
-    scrollListTo(C.ViewListingTags.CONTACT_FIELD)
-    compose
-        .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD, useUnmergedTree = true)
-        .assertIsDisplayed()
-
-    // Type a message - this should trigger setContactMessage and update the ViewModel
-    compose
-        .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD)
-        .performTextInput("Hello, I'm interested in this listing.")
-
-    // Wait for ViewModel state to update (contactMessage field must be set)
-    waitUntil(5_000) {
-      val state = vm.uiState.value
-      state.contactMessage.isNotBlank() &&
-          state.contactMessage.any { !it.isWhitespace() } &&
-          state.isBlockedByOwner
-    }
-
-    // Verify the state is correct before checking UI
-    val state = vm.uiState.value
-    assertTrue("Contact message should be set", state.contactMessage.isNotBlank())
-    assertTrue("User should be blocked", state.isBlockedByOwner)
-
-    // Wait for UI to recompose
-    compose.waitForIdle()
-
-    // Give additional time for recomposition
-    delay(100)
-
-    // Scroll to the apply button area (warning message appears just before it)
-    scrollListTo(C.ViewListingTags.APPLY_BTN)
-
-    // Wait for the warning message text to appear in the UI
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithText("You are not allowed to contact this user", useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Verify warning message appears
-    compose
-        .onNodeWithText("You are not allowed to contact this user", useUnmergedTree = true)
-        .assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE).assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.TITLE).assertDoesNotExist()
+    compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).assertDoesNotExist()
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
   }
 
   @Test
-  fun blockedUser_applyButtonTurnsViolet_whenTypingMessage() = runTest {
+  fun blockedUser_blockedNoticeBackButton_callsOnGoBack() = runTest {
+    var navigatedBack = false
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
-      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
+      ViewListingScreen(
+          viewListingViewModel = vm,
+          listingUid = ownerListing.uid,
+          onGoBack = { navigatedBack = true })
     }
     waitForScreenRoot()
 
     // Wait for blocked status
     waitUntil { vm.uiState.value.isBlockedByOwner }
 
-    // Type a message
-    scrollListTo(C.ViewListingTags.CONTACT_FIELD)
-    compose
-        .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD)
-        .performTextInput("Interested in this property")
-
-    compose.waitForIdle()
-
-    // Verify button exists and is disabled (blocked users can't apply)
-    scrollListTo(C.ViewListingTags.APPLY_BTN)
-    compose
-        .onNodeWithTag(C.ViewListingTags.APPLY_BTN, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .assertIsNotEnabled()
-
-    // Note: We can't easily test the exact color (violet) without inspecting the semantics,
-    // but we verify the button is disabled which is the key behavior
-  }
-
-  @Test
-  fun blockedUser_applyButtonDisabled_afterTypingMessage() = runTest {
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
-    }
-    waitForScreenRoot()
-
-    // Wait for blocked status to load
-    waitUntil { vm.uiState.value.isBlockedByOwner }
-
-    // Initially button should be disabled (no message)
-    scrollListTo(C.ViewListingTags.APPLY_BTN)
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN, useUnmergedTree = true).assertIsNotEnabled()
-
-    // Type a message
-    scrollListTo(C.ViewListingTags.CONTACT_FIELD)
-    compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).performTextInput("I want to apply")
-
-    compose.waitForIdle()
-
-    // Button should still be disabled (blocked users can't apply even with message)
-    scrollListTo(C.ViewListingTags.APPLY_BTN)
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN, useUnmergedTree = true).assertIsNotEnabled()
+    compose.onNodeWithTag(C.ViewListingTags.BLOCKED_BACK_BTN).assertIsDisplayed().performClick()
+    compose.waitUntil(3_000) { navigatedBack }
+    assertTrue(navigatedBack)
   }
 
   @Test

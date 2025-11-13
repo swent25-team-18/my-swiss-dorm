@@ -23,6 +23,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -89,173 +90,205 @@ fun ViewListingScreen(
             })
       },
       content = { paddingValues ->
-        Column(
-            modifier =
-                Modifier.fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .verticalScroll(rememberScrollState())
-                    .imePadding()
-                    .testTag(C.ViewListingTags.ROOT),
-            verticalArrangement = Arrangement.spacedBy(16.dp)) {
-              Text(
-                  text = listing.title,
-                  fontSize = 28.sp,
-                  fontWeight = FontWeight.SemiBold,
-                  lineHeight = 32.sp,
-                  modifier = Modifier.testTag(C.ViewListingTags.TITLE),
-                  color = TextColor)
+        if (isBlockedByOwner && !isOwner) {
+          Box(
+              modifier =
+                  Modifier.fillMaxSize()
+                      .padding(paddingValues)
+                      .padding(horizontal = 16.dp, vertical = 24.dp)
+                      .testTag(C.ViewListingTags.ROOT),
+              contentAlignment = Alignment.Center) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                      Text(
+                          text = "Listing unavailable",
+                          style = MaterialTheme.typography.titleLarge.copy(color = TextColor),
+                          modifier = Modifier.testTag(C.ViewListingTags.BLOCKED_NOTICE))
+                      Text(
+                          text =
+                              "You cannot view this listing because the owner has blocked you. If this is a mistake, manage your blocked contacts from Settings.",
+                          style =
+                              MaterialTheme.typography.bodyMedium.copy(
+                                  color = MaterialTheme.colorScheme.onSurfaceVariant),
+                          textAlign = TextAlign.Center)
+                      Button(
+                          onClick = onGoBack,
+                          modifier =
+                              Modifier.fillMaxWidth(0.6f)
+                                  .testTag(C.ViewListingTags.BLOCKED_BACK_BTN),
+                          shape = RoundedCornerShape(14.dp),
+                          colors =
+                              ButtonDefaults.buttonColors(
+                                  containerColor = MainColor, contentColor = Color.White)) {
+                            Text("Go back")
+                          }
+                    }
+              }
+        } else {
+          Column(
+              modifier =
+                  Modifier.fillMaxSize()
+                      .padding(paddingValues)
+                      .padding(horizontal = 16.dp, vertical = 8.dp)
+                      .verticalScroll(rememberScrollState())
+                      .imePadding()
+                      .testTag(C.ViewListingTags.ROOT),
+              verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = listing.title,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    lineHeight = 32.sp,
+                    modifier = Modifier.testTag(C.ViewListingTags.TITLE),
+                    color = TextColor)
 
-              // tag we'll look for
-              val tagProfile = "PROFILE_ID"
+                // tag we'll look for
+                val tagProfile = "PROFILE_ID"
 
-              // build the AnnotatedString tagging the name
-              val annotatedPostedByString = buildAnnotatedString {
-                append("Posted by ")
+                // build the AnnotatedString tagging the name
+                val annotatedPostedByString = buildAnnotatedString {
+                  append("Posted by ")
 
-                // pushStringAnnotation to "tag" this part of the string
-                pushStringAnnotation(tag = tagProfile, annotation = listing.ownerId)
-                // apply the style to the name
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
-                  append(fullNameOfPoster)
-                  if (isOwner) append(" (You)")
+                  // pushStringAnnotation to "tag" this part of the string
+                  pushStringAnnotation(tag = tagProfile, annotation = listing.ownerId)
+                  // apply the style to the name
+                  withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
+                    append(fullNameOfPoster)
+                    if (isOwner) append(" (You)")
+                  }
+                  // stop tagging
+                  pop()
+
+                  append(" ${formatRelative(listing.postedAt)}")
                 }
-                // stop tagging
-                pop()
 
-                append(" ${formatRelative(listing.postedAt)}")
-              }
+                // remember the TextLayoutResult
+                var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
 
-              // remember the TextLayoutResult
-              var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-
-              Text(
-                  text = annotatedPostedByString,
-                  style =
-                      MaterialTheme.typography.bodyMedium.copy(
-                          color = MaterialTheme.colorScheme.onSurfaceVariant),
-                  onTextLayout = { textLayoutResult = it },
-                  modifier =
-                      Modifier.testTag(C.ViewListingTags.POSTED_BY).pointerInput(Unit) {
-                        detectTapGestures { pos ->
-                          val l = textLayoutResult ?: return@detectTapGestures
-                          val offset = l.getOffsetForPosition(pos)
-
-                          // find any annotations at that exact offset
-                          annotatedPostedByString
-                              .getStringAnnotations(start = offset, end = offset)
-                              .firstOrNull { it.tag == tagProfile } // Check if it's our tag
-                              ?.let { annotation ->
-                                // trigger the callback with the stored ownerId
-                                onViewProfile(annotation.item)
-                              }
-                        }
-                      })
-
-              // Bullet section
-              SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
-                BulletRow("${listing.roomType}")
-                BulletRow("${listing.pricePerMonth}.-/month")
-                BulletRow("${listing.areaInM2}m²")
-                BulletRow("Starting ${formatDate(listing.startDate)}")
-              }
-
-              // Description
-              SectionCard(modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION)) {
-                Text("Description :", fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(3.dp))
-                Text(listing.description, style = MaterialTheme.typography.bodyLarge)
-              }
-
-              // Photos placeholder
-              PlaceholderBlock(
-                  text = "PHOTOS (Not implemented yet)",
-                  height = 220.dp,
-                  modifier = Modifier.testTag(C.ViewListingTags.PHOTOS))
-
-              // Location placeholder
-              viewListingViewModel.setLocationOfListing(listingUid)
-              val location = listingUIState.locationOfListing
-              if (location.latitude != 0.0 && location.longitude != 0.0) {
-                MapPreview(
-                    location = location,
-                    title = listing.title,
+                Text(
+                    text = annotatedPostedByString,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant),
+                    onTextLayout = { textLayoutResult = it },
                     modifier =
-                        Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewListingTags.LOCATION),
-                    onMapClick = {
-                      onViewMap(location.latitude, location.longitude, listing.title, "Listing")
-                    })
-              } else {
+                        Modifier.testTag(C.ViewListingTags.POSTED_BY).pointerInput(Unit) {
+                          detectTapGestures { pos ->
+                            val l = textLayoutResult ?: return@detectTapGestures
+                            val offset = l.getOffsetForPosition(pos)
+
+                            // find any annotations at that exact offset
+                            annotatedPostedByString
+                                .getStringAnnotations(start = offset, end = offset)
+                                .firstOrNull { it.tag == tagProfile } // Check if it's our tag
+                                ?.let { annotation ->
+                                  // trigger the callback with the stored ownerId
+                                  onViewProfile(annotation.item)
+                                }
+                          }
+                        })
+
+                // Bullet section
+                SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
+                  BulletRow("${listing.roomType}")
+                  BulletRow("${listing.pricePerMonth}.-/month")
+                  BulletRow("${listing.areaInM2}m²")
+                  BulletRow("Starting ${formatDate(listing.startDate)}")
+                }
+
+                // Description
+                SectionCard(modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION)) {
+                  Text("Description :", fontWeight = FontWeight.SemiBold)
+                  Spacer(Modifier.height(3.dp))
+                  Text(listing.description, style = MaterialTheme.typography.bodyLarge)
+                }
+
+                // Photos placeholder
                 PlaceholderBlock(
-                    text = "LOCATION (Not available)",
-                    height = 180.dp,
-                    modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
-              }
+                    text = "PHOTOS (Not implemented yet)",
+                    height = 220.dp,
+                    modifier = Modifier.testTag(C.ViewListingTags.PHOTOS))
 
-              if (isOwner) {
-                // Owner sees an Edit button centered, same size as Apply
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                  Button(
-                      onClick = onEdit,
+                // Location placeholder
+                viewListingViewModel.setLocationOfListing(listingUid)
+                val location = listingUIState.locationOfListing
+                if (location.latitude != 0.0 && location.longitude != 0.0) {
+                  MapPreview(
+                      location = location,
+                      title = listing.title,
                       modifier =
-                          Modifier.fillMaxWidth(0.55f)
-                              .height(52.dp)
-                              .testTag(C.ViewListingTags.EDIT_BTN),
-                      shape = RoundedCornerShape(16.dp)) {
-                        Text(
-                            "Edit", style = MaterialTheme.typography.titleMedium, color = MainColor)
-                      }
-                }
-              } else {
-                // Contact message
-                OutlinedTextField(
-                    value = listingUIState.contactMessage,
-                    onValueChange = { viewListingViewModel.setContactMessage(it) },
-                    placeholder = { Text("Contact the announcer") },
-                    modifier = Modifier.fillMaxWidth().testTag(C.ViewListingTags.CONTACT_FIELD),
-                    shape = RoundedCornerShape(16.dp),
-                    singleLine = false,
-                    minLines = 1,
-                    colors =
-                        OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFFF0F0F0),
-                            unfocusedContainerColor = Color(0xFFF0F0F0),
-                            disabledContainerColor = Color(0xFFF0F0F0),
-                            focusedBorderColor = MaterialTheme.colorScheme.outline,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline))
-
-                // Warning message if blocked
-                if (isBlockedByOwner && hasMessage) {
-                  Text(
-                      text = "You are not allowed to contact this user",
-                      color = Color(0xFFFF5722),
-                      style = MaterialTheme.typography.bodyMedium,
-                      modifier = Modifier.padding(horizontal = 4.dp))
+                          Modifier.fillMaxWidth()
+                              .height(180.dp)
+                              .testTag(C.ViewListingTags.LOCATION),
+                      onMapClick = {
+                        onViewMap(location.latitude, location.longitude, listing.title, "Listing")
+                      })
+                } else {
+                  PlaceholderBlock(
+                      text = "LOCATION (Not available)",
+                      height = 180.dp,
+                      modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
                 }
 
-                // Apply now button (centered, half width, rounded, red or violet)
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                  Button(
-                      onClick = onApply,
-                      enabled = canApply,
-                      modifier =
-                          Modifier.fillMaxWidth(0.55f)
-                              .height(52.dp)
-                              .testTag(C.ViewListingTags.APPLY_BTN),
+                if (isOwner) {
+                  // Owner sees an Edit button centered, same size as Apply
+                  Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Button(
+                        onClick = onEdit,
+                        modifier =
+                            Modifier.fillMaxWidth(0.55f)
+                                .height(52.dp)
+                                .testTag(C.ViewListingTags.EDIT_BTN),
+                        shape = RoundedCornerShape(16.dp)) {
+                          Text(
+                              "Edit",
+                              style = MaterialTheme.typography.titleMedium,
+                              color = MainColor)
+                        }
+                  }
+                } else {
+                  // Contact message
+                  OutlinedTextField(
+                      value = listingUIState.contactMessage,
+                      onValueChange = { viewListingViewModel.setContactMessage(it) },
+                      placeholder = { Text("Contact the announcer") },
+                      modifier = Modifier.fillMaxWidth().testTag(C.ViewListingTags.CONTACT_FIELD),
                       shape = RoundedCornerShape(16.dp),
+                      singleLine = false,
+                      minLines = 1,
                       colors =
-                          ButtonDefaults.buttonColors(
-                              containerColor = buttonColor,
-                              disabledContainerColor = Color(0xFFEBD0CE),
-                              disabledContentColor = Color(0xFFFFFFFF))) {
-                        Text(
-                            "Apply now !",
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleMedium)
-                      }
+                          OutlinedTextFieldDefaults.colors(
+                              focusedContainerColor = Color(0xFFF0F0F0),
+                              unfocusedContainerColor = Color(0xFFF0F0F0),
+                              disabledContainerColor = Color(0xFFF0F0F0),
+                              focusedBorderColor = MaterialTheme.colorScheme.outline,
+                              unfocusedBorderColor = MaterialTheme.colorScheme.outline))
+
+                  // Apply now button (centered, half width, rounded, red or violet)
+                  Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Button(
+                        onClick = onApply,
+                        enabled = canApply,
+                        modifier =
+                            Modifier.fillMaxWidth(0.55f)
+                                .height(52.dp)
+                                .testTag(C.ViewListingTags.APPLY_BTN),
+                        shape = RoundedCornerShape(16.dp),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = buttonColor,
+                                disabledContainerColor = Color(0xFFEBD0CE),
+                                disabledContentColor = Color(0xFFFFFFFF))) {
+                          Text(
+                              "Apply now !",
+                              color = Color.White,
+                              style = MaterialTheme.typography.titleMedium)
+                        }
+                  }
                 }
               }
-            }
+        }
       })
 }
 

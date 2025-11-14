@@ -102,6 +102,12 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     compose.onNodeWithTag(C.ViewListingTags.ROOT).performScrollToNode(hasTestTag(childTag))
   }
 
+  private fun waitForNode(tag: String) {
+    compose.waitUntil(5_000) {
+      compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+    }
+  }
+
   @Test
   fun blockedUser_seesBlockedNotice_andListingHidden() = runTest {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
@@ -116,6 +122,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     // Verify blocked status is set
     assertTrue("User should be blocked by owner", vm.uiState.value.isBlockedByOwner)
 
+    waitForNode(C.ViewListingTags.BLOCKED_NOTICE)
     compose.onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.TITLE).assertDoesNotExist()
     compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).assertDoesNotExist()
@@ -137,6 +144,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     // Wait for blocked status
     waitUntil { vm.uiState.value.isBlockedByOwner }
 
+    waitForNode(C.ViewListingTags.BLOCKED_BACK_BTN)
     compose.onNodeWithTag(C.ViewListingTags.BLOCKED_BACK_BTN).assertIsDisplayed().performClick()
     compose.waitUntil(3_000) { navigatedBack }
     assertTrue(navigatedBack)

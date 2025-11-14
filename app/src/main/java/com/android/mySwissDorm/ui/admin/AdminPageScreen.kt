@@ -1,5 +1,10 @@
 package com.android.mySwissDorm.ui.admin
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,13 +38,18 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.InputSanitizers
@@ -49,6 +59,8 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
+import com.android.mySwissDorm.ui.utils.fetchDeviceLocation
+import com.google.android.gms.location.LocationServices
 
 // Documentation was made with the help of AI
 /**
@@ -91,7 +103,56 @@ fun AdminPageScreen(
 
   val ui = vm.uiState
   val scrollState = rememberScrollState()
+  val context = LocalContext.current
+  val fusedLocationClient =
+      remember(context) { LocationServices.getFusedLocationProviderClient(context) }
 
+  var hasLocationPermission by remember {
+    mutableStateOf(
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED)
+  }
+
+  val onFetchLocationName =
+      remember<(Double, Double) -> Unit> { { lat, lon -> vm.fetchLocationName(lat, lon) } }
+  val permissionLauncher =
+      rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.RequestPermission(),
+          onResult = { isGranted ->
+            if (isGranted) {
+              hasLocationPermission = true
+              fetchDeviceLocation(
+                  context = context,
+                  fusedLocationClient = fusedLocationClient,
+                  onLocationFetched = onFetchLocationName,
+                  onPermissionDenied = {
+                    Toast.makeText(
+                            context, "Could not get location. Is GPS on?", Toast.LENGTH_SHORT)
+                        .show()
+                  })
+            } else {
+              Toast.makeText(context, "Permission denied. Cannot get location.", Toast.LENGTH_SHORT)
+                  .show()
+            }
+          })
+
+  val onUseCurrentLocationClick =
+      remember<() -> Unit> {
+        {
+          if (hasLocationPermission) {
+            fetchDeviceLocation(
+                context = context,
+                fusedLocationClient = fusedLocationClient,
+                onLocationFetched = onFetchLocationName,
+                onPermissionDenied = {
+                  Toast.makeText(context, "Could not get location. Is GPS on?", Toast.LENGTH_SHORT)
+                      .show()
+                })
+          } else {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+          }
+        }
+      }
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
@@ -324,7 +385,8 @@ fun AdminPageScreen(
               onValueChange = onValueChange,
               onDropDownLocationSelect = onDropDownLocationSelect,
               onDismiss = onDismiss,
-              onConfirm = onConfirm)
+              onConfirm = onConfirm,
+              onUseCurrentLocationClick = onUseCurrentLocationClick)
         }
       }
 }

@@ -207,4 +207,19 @@ class AdminPageViewModel(
       }
     }
   }
+
+  fun fetchLocationName(latitude: Double, longitude: Double) {
+    viewModelScope.launch {
+      try {
+        val location = locationRepository.reverseSearch(latitude, longitude)
+        if (location != null) {
+          uiState = uiState.copy(customLocation = location, customLocationQuery = location.name)
+        } else {
+          Log.w("AdminPageViewModel", "Could not reverse geocode location")
+        }
+      } catch (e: Exception) {
+        Log.e("AdminPageViewModel", "Error reverse geocoding", e)
+      }
+    }
+  }
 }

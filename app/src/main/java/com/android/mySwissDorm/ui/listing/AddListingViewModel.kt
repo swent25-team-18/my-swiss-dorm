@@ -143,17 +143,11 @@ class AddListingViewModel(
     val state = _uiState.value
 
     val titleRes = InputSanitizers.validateFinal<String>(FieldType.Title, state.title)
-    val residencyRes =
-        InputSanitizers.validateFinal<String>(FieldType.FirstName, state.residencyName)
     val sizeRes = InputSanitizers.validateFinal<Double>(FieldType.RoomSize, state.sizeSqm)
     val priceRes = InputSanitizers.validateFinal<Int>(FieldType.Price, state.price)
     val descRes = InputSanitizers.validateFinal<String>(FieldType.Description, state.description)
 
-    if (!titleRes.isValid ||
-        !sizeRes.isValid ||
-        !priceRes.isValid ||
-        !descRes.isValid ||
-        !residencyRes.isValid) {
+    if (!titleRes.isValid || !sizeRes.isValid || !priceRes.isValid || !descRes.isValid) {
       setErrorMsg("At least one field is not valid")
       return
     }

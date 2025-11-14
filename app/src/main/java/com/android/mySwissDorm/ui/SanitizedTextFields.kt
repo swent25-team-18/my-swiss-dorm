@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
 import com.android.mySwissDorm.ui.theme.*
 
@@ -315,7 +316,7 @@ fun DescriptionField(
         value,
         onValueChange,
         FieldType.Description,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 140.dp),
         label = label,
         placeholder = "Add details (neighborhood, rules, etc.)",
         externalErrorKey = externalErrorKey,
@@ -372,33 +373,39 @@ fun ResidencyDropdownResID(
   var expanded by remember { mutableStateOf(false) }
   val label = selected?.toString() ?: "Select residency"
 
-  ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-    OutlinedTextField(
-        value = label,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text("Residency Name") },
-        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-        leadingIcon = { Icon(Icons.Default.Home, null, tint = MainColor) },
-        colors =
-            OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MainColor,
-                unfocusedBorderColor = MainColor,
-                focusedLabelColor = MainColor,
-                unfocusedLabelColor = Color.Gray),
-        modifier = Modifier.menuAnchor().fillMaxWidth(),
-    )
-    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-      residencies.forEach { residency ->
-        DropdownMenuItem(
-            text = { Text(residency.name) },
-            onClick = {
-              onSelected(residency.name)
-              expanded = false
-            })
+  ExposedDropdownMenuBox(
+      expanded = expanded,
+      onExpandedChange = { expanded = it },
+      modifier = Modifier.testTag(C.SanitizedResidencyDropdownTags.RESIDENCY_DROPDOWN_BOX)) {
+        OutlinedTextField(
+            value = label,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Residency Name") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            leadingIcon = { Icon(Icons.Default.Home, null, tint = MainColor) },
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MainColor,
+                    unfocusedBorderColor = MainColor,
+                    focusedLabelColor = MainColor,
+                    unfocusedLabelColor = Color.Gray),
+            modifier = Modifier.menuAnchor().fillMaxWidth(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+          residencies.forEach { residency ->
+            DropdownMenuItem(
+                modifier =
+                    Modifier.testTag(
+                        C.SanitizedResidencyDropdownTags.getResidencyTag(residency.name)),
+                text = { Text(residency.name) },
+                onClick = {
+                  onSelected(residency.name)
+                  expanded = false
+                })
+          }
+        }
       }
-    }
-  }
 }
 
 /* ---------- Helpers ---------- */

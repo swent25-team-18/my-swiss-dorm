@@ -19,8 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.android.mySwissDorm.resources.C
 import kotlin.math.roundToInt
 
 /**
@@ -76,7 +78,8 @@ fun StarRatingBar(
               imageVector = icon,
               contentDescription = null,
               tint = if (i - 0.5 <= rating) activeColor else inactiveColor,
-              modifier = Modifier.weight(1f).height(30.dp))
+              modifier =
+                  Modifier.weight(1f).height(30.dp).testTag(C.StarRatingBarTags.getStarTag(i)))
         }
       }
 }

@@ -22,8 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// ⬇️ NEW: central sanitizers
-
 data class AddListingUIState(
     val title: String = "",
     val residencies: List<Residency>,
@@ -50,7 +48,12 @@ data class AddListingUIState(
       val descOk =
           InputSanitizers.validateFinal<String>(InputSanitizers.FieldType.Description, description)
               .isValid
-      return titleOk && descOk && sizeOk && priceOk
+
+      // because residencies are predefined, no validation needed. We just need to check that the
+      // field is not empty.
+      val residencyOk = residencyName.isNotEmpty()
+
+      return titleOk && descOk && sizeOk && priceOk && residencyOk
     }
 }
 
@@ -140,11 +143,17 @@ class AddListingViewModel(
     val state = _uiState.value
 
     val titleRes = InputSanitizers.validateFinal<String>(FieldType.Title, state.title)
+    val residencyRes =
+        InputSanitizers.validateFinal<String>(FieldType.FirstName, state.residencyName)
     val sizeRes = InputSanitizers.validateFinal<Double>(FieldType.RoomSize, state.sizeSqm)
     val priceRes = InputSanitizers.validateFinal<Int>(FieldType.Price, state.price)
     val descRes = InputSanitizers.validateFinal<String>(FieldType.Description, state.description)
 
-    if (!titleRes.isValid || !sizeRes.isValid || !priceRes.isValid || !descRes.isValid) {
+    if (!titleRes.isValid ||
+        !sizeRes.isValid ||
+        !priceRes.isValid ||
+        !descRes.isValid ||
+        !residencyRes.isValid) {
       setErrorMsg("At least one field is not valid")
       return
     }

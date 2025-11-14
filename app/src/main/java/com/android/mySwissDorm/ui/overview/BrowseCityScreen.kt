@@ -42,6 +42,7 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.google.firebase.Timestamp
@@ -696,10 +697,7 @@ private fun SizeFilterContent(sizeRange: Pair<Int?, Int?>, onRangeChange: (Int?,
   }
 }
 
-/**
- * Start date filter content with date selection buttons. Note: For now using simple text display.
- * Date picker can be enhanced later.
- */
+/** Start date filter content with date selection buttons using CustomDatePickerDialog. */
 @Composable
 private fun StartDateFilterContent(
     dateRange: Pair<Timestamp?, Timestamp?>,
@@ -707,19 +705,72 @@ private fun StartDateFilterContent(
 ) {
   var minDate by remember(dateRange) { mutableStateOf(dateRange.first) }
   var maxDate by remember(dateRange) { mutableStateOf(dateRange.second) }
+  var showMinDatePicker by remember { mutableStateOf(false) }
+  var showMaxDatePicker by remember { mutableStateOf(false) }
 
   Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-    Text(
-        "Min Start Date: ${if (minDate != null) formatDate(minDate) else "Not set"}",
-        color = TextColor)
-    Text(
-        "Max Start Date: ${if (maxDate != null) formatDate(maxDate) else "Not set"}",
-        color = TextColor)
-    // TODO: Replace with actual date pickers
-    OutlinedButton(onClick = { onRangeChange(null, null) }, modifier = Modifier.fillMaxWidth()) {
-      Text("Clear Dates", color = TextColor)
-    }
+    // Min Start Date Button
+    OutlinedButton(
+        onClick = { showMinDatePicker = true },
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically) {
+                Text("Min Start Date", color = TextColor)
+                Text(
+                    if (minDate != null) formatDate(minDate) else "Not set",
+                    color = TextColor,
+                    style = MaterialTheme.typography.bodyMedium)
+              }
+        }
+
+    // Max Start Date Button
+    OutlinedButton(
+        onClick = { showMaxDatePicker = true },
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically) {
+                Text("Max Start Date", color = TextColor)
+                Text(
+                    if (maxDate != null) formatDate(maxDate) else "Not set",
+                    color = TextColor,
+                    style = MaterialTheme.typography.bodyMedium)
+              }
+        }
   }
+
+  // Min Date Picker Dialog
+  // Constraint: minDate cannot be larger than maxDate (if maxDate is set)
+  CustomDatePickerDialog(
+      showDialog = showMinDatePicker,
+      initialDate = minDate,
+      onDismiss = { showMinDatePicker = false },
+      onDateSelected = { timestamp ->
+        minDate = timestamp
+        onRangeChange(minDate, maxDate)
+        showMinDatePicker = false
+      },
+      maxDate = maxDate)
+
+  // Max Date Picker Dialog
+  // Constraint: maxDate cannot be smaller than minDate (if minDate is set)
+  CustomDatePickerDialog(
+      showDialog = showMaxDatePicker,
+      initialDate = maxDate,
+      onDismiss = { showMaxDatePicker = false },
+      onDateSelected = { timestamp ->
+        maxDate = timestamp
+        onRangeChange(minDate, maxDate)
+        showMaxDatePicker = false
+      },
+      minDate = minDate)
 }
 
 /**

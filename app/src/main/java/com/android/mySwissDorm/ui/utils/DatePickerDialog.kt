@@ -19,6 +19,75 @@ import java.util.TimeZone
 private val SWITZERLAND_TIMEZONE = TimeZone.getTimeZone("Europe/Zurich")
 private val SWITZERLAND_LOCALE = Locale("fr", "CH")
 
+/** Gets today's date at midnight in Switzerland timezone as UTC milliseconds. */
+private fun getTodayMidnightUtc(): Long {
+  val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+  todaySwiss.set(Calendar.HOUR_OF_DAY, 0)
+  todaySwiss.set(Calendar.MINUTE, 0)
+  todaySwiss.set(Calendar.SECOND, 0)
+  todaySwiss.set(Calendar.MILLISECOND, 0)
+  return todaySwiss.timeInMillis
+}
+
+/** Converts a Timestamp to midnight UTC milliseconds in Switzerland timezone. */
+private fun timestampToMidnightUtc(timestamp: Timestamp): Long {
+  val swissCal = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+  swissCal.timeInMillis = timestamp.toDate().time
+  val year = swissCal.get(Calendar.YEAR)
+  val month = swissCal.get(Calendar.MONTH)
+  val day = swissCal.get(Calendar.DAY_OF_MONTH)
+
+  val midnightSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+  midnightSwiss.set(year, month, day, 0, 0, 0)
+  midnightSwiss.set(Calendar.MILLISECOND, 0)
+  return midnightSwiss.timeInMillis
+}
+
+/**
+ * Converts UTC milliseconds to date components and creates a system timezone calendar at noon (to
+ * avoid DST issues) for DatePickerState.
+ */
+private fun utcMillisToSystemNoon(utcMillis: Long): Long {
+  val swissCal = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+  swissCal.timeInMillis = utcMillis
+  val year = swissCal.get(Calendar.YEAR)
+  val month = swissCal.get(Calendar.MONTH)
+  val day = swissCal.get(Calendar.DAY_OF_MONTH)
+
+  val systemCal = Calendar.getInstance()
+  systemCal.set(year, month, day, 12, 0, 0)
+  systemCal.set(Calendar.MILLISECOND, 0)
+  return systemCal.timeInMillis
+}
+
+/** Converts system timezone milliseconds to a Timestamp at midnight in Switzerland timezone. */
+private fun systemMillisToTimestamp(millis: Long): Timestamp {
+  val systemCal = Calendar.getInstance()
+  systemCal.timeInMillis = millis
+  val year = systemCal.get(Calendar.YEAR)
+  val month = systemCal.get(Calendar.MONTH)
+  val day = systemCal.get(Calendar.DAY_OF_MONTH)
+
+  val swissCal = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+  swissCal.set(year, month, day, 0, 0, 0)
+  swissCal.set(Calendar.MILLISECOND, 0)
+  return Timestamp(swissCal.time)
+}
+
+/** Normalizes UTC milliseconds to midnight UTC in Switzerland timezone. */
+private fun normalizeToMidnightUtc(utcTimeMillis: Long): Long {
+  val swissCal = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+  swissCal.timeInMillis = utcTimeMillis
+  val year = swissCal.get(Calendar.YEAR)
+  val month = swissCal.get(Calendar.MONTH)
+  val day = swissCal.get(Calendar.DAY_OF_MONTH)
+
+  val midnightSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+  midnightSwiss.set(year, month, day, 0, 0, 0)
+  midnightSwiss.set(Calendar.MILLISECOND, 0)
+  return midnightSwiss.timeInMillis
+}
+
 /**
  * [SelectableDates] implementation that prevents selecting past dates. Only dates from today
  * onwards (in Switzerland timezone) are selectable.
@@ -26,37 +95,63 @@ private val SWITZERLAND_LOCALE = Locale("fr", "CH")
 @OptIn(ExperimentalMaterial3Api::class)
 private class FutureSelectableDates : SelectableDates {
   override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-    // Get today's date at midnight in Switzerland timezone
-    val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-    todaySwiss.set(Calendar.HOUR_OF_DAY, 0)
-    todaySwiss.set(Calendar.MINUTE, 0)
-    todaySwiss.set(Calendar.SECOND, 0)
-    todaySwiss.set(Calendar.MILLISECOND, 0)
-    val todayMidnightUtc = todaySwiss.timeInMillis
-
-    // Convert UTC milliseconds to date components in Switzerland timezone
-    // utcTimeMillis is already in UTC, so we can directly compare
-    // But we need to normalize to midnight in Switzerland timezone for fair comparison
-    val selectedSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-    selectedSwiss.timeInMillis = utcTimeMillis
-    val year = selectedSwiss.get(Calendar.YEAR)
-    val month = selectedSwiss.get(Calendar.MONTH)
-    val day = selectedSwiss.get(Calendar.DAY_OF_MONTH)
-
-    // Create a calendar for the selected date at midnight in Switzerland timezone
-    val selectedMidnightSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-    selectedMidnightSwiss.set(year, month, day, 0, 0, 0)
-    selectedMidnightSwiss.set(Calendar.MILLISECOND, 0)
-    val selectedMidnightUtc = selectedMidnightSwiss.timeInMillis
-
-    // Only allow dates from today onwards
+    val todayMidnightUtc = getTodayMidnightUtc()
+    val selectedMidnightUtc = normalizeToMidnightUtc(utcTimeMillis)
     return selectedMidnightUtc >= todayMidnightUtc
   }
 
   override fun isSelectableYear(year: Int): Boolean {
-    // Get current year in Switzerland timezone
     val currentYear = Calendar.getInstance(SWITZERLAND_TIMEZONE).get(Calendar.YEAR)
     return year >= currentYear
+  }
+}
+
+/**
+ * [SelectableDates] implementation that respects min and max date constraints. Dates must be from
+ * today onwards and within the specified min/max range.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+private class ConstrainedSelectableDates(
+    private val minDate: Timestamp?,
+    private val maxDate: Timestamp?
+) : SelectableDates {
+  override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+    val todayMidnightUtc = getTodayMidnightUtc()
+    val selectedMidnightUtc = normalizeToMidnightUtc(utcTimeMillis)
+
+    // Must be from today onwards
+    if (selectedMidnightUtc < todayMidnightUtc) return false
+
+    // Check min date constraint
+    minDate?.let { if (selectedMidnightUtc < timestampToMidnightUtc(it)) return false }
+
+    // Check max date constraint
+    maxDate?.let { if (selectedMidnightUtc > timestampToMidnightUtc(it)) return false }
+
+    return true
+  }
+
+  override fun isSelectableYear(year: Int): Boolean {
+    val currentYear = Calendar.getInstance(SWITZERLAND_TIMEZONE).get(Calendar.YEAR)
+    if (year < currentYear) return false
+
+    minDate?.let {
+      val minYear =
+          Calendar.getInstance(SWITZERLAND_TIMEZONE)
+              .apply { timeInMillis = it.toDate().time }
+              .get(Calendar.YEAR)
+      if (year < minYear) return false
+    }
+
+    maxDate?.let {
+      val maxYear =
+          Calendar.getInstance(SWITZERLAND_TIMEZONE)
+              .apply { timeInMillis = it.toDate().time }
+              .get(Calendar.YEAR)
+      if (year > maxYear) return false
+    }
+
+    return true
   }
 }
 
@@ -77,6 +172,8 @@ private class FutureSelectableDates : SelectableDates {
  * @param onDateSelected Callback with selected date as [Timestamp] at midnight in Switzerland
  *   timezone
  * @param yearRange Available year range (default: 2025-3000)
+ * @param minDate Optional minimum selectable date (null = no minimum constraint beyond today)
+ * @param maxDate Optional maximum selectable date (null = no maximum constraint)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,60 +182,50 @@ fun CustomDatePickerDialog(
     initialDate: Timestamp? = null,
     onDismiss: () -> Unit,
     onDateSelected: (Timestamp) -> Unit,
-    yearRange: IntRange = IntRange(2025, 3000)
+    yearRange: IntRange = IntRange(2025, 3000),
+    minDate: Timestamp? = null,
+    maxDate: Timestamp? = null
 ) {
-  // Calculate initial milliseconds only when initialDate changes
-  // If initialDate is in the past, use today's date instead
+  // Calculate initial milliseconds only when initialDate or constraints change
+  // If initialDate is in the past or outside constraints, adjust it
   val initialMillis =
-      remember(initialDate) {
-        val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-        todaySwiss.set(Calendar.HOUR_OF_DAY, 0)
-        todaySwiss.set(Calendar.MINUTE, 0)
-        todaySwiss.set(Calendar.SECOND, 0)
-        todaySwiss.set(Calendar.MILLISECOND, 0)
-        val todayMidnightUtc = todaySwiss.timeInMillis
+      remember(initialDate, minDate, maxDate) {
+        val todayMidnightUtc = getTodayMidnightUtc()
 
-        if (initialDate != null) {
-          // Convert UTC timestamp to Switzerland timezone and get date components
-          val swissCal = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-          swissCal.timeInMillis = initialDate.toDate().time
-          val year = swissCal.get(Calendar.YEAR)
-          val month = swissCal.get(Calendar.MONTH)
-          val day = swissCal.get(Calendar.DAY_OF_MONTH)
+        // Calculate effective min/max constraints
+        val effectiveMinUtc = minDate?.let { timestampToMidnightUtc(it) } ?: todayMidnightUtc
+        val effectiveMaxUtc = maxDate?.let { timestampToMidnightUtc(it) } ?: Long.MAX_VALUE
 
-          // Create a calendar for the initial date at midnight in Switzerland timezone
-          val initialMidnightSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-          initialMidnightSwiss.set(year, month, day, 0, 0, 0)
-          initialMidnightSwiss.set(Calendar.MILLISECOND, 0)
-          val initialMidnightUtc = initialMidnightSwiss.timeInMillis
+        // Determine the initial date UTC
+        val initialMidnightUtc =
+            if (initialDate != null) {
+              var dateUtc = timestampToMidnightUtc(initialDate)
+              // Adjust if outside constraints
+              dateUtc = dateUtc.coerceIn(effectiveMinUtc, effectiveMaxUtc)
+              // Ensure not in the past
+              dateUtc.coerceAtLeast(todayMidnightUtc)
+            } else {
+              // Use today, adjusted to constraints
+              todayMidnightUtc.coerceIn(effectiveMinUtc, effectiveMaxUtc)
+            }
 
-          // If initial date is in the past, use today's date instead
-          if (initialMidnightUtc < todayMidnightUtc) {
-            // Use today's date at noon in system timezone (to avoid DST issues)
-            val systemCal = Calendar.getInstance()
-            systemCal.timeInMillis = todayMidnightUtc
-            systemCal.set(Calendar.HOUR_OF_DAY, 12)
-            systemCal.set(Calendar.MINUTE, 0)
-            systemCal.set(Calendar.SECOND, 0)
-            systemCal.set(Calendar.MILLISECOND, 0)
-            systemCal.timeInMillis
-          } else {
-            // Create date at noon in system timezone (to avoid DST issues)
-            val systemCal = Calendar.getInstance()
-            systemCal.set(year, month, day, 12, 0, 0)
-            systemCal.set(Calendar.MILLISECOND, 0)
-            systemCal.timeInMillis
-          }
+        // Convert to system timezone at noon for DatePickerState
+        utcMillisToSystemNoon(initialMidnightUtc)
+      }
+
+  // Create SelectableDates instance with constraints
+  val selectableDates =
+      remember(minDate, maxDate) {
+        if (minDate != null || maxDate != null) {
+          ConstrainedSelectableDates(minDate, maxDate)
         } else {
-          System.currentTimeMillis()
+          FutureSelectableDates()
         }
       }
 
-  // Create SelectableDates instance to prevent past dates
-  val selectableDates = remember { FutureSelectableDates() }
-
+  // DatePickerState must be recreated when selectableDates changes to apply constraints
   val datePickerState =
-      remember(initialMillis) {
+      remember(initialMillis, selectableDates) {
         DatePickerState(
             initialSelectedDateMillis = initialMillis,
             yearRange = yearRange,
@@ -153,38 +240,22 @@ fun CustomDatePickerDialog(
           TextButton(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  // Get date components from system timezone
-                  val systemCal = Calendar.getInstance()
-                  systemCal.timeInMillis = millis
-
-                  val year = systemCal.get(Calendar.YEAR)
-                  val month = systemCal.get(Calendar.MONTH)
-                  val day = systemCal.get(Calendar.DAY_OF_MONTH)
-
-                  // Create timestamp at midnight in Switzerland timezone
-                  val swissCal = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-                  swissCal.set(year, month, day, 0, 0, 0)
-                  swissCal.set(Calendar.MILLISECOND, 0)
-                  val selectedMidnightUtc = swissCal.timeInMillis
-
-                  // Get today's date at midnight in Switzerland timezone
-                  val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-                  todaySwiss.set(Calendar.HOUR_OF_DAY, 0)
-                  todaySwiss.set(Calendar.MINUTE, 0)
-                  todaySwiss.set(Calendar.SECOND, 0)
-                  todaySwiss.set(Calendar.MILLISECOND, 0)
-                  val todayMidnightUtc = todaySwiss.timeInMillis
+                  val selectedTimestamp = systemMillisToTimestamp(millis)
+                  val selectedMidnightUtc = timestampToMidnightUtc(selectedTimestamp)
+                  val todayMidnightUtc = getTodayMidnightUtc()
 
                   // Ensure selected date is not in the past (safety check)
-                  val finalDate =
+                  val finalTimestamp =
                       if (selectedMidnightUtc < todayMidnightUtc) {
                         // Use today's date if somehow a past date was selected
-                        todaySwiss
+                        val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+                        todaySwiss.timeInMillis = todayMidnightUtc
+                        Timestamp(todaySwiss.time)
                       } else {
-                        swissCal
+                        selectedTimestamp
                       }
 
-                  onDateSelected(Timestamp(finalDate.time))
+                  onDateSelected(finalTimestamp)
                 }
                 onDismiss()
               },

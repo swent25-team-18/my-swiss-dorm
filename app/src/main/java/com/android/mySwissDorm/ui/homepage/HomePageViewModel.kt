@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.ui.homepage
 
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.city.CitiesRepository
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
@@ -11,6 +10,7 @@ import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,11 +47,11 @@ data class HomePageUIState(
  */
 class HomePageViewModel(
     private val citiesRepository: CitiesRepository = CitiesRepositoryProvider.repository,
-    private val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+    override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-) : ViewModel() {
-
+) : BaseLocationSearchViewModel() {
+  override val logTag = "HomePageViewModel"
   private val _uiState = MutableStateFlow(HomePageUIState())
   val uiState: StateFlow<HomePageUIState> = _uiState.asStateFlow()
 
@@ -71,64 +71,27 @@ class HomePageViewModel(
     }
   }
 
-  /**
-   * Sets the custom location query and fetches suggestions if the query is not empty.
-   *
-   * @param query The user's search query.
-   */
-  fun setCustomLocationQuery(query: String) {
+  override fun updateStateWithQuery(query: String) {
     _uiState.value = _uiState.value.copy(customLocationQuery = query)
-    if (query.isNotEmpty()) {
-      viewModelScope.launch {
-        try {
-          val results = locationRepository.search(query)
-          _uiState.value = _uiState.value.copy(locationSuggestions = results)
-        } catch (e: Exception) {
-          Log.e("HomePageViewModel", "Error fetching location suggestions", e)
-          _uiState.value = _uiState.value.copy(locationSuggestions = emptyList())
-        }
-      }
-    } else {
-      _uiState.value = _uiState.value.copy(locationSuggestions = emptyList())
-    }
   }
 
-  /**
-   * Sets the selected custom location and updates the query to match.
-   *
-   * @param location The selected location.
-   */
-  fun setCustomLocation(location: Location) {
+  override fun updateStateWithSuggestions(suggestions: List<Location>) {
+    _uiState.value = _uiState.value.copy(locationSuggestions = suggestions)
+  }
+
+  override fun updateStateWithLocation(location: Location) {
     _uiState.value =
         _uiState.value.copy(customLocation = location, customLocationQuery = location.name)
   }
 
-  /** Shows the custom location dialog. */
-  fun onCustomLocationClick() {
+  override fun updateStateShowDialog(currentLocation: Location?) {
     _uiState.value = _uiState.value.copy(showCustomLocationDialog = true)
   }
 
-  /** Hides the custom location dialog and resets its state. */
-  fun dismissCustomLocationDialog() {
+  override fun updateStateDismissDialog() {
     _uiState.value =
         _uiState.value.copy(
             showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
-  }
-
-  fun fetchLocationName(latitude: Double, longitude: Double) {
-    viewModelScope.launch {
-      try {
-        val location = locationRepository.reverseSearch(latitude, longitude)
-        if (location != null) {
-          _uiState.value =
-              _uiState.value.copy(customLocation = location, customLocationQuery = location.name)
-        } else {
-          Log.w("HomePageViewModel", "Could not reverse geocode location")
-        }
-      } catch (e: Exception) {
-        Log.e("HomePageViewModel", "Error reverse geocoding", e)
-      }
-    }
   }
 
   /**

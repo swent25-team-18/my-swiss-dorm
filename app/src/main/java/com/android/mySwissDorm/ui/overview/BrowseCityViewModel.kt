@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.ui.overview
 
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
@@ -17,6 +16,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
+import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
@@ -125,11 +125,11 @@ class BrowseCityViewModel(
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
-    private val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+    override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-) : ViewModel() {
-
+) : BaseLocationSearchViewModel() {
+  override val logTag = "BrowseCityViewModel"
   private val _uiState = MutableStateFlow(BrowseCityUiState())
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()
 
@@ -225,74 +225,27 @@ class BrowseCityViewModel(
     }
   }
 
-  /**
-   * Sets the custom location query and fetches suggestions if the query is not empty.
-   *
-   * @param query The user's search query.
-   */
-  fun setCustomLocationQuery(query: String) {
-    _uiState.update { it.copy(customLocationQuery = query) }
-    if (query.isNotEmpty()) {
-      viewModelScope.launch {
-        try {
-          val results = locationRepository.search(query)
-          _uiState.update { it.copy(locationSuggestions = results) }
-        } catch (e: Exception) {
-          Log.e("BrowseCityViewModel", "Error fetching location suggestions", e)
-          _uiState.update { it.copy(locationSuggestions = emptyList()) }
-        }
-      }
-    } else {
-      _uiState.update { it.copy(locationSuggestions = emptyList()) }
-    }
+  override fun updateStateWithQuery(query: String) {
+    _uiState.value = _uiState.value.copy(customLocationQuery = query)
   }
 
-  /**
-   * Sets the selected custom location and updates the query to match.
-   *
-   * @param location The selected location.
-   */
-  fun setCustomLocation(location: Location) {
-    _uiState.update { it.copy(customLocation = location, customLocationQuery = location.name) }
+  override fun updateStateWithSuggestions(suggestions: List<Location>) {
+    _uiState.value = _uiState.value.copy(locationSuggestions = suggestions)
   }
 
-  /** Shows the custom location dialog. */
-  fun onCustomLocationClick(currentLocation: Location? = null) {
-    _uiState.update {
-      it.copy(
-          showCustomLocationDialog = true,
-          customLocationQuery = currentLocation?.name ?: "",
-          customLocation = currentLocation)
-    }
+  override fun updateStateWithLocation(location: Location) {
+    _uiState.value =
+        _uiState.value.copy(customLocation = location, customLocationQuery = location.name)
   }
 
-  /** Hides the custom location dialog and resets its state. */
-  fun dismissCustomLocationDialog() {
-    _uiState.update {
-      it.copy(showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
-    }
+  override fun updateStateShowDialog(currentLocation: Location?) {
+    _uiState.value = _uiState.value.copy(showCustomLocationDialog = true)
   }
-  /**
-   * Fetches the location name (address) from given coordinates and updates the UI state.
-   *
-   * @param latitude The latitude of the location.
-   * @param longitude The longitude of the location.
-   */
-  fun fetchLocationName(latitude: Double, longitude: Double) {
-    viewModelScope.launch {
-      try {
-        val location = locationRepository.reverseSearch(latitude, longitude)
-        if (location != null) {
-          _uiState.update {
-            it.copy(customLocation = location, customLocationQuery = location.name)
-          }
-        } else {
-          Log.w("BrowseCityViewModel", "Could not reverse geocode location")
-        }
-      } catch (e: Exception) {
-        Log.e("BrowseCityViewModel", "Error reverse geocoding", e)
-      }
-    }
+
+  override fun updateStateDismissDialog() {
+    _uiState.value =
+        _uiState.value.copy(
+            showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
   }
 
   /**

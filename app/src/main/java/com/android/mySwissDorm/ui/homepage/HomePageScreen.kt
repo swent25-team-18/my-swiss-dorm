@@ -55,6 +55,7 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
+import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 
 /** Test tags for the Home Page screen, used for UI testing. */
 object HomePageScreenTestTags {
@@ -89,6 +90,7 @@ fun HomePageScreen(
   val uiState by homePageViewModel.uiState.collectAsState()
   val context = LocalContext.current
   val lazyState = LazyListState()
+  val onUseCurrentLocationClick = onUserLocationClickFunc(context, homePageViewModel)
 
   LaunchedEffect(uiState.errorMsg) {
     uiState.errorMsg?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
@@ -195,7 +197,8 @@ fun HomePageScreen(
               onValueChange = onValueChange,
               onDropDownLocationSelect = onDropDownLocationSelect,
               onDismiss = onDismiss,
-              onConfirm = onConfirm)
+              onConfirm = onConfirm,
+              onUseCurrentLocationClick = onUseCurrentLocationClick)
         }
       }
 }

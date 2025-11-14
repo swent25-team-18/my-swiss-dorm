@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,6 +42,7 @@ import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 import com.google.firebase.Timestamp
 
 /**
@@ -79,6 +81,8 @@ fun BrowseCityScreen(
   }
 
   val uiState by browseCityViewModel.uiState.collectAsState()
+  val context = LocalContext.current
+  val onUseCurrentLocationClick = onUserLocationClickFunc(context, browseCityViewModel)
 
   val onLocationClick = remember { { browseCityViewModel.onCustomLocationClick() } }
 
@@ -118,7 +122,8 @@ fun BrowseCityScreen(
         onValueChange = onValueChange,
         onDropDownLocationSelect = onDropDownLocationSelect,
         onDismiss = onDismiss,
-        onConfirm = onConfirm)
+        onConfirm = onConfirm,
+        onUseCurrentLocationClick = onUseCurrentLocationClick)
   }
 }
 

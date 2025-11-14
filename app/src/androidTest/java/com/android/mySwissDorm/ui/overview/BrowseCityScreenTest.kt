@@ -403,6 +403,10 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val mockLocationRepository =
         object : LocationRepository {
           override suspend fun search(query: String): List<Location> = emptyList()
+
+          override suspend fun reverseSearch(latitude: Double, longitude: Double): Location? {
+            return null
+          }
         }
     val vm =
         BrowseCityViewModel(

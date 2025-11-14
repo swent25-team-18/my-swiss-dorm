@@ -115,6 +115,22 @@ class HomePageViewModel(
             showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
   }
 
+  fun fetchLocationName(latitude: Double, longitude: Double) {
+    viewModelScope.launch {
+      try {
+        val location = locationRepository.reverseSearch(latitude, longitude)
+        if (location != null) {
+          _uiState.value =
+              _uiState.value.copy(customLocation = location, customLocationQuery = location.name)
+        } else {
+          Log.w("HomePageViewModel", "Could not reverse geocode location")
+        }
+      } catch (e: Exception) {
+        Log.e("HomePageViewModel", "Error reverse geocoding", e)
+      }
+    }
+  }
+
   /**
    * Saves the selected location to the user's profile.
    *

@@ -1,6 +1,10 @@
 package com.android.mySwissDorm.ui.homepage
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,6 +48,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.city.City
@@ -55,6 +60,8 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
+import com.android.mySwissDorm.ui.utils.fetchDeviceLocation
+import com.google.android.gms.location.LocationServices
 
 /** Test tags for the Home Page screen, used for UI testing. */
 object HomePageScreenTestTags {
@@ -88,6 +95,58 @@ fun HomePageScreen(
   val uiState by homePageViewModel.uiState.collectAsState()
   val context = LocalContext.current
   val lazyState = LazyListState()
+  val fusedLocationClient =
+      remember(context) { LocationServices.getFusedLocationProviderClient(context) }
+
+  var hasLocationPermission by remember {
+    mutableStateOf(
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED)
+  }
+
+  val onFetchLocationName =
+      remember<(Double, Double) -> Unit> {
+        { lat, lon -> homePageViewModel.fetchLocationName(lat, lon) }
+      }
+
+  val permissionLauncher =
+      rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.RequestPermission(),
+          onResult = { isGranted ->
+            if (isGranted) {
+              hasLocationPermission = true
+              fetchDeviceLocation(
+                  context = context,
+                  fusedLocationClient = fusedLocationClient,
+                  onLocationFetched = onFetchLocationName,
+                  onPermissionDenied = {
+                    Toast.makeText(
+                            context, "Could not get location. Is GPS on?", Toast.LENGTH_SHORT)
+                        .show()
+                  })
+            } else {
+              Toast.makeText(context, "Permission denied. Cannot get location.", Toast.LENGTH_SHORT)
+                  .show()
+            }
+          })
+
+  val onUseCurrentLocationClick =
+      remember<() -> Unit> {
+        {
+          if (hasLocationPermission) {
+            fetchDeviceLocation(
+                context = context,
+                fusedLocationClient = fusedLocationClient,
+                onLocationFetched = onFetchLocationName,
+                onPermissionDenied = {
+                  Toast.makeText(context, "Could not get location. Is GPS on?", Toast.LENGTH_SHORT)
+                      .show()
+                })
+          } else {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+          }
+        }
+      }
 
   LaunchedEffect(uiState.errorMsg) {
     uiState.errorMsg?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
@@ -192,7 +251,8 @@ fun HomePageScreen(
               onValueChange = onValueChange,
               onDropDownLocationSelect = onDropDownLocationSelect,
               onDismiss = onDismiss,
-              onConfirm = onConfirm)
+              onConfirm = onConfirm,
+              onUseCurrentLocationClick = onUseCurrentLocationClick)
         }
       }
 }

@@ -162,6 +162,7 @@ dependencies {
     implementation(libs.maps.compose)
     implementation(libs.maps.compose.utils)
     implementation(libs.play.services.auth)
+    implementation("com.google.android.gms:play-services-location:21.2.0")
 
     // Firebase
     implementation(libs.firebase.database.ktx)

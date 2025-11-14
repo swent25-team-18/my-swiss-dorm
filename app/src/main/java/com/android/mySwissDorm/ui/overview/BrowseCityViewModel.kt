@@ -272,6 +272,28 @@ class BrowseCityViewModel(
       it.copy(showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
     }
   }
+  /**
+   * Fetches the location name (address) from given coordinates and updates the UI state.
+   *
+   * @param latitude The latitude of the location.
+   * @param longitude The longitude of the location.
+   */
+  fun fetchLocationName(latitude: Double, longitude: Double) {
+    viewModelScope.launch {
+      try {
+        val location = locationRepository.reverseSearch(latitude, longitude)
+        if (location != null) {
+          _uiState.update {
+            it.copy(customLocation = location, customLocationQuery = location.name)
+          }
+        } else {
+          Log.w("BrowseCityViewModel", "Could not reverse geocode location")
+        }
+      } catch (e: Exception) {
+        Log.e("BrowseCityViewModel", "Error reverse geocoding", e)
+      }
+    }
+  }
 
   /**
    * Saves the selected location to the user's profile.

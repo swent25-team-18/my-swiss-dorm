@@ -163,10 +163,74 @@ object C {
     const val MORE_OPTION = "customLocationDialogMoreOption"
   }
 
+  object EditReviewTags {
+    const val TEXT_FIELD = "reviewTitleField"
+
+    const val RESIDENCY_DROPDOWN = "residencyDropdown"
+
+    const val SIZE_FIELD = "sizeField"
+
+    const val PRICE_FIELD = "priceField"
+
+    const val DESCRIPTION_FIELD = "descField"
+
+    const val GRADE_FIELD = "gradeField"
+
+    const val DELETE_BUTTON = "deleteButton"
+
+    const val SAVE_BUTTON = "saveButton"
+
+    const val REVIEW_TITLE = "reviewTitleField"
+  }
+
+  object CustomDatePickerDialogTags {
+    const val OK_BUTTON = "customDatePickerDialogOkButton"
+    const val CANCEL_BUTTON = "customDatePickerDialogCancelButton"
+  }
+
+  object AddListingScreenTags {
+    const val TITLE_FIELD = "titleField"
+    const val SIZE_FIELD = "sizeField"
+    const val PRICE_FIELD = "priceField"
+    const val START_DATE_FIELD = "startDateField"
+    const val DESC_FIELD = "descField"
+  }
+
+  object EditListingScreenTags {
+    const val TITLE_FIELD = "titleField"
+    const val SIZE_FIELD = "sizeField"
+    const val PRICE_FIELD = "priceField"
+    const val START_DATE_FIELD = "startDateField"
+    const val DESC_FIELD = "descField"
+    const val DELETE_BUTTON = "deleteButton"
+    const val SAVE_BUTTON = "saveButton"
+  }
+
+  object AdminPageTags {
+    const val CHIP_CITY = "adminPageChipCity"
+    const val CHIP_RESIDENCY = "adminPageChipResidency"
+    const val CHIP_UNIVERSITY = "adminPageChipUniversity"
+    const val LOCATION_BUTTON = "adminPageLocationButton"
+    const val SAVE_BUTTON = "adminPageSaveButton"
+  }
+
   object AddPhotoButtonTags {
     const val BUTTON = "addPhotoButton"
     const val DIALOG = "addPhotoDialog"
     const val CAMERA_BUTTON_TEXT = "addPhotoCameraButtonText"
     const val GALLERY_BUTTON_TEXT = "addPhotoGalleryButtonText"
+  }
+
+  object SettingsTags {
+    const val SETTINGS_SCROLL = "SettingsScroll"
+    const val PROFILE_BUTTON = "ProfileButton"
+    const val EMAIL_FIELD = "EmailField"
+    const val DELETE_ACCOUNT_BUTTON = "DeleteAccountButton"
+    const val BLOCKED_CONTACTS_TOGGLE = "BlockedContactsToggle"
+    const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
+    const val BOTTOM_BAR = "bottom_nav"
+    const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
+
+    fun switch(label: String): String = "SettingSwitch_$label"
   }
 }

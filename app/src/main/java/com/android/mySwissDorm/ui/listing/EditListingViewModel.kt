@@ -121,6 +121,7 @@ class EditListingViewModel(
     viewModelScope.launch {
       try {
         val listing = rentalListingRepository.getRentalListing(rentalPostID)
+        val currentResidencies = _uiState.value.residencies
         val residency = residenciesRepository.getResidency(listing.residencyName)
         _uiState.value =
             EditListingUIState(
@@ -135,7 +136,11 @@ class EditListingViewModel(
                 mapLat = residency.location.latitude,
                 mapLng = residency.location.longitude,
                 errorMsg = null,
-                residencies = listOf())
+                residencies = currentResidencies)
+        // If residencies haven't been loaded yet, load them now
+        if (currentResidencies.isEmpty()) {
+          loadResidencies()
+        }
       } catch (e: Exception) {
         Log.e("EditListingViewModel", "Error loading listing by ID: $rentalPostID", e)
         setErrorMsg("Failed to load listing: ${e.message}")
@@ -176,7 +181,9 @@ class EditListingViewModel(
       return false
     }
 
-    val uid = Firebase.auth.currentUser?.uid ?: "Non existing user"
+    val uid =
+        Firebase.auth.currentUser?.uid
+            ?: throw IllegalStateException("User must be authenticated to edit a listing")
 
     editRentalListingToRepository(
         id = id,

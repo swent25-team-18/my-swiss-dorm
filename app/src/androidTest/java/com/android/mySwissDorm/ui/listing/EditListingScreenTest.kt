@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.listing
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
@@ -20,6 +21,7 @@ import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -174,14 +176,16 @@ class EditListingScreenTest : FirestoreTest() {
 
     composeRule.waitUntil(5_000) {
       composeRule
-          .onAllNodes(hasTestTag("titleField") and hasSetTextAction(), useUnmergedTree = true)
+          .onAllNodes(
+              hasTestTag(C.EditListingScreenTags.TITLE_FIELD) and hasSetTextAction(),
+              useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    editable("titleField").replaceText("Cozy Studio - Updated")
-    editable("priceField").replaceText("1500")
-    editable("sizeField").replaceText("25.0")
+    editable(C.EditListingScreenTags.TITLE_FIELD).replaceText("Cozy Studio - Updated")
+    editable(C.EditListingScreenTags.PRICE_FIELD).replaceText("1500")
+    editable(C.EditListingScreenTags.SIZE_FIELD).replaceText("25.0")
 
     composeRule.onNodeWithText("Save", useUnmergedTree = true).assertIsEnabled().performClick()
 
@@ -223,23 +227,206 @@ class EditListingScreenTest : FirestoreTest() {
 
     composeRule.waitUntil(5_000) {
       composeRule
-          .onAllNodes(hasTestTag("priceField") and hasSetTextAction(), useUnmergedTree = true)
+          .onAllNodes(
+              hasTestTag(C.EditListingScreenTags.PRICE_FIELD) and hasSetTextAction(),
+              useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    editable("priceField").performTextClearance()
-    editable("priceField").performTextInput("abc")
+    editable(C.EditListingScreenTags.PRICE_FIELD).performTextClearance()
+    editable(C.EditListingScreenTags.PRICE_FIELD).performTextInput("abc")
 
     composeRule.waitUntil(5_000) { !vm.uiState.value.isFormValid }
     composeRule.waitForIdle()
 
-    composeRule.onNodeWithTag("saveButton", useUnmergedTree = true).assertIsNotEnabled()
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.SAVE_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
 
     composeRule
         .onNodeWithText(
             "Please complete all required fields (valid size, price, and starting date).",
             useUnmergedTree = true)
         .assertExists()
+  }
+
+  @Test
+  fun start_date_field_is_displayed() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .assertIsDisplayed()
+    composeRule.onNodeWithText("Start Date", useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun clicking_start_date_opens_date_picker() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear and verify it's displayed
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify OK button exists
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun date_picker_can_be_dismissed() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for date picker dialog to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify dialog is displayed
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Click the dialog's Cancel button (using test tag to avoid confusion with bottom bar Cancel)
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.CANCEL_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for dialog to be dismissed - verify by checking OK button is gone
+    composeRule.waitUntil(2_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.CustomDatePickerDialogTags.OK_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
+  }
+
+  @Test
+  fun selecting_date_updates_viewmodel_state() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    val originalDate = vm.uiState.value.startDate
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for ViewModel state to update
+    composeRule.waitUntil(5_000) { vm.uiState.value.startDate != originalDate }
+
+    // Date should be updated
+    assert(vm.uiState.value.startDate != originalDate)
+  }
+
+  @Test
+  fun editing_start_date_persists_to_firestore() = runTest {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    setContentFor(vm, rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.START_DATE_FIELD), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Open date picker and select a date
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Wait for ViewModel state to update
+    composeRule.waitUntil(5_000) { vm.uiState.value.isFormValid }
+
+    // Save the listing
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.SAVE_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+        .performClick()
+
+    // Wait for save to complete - check ViewModel state instead of Firestore directly
+    composeRule.waitUntil(5_000) { vm.uiState.value.isFormValid }
+
+    // Give time for Firestore write to complete
+    kotlinx.coroutines.delay(500)
+
+    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing1.uid)
+    assertEquals("Start date should be persisted", vm.uiState.value.startDate, finalDoc.startDate)
   }
 }

@@ -1,15 +1,12 @@
 package com.android.mySwissDorm.resources
 
+import android.net.Uri
 import com.android.mySwissDorm.ui.navigation.Screen
 
 // Like R, but C
 object C {
   object Tag {
-    const val greeting = "main_screen_greeting"
-    const val greeting_robo = "second_screen_greeting"
-
     const val main_screen_container = "main_screen_container"
-    const val second_screen_container = "second_screen_container"
     const val SIGN_IN_SCREEN = "signInScreen"
     const val SIGN_IN_APP_LOGO = "signInAppLogo"
     const val SIGN_IN_LOG_IN_BUTTON = "signInLogInButton"
@@ -232,5 +229,13 @@ object C {
     const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
 
     fun switch(label: String): String = "SettingSwitch_$label"
+  }
+
+  object ImageGridTags {
+    fun imageTag(uri: Uri): String = "ImageGridImage$uri"
+
+    fun deleteButtonTag(uri: Uri): String = "ImageGridDeleteButton$uri"
+
+    const val ICON_DELETE_CONTENT_DESC: String = "Remove image"
   }
 }

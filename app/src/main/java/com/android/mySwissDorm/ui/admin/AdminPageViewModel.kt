@@ -27,7 +27,7 @@ class AdminPageViewModel(
         UniversitiesRepositoryProvider.repository,
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
 ) : BaseLocationSearchViewModel() {
-  override val logTag = "HomePageViewModel"
+  override val logTag = "AdminPageViewModel"
 
   enum class EntityType {
     CITY,

@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
@@ -29,21 +29,55 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.StarRatingBar
 
+/**
+ * Edit screen for an existing review.
+ *
+ * All documentation was made with the help of AI
+ *
+ * This composable provides a form interface for editing an existing review. The ViewModel
+ * automatically loads the review data on initialization, displays all review fields in a validated
+ * form bound to [EditReviewViewModel.uiState], and handles saving or deleting the review.
+ *
+ * Responsibilities:
+ * - Displays a validated form bound to [EditReviewViewModel.uiState] with fields for title,
+ *   residency, room type, price, area, review text, and rating.
+ * - Exposes three navigation callbacks to the host:
+ *     - [onBack]: Invoked by the top-left back arrow and the "Cancel" button.
+ *     - [onConfirm]: Invoked after a successful save (only when the form is valid).
+ *     - [onDelete]: Invoked after deletion.
+ *
+ * Notes:
+ * - The ViewModel automatically loads the review data on initialization via its init block.
+ * - Input fields are normalized and validated using centralized [InputSanitizers].
+ * - Error helper texts under Size/Price are shown only when the user has typed something invalid.
+ * - The rating is displayed as an interactive star rating bar that supports half-star ratings.
+ * - Photo upload functionality is not yet implemented.
+ *
+ * @param modifier Standard Compose [Modifier] for styling the screen.
+ * @param onConfirm Called after a successful save of the edited review.
+ * @param onBack Called when the user wants to cancel editing (back arrow or Cancel button).
+ * @param reviewID The unique identifier of the review to edit. Used to create the ViewModel.
+ * @param onDelete Called after deletion.
+ * @param editReviewViewModel ViewModel that owns the edit state and repository calls. Created
+ *   automatically with the [reviewID] parameter, but can be provided for testing purposes.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddReviewScreen(
+fun EditReviewScreen(
     modifier: Modifier = Modifier,
-    addReviewViewModel: AddReviewViewModel = viewModel(),
-    onConfirm: (Review) -> Unit,
-    onBack: () -> Unit
+    editReviewViewModel: EditReviewViewModel = viewModel(),
+    onConfirm: () -> Unit,
+    onBack: () -> Unit,
+    reviewID: String,
+    onDelete: (String) -> Unit,
 ) {
-  val reviewUIState by addReviewViewModel.uiState.collectAsState()
+  val editReviewUIState by editReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
 
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Add Review") },
+            title = { Text("Edit Review") },
             navigationIcon = {
               IconButton(onClick = onBack) {
                 Icon(
@@ -51,31 +85,60 @@ fun AddReviewScreen(
                     contentDescription = "Back",
                     tint = MainColor)
               }
+            },
+            actions = {
+              IconButton(
+                  onClick = {
+                    editReviewViewModel.deleteReview(reviewID)
+                    onDelete(editReviewUIState.residencyName)
+                  },
+                  modifier = Modifier.testTag("deleteButton") // ← add this
+                  ) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MainColor)
+                  }
             })
       },
       bottomBar = {
         Surface(shadowElevation = 8.dp) {
-          Column(Modifier.padding(16.dp)) {
-            val ui = reviewUIState
-            Button(
-                onClick = { addReviewViewModel.submitReviewForm(onConfirm) },
-                enabled = ui.isFormValid,
-                colors = ButtonDefaults.buttonColors(containerColor = MainColor),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(16.dp)) {
-                  Text("Submit Review", color = Color.White)
+          Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            val ui = editReviewUIState
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                  Button(
+                      onClick = onBack,
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = TextBoxColor, contentColor = MainColor),
+                      modifier = Modifier.weight(1f).height(52.dp),
+                      shape = RoundedCornerShape(16.dp)) {
+                        Text("Cancel")
+                      }
+
+                  Button(
+                      onClick = { if (editReviewViewModel.editReview(reviewID)) onConfirm() },
+                      enabled = ui.isFormValid,
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = MainColor,
+                              disabledContainerColor = MainColor.copy(alpha = 0.3f)),
+                      modifier =
+                          Modifier.weight(1f).height(52.dp).testTag("saveButton"), // ← add this
+                      shape = RoundedCornerShape(16.dp)) {
+                        Text("Save", color = Color.White)
+                      }
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid) {
               Text(
-                  "Please complete all required fields (valid grade, size, price, etc.).",
+                  "Please complete all required fields (valid size, price, and starting date).",
                   style = MaterialTheme.typography.bodySmall,
                   color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
           }
         }
       }) { padding ->
-        val ui = reviewUIState
+        val ui = editReviewUIState
 
         val sizeInvalid =
             ui.areaInM2.isNotBlank() &&
@@ -93,18 +156,18 @@ fun AddReviewScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               TitleField(
                   value = ui.title,
-                  onValueChange = { addReviewViewModel.setTitle(it) },
+                  onValueChange = { editReviewViewModel.setTitle(it) },
                   modifier = Modifier.testTag("reviewTitleField").fillMaxWidth())
               ResidencyDropdownResID(
                   selected = ui.residencyName,
-                  onSelected = { addReviewViewModel.setResidencyName(it) },
+                  onSelected = { editReviewViewModel.setResidencyName(it) },
                   residencies = ui.residencies,
                   accentColor = MainColor,
                   modifier = Modifier.testTag("residencyDropdown").fillMaxWidth())
 
               HousingTypeDropdown(
                   selected = ui.roomType,
-                  onSelected = { addReviewViewModel.setRoomType(it) },
+                  onSelected = { editReviewViewModel.setRoomType(it) },
                   accentColor = MainColor)
 
               val sizeErrKey =
@@ -116,7 +179,7 @@ fun AddReviewScreen(
                       }
               RoomSizeField(
                   value = ui.areaInM2,
-                  onValueChange = { addReviewViewModel.setAreaInM2(it) },
+                  onValueChange = { editReviewViewModel.setAreaInM2(it) },
                   externalErrorKey = sizeErrKey,
                   modifier = Modifier.testTag("sizeField").fillMaxWidth())
               if (sizeInvalid) {
@@ -135,7 +198,7 @@ fun AddReviewScreen(
                       }
               PriceField(
                   value = ui.pricePerMonth,
-                  onValueChange = { addReviewViewModel.setPricePerMonth(it) },
+                  onValueChange = { editReviewViewModel.setPricePerMonth(it) },
                   externalErrorKey = priceErrKey,
                   modifier = Modifier.testTag("priceField").fillMaxWidth())
               if (priceInvalid) {
@@ -147,7 +210,7 @@ fun AddReviewScreen(
 
               DescriptionField(
                   value = ui.reviewText,
-                  onValueChange = { addReviewViewModel.setReviewText(it) },
+                  onValueChange = { editReviewViewModel.setReviewText(it) },
                   label = "Review",
                   modifier = Modifier.testTag("descField").fillMaxWidth())
               Row(
@@ -160,7 +223,7 @@ fun AddReviewScreen(
                         style = MaterialTheme.typography.titleMedium)
                     StarRatingBar(
                         rating = ui.grade,
-                        onRatingChange = { addReviewViewModel.setGrade(it) },
+                        onRatingChange = { editReviewViewModel.setGrade(it) },
                         activeColor = MainColor,
                         inactiveColor = TextBoxColor,
                         modifier = Modifier.testTag("gradeField"))

@@ -178,6 +178,26 @@ object C {
     const val MORE_OPTION = "customLocationDialogMoreOption"
   }
 
+  object EditReviewTags {
+    const val TEXT_FIELD = "reviewTitleField"
+
+    const val RESIDENCY_DROPDOWN = "residencyDropdown"
+
+    const val SIZE_FIELD = "sizeField"
+
+    const val PRICE_FIELD = "priceField"
+
+    const val DESCRIPTION_FIELD = "descField"
+
+    const val GRADE_FIELD = "gradeField"
+
+    const val DELETE_BUTTON = "deleteButton"
+
+    const val SAVE_BUTTON = "saveButton"
+
+    const val REVIEW_TITLE = "reviewTitleField"
+  }
+
   object CustomDatePickerDialogTags {
     const val OK_BUTTON = "customDatePickerDialogOkButton"
     const val CANCEL_BUTTON = "customDatePickerDialogCancelButton"

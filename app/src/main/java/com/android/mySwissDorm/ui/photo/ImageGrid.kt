@@ -43,7 +43,7 @@ import com.android.mySwissDorm.resources.C
  */
 @Composable
 fun ImageGrid(
-    imageUris: List<Uri>,
+    imageUris: Set<Uri>,
     isEditingMode: Boolean,
     onRemove: (Uri) -> Unit,
     modifier: Modifier = Modifier,
@@ -53,27 +53,25 @@ fun ImageGrid(
       modifier = modifier,
       horizontalArrangement = Arrangement.spacedBy(8.dp),
       contentPadding = PaddingValues(horizontal = 16.dp)) {
-        items(imageUris) { uri ->
-          Box(modifier = Modifier.size(imageSize)) {
+        items(imageUris.toList()) { uri ->
+          Box(modifier = Modifier.size(imageSize).testTag(C.ImageGridTags.imageTag(uri))) {
             AsyncImage(
                 model = uri,
                 contentDescription = null,
                 modifier =
                     Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(8.dp))
-                        .testTag(C.ImageGridTags.imageTag(uri)),
+                        .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop)
-          }
-
-          if (isEditingMode) {
-            FloatingActionButton(
-                onClick = { onRemove(uri) },
-                modifier = Modifier.offset(x = 8.dp, y = (-8).dp).size(32.dp)) {
-                  Icon(
-                      imageVector = Icons.Default.Delete,
-                      contentDescription = "Remove image",
-                      modifier = Modifier.size(20.dp).testTag(C.ImageGridTags.deleteButtonTag(uri)))
-                }
+              if (isEditingMode) {
+                  FloatingActionButton(
+                      onClick = { onRemove(uri) },
+                      modifier = Modifier.offset(x = 8.dp, y = (-8).dp).size(32.dp)) {
+                      Icon(
+                          imageVector = Icons.Default.Delete,
+                          contentDescription = C.ImageGridTags.ICON_DELETE_CONTENT_DESC,
+                          modifier = Modifier.size(20.dp).testTag(C.ImageGridTags.deleteButtonTag(uri)))
+                  }
+              }
           }
         }
       }
@@ -86,5 +84,5 @@ private fun ImageGridPreview() {
   val uri2 = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri()
   val uri3 = "android.resource://com.android.mySwissDorm/${R.drawable.fribourg}".toUri()
   val list = remember { mutableStateListOf(uri1, uri2, uri3) }
-  ImageGrid(imageUris = list, isEditingMode = true, { list.remove(it) })
+  ImageGrid(imageUris = list.toSet(), isEditingMode = true, { list.remove(it) })
 }

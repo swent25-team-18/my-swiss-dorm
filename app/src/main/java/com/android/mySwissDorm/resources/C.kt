@@ -192,5 +192,7 @@ object C {
     fun imageTag(uri: Uri): String = "ImageGridImage$uri"
 
     fun deleteButtonTag(uri: Uri): String = "ImageGridDeleteButton$uri"
+
+    const val ICON_DELETE_CONTENT_DESC: String = "Remove image"
   }
 }

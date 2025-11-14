@@ -147,6 +147,86 @@ class NominatimLocationRepositoryTest {
     repo.search("lausanne")
   }
 
+  // Added these tests for the reverse geocode(search) mechanism
+  @Test
+  fun reverseSearch_ok_parsesResult() = runTest {
+    server.enqueue(
+        MockResponse()
+            .setResponseCode(200)
+            .setBody(
+                """
+                {
+                    "place_id": 12345,
+                    "lat": "46.5197",
+                    "lon": "6.6323",
+                    "display_name": "Lausanne, District de Lausanne, Vaud, Switzerland"
+                }
+                """
+                    .trimIndent()))
+
+    val lat = 46.5197
+    val lon = 6.6323
+    val result = repo.reverseSearch(lat, lon)
+
+    assertNotNull(result)
+    assertEquals("Lausanne, District de Lausanne, Vaud, Switzerland", result!!.name)
+    assertEquals(lat, result.latitude, 1e-6)
+    assertEquals(lon, result.longitude, 1e-6)
+
+    val recorded = server.takeRequest()
+    assertTrue(recorded.path!!.startsWith("/reverse"))
+    val url = recorded.requestUrl!!
+    assertEquals(lat.toString(), url.queryParameter("lat"))
+    assertEquals(lon.toString(), url.queryParameter("lon"))
+    assertEquals("json", url.queryParameter("format"))
+  }
+
+  @Test(expected = IOException::class)
+  fun reverseSearch_http429_throwsIOException() = runTest {
+    server.enqueue(
+        MockResponse()
+            .setResponseCode(429)
+            .setHeader("Retry-After", "0")
+            .setBody("""{"error":"rate limited"}"""))
+    try {
+      repo.reverseSearch(46.5197, 6.6323)
+    } finally {
+      assertEquals(1, server.requestCount)
+    }
+  }
+
+  @Test
+  fun reverseSearch_emptyName_returnsNull() = runTest {
+    server.enqueue(
+        MockResponse()
+            .setResponseCode(200)
+            .setBody(
+                """
+                {
+                    "place_id": 12345,
+                    "lat": "46.5197",
+                    "lon": "6.6323",
+                    "display_name": ""
+                }
+                """
+                    .trimIndent()))
+
+    val result = repo.reverseSearch(46.5197, 6.6323)
+    assertNull(result)
+    server.takeRequest()
+  }
+
+  @Test(expected = Exception::class)
+  fun reverseSearch_http503_throwsException() = runTest {
+    server.enqueue(MockResponse().setResponseCode(503).setBody("""{"error":"unavailable"}"""))
+    repo.reverseSearch(46.5197, 6.6323)
+  }
+
+  @Test(expected = Exception::class)
+  fun reverseSearch_malformedJson_throwsException() = runTest {
+    server.enqueue(MockResponse().setResponseCode(200).setBody("""{ not-a-valid-object """))
+    repo.reverseSearch(46.5197, 6.6323)
+  }
   /**
    * Test-only interceptor that preserves path & query but swaps scheme/host/port to MockWebServer.
    * This avoids adding a baseUrlHost seam in production code.

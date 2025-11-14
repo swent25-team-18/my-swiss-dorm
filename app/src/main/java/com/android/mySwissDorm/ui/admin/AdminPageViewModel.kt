@@ -1,10 +1,8 @@
 package com.android.mySwissDorm.ui.admin
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.city.CitiesRepository
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
@@ -18,6 +16,7 @@ import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.university.UniversitiesRepository
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.model.university.University
+import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import java.net.URL
 import kotlinx.coroutines.launch
 
@@ -26,8 +25,9 @@ class AdminPageViewModel(
     private val residenciesRepo: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
     private val universitiesRepo: UniversitiesRepository =
         UniversitiesRepositoryProvider.repository,
-    private val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
-) : ViewModel() {
+    override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+) : BaseLocationSearchViewModel() {
+  override val logTag = "AdminPageViewModel"
 
   enum class EntityType {
     CITY,
@@ -65,23 +65,26 @@ class AdminPageViewModel(
     uiState = uiState.copy(name = v)
   }
 
-  fun setCustomLocationQuery(query: String) {
-    uiState = uiState.copy(customLocationQuery = query, locationSuggestions = emptyList())
-    if (query.isNotEmpty()) {
-      viewModelScope.launch {
-        try {
-          val results = locationRepository.search(query)
-          uiState = uiState.copy(locationSuggestions = results)
-        } catch (e: Exception) {
-          Log.e("AdminPageViewModel", "Error fetching location suggestions", e)
-          uiState = uiState.copy(locationSuggestions = emptyList())
-        }
-      }
-    }
+  override fun updateStateWithQuery(query: String) {
+    uiState = uiState.copy(customLocationQuery = query)
   }
 
-  fun setCustomLocation(location: Location) {
+  override fun updateStateWithSuggestions(suggestions: List<Location>) {
+    uiState = uiState.copy(locationSuggestions = suggestions)
+  }
+
+  override fun updateStateWithLocation(location: Location) {
     uiState = uiState.copy(customLocation = location, customLocationQuery = location.name)
+  }
+
+  override fun updateStateShowDialog(currentLocation: Location?) {
+    uiState = uiState.copy(showCustomLocationDialog = true)
+  }
+
+  override fun updateStateDismissDialog() {
+    uiState =
+        uiState.copy(
+            showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
   }
 
   fun onCustomLocationClick() {
@@ -90,12 +93,6 @@ class AdminPageViewModel(
             showCustomLocationDialog = true,
             customLocationQuery = uiState.location?.name ?: "",
             customLocation = uiState.location)
-  }
-
-  fun dismissCustomLocationDialog() {
-    uiState =
-        uiState.copy(
-            showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
   }
 
   fun onLocationConfirm(location: Location) {

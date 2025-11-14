@@ -36,7 +36,8 @@ class CustomLocationDialogTest {
           onValueChange = { value = it },
           onDropDownLocationSelect = { currentLocation = it },
           onDismiss = {},
-          onConfirm = {})
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
     }
 
     composeTestRule.onNodeWithTag(C.CustomLocationDialogTags.DIALOG_TITLE).assertIsDisplayed()
@@ -56,7 +57,8 @@ class CustomLocationDialogTest {
           onValueChange = { value = it },
           onDropDownLocationSelect = { currentLocation = it },
           onDismiss = {},
-          onConfirm = {})
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
     }
 
     composeTestRule
@@ -78,7 +80,8 @@ class CustomLocationDialogTest {
           onValueChange = { value = it },
           onDropDownLocationSelect = { currentLocation = it },
           onDismiss = {},
-          onConfirm = {})
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
     }
 
     composeTestRule.onNodeWithTag(C.CustomLocationDialogTags.CONFIRM_BUTTON).assertIsNotEnabled()
@@ -99,7 +102,8 @@ class CustomLocationDialogTest {
           onValueChange = { value = it },
           onDropDownLocationSelect = { currentLocation = it },
           onDismiss = {},
-          onConfirm = {})
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
     }
 
     composeTestRule.onNodeWithTag(C.CustomLocationDialogTags.CONFIRM_BUTTON).assertIsEnabled()
@@ -123,7 +127,8 @@ class CustomLocationDialogTest {
           onValueChange = { value = it },
           onDropDownLocationSelect = { currentLocation = it },
           onDismiss = {},
-          onConfirm = {})
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
     }
 
     // Type to trigger dropdown
@@ -153,7 +158,8 @@ class CustomLocationDialogTest {
           onValueChange = { value = it },
           onDropDownLocationSelect = { currentLocation = it },
           onDismiss = {},
-          onConfirm = {})
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
     }
 
     // Type to trigger dropdown
@@ -187,7 +193,8 @@ class CustomLocationDialogTest {
           onValueChange = { value = it },
           onDropDownLocationSelect = { currentLocation = it },
           onDismiss = {},
-          onConfirm = {})
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
     }
 
     // Type to trigger dropdown
@@ -218,7 +225,8 @@ class CustomLocationDialogTest {
           },
           onDropDownLocationSelect = { currentLocation = it },
           onDismiss = {},
-          onConfirm = {})
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
     }
 
     composeTestRule
@@ -249,7 +257,8 @@ class CustomLocationDialogTest {
             locationSelected = it
           },
           onDismiss = {},
-          onConfirm = {})
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
     }
 
     // Type to trigger dropdown
@@ -282,12 +291,71 @@ class CustomLocationDialogTest {
           onValueChange = { value = it },
           onDropDownLocationSelect = { currentLocation = it },
           onDismiss = {},
-          onConfirm = { confirmedLocation = it })
+          onConfirm = { confirmedLocation = it },
+          onUseCurrentLocationClick = {})
     }
 
     composeTestRule.onNodeWithTag(C.CustomLocationDialogTags.CONFIRM_BUTTON).performClick()
     composeTestRule.waitForIdle()
 
     assert(confirmedLocation == location)
+  }
+
+  @Test
+  fun useMyLocationButton_calls_onUseCurrentLocationClick() {
+    var isClicked = false
+    val onClick = { isClicked = true }
+
+    composeTestRule.setContent {
+      CustomLocationDialog(
+          value = "",
+          currentLocation = null,
+          locationSuggestions = emptyList(),
+          onValueChange = {},
+          onDropDownLocationSelect = {},
+          onDismiss = {},
+          onConfirm = {},
+          onUseCurrentLocationClick = onClick)
+    }
+    composeTestRule.onNodeWithTag("UseCurrentLocationButton").performClick()
+    composeTestRule.waitForIdle()
+
+    assert(isClicked)
+  }
+
+  @Test
+  fun dialog_displaysUseMyLocationButton() {
+    composeTestRule.setContent {
+      CustomLocationDialog(
+          value = "",
+          currentLocation = null,
+          locationSuggestions = emptyList(),
+          onValueChange = {},
+          onDropDownLocationSelect = {},
+          onDismiss = {},
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
+    }
+    composeTestRule.onNodeWithTag("UseCurrentLocationButton").assertIsDisplayed()
+  }
+
+  @Test
+  fun dialog_callsOnDismissWhenCloseButtonClicked() {
+    var dismissed = false
+
+    composeTestRule.setContent {
+      CustomLocationDialog(
+          value = "",
+          currentLocation = null,
+          locationSuggestions = emptyList(),
+          onValueChange = {},
+          onDropDownLocationSelect = {},
+          onDismiss = { dismissed = true },
+          onConfirm = {},
+          onUseCurrentLocationClick = {})
+    }
+    composeTestRule.onNodeWithTag(C.CustomLocationDialogTags.CLOSE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    assert(dismissed)
   }
 }

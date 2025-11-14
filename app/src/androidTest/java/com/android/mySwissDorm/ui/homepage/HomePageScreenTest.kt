@@ -85,6 +85,10 @@ class HomePageScreenTest : FirestoreTest() {
     val mockLocationRepository =
         object : LocationRepository {
           override suspend fun search(query: String): List<Location> = emptyList()
+
+          override suspend fun reverseSearch(latitude: Double, longitude: Double): Location? {
+            return null
+          }
         }
     viewModel =
         HomePageViewModel(
@@ -92,17 +96,18 @@ class HomePageScreenTest : FirestoreTest() {
             locationRepository = mockLocationRepository,
             profileRepository = ProfileRepositoryProvider.repository,
             auth = FirebaseEmulator.auth)
-    composeTestRule.setContent { HomePageScreen(viewModel) }
   }
 
   @Test
   fun testBasicElementsAreDisplayed() {
+    composeTestRule.setContent { HomePageScreen(viewModel) }
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR).assertIsDisplayed()
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD).assertIsDisplayed()
   }
 
   @Test
   fun testCityCards() {
+    composeTestRule.setContent { HomePageScreen(viewModel) }
     allCities.forEach {
       composeTestRule.waitUntil(timeoutMillis = 3_000) {
         composeTestRule
@@ -135,6 +140,7 @@ class HomePageScreenTest : FirestoreTest() {
 
   @Test
   fun testSearchTextField() {
+    composeTestRule.setContent { HomePageScreen(viewModel) }
     // Check that the search bar field is displayed
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD).assertIsDisplayed()
 
@@ -151,6 +157,7 @@ class HomePageScreenTest : FirestoreTest() {
 
   @Test
   fun testSearchTextFieldWorksForCityName() {
+    composeTestRule.setContent { HomePageScreen(viewModel) }
     // Check that the search bar field is displayed
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD).assertIsDisplayed()
 
@@ -204,6 +211,7 @@ class HomePageScreenTest : FirestoreTest() {
 
   @Test
   fun testSearchTextFieldWorksForCityDescription() {
+    composeTestRule.setContent { HomePageScreen(viewModel) }
     // Check that the search bar field is displayed
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD).assertIsDisplayed()
 
@@ -251,6 +259,7 @@ class HomePageScreenTest : FirestoreTest() {
 
   @Test
   fun customLocationDialog_savesLocationToProfile() = runTest {
+    composeTestRule.setContent { HomePageScreen(viewModel) }
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
@@ -293,6 +302,7 @@ class HomePageScreenTest : FirestoreTest() {
 
   @Test
   fun customLocationDialog_confirmButtonSavesLocation() = runTest {
+    composeTestRule.setContent { HomePageScreen(viewModel) }
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
@@ -337,6 +347,7 @@ class HomePageScreenTest : FirestoreTest() {
 
   @Test
   fun clickingCityCard_savesLocationToProfile() = runTest {
+    composeTestRule.setContent { HomePageScreen(viewModel) }
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
@@ -400,6 +411,7 @@ class HomePageScreenTest : FirestoreTest() {
 
   @Test
   fun clickingCityCard_updatesExistingLocation() = runTest {
+    composeTestRule.setContent { HomePageScreen(viewModel) }
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 

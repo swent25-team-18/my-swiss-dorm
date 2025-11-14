@@ -3,11 +3,14 @@ package com.android.mySwissDorm.ui.utils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -20,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +64,8 @@ fun CustomLocationDialog(
     onValueChange: (String) -> Unit,
     onDropDownLocationSelect: (Location) -> Unit,
     onDismiss: () -> Unit,
-    onConfirm: (Location) -> Unit
+    onConfirm: (Location) -> Unit,
+    onUseCurrentLocationClick: () -> Unit
 ) {
   var showDropdown by remember { mutableStateOf(false) }
 
@@ -83,6 +88,16 @@ fun CustomLocationDialog(
                           Modifier.testTag(
                               C.CustomLocationDialogTags.DIALOG_TITLE,
                           ))
+                  TextButton(
+                      onClick = onUseCurrentLocationClick,
+                      modifier = Modifier.testTag("UseCurrentLocationButton")) {
+                        Icon(
+                            imageVector = Icons.Default.MyLocation,
+                            contentDescription = "My Location",
+                            tint = MainColor)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Use my current location", color = MainColor)
+                      }
                   ExposedDropdownMenuBox(
                       expanded = showDropdown && locationSuggestions.isNotEmpty(),
                       onExpandedChange = { showDropdown = it },

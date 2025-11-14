@@ -15,6 +15,7 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
+import org.json.JSONObject
 
 class NominatimLocationRepository(
     private val client: OkHttpClient,
@@ -98,6 +99,59 @@ class NominatimLocationRepository(
           }
         } catch (e: IOException) {
           Log.e("NominatimLocationRepository", "Failed to execute request", e)
+          throw e
+        }
+      }
+
+  override suspend fun reverseSearch(latitude: Double, longitude: Double): Location? =
+      withContext(Dispatchers.IO) {
+        val locale = Locale.getDefault()
+        val url =
+            HttpUrl.Builder()
+                .scheme("https")
+                .host("nominatim.openstreetmap.org")
+                .addPathSegment("reverse")
+                .addQueryParameter("lat", latitude.toString())
+                .addQueryParameter("lon", longitude.toString())
+                .addQueryParameter("format", "json")
+                .build()
+
+        val request =
+            Request.Builder()
+                .url(url)
+                .header("User-Agent", "MySwissDorm/1.0 (contact@myswissdorm.ch)")
+                .header("Referer", "https://myswissdorm.com")
+                .header("Accept-Language", locale.toLanguageTag())
+                .build()
+
+        try {
+          respectRateLimit()
+          val response = client.newCall(request).execute()
+
+          response.use {
+            if (response.code == 429) {
+              val retryAfter = response.header("Retry-After")?.toLongOrNull() ?: 2L
+              delay(retryAfter * 1000)
+              throw IOException("Rate limited by Nominatim (429). Try later.")
+            }
+            if (!response.isSuccessful) {
+              Log.d("NominatimLocationRepository", "Unexpected code $response")
+              throw Exception("Unexpected code $response")
+            }
+
+            val body = response.body?.string() ?: return@withContext null
+            val jsonObject = JSONObject(body)
+
+            val lat = jsonObject.optDouble("lat", latitude)
+            val lon = jsonObject.optDouble("lon", longitude)
+            val name = jsonObject.optString("display_name", "Current Location")
+
+            if (name.isEmpty()) return@withContext null
+
+            return@withContext Location(latitude = lat, name = name, longitude = lon)
+          }
+        } catch (e: Exception) {
+          Log.e("NominatimLocationRepository", "Failed to execute reverse request", e)
           throw e
         }
       }

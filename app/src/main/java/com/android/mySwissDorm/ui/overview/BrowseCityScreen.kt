@@ -421,12 +421,14 @@ private fun FilterChipBar(
             tint = TextColor,
             modifier = Modifier.size(20.dp))
         LazyRow(
-            modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            modifier = Modifier.weight(1f).testTag(C.BrowseCityTags.FILTER_CHIP_ROW),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
               item {
                 FilterChip(
                     label = "Room Type",
                     isActive = filterState.selectedRoomTypes.isNotEmpty(),
-                    onClick = { onFilterClick(FilterType.ROOM_TYPE) })
+                    onClick = { onFilterClick(FilterType.ROOM_TYPE) },
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_ROOM_TYPE))
               }
               item {
                 FilterChip(
@@ -434,14 +436,16 @@ private fun FilterChipBar(
                     isActive =
                         filterState.priceRange.first != null ||
                             filterState.priceRange.second != null,
-                    onClick = { onFilterClick(FilterType.PRICE) })
+                    onClick = { onFilterClick(FilterType.PRICE) },
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_PRICE))
               }
               item {
                 FilterChip(
                     label = "Size",
                     isActive =
                         filterState.sizeRange.first != null || filterState.sizeRange.second != null,
-                    onClick = { onFilterClick(FilterType.SIZE) })
+                    onClick = { onFilterClick(FilterType.SIZE) },
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_SIZE))
               }
               item {
                 FilterChip(
@@ -449,19 +453,22 @@ private fun FilterChipBar(
                     isActive =
                         filterState.startDateRange.first != null ||
                             filterState.startDateRange.second != null,
-                    onClick = { onFilterClick(FilterType.START_DATE) })
+                    onClick = { onFilterClick(FilterType.START_DATE) },
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_START_DATE))
               }
               item {
                 FilterChip(
                     label = "Most Recent",
                     isActive = filterState.sortByMostRecent,
-                    onClick = onToggleMostRecent)
+                    onClick = onToggleMostRecent,
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_MOST_RECENT))
               }
             }
         // Show "Clear All" button when any filter is active
         if (hasAnyFilterActive(filterState)) {
           TextButton(
               onClick = onClearAll,
+              modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CLEAR_ALL_BUTTON),
               colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
                 Text("Clear All", style = MaterialTheme.typography.bodySmall)
               }
@@ -513,7 +520,10 @@ private fun FilterBottomSheet(
   var localDateRange by remember(filterType) { mutableStateOf(filterState.startDateRange) }
 
   ModalBottomSheet(
-      onDismissRequest = onDismiss, sheetState = sheetState, containerColor = BackGroundColor) {
+      onDismissRequest = onDismiss,
+      sheetState = sheetState,
+      containerColor = BackGroundColor,
+      modifier = Modifier.testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET)) {
         Column(
             modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
@@ -527,7 +537,8 @@ private fun FilterBottomSheet(
                       },
                   style = MaterialTheme.typography.titleLarge,
                   color = TextColor,
-                  fontWeight = FontWeight.Bold)
+                  fontWeight = FontWeight.Bold,
+                  modifier = Modifier.testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_TITLE))
 
               when (filterType) {
                 FilterType.ROOM_TYPE -> {
@@ -575,7 +586,9 @@ private fun FilterBottomSheet(
                           onApply() // Apply the cleared filter and reload listings
                           onDismiss() // Close the sheet
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            Modifier.weight(1f)
+                                .testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_CLEAR_BUTTON),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
                           Text("Clear")
                         }
@@ -598,7 +611,9 @@ private fun FilterBottomSheet(
                           onApply() // Reload listings with new filters
                           onDismiss() // Close the sheet
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            Modifier.weight(1f)
+                                .testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON),
                         colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
                           Text("Apply", color = Color.White)
                         }
@@ -631,6 +646,7 @@ private fun RoomTypeFilterContent(
                       }
                   onSelectionChange(newSelection)
                 },
+                modifier = Modifier.testTag(C.BrowseCityTags.roomTypeCheckbox(roomType.name)),
                 colors = CheckboxDefaults.colors(checkedColor = MainColor))
           }
     }

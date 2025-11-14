@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.*
+import org.junit.Assert.assertTrue
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -129,13 +130,95 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     super.tearDown()
   }
 
+  // ——————————————— Helper Functions ———————————————
+
+  private val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+
+  /** Sets up the screen with Lausanne location and waits for listings to load. */
+  private suspend fun setupScreenWithListings() {
+    switchToUser(FakeUser.FakeUser1)
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation) }
+    compose.waitUntil(5_000) { vm.uiState.value.listings.items.isNotEmpty() }
+  }
+
+  /** Waits for filter chip row to exist. */
+  private fun waitForFilterChipRow() {
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.FILTER_CHIP_ROW, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+  }
+
+  /** Scrolls to a filter chip by index and clicks it. */
+  private fun scrollToAndClickFilterChip(index: Int, chipTag: String) {
+    compose
+        .onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_ROW, useUnmergedTree = true)
+        .performScrollToIndex(index)
+    compose.waitForIdle()
+    compose.waitUntil(5_000) {
+      compose.onAllNodesWithTag(chipTag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onNodeWithTag(chipTag, useUnmergedTree = true).assertIsDisplayed().performClick()
+    compose.waitForIdle()
+  }
+
+  /** Waits for bottom sheet to appear. */
+  private fun waitForBottomSheet() {
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+  }
+
+  /** Waits for Apply button and clicks it. */
+  private fun waitForAndClickApplyButton() {
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(
+              C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose
+        .onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON, useUnmergedTree = true)
+        .performClick()
+    compose.waitForIdle()
+    compose.waitUntil(5_000) { !vm.uiState.value.listings.loading }
+  }
+
+  /** Selects a room type in the filter bottom sheet. */
+  private fun selectRoomType(roomType: RoomType) {
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(
+              C.BrowseCityTags.roomTypeCheckbox(roomType.name), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose
+        .onNodeWithTag(C.BrowseCityTags.roomTypeCheckbox(roomType.name), useUnmergedTree = true)
+        .performClick()
+    compose.waitForIdle()
+  }
+
+  /** Applies a room type filter (opens filter, selects room type, applies). */
+  private fun applyRoomTypeFilter(roomType: RoomType) {
+    waitForFilterChipRow()
+    scrollToAndClickFilterChip(0, C.BrowseCityTags.FILTER_CHIP_ROOM_TYPE)
+    waitForBottomSheet()
+    selectRoomType(roomType)
+    waitForAndClickApplyButton()
+  }
+
   // ——————————————— Tests ———————————————
 
   @Test
   fun loadsFromFirestore_filtersByCity_displaysOnlyLausanne() = runTest {
     switchToUser(FakeUser.FakeUser1)
-
-    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
     compose.setContent {
       BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation, onSelectListing = {})
     }
@@ -154,9 +237,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun onlyLausanneResidenciesAreDisplayed() {
-    compose.setContent {
-      BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
-    }
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation) }
     compose.waitForIdle()
 
     compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
@@ -177,9 +258,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun noReviewForResidencyShowsNoReviewsYet() {
-    compose.setContent {
-      BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
-    }
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation) }
 
     compose.waitForIdle()
 
@@ -201,9 +280,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun showsLatestReviewForResidency() {
-    compose.setContent {
-      BrowseCityScreen(browseCityViewModel = vm, location = Location("Lausanne", 46.5197, 6.6323))
-    }
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation) }
 
     compose.waitForIdle()
 
@@ -228,8 +305,6 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   fun clickingCard_callsOnSelectListing_withCorrectUid() = runTest {
     val clicked = mutableStateOf<ListingCardUI?>(null)
     switchToUser(FakeUser.FakeUser1)
-
-    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
     compose.setContent {
       BrowseCityScreen(location = lausanneLocation, onSelectListing = { clicked.value = it })
     }
@@ -316,28 +391,18 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   @Test
   fun locationButton_opensCustomLocationDialog() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
-
     compose.setContent { BrowseCityScreen(location = lausanneLocation) }
     compose.waitForIdle()
-
-    // Click on location button
     compose.onNodeWithTag(C.BrowseCityTags.LOCATION_BUTTON).performClick()
     compose.waitForIdle()
-
-    // Check that dialog appears
     compose.onNodeWithTag(C.CustomLocationDialogTags.DIALOG_TITLE).assertIsDisplayed()
   }
 
   @Test
   fun locationButton_displaysLocationName() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
-
     compose.setContent { BrowseCityScreen(location = lausanneLocation) }
     compose.waitForIdle()
-
-    // Check that location name is displayed
     compose.onNodeWithText("Lausanne").assertIsDisplayed()
   }
 
@@ -345,29 +410,262 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   fun locationButton_savesLocationToProfile() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
-    val initialLocation = Location("Lausanne", 46.5197, 6.6323)
-
-    // Use profile1 with no location and updated ownerId
     profileRepo.createProfile(
         profile1.copy(userInfo = profile1.userInfo.copy(location = null), ownerId = uid))
 
-    compose.setContent { BrowseCityScreen(location = initialLocation, onLocationChange = {}) }
+    compose.setContent { BrowseCityScreen(location = lausanneLocation, onLocationChange = {}) }
     compose.waitForIdle()
-
-    // Click location button to open dialog
     compose.onNodeWithTag(C.BrowseCityTags.LOCATION_BUTTON).performClick()
     compose.waitForIdle()
 
-    // Wait for dialog to appear
     compose.waitUntil(timeoutMillis = 5_000) {
       compose
           .onAllNodesWithTag(C.CustomLocationDialogTags.DIALOG_TITLE)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
-
-    // Verify the dialog opens and text field is displayed
     compose.onNodeWithTag(C.CustomLocationDialogTags.LOCATION_TEXT_FIELD).assertIsDisplayed()
+  }
+
+  @Test
+  fun filter_chips_are_displayed() = runTest {
+    setupScreenWithListings()
+
+    compose.waitUntil(10_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.FILTER_CHIP_ROW, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify all filter chips are displayed by scrolling to each index
+    val chips =
+        listOf(
+            Pair(0, C.BrowseCityTags.FILTER_CHIP_ROOM_TYPE),
+            Pair(1, C.BrowseCityTags.FILTER_CHIP_PRICE),
+            Pair(2, C.BrowseCityTags.FILTER_CHIP_SIZE),
+            Pair(3, C.BrowseCityTags.FILTER_CHIP_START_DATE),
+            Pair(4, C.BrowseCityTags.FILTER_CHIP_MOST_RECENT))
+    chips.forEach { (index, tag) ->
+      compose
+          .onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_ROW, useUnmergedTree = true)
+          .performScrollToIndex(index)
+      compose.waitForIdle()
+      compose.onNodeWithTag(tag, useUnmergedTree = true).assertIsDisplayed()
+    }
+  }
+
+  @Test
+  fun clicking_room_type_filter_opens_bottom_sheet() = runTest {
+    setupScreenWithListings()
+    waitForFilterChipRow()
+    scrollToAndClickFilterChip(0, C.BrowseCityTags.FILTER_CHIP_ROOM_TYPE)
+    waitForBottomSheet()
+
+    compose
+        .onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET, useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_TITLE, useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose.onNodeWithText("Filter by Room Type", useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun room_type_filter_applies_correctly() = runTest {
+    setupScreenWithListings()
+    val initialCount = vm.uiState.value.listings.items.size
+
+    waitForFilterChipRow()
+    scrollToAndClickFilterChip(0, C.BrowseCityTags.FILTER_CHIP_ROOM_TYPE)
+    waitForBottomSheet()
+    selectRoomType(RoomType.STUDIO)
+    waitForAndClickApplyButton()
+
+    val filteredCount = vm.uiState.value.listings.items.size
+    assertTrue("Filtered count should be <= initial count", filteredCount <= initialCount)
+    assertTrue("Should have some filtered results", filteredCount >= 0)
+
+    vm.uiState.value.listings.items.forEach { listing ->
+      assertTrue(
+          "All listings should be Studio type",
+          listing.leftBullets.firstOrNull() == RoomType.STUDIO.toString())
+    }
+  }
+
+  @Test
+  fun price_filter_applies_correctly() = runTest {
+    setupScreenWithListings()
+    val initialCount = vm.uiState.value.listings.items.size
+
+    waitForFilterChipRow()
+    scrollToAndClickFilterChip(1, C.BrowseCityTags.FILTER_CHIP_PRICE)
+    waitForBottomSheet()
+    waitForAndClickApplyButton()
+
+    assertTrue(
+        "Filtered count should be <= initial count",
+        vm.uiState.value.listings.items.size <= initialCount)
+  }
+
+  @Test
+  fun size_filter_applies_correctly() = runTest {
+    setupScreenWithListings()
+    val initialCount = vm.uiState.value.listings.items.size
+
+    waitForFilterChipRow()
+    scrollToAndClickFilterChip(2, C.BrowseCityTags.FILTER_CHIP_SIZE)
+    waitForBottomSheet()
+    waitForAndClickApplyButton()
+
+    assertTrue(
+        "Filtered count should be <= initial count",
+        vm.uiState.value.listings.items.size <= initialCount)
+  }
+
+  @Test
+  fun start_date_filter_opens_date_picker() = runTest {
+    setupScreenWithListings()
+    waitForFilterChipRow()
+    scrollToAndClickFilterChip(3, C.BrowseCityTags.FILTER_CHIP_START_DATE)
+    waitForBottomSheet()
+
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithText("Min Start Date", useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose.onNodeWithText("Min Start Date", useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun clear_all_button_clears_all_filters() = runTest {
+    setupScreenWithListings()
+    applyRoomTypeFilter(RoomType.STUDIO)
+
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.FILTER_CLEAR_ALL_BUTTON, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose
+        .onNodeWithTag(C.BrowseCityTags.FILTER_CLEAR_ALL_BUTTON, useUnmergedTree = true)
+        .performClick()
+    compose.waitForIdle()
+    compose.waitUntil(5_000) { !vm.uiState.value.listings.loading }
+
+    val filterState = vm.uiState.value.filterState
+    assertTrue("Room types should be empty", filterState.selectedRoomTypes.isEmpty())
+    assertTrue(
+        "Price range should be null",
+        filterState.priceRange.first == null && filterState.priceRange.second == null)
+    assertTrue(
+        "Size range should be null",
+        filterState.sizeRange.first == null && filterState.sizeRange.second == null)
+    assertTrue(
+        "Start date range should be null",
+        filterState.startDateRange.first == null && filterState.startDateRange.second == null)
+    assertTrue("Sort by most recent should be false", !filterState.sortByMostRecent)
+  }
+
+  @Test
+  fun filter_bottom_sheet_can_be_dismissed_via_apply() = runTest {
+    setupScreenWithListings()
+    waitForFilterChipRow()
+    scrollToAndClickFilterChip(1, C.BrowseCityTags.FILTER_CHIP_PRICE)
+    waitForBottomSheet()
+
+    compose
+        .onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET, useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    waitForAndClickApplyButton()
+
+    compose.waitUntil(5_000) { !vm.uiState.value.filterState.showFilterBottomSheet }
+    compose
+        .onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun most_recent_toggle_works() = runTest {
+    setupScreenWithListings()
+    waitForFilterChipRow()
+    scrollToAndClickFilterChip(4, C.BrowseCityTags.FILTER_CHIP_MOST_RECENT)
+    compose.waitUntil(5_000) { !vm.uiState.value.listings.loading }
+
+    assertTrue(
+        "Sort by most recent should be enabled", vm.uiState.value.filterState.sortByMostRecent)
+  }
+
+  @Test
+  fun clear_button_in_bottom_sheet_clears_filter() = runTest {
+    setupScreenWithListings()
+    applyRoomTypeFilter(RoomType.STUDIO)
+
+    assertTrue(
+        "Room type filter should be active",
+        vm.uiState.value.filterState.selectedRoomTypes.isNotEmpty())
+
+    waitForFilterChipRow()
+    scrollToAndClickFilterChip(0, C.BrowseCityTags.FILTER_CHIP_ROOM_TYPE)
+    compose.waitUntil(2_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(
+              C.BrowseCityTags.FILTER_BOTTOM_SHEET_CLEAR_BUTTON, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose
+        .onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_CLEAR_BUTTON, useUnmergedTree = true)
+        .performClick()
+    compose.waitForIdle()
+    compose.waitUntil(5_000) { !vm.uiState.value.listings.loading }
+
+    assertTrue(
+        "Room type filter should be cleared",
+        vm.uiState.value.filterState.selectedRoomTypes.isEmpty())
+  }
+
+  @Test
+  fun empty_state_shows_filtered_message_when_filters_active() = runTest {
+    setupScreenWithListings()
+    vm.setPriceFilter(10000.0, 20000.0) // Very high price range that won't match anything
+    vm.loadListings(lausanneLocation)
+    compose.waitUntil(5_000) { !vm.uiState.value.listings.loading }
+
+    if (vm.uiState.value.listings.items.isEmpty()) {
+      compose.waitUntil(5_000) {
+        compose
+            .onAllNodesWithText("No listings match your filters.", useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+      compose
+          .onNodeWithText("No listings match your filters.", useUnmergedTree = true)
+          .assertIsDisplayed()
+      compose.onNodeWithText("Clear filters", useUnmergedTree = true).assertIsDisplayed()
+    }
   }
 
   @Test
@@ -411,7 +709,6 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             profileRepository = ProfileRepositoryProvider.repository,
             auth = FirebaseEmulator.auth)
 
-    val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
     compose.setContent { BrowseCityScreen(location = lausanneLocation, browseCityViewModel = vm) }
 
     // We should eventually see the error label

@@ -29,6 +29,64 @@ class CustomDatePickerDialogTest {
 
   private val SWITZERLAND_TIMEZONE = TimeZone.getTimeZone("Europe/Zurich")
 
+  /** Creates a Timestamp for a date N days from now in Switzerland timezone. */
+  private fun createTimestampDaysFromNow(days: Int): Timestamp {
+    val cal = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    cal.add(Calendar.DAY_OF_YEAR, days)
+    cal.set(Calendar.HOUR_OF_DAY, 12)
+    cal.set(Calendar.MINUTE, 0)
+    cal.set(Calendar.SECOND, 0)
+    cal.set(Calendar.MILLISECOND, 0)
+    return Timestamp(cal.time)
+  }
+
+  /** Converts a Timestamp to midnight UTC milliseconds in Switzerland timezone. */
+  private fun timestampToMidnightUtc(timestamp: Timestamp): Long {
+    val swiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
+    swiss.time = timestamp.toDate()
+    swiss.set(Calendar.HOUR_OF_DAY, 0)
+    swiss.set(Calendar.MINUTE, 0)
+    swiss.set(Calendar.SECOND, 0)
+    swiss.set(Calendar.MILLISECOND, 0)
+    return swiss.timeInMillis
+  }
+
+  /**
+   * Sets up the date picker dialog, clicks OK, and returns the selected date.
+   *
+   * @param initialDate Initial date to display (null = current date)
+   * @param minDate Optional minimum selectable date
+   * @param maxDate Optional maximum selectable date
+   * @return The selected date, or null if no date was selected
+   */
+  private fun selectDateFromDialog(
+      initialDate: Timestamp? = null,
+      minDate: Timestamp? = null,
+      maxDate: Timestamp? = null
+  ): Timestamp? {
+    var selectedDate: Timestamp? = null
+
+    composeRule.setContent {
+      MySwissDormAppTheme {
+        CustomDatePickerDialog(
+            showDialog = true,
+            initialDate = initialDate,
+            onDismiss = {},
+            onDateSelected = { selectedDate = it },
+            minDate = minDate,
+            maxDate = maxDate)
+      }
+    }
+
+    composeRule.waitForIdle()
+    composeRule
+        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    return selectedDate
+  }
+
   @Test
   fun dialog_not_displayed_when_showDialog_is_false() {
     composeRule.setContent {
@@ -182,41 +240,12 @@ class CustomDatePickerDialogTest {
 
   @Test
   fun selected_date_is_not_in_past() = runTest {
-    var selectedDate: Timestamp? = null
-
-    composeRule.setContent {
-      MySwissDormAppTheme {
-        CustomDatePickerDialog(
-            showDialog = true,
-            initialDate = null,
-            onDismiss = {},
-            onDateSelected = { selectedDate = it })
-      }
-    }
-
-    composeRule.waitForIdle()
-    composeRule
-        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
-        .performClick()
-    composeRule.waitForIdle()
+    val selectedDate = selectDateFromDialog()
 
     assertNotNull("Date should be selected", selectedDate)
 
-    // Verify the selected date is not in the past
-    val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-    todaySwiss.set(Calendar.HOUR_OF_DAY, 0)
-    todaySwiss.set(Calendar.MINUTE, 0)
-    todaySwiss.set(Calendar.SECOND, 0)
-    todaySwiss.set(Calendar.MILLISECOND, 0)
-    val todayMidnight = todaySwiss.timeInMillis
-
-    val selectedSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-    selectedSwiss.time = selectedDate!!.toDate()
-    selectedSwiss.set(Calendar.HOUR_OF_DAY, 0)
-    selectedSwiss.set(Calendar.MINUTE, 0)
-    selectedSwiss.set(Calendar.SECOND, 0)
-    selectedSwiss.set(Calendar.MILLISECOND, 0)
-    val selectedMidnight = selectedSwiss.timeInMillis
+    val todayMidnight = timestampToMidnightUtc(createTimestampDaysFromNow(0))
+    val selectedMidnight = timestampToMidnightUtc(selectedDate!!)
 
     assertTrue(
         "Selected date should be today or in the future, but was before today",
@@ -320,60 +349,116 @@ class CustomDatePickerDialogTest {
   }
 
   @Test
-  fun past_date_as_initial_is_adjusted_to_today() {
-    // Create a past date (30 days ago)
-    val pastSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-    pastSwiss.add(Calendar.DAY_OF_YEAR, -30)
-    pastSwiss.set(Calendar.HOUR_OF_DAY, 12)
-    pastSwiss.set(Calendar.MINUTE, 0)
-    pastSwiss.set(Calendar.SECOND, 0)
-    pastSwiss.set(Calendar.MILLISECOND, 0)
-    val pastTimestamp = Timestamp(pastSwiss.time)
-
-    var selectedDate: Timestamp? = null
-
-    composeRule.setContent {
-      MySwissDormAppTheme {
-        CustomDatePickerDialog(
-            showDialog = true,
-            initialDate = pastTimestamp,
-            onDismiss = {},
-            onDateSelected = { selectedDate = it })
-      }
-    }
-
-    composeRule.waitForIdle()
-    // Dialog should still be displayed (the picker will show today's date instead of the past date)
-    composeRule
-        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
-        .assertIsDisplayed()
-
-    // When OK is clicked, the selected date should be today or later
-    composeRule
-        .onNodeWithTag(C.CustomDatePickerDialogTags.OK_BUTTON, useUnmergedTree = true)
-        .performClick()
-    composeRule.waitForIdle()
+  fun past_date_as_initial_is_adjusted_to_today() = runTest {
+    val pastTimestamp = createTimestampDaysFromNow(-30)
+    val selectedDate = selectDateFromDialog(initialDate = pastTimestamp)
 
     assertNotNull("Date should be selected", selectedDate)
 
-    // Verify the selected date is not in the past
-    val todaySwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-    todaySwiss.set(Calendar.HOUR_OF_DAY, 0)
-    todaySwiss.set(Calendar.MINUTE, 0)
-    todaySwiss.set(Calendar.SECOND, 0)
-    todaySwiss.set(Calendar.MILLISECOND, 0)
-    val todayMidnight = todaySwiss.timeInMillis
-
-    val selectedSwiss = Calendar.getInstance(SWITZERLAND_TIMEZONE)
-    selectedSwiss.time = selectedDate!!.toDate()
-    selectedSwiss.set(Calendar.HOUR_OF_DAY, 0)
-    selectedSwiss.set(Calendar.MINUTE, 0)
-    selectedSwiss.set(Calendar.SECOND, 0)
-    selectedSwiss.set(Calendar.MILLISECOND, 0)
-    val selectedMidnight = selectedSwiss.timeInMillis
+    val todayMidnight = timestampToMidnightUtc(createTimestampDaysFromNow(0))
+    val selectedMidnight = timestampToMidnightUtc(selectedDate!!)
 
     assertTrue(
         "Selected date should be today or in the future, even if initial date was in the past",
         selectedMidnight >= todayMidnight)
+  }
+
+  @Test
+  fun min_date_constraint_prevents_selecting_dates_before_min() = runTest {
+    val minTimestamp = createTimestampDaysFromNow(10)
+    val selectedDate = selectDateFromDialog(minDate = minTimestamp)
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    val minMidnight = timestampToMidnightUtc(minTimestamp)
+    val selectedMidnight = timestampToMidnightUtc(selectedDate!!)
+
+    assertTrue(
+        "Selected date should be at least the min date, but was before it",
+        selectedMidnight >= minMidnight)
+  }
+
+  @Test
+  fun max_date_constraint_prevents_selecting_dates_after_max() = runTest {
+    val maxTimestamp = createTimestampDaysFromNow(30)
+    val selectedDate = selectDateFromDialog(maxDate = maxTimestamp)
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    val maxMidnight = timestampToMidnightUtc(maxTimestamp)
+    val selectedMidnight = timestampToMidnightUtc(selectedDate!!)
+
+    assertTrue(
+        "Selected date should be at most the max date, but was after it",
+        selectedMidnight <= maxMidnight)
+  }
+
+  @Test
+  fun both_min_and_max_constraints_are_respected() = runTest {
+    val minTimestamp = createTimestampDaysFromNow(10)
+    val maxTimestamp = createTimestampDaysFromNow(30)
+    val selectedDate = selectDateFromDialog(minDate = minTimestamp, maxDate = maxTimestamp)
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    val minMidnight = timestampToMidnightUtc(minTimestamp)
+    val maxMidnight = timestampToMidnightUtc(maxTimestamp)
+    val selectedMidnight = timestampToMidnightUtc(selectedDate!!)
+
+    assertTrue(
+        "Selected date should be within min and max range",
+        selectedMidnight >= minMidnight && selectedMidnight <= maxMidnight)
+  }
+
+  @Test
+  fun initial_date_before_min_is_adjusted_to_min() = runTest {
+    val minTimestamp = createTimestampDaysFromNow(10)
+    val initialTimestamp = createTimestampDaysFromNow(5)
+    val selectedDate = selectDateFromDialog(initialDate = initialTimestamp, minDate = minTimestamp)
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    val minMidnight = timestampToMidnightUtc(minTimestamp)
+    val selectedMidnight = timestampToMidnightUtc(selectedDate!!)
+
+    assertTrue(
+        "Selected date should be at least the min date, even if initial date was before it",
+        selectedMidnight >= minMidnight)
+  }
+
+  @Test
+  fun initial_date_after_max_is_adjusted_to_max() = runTest {
+    val maxTimestamp = createTimestampDaysFromNow(30)
+    val initialTimestamp = createTimestampDaysFromNow(50)
+    val selectedDate = selectDateFromDialog(initialDate = initialTimestamp, maxDate = maxTimestamp)
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    val maxMidnight = timestampToMidnightUtc(maxTimestamp)
+    val selectedMidnight = timestampToMidnightUtc(selectedDate!!)
+
+    assertTrue(
+        "Selected date should be at most the max date, even if initial date was after it",
+        selectedMidnight <= maxMidnight)
+  }
+
+  @Test
+  fun initial_date_outside_range_is_adjusted_to_valid_range() = runTest {
+    val minTimestamp = createTimestampDaysFromNow(10)
+    val maxTimestamp = createTimestampDaysFromNow(30)
+    val initialTimestamp = createTimestampDaysFromNow(5)
+    val selectedDate =
+        selectDateFromDialog(
+            initialDate = initialTimestamp, minDate = minTimestamp, maxDate = maxTimestamp)
+
+    assertNotNull("Date should be selected", selectedDate)
+
+    val minMidnight = timestampToMidnightUtc(minTimestamp)
+    val maxMidnight = timestampToMidnightUtc(maxTimestamp)
+    val selectedMidnight = timestampToMidnightUtc(selectedDate!!)
+
+    assertTrue(
+        "Selected date should be within min and max range, even if initial date was outside it",
+        selectedMidnight >= minMidnight && selectedMidnight <= maxMidnight)
   }
 }

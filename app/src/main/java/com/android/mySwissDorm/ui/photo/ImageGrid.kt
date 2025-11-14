@@ -15,20 +15,14 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import coil.compose.AsyncImage
-import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.Red0
 
 /**
@@ -79,14 +73,14 @@ fun ImageGrid(
       }
 }
 
-@Composable
-@Preview
-private fun ImageGridPreview() {
-  val uri1 = "android.resource://com.android.mySwissDorm/${R.drawable.geneve}".toUri()
-  val uri2 = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri()
-  val uri3 = "android.resource://com.android.mySwissDorm/${R.drawable.fribourg}".toUri()
-  val list = remember { mutableStateListOf(uri1, uri2, uri3) }
-  MySwissDormAppTheme {
-    ImageGrid(imageUris = list.toSet(), isEditingMode = true, { list.remove(it) })
-  }
-}
+// @Composable
+// @Preview
+// private fun ImageGridPreview() {
+//  val uri1 = "android.resource://com.android.mySwissDorm/${R.drawable.geneve}".toUri()
+//  val uri2 = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri()
+//  val uri3 = "android.resource://com.android.mySwissDorm/${R.drawable.fribourg}".toUri()
+//  val list = remember { mutableStateListOf(uri1, uri2, uri3) }
+//  MySwissDormAppTheme {
+//    ImageGrid(imageUris = list.toSet(), isEditingMode = true, { list.remove(it) })
+//  }
+// }

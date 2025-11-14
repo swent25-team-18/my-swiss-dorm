@@ -28,6 +28,8 @@ import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.Red0
 
 /**
  * An image grid is a scrollable row which displays a list of images.
@@ -58,20 +60,20 @@ fun ImageGrid(
             AsyncImage(
                 model = uri,
                 contentDescription = null,
-                modifier =
-                    Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(8.dp)),
+                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop)
-              if (isEditingMode) {
-                  FloatingActionButton(
-                      onClick = { onRemove(uri) },
-                      modifier = Modifier.offset(x = 8.dp, y = (-8).dp).size(32.dp)) {
-                      Icon(
-                          imageVector = Icons.Default.Delete,
-                          contentDescription = C.ImageGridTags.ICON_DELETE_CONTENT_DESC,
-                          modifier = Modifier.size(20.dp).testTag(C.ImageGridTags.deleteButtonTag(uri)))
+            if (isEditingMode) {
+              FloatingActionButton(
+                  onClick = { onRemove(uri) },
+                  modifier = Modifier.offset(x = 8.dp, y = (-8).dp).size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = C.ImageGridTags.ICON_DELETE_CONTENT_DESC,
+                        modifier =
+                            Modifier.size(20.dp).testTag(C.ImageGridTags.deleteButtonTag(uri)),
+                        tint = Red0)
                   }
-              }
+            }
           }
         }
       }
@@ -84,5 +86,7 @@ private fun ImageGridPreview() {
   val uri2 = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri()
   val uri3 = "android.resource://com.android.mySwissDorm/${R.drawable.fribourg}".toUri()
   val list = remember { mutableStateListOf(uri1, uri2, uri3) }
-  ImageGrid(imageUris = list.toSet(), isEditingMode = true, { list.remove(it) })
+  MySwissDormAppTheme {
+    ImageGrid(imageUris = list.toSet(), isEditingMode = true, { list.remove(it) })
+  }
 }

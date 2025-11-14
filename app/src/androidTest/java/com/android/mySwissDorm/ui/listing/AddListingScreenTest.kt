@@ -14,12 +14,17 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import java.net.URL
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -40,6 +45,8 @@ class AddListingScreenTest : FirestoreTest() {
   override fun createRepositories() {
     RentalListingRepositoryProvider.repository =
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+    ResidenciesRepositoryProvider.repository =
+        ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
   private fun setContentWith(onConfirmCapture: (String) -> Unit = {}) {
@@ -51,7 +58,114 @@ class AddListingScreenTest : FirestoreTest() {
 
   @Before
   override fun setUp() {
-    super.setUp()
+    runTest {
+      super.setUp()
+      switchToUser(FakeUser.FakeUser1)
+      // Seed a residency before the screen loads (ViewModel loads residencies in init)
+      ResidenciesRepositoryProvider.repository.addResidency(
+          Residency(
+              name = "Vortex",
+              description = "Test residency",
+              location = Location(name = "Vortex", latitude = 46.52, longitude = 6.57),
+              city = "Lausanne",
+              email = null,
+              phone = null,
+              website = URL("https://example.com")))
+      // Wait for the residency to be persisted to Firestore
+      delay(500)
+    }
+  }
+
+  // Helper function to select a residency from the dropdown
+  private fun selectResidency(residencyName: String) {
+    // Wait for the "Residency Name" label to appear (field exists in UI)
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasText("Residency Name"), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Wait for residencies to load - try to open dropdown until menu appears with residency
+    // We'll attempt to click the field and check if menu opens with options
+    var dropdownOpened = false
+    var attempts = 0
+    while (!dropdownOpened && attempts < 30) {
+      try {
+        // Try clicking on "Select residency" if it exists, otherwise try clicking on the label area
+        val hasSelectResidency =
+            composeRule
+                .onAllNodes(hasText("Select residency"), useUnmergedTree = true)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+
+        if (hasSelectResidency) {
+          composeRule.onNodeWithText("Select residency", useUnmergedTree = true).performClick()
+        } else {
+          // If "Select residency" doesn't exist yet, try clicking on "Residency Name" label
+          // The field should still be clickable even if value isn't visible
+          composeRule.onNodeWithText("Residency Name", useUnmergedTree = true).performClick()
+        }
+        composeRule.waitForIdle()
+
+        // Check if menu opened by looking for residency name in dropdown menu
+        val menuOpen =
+            composeRule
+                .onAllNodes(hasText(residencyName), useUnmergedTree = true)
+                .fetchSemanticsNodes()
+                .size >= 2 // Should appear at least in menu (and maybe field if already selected)
+
+        if (menuOpen) {
+          dropdownOpened = true
+        }
+      } catch (e: Exception) {
+        // Field might not be ready yet, wait and try again
+      }
+      attempts++
+      if (!dropdownOpened && attempts < 30) {
+        composeRule.waitForIdle()
+        // Small delay to allow residencies to load
+        Thread.sleep(200)
+      }
+    }
+
+    if (!dropdownOpened) {
+      // Final attempt with longer wait - residencies should be loaded by now
+      composeRule.waitUntil(5_000) {
+        val hasField =
+            composeRule
+                .onAllNodes(
+                    hasText("Select residency") or hasText("Residency Name"),
+                    useUnmergedTree = true)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        if (hasField) {
+          val fieldNodes =
+              composeRule.onAllNodes(
+                  hasText("Select residency") or hasText("Residency Name"), useUnmergedTree = true)
+          fieldNodes[0].performClick()
+          composeRule.waitForIdle()
+          composeRule
+              .onAllNodes(hasText(residencyName), useUnmergedTree = true)
+              .fetchSemanticsNodes()
+              .isNotEmpty()
+        } else {
+          false
+        }
+      }
+    }
+
+    // Now click on the residency name in the dropdown menu
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasText(residencyName), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    val menuItems = composeRule.onAllNodes(hasText(residencyName), useUnmergedTree = true)
+    menuItems[0].performClick()
+    composeRule.waitForIdle()
   }
 
   @After
@@ -70,6 +184,7 @@ class AddListingScreenTest : FirestoreTest() {
 
     // Fill fields with VALID values respecting new validators (size requires one decimal).
     composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("Cozy studio")
+    selectResidency("Vortex")
     composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("25.0")
     composeRule
         .onNode(hasText("Price (CHF / month)") and hasSetTextAction())
@@ -120,6 +235,8 @@ class AddListingScreenTest : FirestoreTest() {
     // Enter minimal other fields so the button remains disabled (size missing decimal)
     composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("A")
     composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("10")
+    // Select a residency (now required)
+    selectResidency("Vortex")
 
     // Still disabled because size invalid (no decimal) and description empty
     composeRule.onNodeWithText("Confirm listing").assertIsEnabled()
@@ -235,6 +352,7 @@ class AddListingScreenTest : FirestoreTest() {
 
     // Fill required fields
     composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("Cozy studio")
+    selectResidency("Vortex")
     composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("25.0")
     composeRule
         .onNode(hasText("Price (CHF / month)") and hasSetTextAction())

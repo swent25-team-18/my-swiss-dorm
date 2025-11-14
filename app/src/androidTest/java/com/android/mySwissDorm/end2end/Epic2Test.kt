@@ -90,7 +90,7 @@ class Epic2Test : FirestoreTest() {
   /**
    * The test does the following actions :
    * 1. Sign Up
-   * 2. Select current location
+   * 2. Select custom location
    * 3. Add a new RentalListing
    * 4. Block a user
    * 5. Add a new Review

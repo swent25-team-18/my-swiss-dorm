@@ -177,18 +177,44 @@ class BrowseCityViewModel(
         val state = _uiState.value
         // Fetch all and filter by distance
         val all = listingsRepository.getAllRentalListings()
+
+        val currentUid = auth.currentUser?.uid
+
+        val blockedCache = mutableMapOf<String, Boolean>()
+
         var filtered =
             all.filter { listing ->
-              try {
-                val residency = residenciesRepository.getResidency(listing.residencyName)
-                location.distanceTo(residency.location) <= maxDistanceToDisplay
-              } catch (e: Exception) {
-                Log.w(
-                    "BrowseCityViewModel",
-                    "Could not find residency ${listing.residencyName} for listing ${listing.uid}",
-                    e)
-                false
-              }
+              val matchesLocation =
+                  try {
+                    val residency = residenciesRepository.getResidency(listing.residencyName)
+                    location.distanceTo(residency.location) <= maxDistanceToDisplay
+                  } catch (e: Exception) {
+                    Log.w(
+                        "BrowseCityViewModel",
+                        "Could not find residency ${listing.residencyName} for listing ${listing.uid}",
+                        e)
+                    false
+                  }
+
+              if (!matchesLocation) return@filter false
+
+              if (currentUid == null || currentUid == listing.ownerId) return@filter true
+
+              val ownerId = listing.ownerId
+              val hasBlocked =
+                  blockedCache.getOrPut(ownerId) {
+                    runCatching { profileRepository.getBlockedUserIds(ownerId) }
+                        .onFailure {
+                          Log.w(
+                              "BrowseCityViewModel",
+                              "Failed to fetch blocked list for owner $ownerId",
+                              it)
+                        }
+                        .getOrDefault(emptyList())
+                        .contains(currentUid)
+                  }
+
+              !hasBlocked
             }
 
         // Apply room type filter
@@ -261,13 +287,39 @@ class BrowseCityViewModel(
         val mapped =
             filtered.map {
               val allReviews = reviewsRepository.getAllReviewsByResidency(it.name)
+              val currentUid = auth.currentUser?.uid
+
+              val reviewsFiltered =
+                  if (currentUid == null) {
+                    allReviews
+                  } else {
+                    val blockedCache = mutableMapOf<String, Boolean>()
+                    allReviews.filter { review ->
+                      val ownerId = review.ownerId
+                      if (ownerId == currentUid) return@filter true
+                      val hasBlocked =
+                          blockedCache.getOrPut(ownerId) {
+                            runCatching { profileRepository.getBlockedUserIds(ownerId) }
+                                .onFailure {
+                                  Log.w(
+                                      "BrowseCityViewModel",
+                                      "Failed to fetch blocked list for reviewer $ownerId",
+                                      it)
+                                }
+                                .getOrDefault(emptyList())
+                                .contains(currentUid)
+                          }
+                      !hasBlocked
+                    }
+                  }
+
               val meanGrade =
-                  if (allReviews.isNotEmpty()) {
-                    val average = allReviews.map { review -> review.grade }.average()
+                  if (reviewsFiltered.isNotEmpty()) {
+                    val average = reviewsFiltered.map { review -> review.grade }.average()
                     (average * 2).roundToInt() /
                         2.0 // Round to the nearest half unit (1.0, 1.5, 2.0, etc)
                   } else 0.0
-              val latestReview = allReviews.maxByOrNull { review -> review.postedAt }
+              val latestReview = reviewsFiltered.maxByOrNull { review -> review.postedAt }
               val ownerInfo =
                   if (latestReview != null) {
                     try {

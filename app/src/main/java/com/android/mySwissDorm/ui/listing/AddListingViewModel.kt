@@ -22,8 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// ⬇️ NEW: central sanitizers
-
 data class AddListingUIState(
     val title: String = "",
     val residencies: List<Residency>,
@@ -50,7 +48,12 @@ data class AddListingUIState(
       val descOk =
           InputSanitizers.validateFinal<String>(InputSanitizers.FieldType.Description, description)
               .isValid
-      return titleOk && descOk && sizeOk && priceOk
+
+      // because residencies are predefined, no validation needed. We just need to check that the
+      // field is not empty.
+      val residencyOk = residencyName.isNotEmpty()
+
+      return titleOk && descOk && sizeOk && priceOk && residencyOk
     }
 }
 

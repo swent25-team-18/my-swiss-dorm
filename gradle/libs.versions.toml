@@ -19,6 +19,7 @@ material = "1.6.8"
 material3 = "1.3.2"
 materialVersion = "1.12.0"
 materialIconsExtended = "1.6.8"
+coil = "2.6.0"
 
 # Firebase
 firebaseAuth = "23.0.0"
@@ -122,6 +123,7 @@ play-services-auth = { module = "com.google.android.gms:play-services-auth", ver
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidxCoreKtx" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 
 

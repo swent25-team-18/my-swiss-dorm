@@ -1,6 +1,8 @@
 package com.android.mySwissDorm.utils
 
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.city.CITIES_COLLECTION_PATH
+import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
@@ -194,6 +196,8 @@ abstract class FirestoreTest : TestCase() {
           phone = "+41 44 256 68 00",
           website = URL("https://www.woko.ch/"))
 
+  val residencies = listOf(vortex, atrium, woko)
+
   var resTest =
       Residency(
           name = "Vortex",
@@ -255,7 +259,7 @@ abstract class FirestoreTest : TestCase() {
           imageUrls = emptyList(),
           status = RentalStatus.POSTED)
 
-  val reviewVortex1 =
+  var reviewVortex1 =
       Review(
           uid = "reviewVortex1",
           ownerId = "",
@@ -269,13 +273,41 @@ abstract class FirestoreTest : TestCase() {
           areaInM2 = 60,
           imageUrls = emptyList())
 
-  val reviewVortex2 =
+  var reviewVortex2 =
       reviewVortex1.copy(
           uid = "reviewVortex2",
           title = "Vortex Review 2",
           postedAt = Timestamp(Timestamp.now().seconds + 10, 0), // post timestamp 10s later
           reviewText = "Second review")
 
-  val reviewWoko1 =
+  var reviewWoko1 =
       reviewVortex1.copy(uid = "reviewWoko1", title = "Woko Room", residencyName = "WOKO")
+
+  val cityLausanne =
+      City(
+          name = "Lausanne",
+          description =
+              "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.",
+          location = Location(name = "Lausanne", latitude = 46.5197, longitude = 6.6323),
+          imageId = R.drawable.lausanne)
+  val cityGeneva =
+      City(
+          name = "Geneva",
+          description = "Geneva is a global city, hosting numerous international organizations.",
+          location = Location(name = "Geneva", latitude = 46.2044, longitude = 6.1432),
+          imageId = R.drawable.geneve)
+  val cityZurich =
+      City(
+          name = "Zurich",
+          description = "Zurich is the largest city in Switzerland and a major financial hub.",
+          location = Location(name = "Zürich", latitude = 47.3769, longitude = 8.5417),
+          imageId = R.drawable.zurich)
+  val cityFribourg =
+      City(
+          name = "Fribourg",
+          description = "Fribourg is a bilingual city famous for its medieval architecture.",
+          location = Location(name = "Fribourg", latitude = 46.8065, longitude = 7.16197),
+          imageId = R.drawable.fribourg)
+
+  val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
 }

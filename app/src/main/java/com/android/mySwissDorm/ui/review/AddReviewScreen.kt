@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.review.Review
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
@@ -61,7 +62,8 @@ fun AddReviewScreen(
                 onClick = { addReviewViewModel.submitReviewForm(onConfirm) },
                 enabled = ui.isFormValid,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier =
+                    Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
                   Text("Submit Review", color = Color.White)
                 }
@@ -94,13 +96,13 @@ fun AddReviewScreen(
               TitleField(
                   value = ui.title,
                   onValueChange = { addReviewViewModel.setTitle(it) },
-                  modifier = Modifier.testTag("reviewTitleField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddReviewTags.TITLE_FIELD).fillMaxWidth())
               ResidencyDropdownResID(
                   selected = ui.residencyName,
                   onSelected = { addReviewViewModel.setResidencyName(it) },
                   residencies = ui.residencies,
                   accentColor = MainColor,
-                  modifier = Modifier.testTag("residencyDropdown").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddReviewTags.RESIDENCY_DROPDOWN).fillMaxWidth())
 
               HousingTypeDropdown(
                   selected = ui.roomType,
@@ -118,7 +120,7 @@ fun AddReviewScreen(
                   value = ui.areaInM2,
                   onValueChange = { addReviewViewModel.setAreaInM2(it) },
                   externalErrorKey = sizeErrKey,
-                  modifier = Modifier.testTag("sizeField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddReviewTags.SIZE_FIELD).fillMaxWidth())
               if (sizeInvalid) {
                 Text(
                     text = "Enter 1.0–1000.0 with one decimal (e.g., 18.5).",
@@ -137,7 +139,7 @@ fun AddReviewScreen(
                   value = ui.pricePerMonth,
                   onValueChange = { addReviewViewModel.setPricePerMonth(it) },
                   externalErrorKey = priceErrKey,
-                  modifier = Modifier.testTag("priceField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddReviewTags.PRICE_FIELD).fillMaxWidth())
               if (priceInvalid) {
                 Text(
                     text = "Enter an integer between 1 and 10000.",
@@ -149,7 +151,7 @@ fun AddReviewScreen(
                   value = ui.reviewText,
                   onValueChange = { addReviewViewModel.setReviewText(it) },
                   label = "Review",
-                  modifier = Modifier.testTag("descField").fillMaxWidth())
+                  modifier = Modifier.testTag(C.AddReviewTags.DESC_FIELD).fillMaxWidth())
               Row(
                   modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically,
@@ -163,7 +165,7 @@ fun AddReviewScreen(
                         onRatingChange = { addReviewViewModel.setGrade(it) },
                         activeColor = MainColor,
                         inactiveColor = TextBoxColor,
-                        modifier = Modifier.testTag("gradeField"))
+                        modifier = Modifier.testTag(C.AddReviewTags.GRADE_FIELD))
                   }
 
               Text("Photos", style = MaterialTheme.typography.titleMedium)

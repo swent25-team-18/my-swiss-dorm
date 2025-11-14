@@ -62,7 +62,10 @@ fun AddListingScreen(
                 onClick = { addListingViewModel.submitForm(onConfirm) },
                 enabled = ui.isFormValid,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(52.dp)
+                        .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
                   Text("Confirm listing", color = Color.White)
                 }
@@ -91,7 +94,8 @@ fun AddListingScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp, vertical = 10.dp)
-                .verticalScroll(scrollState),
+                .verticalScroll(scrollState)
+                .testTag(C.AddListingScreenTags.ROOT),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               TitleField(
                   value = ui.title,

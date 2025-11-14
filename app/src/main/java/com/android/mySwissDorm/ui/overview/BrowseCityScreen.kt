@@ -4,10 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.*
@@ -40,6 +43,7 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
@@ -106,9 +110,26 @@ fun BrowseCityScreen(
       location = location,
       listingsState = uiState.listings,
       residenciesState = uiState.residencies,
+      filterState = uiState.filterState,
       onSelectListing = onSelectListing,
       onSelectResidency = onSelectResidency,
       onLocationClick = onLocationClick,
+      onFilterClick = { filterType -> browseCityViewModel.showFilterSheet(filterType) },
+      onToggleMostRecent = {
+        browseCityViewModel.setSortByMostRecent(!uiState.filterState.sortByMostRecent)
+        browseCityViewModel.loadListings(location)
+      },
+      onApplyFilter = { browseCityViewModel.loadListings(location) },
+      onClearFilter = {
+        browseCityViewModel.clearFilter()
+        browseCityViewModel.loadListings(location)
+      },
+      onSetRoomTypeFilter = { roomTypes -> browseCityViewModel.setRoomTypeFilter(roomTypes) },
+      onSetPriceFilter = { min, max -> browseCityViewModel.setPriceFilter(min, max) },
+      onSetSizeFilter = { min, max -> browseCityViewModel.setSizeFilter(min, max) },
+      onSetStartDateFilter = { min, max -> browseCityViewModel.setStartDateFilter(min, max) },
+      onSetSortByMostRecent = { sort -> browseCityViewModel.setSortByMostRecent(sort) },
+      onDismissFilterSheet = { browseCityViewModel.hideFilterSheet() },
       startTab = startTab,
       onAddListingClick = { navigationActions?.navigateTo(Screen.AddListing) },
       onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
@@ -137,9 +158,20 @@ fun BrowseCityScreen(
  * @param location The current location being displayed.
  * @param listingsState The state of the listings (loading, items, error).
  * @param residenciesState The state of the residencies (loading, items, error).
+ * @param filterState The filter state for listings.
  * @param onSelectListing A callback invoked when a listing card is clicked.
  * @param onSelectResidency A callback invoked when a residency card is clicked.
  * @param onLocationClick A callback invoked when the location title is clicked to open the dialog.
+ * @param onFilterClick A callback invoked when a filter chip is clicked.
+ * @param onToggleMostRecent A callback invoked when the Most Recent chip is clicked to toggle it.
+ * @param onApplyFilter A callback invoked when filters are applied.
+ * @param onClearFilter A callback invoked when filters are cleared.
+ * @param onSetRoomTypeFilter A callback to set room type filter.
+ * @param onSetPriceFilter A callback to set price filter.
+ * @param onSetSizeFilter A callback to set size filter.
+ * @param onSetStartDateFilter A callback to set start date filter.
+ * @param onSetSortByMostRecent A callback to set sort by most recent.
+ * @param onDismissFilterSheet A callback to dismiss the filter bottom sheet.
  * @param navigationActions Optional navigation helper.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -148,9 +180,20 @@ private fun BrowseCityScreenUI(
     location: Location,
     listingsState: ListingsState,
     residenciesState: ResidenciesState,
+    filterState: FilterState,
     onSelectListing: (ListingCardUI) -> Unit,
     onSelectResidency: (ResidencyCardUI) -> Unit,
     onLocationClick: () -> Unit,
+    onFilterClick: (FilterType) -> Unit,
+    onToggleMostRecent: () -> Unit,
+    onApplyFilter: () -> Unit,
+    onClearFilter: () -> Unit,
+    onSetRoomTypeFilter: (Set<RoomType>) -> Unit,
+    onSetPriceFilter: (Double?, Double?) -> Unit,
+    onSetSizeFilter: (Int?, Int?) -> Unit,
+    onSetStartDateFilter: (Timestamp?, Timestamp?) -> Unit,
+    onSetSortByMostRecent: (Boolean) -> Unit,
+    onDismissFilterSheet: () -> Unit,
     onAddListingClick: () -> Unit = {},
     onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
@@ -263,44 +306,495 @@ private fun BrowseCityScreenUI(
               }
             }
             else -> {
-              when {
-                listingsState.loading -> {
-                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(modifier = Modifier.testTag(C.BrowseCityTags.LOADING))
+              Column(modifier = Modifier.fillMaxSize()) {
+                FilterChipBar(
+                    filterState = filterState,
+                    onFilterClick = onFilterClick,
+                    onToggleMostRecent = onToggleMostRecent,
+                    onClearAll = {
+                      onClearFilter()
+                      onApplyFilter()
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                when {
+                  listingsState.loading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                      CircularProgressIndicator(
+                          modifier = Modifier.testTag(C.BrowseCityTags.LOADING))
+                    }
                   }
-                }
-                listingsState.error != null -> {
-                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = listingsState.error,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.testTag(C.BrowseCityTags.ERROR))
+                  listingsState.error != null -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                      Text(
+                          text = listingsState.error,
+                          color = MaterialTheme.colorScheme.error,
+                          modifier = Modifier.testTag(C.BrowseCityTags.ERROR))
+                    }
                   }
-                }
-                listingsState.items.isEmpty() -> {
-                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        "No listings yet.",
-                        modifier = Modifier.testTag(C.BrowseCityTags.EMPTY),
-                        color = TextColor)
+                  listingsState.items.isEmpty() -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                      Column(
+                          horizontalAlignment = Alignment.CenterHorizontally,
+                          verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            val message =
+                                if (hasAnyFilterActive(filterState)) {
+                                  "No listings match your filters."
+                                } else {
+                                  "No listings yet."
+                                }
+                            Text(
+                                message,
+                                modifier = Modifier.testTag(C.BrowseCityTags.EMPTY),
+                                color = TextColor)
+                            // Show "Clear filters" button if any filter is active and there are no
+                            // results
+                            if (hasAnyFilterActive(filterState)) {
+                              TextButton(
+                                  onClick = {
+                                    onClearFilter()
+                                    onApplyFilter()
+                                  },
+                                  colors =
+                                      ButtonDefaults.textButtonColors(contentColor = MainColor)) {
+                                    Text(
+                                        "Clear filters", style = MaterialTheme.typography.bodySmall)
+                                  }
+                            }
+                          }
+                    }
                   }
-                }
-                else -> {
-                  LazyColumn(
-                      modifier =
-                          Modifier.fillMaxSize()
-                              .padding(horizontal = 16.dp)
-                              .testTag(C.BrowseCityTags.LISTING_LIST),
-                      contentPadding = PaddingValues(vertical = 12.dp),
-                      verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        items(listingsState.items) { item -> ListingCard(item, onSelectListing) }
-                      }
+                  else -> {
+                    LazyColumn(
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .padding(horizontal = 16.dp)
+                                .testTag(C.BrowseCityTags.LISTING_LIST),
+                        contentPadding = PaddingValues(vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                          items(listingsState.items) { item -> ListingCard(item, onSelectListing) }
+                        }
+                  }
                 }
               }
             }
           }
         }
       }
+
+  // Show filter bottom sheet
+  if (filterState.showFilterBottomSheet && filterState.activeFilterType != null) {
+    FilterBottomSheet(
+        filterType = filterState.activeFilterType,
+        filterState = filterState,
+        onDismiss = onDismissFilterSheet,
+        onApply = {
+          onApplyFilter()
+          onDismissFilterSheet()
+        },
+        onSetRoomTypeFilter = onSetRoomTypeFilter,
+        onSetPriceFilter = onSetPriceFilter,
+        onSetSizeFilter = onSetSizeFilter,
+        onSetStartDateFilter = onSetStartDateFilter)
+  }
+}
+
+/** Checks if any filter is currently active. */
+private fun hasAnyFilterActive(filterState: FilterState): Boolean {
+  return filterState.selectedRoomTypes.isNotEmpty() ||
+      filterState.priceRange.first != null ||
+      filterState.priceRange.second != null ||
+      filterState.sizeRange.first != null ||
+      filterState.sizeRange.second != null ||
+      filterState.startDateRange.first != null ||
+      filterState.startDateRange.second != null ||
+      filterState.sortByMostRecent
+}
+
+/** Horizontal scrolling filter chip bar. */
+@Composable
+private fun FilterChipBar(
+    filterState: FilterState,
+    onFilterClick: (FilterType) -> Unit,
+    onToggleMostRecent: () -> Unit,
+    onClearAll: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+  Row(
+      modifier = modifier,
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Icon(
+            imageVector = Icons.Default.FilterList,
+            contentDescription = "Filters",
+            tint = TextColor,
+            modifier = Modifier.size(20.dp))
+        LazyRow(
+            modifier = Modifier.weight(1f).testTag(C.BrowseCityTags.FILTER_CHIP_ROW),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+              item {
+                FilterChip(
+                    label = "Room Type",
+                    isActive = filterState.selectedRoomTypes.isNotEmpty(),
+                    onClick = { onFilterClick(FilterType.ROOM_TYPE) },
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_ROOM_TYPE))
+              }
+              item {
+                FilterChip(
+                    label = "Price",
+                    isActive =
+                        filterState.priceRange.first != null ||
+                            filterState.priceRange.second != null,
+                    onClick = { onFilterClick(FilterType.PRICE) },
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_PRICE))
+              }
+              item {
+                FilterChip(
+                    label = "Size",
+                    isActive =
+                        filterState.sizeRange.first != null || filterState.sizeRange.second != null,
+                    onClick = { onFilterClick(FilterType.SIZE) },
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_SIZE))
+              }
+              item {
+                FilterChip(
+                    label = "Start Date",
+                    isActive =
+                        filterState.startDateRange.first != null ||
+                            filterState.startDateRange.second != null,
+                    onClick = { onFilterClick(FilterType.START_DATE) },
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_START_DATE))
+              }
+              item {
+                FilterChip(
+                    label = "Most Recent",
+                    isActive = filterState.sortByMostRecent,
+                    onClick = onToggleMostRecent,
+                    modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_MOST_RECENT))
+              }
+            }
+        // Show "Clear All" button when any filter is active
+        if (hasAnyFilterActive(filterState)) {
+          TextButton(
+              onClick = onClearAll,
+              modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CLEAR_ALL_BUTTON),
+              colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
+                Text("Clear All", style = MaterialTheme.typography.bodySmall)
+              }
+        }
+      }
+}
+
+/** Individual filter chip. */
+@Composable
+private fun FilterChip(
+    label: String,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+  AssistChip(
+      onClick = onClick,
+      label = { Text(label) },
+      leadingIcon =
+          if (isActive) {
+            { Icon(Icons.Default.Check, contentDescription = null, tint = TextColor) }
+          } else null,
+      colors =
+          AssistChipDefaults.assistChipColors(
+              containerColor = if (isActive) MainColor.copy(alpha = 0.2f) else BackGroundColor,
+              labelColor = TextColor),
+      modifier = modifier)
+}
+
+/** Filter bottom sheet for selecting filter options. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterBottomSheet(
+    filterType: FilterType,
+    filterState: FilterState,
+    onDismiss: () -> Unit,
+    onApply: () -> Unit,
+    onSetRoomTypeFilter: (Set<RoomType>) -> Unit,
+    onSetPriceFilter: (Double?, Double?) -> Unit,
+    onSetSizeFilter: (Int?, Int?) -> Unit,
+    onSetStartDateFilter: (Timestamp?, Timestamp?) -> Unit
+) {
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+  // Local state for temporary changes (only applied when "Apply" is pressed)
+  var localRoomTypes by remember(filterType) { mutableStateOf(filterState.selectedRoomTypes) }
+  var localPriceRange by remember(filterType) { mutableStateOf(filterState.priceRange) }
+  var localSizeRange by remember(filterType) { mutableStateOf(filterState.sizeRange) }
+  var localDateRange by remember(filterType) { mutableStateOf(filterState.startDateRange) }
+
+  ModalBottomSheet(
+      onDismissRequest = onDismiss,
+      sheetState = sheetState,
+      containerColor = BackGroundColor,
+      modifier = Modifier.testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET)) {
+        Column(
+            modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+              Text(
+                  text =
+                      when (filterType) {
+                        FilterType.ROOM_TYPE -> "Filter by Room Type"
+                        FilterType.PRICE -> "Filter by Price"
+                        FilterType.SIZE -> "Filter by Size"
+                        FilterType.START_DATE -> "Filter by Start Date"
+                        FilterType.MOST_RECENT -> "Sort by Most Recent" // Should never happen
+                      },
+                  style = MaterialTheme.typography.titleLarge,
+                  color = TextColor,
+                  fontWeight = FontWeight.Bold,
+                  modifier = Modifier.testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_TITLE))
+
+              when (filterType) {
+                FilterType.ROOM_TYPE -> {
+                  RoomTypeFilterContent(
+                      selectedRoomTypes = localRoomTypes,
+                      onSelectionChange = { localRoomTypes = it })
+                }
+                FilterType.PRICE -> {
+                  PriceFilterContent(
+                      priceRange = localPriceRange,
+                      onRangeChange = { min, max -> localPriceRange = Pair(min, max) })
+                }
+                FilterType.SIZE -> {
+                  SizeFilterContent(
+                      sizeRange = localSizeRange,
+                      onRangeChange = { min, max -> localSizeRange = Pair(min, max) })
+                }
+                FilterType.START_DATE -> {
+                  StartDateFilterContent(
+                      dateRange = localDateRange,
+                      onRangeChange = { min, max -> localDateRange = Pair(min, max) })
+                }
+                FilterType.MOST_RECENT -> {
+                  // Should never happen - Most Recent is toggled directly, not via bottom sheet
+                  Text("This filter is toggled directly from the filter bar.", color = TextColor)
+                }
+              }
+
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                          // Clear the specific filter type immediately and apply
+                          when (filterType) {
+                            FilterType.ROOM_TYPE -> onSetRoomTypeFilter(emptySet())
+                            FilterType.PRICE -> onSetPriceFilter(null, null)
+                            FilterType.SIZE -> onSetSizeFilter(null, null)
+                            FilterType.START_DATE -> onSetStartDateFilter(null, null)
+                            FilterType.MOST_RECENT -> {
+                              // Should never happen - Most Recent is toggled directly, not via
+                              // bottom sheet
+                            }
+                          }
+                          onApply() // Apply the cleared filter and reload listings
+                          onDismiss() // Close the sheet
+                        },
+                        modifier =
+                            Modifier.weight(1f)
+                                .testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_CLEAR_BUTTON),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+                          Text("Clear")
+                        }
+                    Button(
+                        onClick = {
+                          // Apply local state changes to actual filters
+                          when (filterType) {
+                            FilterType.ROOM_TYPE -> onSetRoomTypeFilter(localRoomTypes)
+                            FilterType.PRICE ->
+                                onSetPriceFilter(localPriceRange.first, localPriceRange.second)
+                            FilterType.SIZE ->
+                                onSetSizeFilter(localSizeRange.first, localSizeRange.second)
+                            FilterType.START_DATE ->
+                                onSetStartDateFilter(localDateRange.first, localDateRange.second)
+                            FilterType.MOST_RECENT -> {
+                              // Should never happen - Most Recent is toggled directly, not via
+                              // bottom sheet
+                            }
+                          }
+                          onApply() // Reload listings with new filters
+                          onDismiss() // Close the sheet
+                        },
+                        modifier =
+                            Modifier.weight(1f)
+                                .testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON),
+                        colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
+                          Text("Apply", color = Color.White)
+                        }
+                  }
+            }
+      }
+}
+
+/** Room type filter content with checkboxes. */
+@Composable
+private fun RoomTypeFilterContent(
+    selectedRoomTypes: Set<RoomType>,
+    onSelectionChange: (Set<RoomType>) -> Unit
+) {
+  Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    RoomType.entries.forEach { roomType ->
+      Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(roomType.toString(), color = TextColor)
+            Checkbox(
+                checked = roomType in selectedRoomTypes,
+                onCheckedChange = { checked ->
+                  val newSelection =
+                      if (checked) {
+                        selectedRoomTypes + roomType
+                      } else {
+                        selectedRoomTypes - roomType
+                      }
+                  onSelectionChange(newSelection)
+                },
+                modifier = Modifier.testTag(C.BrowseCityTags.roomTypeCheckbox(roomType.name)),
+                colors = CheckboxDefaults.colors(checkedColor = MainColor))
+          }
+    }
+  }
+}
+
+/** Price filter content with range slider. */
+@Composable
+private fun PriceFilterContent(
+    priceRange: Pair<Double?, Double?>,
+    onRangeChange: (Double?, Double?) -> Unit
+) {
+  var minPrice by remember(priceRange) { mutableFloatStateOf((priceRange.first ?: 0.0).toFloat()) }
+  var maxPrice by
+      remember(priceRange) { mutableFloatStateOf((priceRange.second ?: 2000.0).toFloat()) }
+
+  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+      Text("Min: ${minPrice.toInt()} CHF", color = TextColor)
+      Text("Max: ${maxPrice.toInt()} CHF", color = TextColor)
+    }
+    RangeSlider(
+        value = minPrice..maxPrice,
+        onValueChange = { range ->
+          minPrice = range.start
+          maxPrice = range.endInclusive
+          onRangeChange(minPrice.toDouble(), maxPrice.toDouble())
+        },
+        valueRange = 0f..5000f,
+        steps = 49,
+        colors =
+            SliderDefaults.colors(
+                thumbColor = MainColor,
+                activeTrackColor = MainColor,
+                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
+  }
+}
+
+/** Size filter content with range slider. */
+@Composable
+private fun SizeFilterContent(sizeRange: Pair<Int?, Int?>, onRangeChange: (Int?, Int?) -> Unit) {
+  var minSize by remember(sizeRange) { mutableFloatStateOf((sizeRange.first ?: 0).toFloat()) }
+  var maxSize by remember(sizeRange) { mutableFloatStateOf((sizeRange.second ?: 100).toFloat()) }
+
+  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+      Text("Min: ${minSize.toInt()} m²", color = TextColor)
+      Text("Max: ${maxSize.toInt()} m²", color = TextColor)
+    }
+    RangeSlider(
+        value = minSize..maxSize,
+        onValueChange = { range ->
+          minSize = range.start
+          maxSize = range.endInclusive
+          onRangeChange(minSize.toInt(), maxSize.toInt())
+        },
+        valueRange = 0f..200f,
+        steps = 39,
+        colors =
+            SliderDefaults.colors(
+                thumbColor = MainColor,
+                activeTrackColor = MainColor,
+                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
+  }
+}
+
+/** Start date filter content with date selection buttons using CustomDatePickerDialog. */
+@Composable
+private fun StartDateFilterContent(
+    dateRange: Pair<Timestamp?, Timestamp?>,
+    onRangeChange: (Timestamp?, Timestamp?) -> Unit
+) {
+  var minDate by remember(dateRange) { mutableStateOf(dateRange.first) }
+  var maxDate by remember(dateRange) { mutableStateOf(dateRange.second) }
+  var showMinDatePicker by remember { mutableStateOf(false) }
+  var showMaxDatePicker by remember { mutableStateOf(false) }
+
+  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    // Min Start Date Button
+    OutlinedButton(
+        onClick = { showMinDatePicker = true },
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically) {
+                Text("Min Start Date", color = TextColor)
+                Text(
+                    if (minDate != null) formatDate(minDate) else "Not set",
+                    color = TextColor,
+                    style = MaterialTheme.typography.bodyMedium)
+              }
+        }
+
+    // Max Start Date Button
+    OutlinedButton(
+        onClick = { showMaxDatePicker = true },
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically) {
+                Text("Max Start Date", color = TextColor)
+                Text(
+                    if (maxDate != null) formatDate(maxDate) else "Not set",
+                    color = TextColor,
+                    style = MaterialTheme.typography.bodyMedium)
+              }
+        }
+  }
+
+  // Min Date Picker Dialog
+  // Constraint: minDate cannot be larger than maxDate (if maxDate is set)
+  CustomDatePickerDialog(
+      showDialog = showMinDatePicker,
+      initialDate = minDate,
+      onDismiss = { showMinDatePicker = false },
+      onDateSelected = { timestamp ->
+        minDate = timestamp
+        onRangeChange(minDate, maxDate)
+        showMinDatePicker = false
+      },
+      maxDate = maxDate)
+
+  // Max Date Picker Dialog
+  // Constraint: maxDate cannot be smaller than minDate (if minDate is set)
+  CustomDatePickerDialog(
+      showDialog = showMaxDatePicker,
+      initialDate = maxDate,
+      onDismiss = { showMaxDatePicker = false },
+      onDateSelected = { timestamp ->
+        maxDate = timestamp
+        onRangeChange(minDate, maxDate)
+        showMaxDatePicker = false
+      },
+      minDate = minDate)
 }
 
 /**
@@ -565,13 +1059,26 @@ private fun BrowseCityScreen_Preview() {
                       fullNameOfPoster = "Doe John"),
               ),
       )
+  val sampleFilterState = FilterState()
+
   MySwissDormAppTheme {
     BrowseCityScreenUI(
         listingsState = sampleListingUi,
         residenciesState = sampleResidencyUi,
+        filterState = sampleFilterState,
         onSelectListing = {},
         onSelectResidency = {},
         location = Location("Lausanne", 46.5197, 6.6323),
-        onLocationClick = {})
+        onLocationClick = {},
+        onFilterClick = {},
+        onApplyFilter = {},
+        onClearFilter = {},
+        onSetRoomTypeFilter = {},
+        onSetPriceFilter = { _, _ -> },
+        onSetSizeFilter = { _, _ -> },
+        onSetStartDateFilter = { _, _ -> },
+        onSetSortByMostRecent = {},
+        onToggleMostRecent = {},
+        onDismissFilterSheet = {})
   }
 }

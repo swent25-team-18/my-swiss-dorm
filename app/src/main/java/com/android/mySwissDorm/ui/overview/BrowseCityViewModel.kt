@@ -11,6 +11,7 @@ import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
@@ -18,6 +19,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -86,6 +88,36 @@ data class ResidenciesState(
     val error: String? = null
 )
 
+/** Enum representing the different types of filters available for listings. */
+enum class FilterType {
+  ROOM_TYPE,
+  PRICE,
+  SIZE,
+  START_DATE,
+  MOST_RECENT
+}
+
+/**
+ * Represents the filter state for listings.
+ *
+ * @property selectedRoomTypes Set of selected room types for filtering (empty = all types)
+ * @property priceRange Price range filter (min, max; null = no limit)
+ * @property sizeRange Size range filter in m² (min, max; null = no limit)
+ * @property startDateRange Start date range filter (min, max; null = no limit)
+ * @property sortByMostRecent Whether to sort listings by most recently posted
+ * @property showFilterBottomSheet Whether the filter bottom sheet is visible
+ * @property activeFilterType The currently active filter type being configured
+ */
+data class FilterState(
+    val selectedRoomTypes: Set<RoomType> = emptySet(),
+    val priceRange: Pair<Double?, Double?> = Pair(null, null),
+    val sizeRange: Pair<Int?, Int?> = Pair(null, null),
+    val startDateRange: Pair<Timestamp?, Timestamp?> = Pair(null, null),
+    val sortByMostRecent: Boolean = false,
+    val showFilterBottomSheet: Boolean = false,
+    val activeFilterType: FilterType? = null
+)
+
 /**
  * Represents the overall UI state for browsing previews and listings in a city.
  *
@@ -96,6 +128,7 @@ data class ResidenciesState(
  * @property locationSuggestions A list of location suggestions based on the user's query.
  * @property showCustomLocationDialog A flag to control the visibility of the custom location
  *   dialog.
+ * @property filterState The filter state for listings
  */
 data class BrowseCityUiState(
     val listings: ListingsState = ListingsState(),
@@ -103,7 +136,8 @@ data class BrowseCityUiState(
     val customLocationQuery: String = "",
     val customLocation: Location? = null,
     val locationSuggestions: List<Location> = emptyList(),
-    val showCustomLocationDialog: Boolean = false
+    val showCustomLocationDialog: Boolean = false,
+    val filterState: FilterState = FilterState()
 )
 
 /**
@@ -140,13 +174,15 @@ class BrowseCityViewModel(
 
     viewModelScope.launch {
       try {
-        // Fetch all and filter by residency.city value matching the given cityName string
+        val state = _uiState.value
+        // Fetch all and filter by distance
         val all = listingsRepository.getAllRentalListings()
+
         val currentUid = auth.currentUser?.uid
 
         val blockedCache = mutableMapOf<String, Boolean>()
 
-        val filtered =
+        var filtered =
             all.filter { listing ->
               val matchesLocation =
                   try {
@@ -180,7 +216,52 @@ class BrowseCityViewModel(
 
               !hasBlocked
             }
-        val mapped = filtered.map { it.toCardUI() }
+
+        // Apply room type filter
+        if (state.filterState.selectedRoomTypes.isNotEmpty()) {
+          filtered = filtered.filter { it.roomType in state.filterState.selectedRoomTypes }
+        }
+
+        // Apply price filter
+        val (minPrice, maxPrice) = state.filterState.priceRange
+        if (minPrice != null || maxPrice != null) {
+          filtered =
+              filtered.filter { listing ->
+                (minPrice == null || listing.pricePerMonth >= minPrice) &&
+                    (maxPrice == null || listing.pricePerMonth <= maxPrice)
+              }
+        }
+
+        // Apply size filter
+        val (minSize, maxSize) = state.filterState.sizeRange
+        if (minSize != null || maxSize != null) {
+          filtered =
+              filtered.filter { listing ->
+                (minSize == null || listing.areaInM2 >= minSize) &&
+                    (maxSize == null || listing.areaInM2 <= maxSize)
+              }
+        }
+
+        // Apply start date filter
+        val (minDate, maxDate) = state.filterState.startDateRange
+        if (minDate != null || maxDate != null) {
+          filtered =
+              filtered.filter { listing ->
+                val listingStart = listing.startDate
+                (minDate == null || listingStart >= minDate) &&
+                    (maxDate == null || listingStart <= maxDate)
+              }
+        }
+
+        // Sort by most recent if enabled
+        val sorted =
+            if (state.filterState.sortByMostRecent) {
+              filtered.sortedByDescending { it.postedAt }
+            } else {
+              filtered
+            }
+
+        val mapped = sorted.map { it.toCardUI() }
 
         _uiState.update {
           it.copy(listings = it.listings.copy(loading = false, items = mapped, error = null))
@@ -324,6 +405,63 @@ class BrowseCityViewModel(
       } catch (e: Exception) {
         Log.e("BrowseCityViewModel", "Error saving location to profile", e)
       }
+    }
+  }
+
+  // Filter functions
+
+  /** Sets the room type filter. */
+  fun setRoomTypeFilter(roomTypes: Set<RoomType>) {
+    _uiState.update { it.copy(filterState = it.filterState.copy(selectedRoomTypes = roomTypes)) }
+  }
+
+  /** Sets the price range filter. */
+  fun setPriceFilter(minPrice: Double?, maxPrice: Double?) {
+    _uiState.update {
+      it.copy(filterState = it.filterState.copy(priceRange = Pair(minPrice, maxPrice)))
+    }
+  }
+
+  /** Sets the size range filter. */
+  fun setSizeFilter(minSize: Int?, maxSize: Int?) {
+    _uiState.update {
+      it.copy(filterState = it.filterState.copy(sizeRange = Pair(minSize, maxSize)))
+    }
+  }
+
+  /** Sets the start date range filter. */
+  fun setStartDateFilter(minDate: Timestamp?, maxDate: Timestamp?) {
+    _uiState.update {
+      it.copy(filterState = it.filterState.copy(startDateRange = Pair(minDate, maxDate)))
+    }
+  }
+
+  /** Sets the sort by most recent option. */
+  fun setSortByMostRecent(sortByMostRecent: Boolean) {
+    _uiState.update {
+      it.copy(filterState = it.filterState.copy(sortByMostRecent = sortByMostRecent))
+    }
+  }
+
+  /** Clears all filters. */
+  fun clearFilter() {
+    _uiState.update { it.copy(filterState = FilterState()) }
+  }
+
+  /** Shows the filter bottom sheet for the specified filter type. */
+  fun showFilterSheet(filterType: FilterType) {
+    _uiState.update {
+      it.copy(
+          filterState =
+              it.filterState.copy(showFilterBottomSheet = true, activeFilterType = filterType))
+    }
+  }
+
+  /** Hides the filter bottom sheet. */
+  fun hideFilterSheet() {
+    _uiState.update {
+      it.copy(
+          filterState = it.filterState.copy(showFilterBottomSheet = false, activeFilterType = null))
     }
   }
 }

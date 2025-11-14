@@ -116,6 +116,21 @@ object C {
         "browseCityResidencyCardEmptyReview_$residencyName"
 
     fun reviewText(reviewUid: String) = "browseCityReviewText_$reviewUid"
+
+    // Filter tags
+    const val FILTER_CHIP_ROW = "browseCityFilterChipRow"
+    const val FILTER_CHIP_ROOM_TYPE = "browseCityFilterChipRoomType"
+    const val FILTER_CHIP_PRICE = "browseCityFilterChipPrice"
+    const val FILTER_CHIP_SIZE = "browseCityFilterChipSize"
+    const val FILTER_CHIP_START_DATE = "browseCityFilterChipStartDate"
+    const val FILTER_CHIP_MOST_RECENT = "browseCityFilterChipMostRecent"
+    const val FILTER_CLEAR_ALL_BUTTON = "browseCityFilterClearAllButton"
+    const val FILTER_BOTTOM_SHEET = "browseCityFilterBottomSheet"
+    const val FILTER_BOTTOM_SHEET_APPLY_BUTTON = "browseCityFilterBottomSheetApplyButton"
+    const val FILTER_BOTTOM_SHEET_CLEAR_BUTTON = "browseCityFilterBottomSheetClearButton"
+    const val FILTER_BOTTOM_SHEET_TITLE = "browseCityFilterBottomSheetTitle"
+
+    fun roomTypeCheckbox(roomType: String) = "browseCityRoomTypeCheckbox_$roomType"
   }
 
   object ReviewsByResidencyTag {

@@ -55,6 +55,8 @@ object C {
     const val CONTACT_FIELD = "viewListingContactField"
     const val APPLY_BTN = "viewListingApplyBtn"
     const val EDIT_BTN = "viewListingEditBtn"
+    const val BLOCKED_NOTICE = "viewListingBlockedNotice"
+    const val BLOCKED_BACK_BTN = "viewListingBlockedBackBtn"
   }
 
   object ViewReviewTags {

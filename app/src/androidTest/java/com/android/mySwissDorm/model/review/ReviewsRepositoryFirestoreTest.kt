@@ -1,10 +1,13 @@
 package com.android.mySwissDorm.model.review
 
+import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import com.google.firebase.Timestamp
 import junit.framework.TestCase
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -174,5 +177,63 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
 
     assertEquals(original.upvotedBy, loaded.upvotedBy)
     assertEquals(original.downvotedBy, loaded.downvotedBy)
+  }
+
+  @Test
+  fun reviewWithoutUpvotedByReturnsNull() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    // Write a document without upvotedBy field (old schema simulation)
+    val id = repo.getNewUid()
+    val data =
+        mapOf(
+            "ownerId" to ownerId,
+            "postedAt" to Timestamp.now(),
+            "title" to "Title",
+            "reviewText" to "Text",
+            "grade" to 4.0,
+            "residencyName" to "Vortex",
+            "roomType" to RoomType.STUDIO.name,
+            "pricePerMonth" to 1000.0,
+            "areaInM2" to 20.0,
+            "imageUrls" to emptyList<String>(),
+            "downvotedBy" to emptyList<String>())
+    // Note: upvotedBy is intentionally missing
+
+    FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
+
+    // Should return null (and getReview throws when null)
+    assertEquals(true, runCatching { repo.getReview(id) }.isFailure)
+  }
+
+  @Test
+  fun reviewWithoutDownvotedByReturnsNull() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    // Write a document without downvotedBy field (old schema simulation)
+    val id = repo.getNewUid()
+    val data =
+        mapOf(
+            "ownerId" to ownerId,
+            "postedAt" to Timestamp.now(),
+            "title" to "Title",
+            "reviewText" to "Text",
+            "grade" to 4.0,
+            "residencyName" to "Vortex",
+            "roomType" to RoomType.STUDIO.name,
+            "pricePerMonth" to 1000.0,
+            "areaInM2" to 20.0,
+            "imageUrls" to emptyList<String>(),
+            "upvotedBy" to emptyList<String>())
+    // Note: downvotedBy is intentionally missing
+
+    FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
+
+    // Should return null (and getReview throws when null)
+    assertEquals(true, runCatching { repo.getReview(id) }.isFailure)
   }
 }

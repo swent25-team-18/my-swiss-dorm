@@ -1,13 +1,10 @@
 package com.android.mySwissDorm.model.review
 
-import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.Timestamp
 import junit.framework.TestCase
 import junit.framework.TestCase.assertEquals
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -177,34 +174,5 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
 
     assertEquals(original.upvotedBy, loaded.upvotedBy)
     assertEquals(original.downvotedBy, loaded.downvotedBy)
-  }
-
-  @Test
-  fun missingVoteListsDefaultToEmpty() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-
-    // Write a document without upvotedBy/downvotedBy (old schema simulation)
-    val id = repo.getNewUid()
-    val ownerId =
-        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
-    val data =
-        mapOf(
-            "ownerId" to ownerId,
-            "postedAt" to Timestamp.now(),
-            "title" to "Title",
-            "reviewText" to "Text",
-            "grade" to 4.0,
-            "residencyName" to "Vortex",
-            "roomType" to RoomType.STUDIO.name,
-            "pricePerMonth" to 1000.0,
-            "areaInM2" to 20.0,
-            "imageUrls" to emptyList<String>())
-
-    FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
-
-    val loaded = repo.getReview(id)
-
-    assertEquals(emptyList<String>(), loaded.upvotedBy)
-    assertEquals(emptyList<String>(), loaded.downvotedBy)
   }
 }

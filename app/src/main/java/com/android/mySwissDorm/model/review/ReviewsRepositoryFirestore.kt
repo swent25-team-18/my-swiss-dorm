@@ -112,9 +112,9 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
           (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: return null
 
       val upvotedBy =
-          (document.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+          (document.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
       val downvotedBy =
-          (document.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+          (document.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
 
       return Review(
           uid = uid,

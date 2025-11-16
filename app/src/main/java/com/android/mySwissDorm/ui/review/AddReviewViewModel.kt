@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.review
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
@@ -11,18 +10,18 @@ import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
+import com.android.mySwissDorm.ui.forms.AbstractAddFormViewModel
+import com.android.mySwissDorm.ui.forms.AddFormUiState
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import kotlin.math.roundToInt
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AddReviewUiState(
     val postedAt: Timestamp,
-    val residencies: List<Residency>,
+    override val residencies: List<Residency>,
     val title: String = "",
     val reviewText: String = "",
     val grade: Double = 0.0,
@@ -31,7 +30,8 @@ data class AddReviewUiState(
     val pricePerMonth: String = "",
     val areaInM2: String = "",
     val imageUrls: List<String> = emptyList(),
-) {
+    override val errorMsg: String? = null
+) : AddFormUiState {
   val isFormValid: Boolean
     get() {
       val isGradeOK = grade in 1.0..5.0
@@ -49,15 +49,19 @@ data class AddReviewUiState(
 
 class AddReviewViewModel(
     private val reviewRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
-    private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository
-) : ViewModel() {
-  private val _uiState =
-      MutableStateFlow(
-          AddReviewUiState(
-              postedAt = Timestamp.now(), roomType = RoomType.STUDIO, residencies = listOf()))
-  val uiState: StateFlow<AddReviewUiState> = _uiState.asStateFlow()
+    residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository
+) :
+    AbstractAddFormViewModel<AddReviewUiState>(
+        residenciesRepository,
+        AddReviewUiState(
+            postedAt = Timestamp.now(), roomType = RoomType.STUDIO, residencies = listOf())) {
+  override fun updateStateWithError(errorMsg: String?) {
+    _uiState.update { it.copy(errorMsg = errorMsg) }
+  }
 
+  override fun updateStateWithResidencies(residencies: List<Residency>) {
+    _uiState.update { it.copy(residencies = residencies) }
+  }
   // Helpers for updating individual fields
   fun setTitle(title: String) {
     val norm = InputSanitizers.normalizeWhileTyping(FieldType.Title, title)
@@ -96,19 +100,6 @@ class AddReviewViewModel(
     _uiState.value = _uiState.value.copy(imageUrls = imageUrls)
   }
 
-  init {
-    loadResidencies()
-  }
-
-  private fun loadResidencies() {
-    viewModelScope.launch {
-      try {
-        val residencies = residenciesRepository.getAllResidencies()
-        _uiState.value = _uiState.value.copy(residencies = residencies)
-      } catch (e: Exception) {}
-    }
-  }
-
   fun submitReviewForm(onConfirm: (Review) -> Unit) {
     val state = _uiState.value
 
@@ -121,6 +112,7 @@ class AddReviewViewModel(
     val reviewRes = InputSanitizers.validateFinal<String>(FieldType.Description, state.reviewText)
 
     if (!state.isFormValid) {
+      setErrorMsg("Form is not valid.")
       return
     }
 
@@ -143,7 +135,9 @@ class AddReviewViewModel(
       try {
         reviewRepository.addReview(reviewToAdd)
         onConfirm(reviewToAdd)
-      } catch (_: Exception) {}
+      } catch (_: Exception) {
+        setErrorMsg("Form is not valid.")
+      }
     }
   }
 }

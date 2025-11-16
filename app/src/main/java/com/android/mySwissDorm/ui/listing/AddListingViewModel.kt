@@ -1,7 +1,5 @@
 package com.android.mySwissDorm.ui.listing
 
-import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
@@ -13,18 +11,18 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
+import com.android.mySwissDorm.ui.forms.AbstractAddFormViewModel
+import com.android.mySwissDorm.ui.forms.AddFormUiState
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import kotlin.math.roundToInt
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AddListingUIState(
     val title: String = "",
-    val residencies: List<Residency>,
+    override val residencies: List<Residency>,
     val residencyName: String = "",
     val price: String = "",
     val housingType: RoomType,
@@ -34,8 +32,8 @@ data class AddListingUIState(
     val pickedImages: List<String> = emptyList(),
     val mapLat: Double? = null,
     val mapLng: Double? = null,
-    val errorMsg: String? = null,
-) {
+    override val errorMsg: String? = null
+) : AddFormUiState {
   // ✅ validation against central policy
   val isFormValid: Boolean
     get() {
@@ -60,54 +58,24 @@ data class AddListingUIState(
 class AddListingViewModel(
     private val rentalListingRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
-    private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository
-) : ViewModel() {
-  private val _uiState =
-      MutableStateFlow(
-          AddListingUIState(
-              residencies = listOf(), startDate = Timestamp.now(), housingType = RoomType.STUDIO))
+    residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository
+) :
+    AbstractAddFormViewModel<AddListingUIState>(
+        residenciesRepository,
+        AddListingUIState(
+            residencies = listOf(), startDate = Timestamp.now(), housingType = RoomType.STUDIO)) {
 
-  val uiState: StateFlow<AddListingUIState> = _uiState.asStateFlow()
-
-  fun clearErrorMsg() {
-    _uiState.value = _uiState.value.copy(errorMsg = null)
+  override fun updateStateWithError(errorMsg: String?) {
+    _uiState.update { it.copy(errorMsg = errorMsg) }
   }
 
-  private fun setErrorMsg(errorMsg: String) {
-    _uiState.value = _uiState.value.copy(errorMsg = errorMsg)
-  }
-
-  // --- Repository write (unchanged) ---
-  private fun addRentalListingToRepository(rentalListing: RentalListing) {
-    viewModelScope.launch {
-      try {
-        rentalListingRepository.addRentalListing(rentalListing)
-      } catch (e: Exception) {
-        Log.e("AddListingViewModel", "Error adding listing", e)
-        setErrorMsg("Failed to add rental listing: ${e.message}")
-      }
-    }
-  }
-
-  init {
-    loadResidencies()
-  }
-
-  private fun loadResidencies() {
-    viewModelScope.launch {
-      try {
-        val residencies = residenciesRepository.getAllResidencies()
-        _uiState.value = _uiState.value.copy(residencies = residencies)
-      } catch (e: Exception) {
-        _uiState.value = _uiState.value.copy(errorMsg = e.message)
-      }
-    }
+  override fun updateStateWithResidencies(residencies: List<Residency>) {
+    _uiState.update { it.copy(residencies = residencies) }
   }
 
   // --- Update handlers: normalize while typing via central rules ---
   fun setTitle(title: String) {
-    val norm = InputSanitizers.normalizeWhileTyping(InputSanitizers.FieldType.Title, title)
+    val norm = InputSanitizers.normalizeWhileTyping(FieldType.Title, title)
     _uiState.value = _uiState.value.copy(title = norm)
   }
 

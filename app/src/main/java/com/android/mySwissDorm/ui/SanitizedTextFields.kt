@@ -368,6 +368,7 @@ fun ResidencyDropdownResID(
     onSelected: (String) -> Unit,
     accentColor: Color,
     residencies: List<Residency>,
+    isListing: Boolean,
     modifier: Modifier = Modifier
 ) {
   var expanded by remember { mutableStateOf(false) }
@@ -401,6 +402,15 @@ fun ResidencyDropdownResID(
                 text = { Text(residency.name) },
                 onClick = {
                   onSelected(residency.name)
+                  expanded = false
+                })
+          }
+          if (isListing) {
+            DropdownMenuItem(
+                modifier = Modifier.testTag(C.SanitizedResidencyDropdownTags.PRIVATE_ACCOMMODATION),
+                text = { Text("Private Accommodation") },
+                onClick = {
+                  onSelected("Private Accommodation")
                   expanded = false
                 })
           }

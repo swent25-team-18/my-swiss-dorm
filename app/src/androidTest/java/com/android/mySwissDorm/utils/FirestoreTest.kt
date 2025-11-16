@@ -229,6 +229,7 @@ abstract class FirestoreTest : TestCase() {
           startDate = Timestamp.now(),
           description = "A good studio close to the campus.",
           imageUrls = emptyList(),
+          location = vortex.location,
           status = RentalStatus.POSTED)
   var rentalListing2 =
       RentalListing(
@@ -243,6 +244,7 @@ abstract class FirestoreTest : TestCase() {
           startDate = Timestamp.now(),
           description = "A good studio close to the campus.",
           imageUrls = emptyList(),
+          location = vortex.location,
           status = RentalStatus.POSTED)
   var rentalListing3 =
       RentalListing(
@@ -257,6 +259,7 @@ abstract class FirestoreTest : TestCase() {
           startDate = Timestamp.now(),
           description = "A good studio close to the campus but a bit small.",
           imageUrls = emptyList(),
+          location = vortex.location,
           status = RentalStatus.POSTED)
 
   var reviewVortex1 =

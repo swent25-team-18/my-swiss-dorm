@@ -184,14 +184,15 @@ class BrowseCityViewModel(
 
         var filtered =
             all.filter { listing ->
+              // Use location directly from the listing (now stored in the model)
+              // This works for both regular residencies and Private Accommodation
               val matchesLocation =
                   try {
-                    val residency = residenciesRepository.getResidency(listing.residencyName)
-                    location.distanceTo(residency.location) <= maxDistanceToDisplay
+                    location.distanceTo(listing.location) <= maxDistanceToDisplay
                   } catch (e: Exception) {
                     Log.w(
                         "BrowseCityViewModel",
-                        "Could not find residency ${listing.residencyName} for listing ${listing.uid}",
+                        "Error calculating distance for listing ${listing.uid}",
                         e)
                     false
                   }

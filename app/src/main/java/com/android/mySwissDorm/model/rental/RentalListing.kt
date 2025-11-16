@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.model.rental
 
+import com.android.mySwissDorm.model.map.Location
 import com.google.firebase.Timestamp
 
 data class RentalListing(
@@ -14,7 +15,8 @@ data class RentalListing(
     val startDate: Timestamp,
     val description: String,
     val imageUrls: List<String>,
-    val status: RentalStatus
+    val status: RentalStatus,
+    val location: Location
 )
 
 enum class RoomType(val value: String) {

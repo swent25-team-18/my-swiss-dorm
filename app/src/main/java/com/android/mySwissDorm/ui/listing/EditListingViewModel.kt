@@ -1,8 +1,10 @@
 package com.android.mySwissDorm.ui.listing
 
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -13,6 +15,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
+import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
@@ -55,6 +58,10 @@ data class EditListingUIState(
     val mapLat: Double? = null,
     val mapLng: Double? = null,
     val errorMsg: String? = null,
+    val customLocationQuery: String = "",
+    val customLocation: Location? = null,
+    val locationSuggestions: List<Location> = emptyList(),
+    val showCustomLocationDialog: Boolean = false,
 ) {
   /**
    * Derived validity flag for the whole form.
@@ -87,8 +94,10 @@ class EditListingViewModel(
     private val rentalListingRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository
-) : ViewModel() {
+        ResidenciesRepositoryProvider.repository,
+    override val locationRepository: LocationRepository = LocationRepositoryProvider.repository
+) : BaseLocationSearchViewModel() {
+  override val logTag = "EditListingViewModel"
 
   /**
    * Backing state for the screen. Initialized with a placeholder [Residency] and defaults for all
@@ -122,7 +131,19 @@ class EditListingViewModel(
       try {
         val listing = rentalListingRepository.getRentalListing(rentalPostID)
         val currentResidencies = _uiState.value.residencies
-        val residency = residenciesRepository.getResidency(listing.residencyName)
+        val isPrivateAccommodation = listing.residencyName == "Private Accommodation"
+        if (isPrivateAccommodation) {
+          null
+        } else {
+          try {
+            residenciesRepository.getResidency(listing.residencyName)
+          } catch (e: Exception) {
+            null
+          }
+        }
+        // Get location from the listing (now stored in the model)
+        val listingLocation = listing.location
+
         _uiState.value =
             EditListingUIState(
                 title = listing.title,
@@ -133,8 +154,21 @@ class EditListingViewModel(
                 startDate = listing.startDate,
                 description = listing.description,
                 pickedImages = listing.imageUrls,
-                mapLat = residency.location.latitude,
-                mapLng = residency.location.longitude,
+                mapLat = listingLocation.latitude,
+                mapLng = listingLocation.longitude,
+                customLocation =
+                    if (isPrivateAccommodation) {
+                      // For Private Accommodation, use the location from the listing
+                      listingLocation
+                    } else {
+                      null
+                    },
+                customLocationQuery =
+                    if (isPrivateAccommodation) {
+                      listingLocation.name
+                    } else {
+                      ""
+                    },
                 errorMsg = null,
                 residencies = currentResidencies)
         // If residencies haven't been loaded yet, load them now
@@ -185,6 +219,36 @@ class EditListingViewModel(
         Firebase.auth.currentUser?.uid
             ?: throw IllegalStateException("User must be authenticated to edit a listing")
 
+    // Determine location: use custom location for Private Accommodation, otherwise use residency
+    // location
+    val location =
+        if (state.residencyName == "Private Accommodation") {
+          if (state.customLocation != null) {
+            state.customLocation
+          } else if (state.mapLat != null && state.mapLng != null) {
+            // Fallback: create location from mapLat/mapLng if customLocation is null
+            Location(
+                name = state.customLocationQuery.ifEmpty { "Custom Location" },
+                latitude = state.mapLat,
+                longitude = state.mapLng)
+          } else {
+            setErrorMsg("Please select a location for Private Accommodation")
+            return false
+          }
+        } else {
+          // For regular residencies, get location from the residency
+          val residency = state.residencies.find { it.name == state.residencyName }
+          if (residency != null) {
+            residency.location
+          } else if (state.mapLat != null && state.mapLng != null) {
+            // Fallback: use mapLat/mapLng if residency not found
+            Location(name = state.residencyName, latitude = state.mapLat, longitude = state.mapLng)
+          } else {
+            setErrorMsg("Could not determine location for the selected residency")
+            return false
+          }
+        }
+
     editRentalListingToRepository(
         id = id,
         listing =
@@ -200,7 +264,8 @@ class EditListingViewModel(
                 startDate = state.startDate,
                 description = state.description,
                 imageUrls = state.pickedImages,
-                status = RentalStatus.POSTED))
+                status = RentalStatus.POSTED,
+                location = location))
     clearErrorMsg()
     return true
   }
@@ -258,7 +323,27 @@ class EditListingViewModel(
    * @param String The new residency.
    */
   fun setResidency(residencyName: String) {
-    _uiState.value = _uiState.value.copy(residencyName = residencyName)
+    val currentState = _uiState.value
+    val isPrivateAccommodation = residencyName == "Private Accommodation"
+
+    if (isPrivateAccommodation) {
+      // For Private Accommodation, keep custom location if already set, otherwise clear it
+      _uiState.value =
+          currentState.copy(
+              residencyName = residencyName,
+              // Keep custom location if it exists, otherwise it stays null
+          )
+    } else {
+      // For regular residencies, set location from the residency
+      val residency = currentState.residencies.find { it.name == residencyName }
+      _uiState.value =
+          currentState.copy(
+              residencyName = residencyName,
+              customLocation = null, // Clear custom location for regular residencies
+              customLocationQuery = "",
+              mapLat = residency?.location?.latitude,
+              mapLng = residency?.location?.longitude)
+    }
   }
 
   fun getCityName(residencyName: String): String {
@@ -311,5 +396,37 @@ class EditListingViewModel(
   fun setDescription(description: String) {
     val norm = InputSanitizers.normalizeWhileTyping(FieldType.Description, description)
     _uiState.value = _uiState.value.copy(description = norm)
+  }
+
+  // --- Custom location methods (BaseLocationSearchViewModel) ---
+  override fun updateStateWithQuery(query: String) {
+    _uiState.value = _uiState.value.copy(customLocationQuery = query)
+  }
+
+  override fun updateStateWithSuggestions(suggestions: List<Location>) {
+    _uiState.value = _uiState.value.copy(locationSuggestions = suggestions)
+  }
+
+  override fun updateStateWithLocation(location: Location) {
+    _uiState.value =
+        _uiState.value.copy(
+            customLocation = location,
+            customLocationQuery = location.name,
+            mapLat = location.latitude,
+            mapLng = location.longitude)
+  }
+
+  override fun updateStateShowDialog(currentLocation: Location?) {
+    _uiState.value =
+        _uiState.value.copy(
+            showCustomLocationDialog = true,
+            customLocation = currentLocation,
+            customLocationQuery = currentLocation?.name ?: "")
+  }
+
+  override fun updateStateDismissDialog() {
+    _uiState.value =
+        _uiState.value.copy(
+            showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)
   }
 }

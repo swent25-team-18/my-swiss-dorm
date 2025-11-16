@@ -143,6 +143,8 @@ class EditListingScreenTest : FirestoreTest() {
     val vm = EditListingViewModel()
     vm.getRentalListing(rentalListing1.uid)
 
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+
     vm.setTitle("Cozy Studio - Updated")
     vm.setPrice("1500")
     vm.setSizeSqm("25.0")

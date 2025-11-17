@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.listing
 
+import AddListingViewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -163,7 +164,7 @@ class AddListingViewModelTest : FirestoreTest() {
       fail("onConfirm must not be called when no location is set for Private Accommodation")
     }
 
-    assertEquals("Please select a location for Private Accommodation", vm.uiState.value.errorMsg)
+    assertEquals("At least one field is not valid", vm.uiState.value.errorMsg)
   }
 
   @Test

@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.listing
 
+import EditListingViewModel
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed

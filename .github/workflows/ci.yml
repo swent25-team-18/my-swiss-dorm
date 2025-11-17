@@ -247,10 +247,10 @@ jobs:
           mkdir -p app/build/outputs/code_coverage/debugAndroidTest/connected/
           
           # Find and move the unit test .exec file
-          find build/reports/unit-test-coverage -name '*.exec' -exec mv {} app/build/jacoco/testDebugUnitTest.exec \;
+          find build/reports/unit-test-coverage -name '*.exec' -exec mv {} app/build/jacoco/testDebugUnitTest.exec \; | echo "No unit test coverage found."
           
           # Find and move all instrumentation .ec files
-          find build/reports/instrumentation-coverage -name '*.ec' -exec mv {} app/build/outputs/code_coverage/debugAndroidTest/connected/ \;
+          find build/reports/instrumentation-coverage -name '*.ec' -exec mv {} app/build/outputs/code_coverage/debugAndroidTest/connected/ {} + || echo "No instrumentation coverage found."
           
           echo "Coverage files organized."
 

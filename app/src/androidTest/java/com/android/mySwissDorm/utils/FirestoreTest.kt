@@ -20,6 +20,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import java.lang.NullPointerException
 import java.net.URL
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.After
 import org.junit.Before
@@ -120,16 +121,20 @@ abstract class FirestoreTest : TestCase() {
 
   @Before
   open fun setUp() {
-    FirebaseEmulator.clearAuthEmulator()
-    FirebaseEmulator.clearFirestoreEmulator()
-    createRepositories()
+    runBlocking {
+      FirebaseEmulator.clearAuthEmulator()
+      FirebaseEmulator.clearFirestoreEmulator()
+      createRepositories()
+    }
   }
 
   @After
   open fun tearDown() {
-    FirebaseEmulator.clearFirestoreEmulator()
-    auth.signOut()
-    FirebaseEmulator.clearAuthEmulator()
+    runBlocking {
+      FirebaseEmulator.clearFirestoreEmulator()
+      auth.signOut()
+      FirebaseEmulator.clearAuthEmulator()
+    }
   }
 
   /** The ownerId must be updated before using it with Firestore */
@@ -229,6 +234,7 @@ abstract class FirestoreTest : TestCase() {
           startDate = Timestamp.now(),
           description = "A good studio close to the campus.",
           imageUrls = emptyList(),
+          location = vortex.location,
           status = RentalStatus.POSTED)
   var rentalListing2 =
       RentalListing(
@@ -243,6 +249,7 @@ abstract class FirestoreTest : TestCase() {
           startDate = Timestamp.now(),
           description = "A good studio close to the campus.",
           imageUrls = emptyList(),
+          location = vortex.location,
           status = RentalStatus.POSTED)
   var rentalListing3 =
       RentalListing(
@@ -257,6 +264,7 @@ abstract class FirestoreTest : TestCase() {
           startDate = Timestamp.now(),
           description = "A good studio close to the campus but a bit small.",
           imageUrls = emptyList(),
+          location = vortex.location,
           status = RentalStatus.POSTED)
 
   var reviewVortex1 =

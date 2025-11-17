@@ -163,6 +163,7 @@ fun EditReviewScreen(
                   onSelected = { editReviewViewModel.setResidencyName(it) },
                   residencies = ui.residencies,
                   accentColor = MainColor,
+                  isListing = false,
                   modifier = Modifier.testTag("residencyDropdown").fillMaxWidth())
 
               HousingTypeDropdown(

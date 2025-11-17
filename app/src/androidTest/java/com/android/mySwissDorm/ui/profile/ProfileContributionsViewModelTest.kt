@@ -86,6 +86,7 @@ class ProfileContributionsViewModelTest {
                               startDate = listingTime,
                               description = "Listing description",
                               imageUrls = emptyList(),
+                              location = Location("Res", 0.0, 0.0),
                               status = RentalStatus.POSTED))
 
                   override suspend fun getRentalListing(rentalPostId: String) =

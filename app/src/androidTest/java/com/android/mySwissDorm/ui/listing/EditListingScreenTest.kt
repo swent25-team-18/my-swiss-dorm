@@ -431,4 +431,151 @@ class EditListingScreenTest : FirestoreTest() {
     val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing1.uid)
     assertEquals("Start date should be persisted", vm.uiState.value.startDate, finalDoc.startDate)
   }
+
+  @Test
+  fun clearErrorMsg_clears_error_from_state() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+
+    vm.setPrice("abc") // triggers invalid form
+    composeRule.waitUntil(5_000) { !vm.uiState.value.isFormValid }
+
+    vm.clearErrorMsg()
+
+    assertEquals(null, vm.uiState.value.errorMsg)
+  }
+
+  @Test
+  fun setResidency_privateAccommodation_sets_customLocation_mode() = run {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
+
+    vm.setResidency("Private Accommodation")
+
+    val ui = vm.uiState.value
+    assertEquals("Private Accommodation", ui.residencyName)
+    // customLocation should remain whatever it was (null at start)
+    assertEquals(null, ui.customLocation)
+  }
+
+  @Test
+  fun setResidency_valid_residency_clears_customLocation_and_sets_mapLatLng() = runTest {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
+
+    vm.setResidency("Vortex")
+
+    val ui = vm.uiState.value
+    val vortex = ui.residencies.find { it.name == "Vortex" }!!
+
+    assertEquals(vortex.location.latitude, ui.mapLat)
+    assertEquals(vortex.location.longitude, ui.mapLng)
+    assertEquals(null, ui.customLocation)
+  }
+
+  @Test
+  fun getCityName_returns_correct_city() = runTest {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+    composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
+
+    vm.setResidency("Vortex")
+    assertEquals("Lausanne", vm.getCityName("Vortex"))
+  }
+
+  @Test
+  fun setHousingType_updates_state() = run {
+    val vm = EditListingViewModel()
+    vm.setHousingType(RoomType.STUDIO)
+
+    assertEquals(RoomType.STUDIO, vm.uiState.value.housingType)
+  }
+
+  @Test
+  fun editRentalListing_fails_if_residency_unknown() = runTest {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+
+    vm.setResidency("NonExistingResidency")
+    vm.setPrice("1200")
+    vm.setSizeSqm("25")
+
+    val ok = vm.editRentalListing(rentalListing1.uid)
+    assertTrue(!ok)
+  }
+
+  @Test
+  fun editRentalListing_privateAccommodation_without_location_fails() = runTest {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+    composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
+
+    vm.setResidency("Private Accommodation")
+    vm.setTitle("Test")
+    vm.setPrice("1000")
+    vm.setSizeSqm("20")
+
+    val ok = vm.editRentalListing(rentalListing1.uid)
+    assertTrue(!ok)
+  }
+
+  @Test
+  fun getRentalListing_with_invalid_id_sets_errorMsg() = runTest {
+    val vm = EditListingViewModel()
+    vm.getRentalListing("id_that_does_not_exist")
+
+    composeRule.waitUntil(3_000) { vm.uiState.value.errorMsg != null }
+
+    assertTrue(vm.uiState.value.errorMsg!!.contains("Failed to load listing"))
+  }
+
+  @Test
+  fun updateStateShowDialog_shows_dialog() = run {
+    val vm = EditListingViewModel()
+
+    vm.updateStateShowDialog(null)
+
+    assertTrue(vm.uiState.value.showCustomLocationDialog)
+  }
+
+  @Test
+  fun updateStateDismissDialog_hides_dialog() = run {
+    val vm = EditListingViewModel()
+
+    vm.updateStateShowDialog(null)
+    vm.updateStateDismissDialog()
+
+    assertTrue(!vm.uiState.value.showCustomLocationDialog)
+  }
+
+  @Test
+  fun clicking_custom_location_button_opens_dialog() = runTest {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid)
+    composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
+    setContentFor(vm, rentalListing1.uid)
+    vm.setResidency("Private Accommodation")
+
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(
+              hasTestTag(C.EditListingScreenTags.CUSTOM_LOCATION_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeRule.onNodeWithTag(C.EditListingScreenTags.CUSTOM_LOCATION_BUTTON).performClick()
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.showCustomLocationDialog }
+
+    assertTrue(vm.uiState.value.showCustomLocationDialog)
+  }
 }

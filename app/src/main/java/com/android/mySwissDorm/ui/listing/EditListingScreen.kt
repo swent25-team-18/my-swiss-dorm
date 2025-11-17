@@ -172,7 +172,7 @@ fun EditListingScreen(
                   selected = ui.residencyName,
                   onSelected = { editListingViewModel.setResidency(it) },
                   residencies = ui.residencies,
-                  isListing = false,
+                  isListing = true,
                   accentColor = MainColor)
 
               HousingTypeDropdown(

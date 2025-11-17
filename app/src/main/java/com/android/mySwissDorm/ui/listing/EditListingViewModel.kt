@@ -416,7 +416,7 @@ class EditListingViewModel(
             mapLng = location.longitude)
   }
 
-  override fun updateStateShowDialog(currentLocation: Location?) {
+  public override fun updateStateShowDialog(currentLocation: Location?) {
     _uiState.value =
         _uiState.value.copy(
             showCustomLocationDialog = true,
@@ -424,7 +424,7 @@ class EditListingViewModel(
             customLocationQuery = currentLocation?.name ?: "")
   }
 
-  override fun updateStateDismissDialog() {
+  public override fun updateStateDismissDialog() {
     _uiState.value =
         _uiState.value.copy(
             showCustomLocationDialog = false, customLocationQuery = "", customLocation = null)

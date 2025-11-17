@@ -20,6 +20,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import java.lang.NullPointerException
 import java.net.URL
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.After
 import org.junit.Before
@@ -120,16 +121,20 @@ abstract class FirestoreTest : TestCase() {
 
   @Before
   open fun setUp() {
-    FirebaseEmulator.clearAuthEmulator()
-    FirebaseEmulator.clearFirestoreEmulator()
-    createRepositories()
+    runBlocking {
+      FirebaseEmulator.clearAuthEmulator()
+      FirebaseEmulator.clearFirestoreEmulator()
+      createRepositories()
+    }
   }
 
   @After
   open fun tearDown() {
-    FirebaseEmulator.clearFirestoreEmulator()
-    auth.signOut()
-    FirebaseEmulator.clearAuthEmulator()
+    runBlocking {
+      FirebaseEmulator.clearFirestoreEmulator()
+      auth.signOut()
+      FirebaseEmulator.clearAuthEmulator()
+    }
   }
 
   /** The ownerId must be updated before using it with Firestore */

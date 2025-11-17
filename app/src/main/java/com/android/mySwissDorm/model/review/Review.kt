@@ -23,6 +23,8 @@ import com.google.firebase.Timestamp
  * @property imageUrls List of image URLs attached to the review.
  * @property upvotedBy List of user IDs who upvoted this review.
  * @property downvotedBy List of user IDs who downvoted this review.
+ * @property isAnonymous Whether the review was posted anonymously. If true, the username should not
+ *   be displayed.
  */
 data class Review(
     val uid: String,
@@ -38,4 +40,5 @@ data class Review(
     val imageUrls: List<String>,
     val upvotedBy: List<String> = emptyList(),
     val downvotedBy: List<String> = emptyList(),
+    val isAnonymous: Boolean = false,
 )

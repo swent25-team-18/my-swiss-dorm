@@ -82,7 +82,11 @@ fun ViewReviewScreen(
 
   val uiState by viewReviewViewModel.uiState.collectAsState()
   val review = uiState.review
-  val fullNameOfPoster = uiState.fullNameOfPoster
+  // For anonymous reviews, we ignore fullNameOfPoster and always show "anonymous"
+  // This ensures that even if the user is the owner, anonymous reviews stay anonymous
+  // IMPORTANT: Always check review.isAnonymous directly - this is the source of truth from
+  // Firestore
+  val fullNameOfPoster = if (review.isAnonymous) "anonymous" else uiState.fullNameOfPoster
   val errorMsg = uiState.errorMsg
   val isOwner = uiState.isOwner
 
@@ -128,18 +132,38 @@ fun ViewReviewScreen(
               val tagProfile = "PROFILE_ID"
 
               // build the AnnotatedString tagging the name
+              // IMPORTANT: For anonymous reviews, ALWAYS show "anonymous" regardless of who posted
+              // it
+              // The ownerId is still saved in Firebase for data integrity, but the display is
+              // anonymous
               val annotatedPostedByString = buildAnnotatedString {
                 append("Posted by ")
 
-                // pushStringAnnotation to "tag" this part of the string
-                pushStringAnnotation(tag = tagProfile, annotation = review.ownerId)
-                // apply the style to the name
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
-                  append(fullNameOfPoster)
-                  if (isOwner) append(" (You)")
+                // CRITICAL: Check review.isAnonymous directly from the loaded review object
+                // This is the source of truth from Firestore. If true, ALWAYS show "anonymous"
+                // We explicitly check for true to ensure we never show the name for anonymous
+                // reviews
+                val isReviewAnonymous = review.isAnonymous
+
+                if (isReviewAnonymous) {
+                  // For anonymous reviews, show "anonymous" tag without clickable link
+                  // This applies even if the current user is the owner
+                  // The ownerId is still saved in Firebase, but the display is always anonymous
+                  withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
+                    append("anonymous")
+                  }
+                } else {
+                  // Only show the actual name if the review is NOT anonymous
+                  // pushStringAnnotation to "tag" this part of the string
+                  pushStringAnnotation(tag = tagProfile, annotation = review.ownerId)
+                  // apply the style to the name
+                  withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
+                    append(fullNameOfPoster)
+                    if (isOwner && !isReviewAnonymous) append(" (You)")
+                  }
+                  // stop tagging
+                  pop()
                 }
-                // stop tagging
-                pop()
 
                 append(" ${formatRelative(review.postedAt)}")
               }
@@ -154,21 +178,29 @@ fun ViewReviewScreen(
                           color = MaterialTheme.colorScheme.onSurfaceVariant),
                   onTextLayout = { textLayoutResult = it },
                   modifier =
-                      Modifier.testTag(C.ViewReviewTags.POSTED_BY).pointerInput(Unit) {
-                        detectTapGestures { pos ->
-                          val l = textLayoutResult ?: return@detectTapGestures
-                          val offset = l.getOffsetForPosition(pos)
+                      Modifier.testTag(C.ViewReviewTags.POSTED_BY)
+                          .then(
+                              if (review.isAnonymous) {
+                                Modifier // No click handler for anonymous reviews
+                              } else {
+                                Modifier.pointerInput(Unit) {
+                                  detectTapGestures { pos ->
+                                    val l = textLayoutResult ?: return@detectTapGestures
+                                    val offset = l.getOffsetForPosition(pos)
 
-                          // find any annotations at that exact offset
-                          annotatedPostedByString
-                              .getStringAnnotations(start = offset, end = offset)
-                              .firstOrNull { it.tag == tagProfile } // Check if it's our tag
-                              ?.let { annotation ->
-                                // trigger the callback with the stored ownerId
-                                onViewProfile(annotation.item)
-                              }
-                        }
-                      })
+                                    // find any annotations at that exact offset
+                                    annotatedPostedByString
+                                        .getStringAnnotations(start = offset, end = offset)
+                                        .firstOrNull {
+                                          it.tag == tagProfile
+                                        } // Check if it's our tag
+                                        ?.let { annotation ->
+                                          // trigger the callback with the stored ownerId
+                                          onViewProfile(annotation.item)
+                                        }
+                                  }
+                                }
+                              }))
 
               // Bullet section
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.BULLETS)) {

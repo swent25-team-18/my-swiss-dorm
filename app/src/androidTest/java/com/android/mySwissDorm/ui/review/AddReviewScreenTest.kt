@@ -152,4 +152,68 @@ class AddReviewScreenTest : FirestoreTest() {
     val actualArea = (doc.getLong("areaInM2") ?: 0L).toInt()
     assertEquals(expectedArea, actualArea)
   }
+
+  @Test
+  fun submit_withAnonymousEnabled_savesIsAnonymousAsTrue() = runTest {
+    setContent()
+    assertEquals(0, getReviewCount())
+    val title = "Anonymous Review"
+    val description = "This is an anonymous review"
+    val price = "800"
+    val size = "20.0"
+    val residencyName = "Vortex"
+    val grade = 4.0
+
+    composeTestRule.onNodeWithTag("reviewTitleField").performScrollTo().performTextInput(title)
+    composeTestRule.onNodeWithText("Review").performScrollTo().performTextInput(description)
+    composeTestRule.onNodeWithTag("priceField").performScrollTo().performTextInput(price)
+    composeTestRule.onNodeWithTag("sizeField").performScrollTo().performTextInput(size)
+    viewModel.setResidencyName(residencyName)
+    viewModel.setRoomType(RoomType.STUDIO)
+    viewModel.setGrade(grade)
+    viewModel.setIsAnonymous(true) // Enable anonymous
+    composeTestRule.awaitIdle()
+
+    assertTrue(viewModel.uiState.value.isFormValid)
+    assertTrue(viewModel.uiState.value.isAnonymous)
+    composeTestRule.onNodeWithText("Submit Review").performClick()
+    advanceUntilIdle()
+
+    assertEquals(1, getReviewCount())
+    val docs = FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).get().await()
+    val doc = docs.documents.first()
+    assertEquals(true, doc.getBoolean("isAnonymous"))
+  }
+
+  @Test
+  fun submit_withAnonymousDisabled_savesIsAnonymousAsFalse() = runTest {
+    setContent()
+    assertEquals(0, getReviewCount())
+    val title = "Non-Anonymous Review"
+    val description = "This is a non-anonymous review"
+    val price = "700"
+    val size = "18.0"
+    val residencyName = "Vortex"
+    val grade = 3.5
+
+    composeTestRule.onNodeWithTag("reviewTitleField").performScrollTo().performTextInput(title)
+    composeTestRule.onNodeWithText("Review").performScrollTo().performTextInput(description)
+    composeTestRule.onNodeWithTag("priceField").performScrollTo().performTextInput(price)
+    composeTestRule.onNodeWithTag("sizeField").performScrollTo().performTextInput(size)
+    viewModel.setResidencyName(residencyName)
+    viewModel.setRoomType(RoomType.STUDIO)
+    viewModel.setGrade(grade)
+    viewModel.setIsAnonymous(false) // Explicitly disable anonymous
+    composeTestRule.awaitIdle()
+
+    assertTrue(viewModel.uiState.value.isFormValid)
+    assertEquals(false, viewModel.uiState.value.isAnonymous)
+    composeTestRule.onNodeWithText("Submit Review").performClick()
+    advanceUntilIdle()
+
+    assertEquals(1, getReviewCount())
+    val docs = FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).get().await()
+    val doc = docs.documents.first()
+    assertEquals(false, doc.getBoolean("isAnonymous"))
+  }
 }

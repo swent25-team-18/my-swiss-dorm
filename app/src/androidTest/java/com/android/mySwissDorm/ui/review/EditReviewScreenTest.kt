@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.review
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
@@ -9,10 +10,12 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -75,7 +78,8 @@ class EditReviewScreenTest : FirestoreTest() {
       grade: Double = 4.5,
       price: Double = 980.0,
       sizeM2: Int = 18,
-      roomType: RoomType = RoomType.STUDIO
+      roomType: RoomType = RoomType.STUDIO,
+      isAnonymous: Boolean = false
   ): String {
     val repo = ReviewsRepositoryProvider.repository
     val id = "seed-${UUID.randomUUID()}"
@@ -91,7 +95,8 @@ class EditReviewScreenTest : FirestoreTest() {
             roomType = roomType,
             pricePerMonth = price,
             areaInM2 = sizeM2,
-            imageUrls = emptyList())
+            imageUrls = emptyList(),
+            isAnonymous = isAnonymous)
     repo.editReview(reviewId = id, newValue = review) // upsert
     return id
   }
@@ -269,6 +274,10 @@ class EditReviewScreenTest : FirestoreTest() {
     val vm = EditReviewViewModel(reviewId = id)
     vm.deleteReview(id)
 
+    // Wait for the delete coroutine to complete
+    composeRule.waitForIdle()
+    delay(100) // Small delay to ensure Firestore operation completes
+
     val after = getAllReviewsByUserCount(Firebase.auth.currentUser!!.uid)
     assertEquals(before - 1, after)
   }
@@ -353,5 +362,122 @@ class EditReviewScreenTest : FirestoreTest() {
             "Please complete all required fields (valid size, price, and starting date).",
             useUnmergedTree = true)
         .assertExists()
+  }
+
+  @Test
+  fun anonymousToggle_isDisplayedAndCanBeToggled() = runTest {
+    val reviewId = seedReviewUpsert(isAnonymous = false)
+    val vm = EditReviewViewModel(reviewId)
+    setContentFor(vm, reviewId)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotEmpty() }
+
+    // Wait for the "Post anonymously" text to appear and scroll to it if needed
+    composeRule.waitUntil(5_000) {
+      val nodes =
+          composeRule
+              .onAllNodesWithText("Post anonymously", useUnmergedTree = true)
+              .fetchSemanticsNodes()
+      if (nodes.isNotEmpty()) {
+        try {
+          composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).performScrollTo()
+          true
+        } catch (e: Exception) {
+          false
+        }
+      } else {
+        false
+      }
+    }
+
+    composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).assertIsDisplayed()
+    assertEquals(false, vm.uiState.value.isAnonymous)
+
+    // Toggle anonymous on
+    vm.setIsAnonymous(true)
+    composeRule.awaitIdle()
+    assertEquals(true, vm.uiState.value.isAnonymous)
+
+    // Toggle anonymous off
+    vm.setIsAnonymous(false)
+    composeRule.awaitIdle()
+    assertEquals(false, vm.uiState.value.isAnonymous)
+  }
+
+  @Test
+  fun editReview_withAnonymousEnabled_savesIsAnonymousAsTrue() = runTest {
+    val reviewId = seedReviewUpsert(isAnonymous = false)
+    val vm = EditReviewViewModel(reviewId)
+    setContentFor(vm, reviewId)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotEmpty() }
+
+    // Enable anonymous
+    vm.setIsAnonymous(true)
+    composeRule.awaitIdle()
+    assertTrue(vm.uiState.value.isAnonymous)
+
+    // Save the review
+    val saved = vm.editReview(reviewId)
+    assertTrue("Review should be saved successfully", saved)
+    composeRule.awaitIdle()
+
+    // Verify it was saved with isAnonymous = true
+    val savedReview = ReviewsRepositoryProvider.repository.getReview(reviewId)
+    assertEquals(true, savedReview.isAnonymous)
+  }
+
+  @Test
+  fun editReview_withAnonymousDisabled_savesIsAnonymousAsFalse() = runTest {
+    val reviewId = seedReviewUpsert(isAnonymous = true)
+    val vm = EditReviewViewModel(reviewId)
+    setContentFor(vm, reviewId)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotEmpty() }
+
+    // Disable anonymous
+    vm.setIsAnonymous(false)
+    composeRule.awaitIdle()
+    assertEquals(false, vm.uiState.value.isAnonymous)
+
+    // Save the review
+    val saved = vm.editReview(reviewId)
+    assertTrue("Review should be saved successfully", saved)
+    composeRule.awaitIdle()
+
+    // Verify it was saved with isAnonymous = false
+    val savedReview = ReviewsRepositoryProvider.repository.getReview(reviewId)
+    assertEquals(false, savedReview.isAnonymous)
+  }
+
+  @Test
+  fun editReview_loadsExistingAnonymousStatus() = runTest {
+    val reviewId = seedReviewUpsert(isAnonymous = true)
+    val vm = EditReviewViewModel(reviewId)
+    setContentFor(vm, reviewId)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotEmpty() }
+
+    // Wait for the "Post anonymously" text to appear and scroll to it if needed
+    composeRule.waitUntil(5_000) {
+      val nodes =
+          composeRule
+              .onAllNodesWithText("Post anonymously", useUnmergedTree = true)
+              .fetchSemanticsNodes()
+      if (nodes.isNotEmpty()) {
+        try {
+          composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).performScrollTo()
+          true
+        } catch (e: Exception) {
+          false
+        }
+      } else {
+        false
+      }
+    }
+
+    // Verify that the anonymous status is loaded correctly
+    assertEquals(true, vm.uiState.value.isAnonymous)
+    composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).assertIsDisplayed()
   }
 }

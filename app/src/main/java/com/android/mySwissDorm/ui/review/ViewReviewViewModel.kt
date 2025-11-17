@@ -82,8 +82,18 @@ class ViewReviewViewModel(
     viewModelScope.launch {
       try {
         val review = reviewsRepository.getReview(reviewId)
-        val ownerUserInfo = profilesRepository.getProfile(review.ownerId).userInfo
-        val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
+        val fullNameOfPoster =
+            if (review.isAnonymous) {
+              "anonymous"
+            } else {
+              try {
+                val ownerUserInfo = profilesRepository.getProfile(review.ownerId).userInfo
+                ownerUserInfo.name + " " + ownerUserInfo.lastName
+              } catch (e: Exception) {
+                Log.w("ViewReviewViewModel", "Could not fetch profile for review owner", e)
+                "Unknown"
+              }
+            }
         val isOwner = FirebaseAuth.getInstance().currentUser?.uid == review.ownerId
         _uiState.update {
           it.copy(review = review, fullNameOfPoster = fullNameOfPoster, isOwner = isOwner)

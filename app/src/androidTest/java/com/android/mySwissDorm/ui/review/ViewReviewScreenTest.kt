@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.review
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -29,6 +31,7 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
 import java.util.Date
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -272,5 +275,99 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.onAllNodesWithTag(C.ViewReviewTags.FILLED_STAR).assertCountEquals(3)
     compose.onAllNodesWithTag(C.ViewReviewTags.HALF_STAR).assertCountEquals(1)
     compose.onAllNodesWithTag(C.ViewReviewTags.EMPTY_STAR).assertCountEquals(1)
+  }
+
+  @Test
+  fun anonymousReview_showsAnonymousInsteadOfName() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val anonymousReview = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = true)
+    reviewsRepo.addReview(anonymousReview)
+
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = anonymousReview.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReview.uid }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+        .assertIsDisplayed()
+        .assertTextContains("anonymous", substring = true)
+        .assertTextContains("Posted by", substring = true)
+    // Should NOT contain the actual name
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+        .assertTextEquals("Posted by anonymous ${formatRelative(anonymousReview.postedAt)}")
+  }
+
+  @Test
+  fun anonymousReview_doesNotShowYouTagEvenWhenOwner() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val anonymousReview = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = true)
+    reviewsRepo.addReview(anonymousReview)
+
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = anonymousReview.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReview.uid }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+        .assertIsDisplayed()
+        .assertTextContains("Posted by", substring = true)
+        .assertTextContains("anonymous", substring = true)
+    // Should NOT contain "(You)" even though user is the owner
+    val postedByText =
+        compose
+            .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+            .fetchSemanticsNode()
+            .config
+            .getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)
+            ?.firstOrNull()
+            ?.text ?: ""
+    assertTrue(
+        "Should contain 'Posted by anonymous'",
+        postedByText.contains("Posted by anonymous", ignoreCase = true))
+    assertTrue(
+        "Should NOT contain '(You)' even when owner",
+        !postedByText.contains("(You)", ignoreCase = true))
+  }
+
+  @Test
+  fun nonAnonymousReview_showsActualName() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val nonAnonymousReview = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = false)
+    reviewsRepo.addReview(nonAnonymousReview)
+
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = nonAnonymousReview.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == nonAnonymousReview.uid }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+        .assertIsDisplayed()
+        .assertTextContains("Posted by", substring = true)
+    // Should contain the actual name, not "anonymous"
+    val postedByText =
+        compose
+            .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+            .fetchSemanticsNode()
+            .config
+            .getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)
+            ?.firstOrNull()
+            ?.text ?: ""
+    assertTrue(
+        "Should contain actual name, not 'anonymous'",
+        !postedByText.contains("anonymous", ignoreCase = true))
+    assertTrue(
+        "Should contain user name",
+        postedByText.contains("Bob", ignoreCase = true) ||
+            postedByText.contains("King", ignoreCase = true))
   }
 }

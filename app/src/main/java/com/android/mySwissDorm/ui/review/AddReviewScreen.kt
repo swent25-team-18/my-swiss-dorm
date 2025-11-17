@@ -168,6 +168,25 @@ fun AddReviewScreen(
                         modifier = Modifier.testTag(C.AddReviewTags.GRADE_FIELD))
                   }
 
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        text = "Post anonymously",
+                        color = TextColor,
+                        style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = ui.isAnonymous,
+                        onCheckedChange = { addReviewViewModel.setIsAnonymous(it) },
+                        colors =
+                            SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = MainColor,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
+                  }
+
               Text("Photos", style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,

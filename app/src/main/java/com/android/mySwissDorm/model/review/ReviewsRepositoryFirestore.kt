@@ -72,7 +72,26 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
 
   /** Inserts a new [review] document or overwrites an existing document with the same id. */
   override suspend fun addReview(review: Review) {
-    db.collection(REVIEWS_COLLECTION_PATH).document(review.uid).set(review).await()
+    // Explicitly ensure isAnonymous is always saved to Firestore
+    // Firestore might skip fields with default values during serialization
+    val reviewData =
+        hashMapOf<String, Any>(
+            "uid" to review.uid,
+            "ownerId" to review.ownerId,
+            "postedAt" to review.postedAt,
+            "title" to review.title,
+            "reviewText" to review.reviewText,
+            "grade" to review.grade,
+            "residencyName" to review.residencyName,
+            "roomType" to review.roomType.name,
+            "pricePerMonth" to review.pricePerMonth,
+            "areaInM2" to review.areaInM2.toDouble(),
+            "imageUrls" to review.imageUrls,
+            "upvotedBy" to review.upvotedBy,
+            "downvotedBy" to review.downvotedBy,
+            "isAnonymous" to review.isAnonymous // Explicitly include isAnonymous
+            )
+    db.collection(REVIEWS_COLLECTION_PATH).document(review.uid).set(reviewData).await()
   }
 
   /**
@@ -84,7 +103,25 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
     if (newValue.uid != reviewId) {
       throw Exception("ReviewsRepositoryFirestore: Provided reviewId does not match newValue.uid")
     }
-    db.collection(REVIEWS_COLLECTION_PATH).document(reviewId).set(newValue).await()
+    // Explicitly ensure isAnonymous is always saved to Firestore
+    val reviewData =
+        hashMapOf<String, Any>(
+            "uid" to newValue.uid,
+            "ownerId" to newValue.ownerId,
+            "postedAt" to newValue.postedAt,
+            "title" to newValue.title,
+            "reviewText" to newValue.reviewText,
+            "grade" to newValue.grade,
+            "residencyName" to newValue.residencyName,
+            "roomType" to newValue.roomType.name,
+            "pricePerMonth" to newValue.pricePerMonth,
+            "areaInM2" to newValue.areaInM2.toDouble(),
+            "imageUrls" to newValue.imageUrls,
+            "upvotedBy" to newValue.upvotedBy,
+            "downvotedBy" to newValue.downvotedBy,
+            "isAnonymous" to newValue.isAnonymous // Explicitly include isAnonymous
+            )
+    db.collection(REVIEWS_COLLECTION_PATH).document(reviewId).set(reviewData).await()
   }
 
   /** Deletes the review document with the given [reviewId]. */
@@ -115,6 +152,7 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
           (document.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
       val downvotedBy =
           (document.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
+      val isAnonymous = document.getBoolean("isAnonymous") ?: false
 
       return Review(
           uid = uid,
@@ -129,7 +167,8 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
           areaInM2 = areaInM2,
           imageUrls = imageUrls,
           upvotedBy = upvotedBy,
-          downvotedBy = downvotedBy)
+          downvotedBy = downvotedBy,
+          isAnonymous = isAnonymous)
     } catch (e: Exception) {
       Log.e("ReviewsRepositoryFirestore", "Error converting document to Review", e)
       null

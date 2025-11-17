@@ -114,7 +114,8 @@ fun GalleryButtonMultiplePick(
               uris.map {
                 Photo(
                     image = it,
-                    fileName = UUID.randomUUID().toString() + it.path!!.substringAfterLast('.'))
+                    fileName =
+                        UUID.randomUUID().toString() + "." + it.path!!.substringAfterLast('.'))
               })
         }
       }

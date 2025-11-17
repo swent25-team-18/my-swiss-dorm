@@ -53,15 +53,6 @@ android {
             useSupportLibrary = true
         }
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
-        val numShards: Provider<String> = providers.gradleProperty("android.testInstrumentationRunnerArguments.numShards")
-        if (numShards.isPresent) {
-            testInstrumentationRunnerArguments["numShards"] = numShards.get()
-        }
-
-        val shardIndex: Provider<String> = providers.gradleProperty("android.testInstrumentationRunnerArguments.shardIndex")
-        if (shardIndex.isPresent) {
-            testInstrumentationRunnerArguments["shardIndex"] = shardIndex.get()
-        }
     }
 
     buildTypes {

@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-coverage
-          path: "**/build/jacoco/testDebugUnitTest.exec"
+          path: "app/build/jacoco/testDebugUnitTest.exec"
           retention-days: 1
 
   # Job 3: Runs Firebase rules tests
@@ -119,8 +119,15 @@ jobs:
 
   # Job 4: Runs slow instrumentation tests on an emulator
   instrumentation-tests:
-    name: Instrumentation Tests
+    name: Instrumentation Tests (Shard ${{ matrix.shard }}/${{ strategy.matrix.total-shards }})
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false # Don't cancel other shards if one fails so we keep testing everything
+      matrix:
+        shard: [0, 1, 2, 3] # Creates 4 parallel jobs
+        total-shards: [4]     #  total number of shards
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -146,7 +153,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-34
+          key: avd-34-${{ matrix.shard }}
       - name: create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
@@ -184,7 +191,8 @@ jobs:
           else
             echo "Firebase emulators not configured, skipping emulator startup..."
           fi
-      - name: Run instrumentation tests
+
+      - name: Run instrumentation tests (Shard ${{ matrix.shard }})
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -193,12 +201,13 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew connectedCheck --parallel --build-cache
-      - name: Upload instrumentation coverage
+          script: ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.numShards=${{ matrix.total-shards }} -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} --parallel --build-cache
+
+      - name: Upload instrumentation coverage (Shard ${{ matrix.shard }})
         uses: actions/upload-artifact@v4
         with:
-          name: instrumentation-coverage
-          path: "**/build/outputs/code_coverage/debugAndroidTest/connected/*.ec" # Adjust path if needed
+          name: instrumentation-coverage-${{ matrix.shard }}
+          path: "app/build/outputs/code_coverage/debugAndroidTest/connected/**/*.ec"
           retention-days: 1
 
   # Job 5: "Fan-in" job to combine reports and run analysis
@@ -238,21 +247,27 @@ jobs:
           path: build/reports/
 
       - name: List downloaded files (for debugging)
-        run: ls -R build/reports/
+        run: |
+          echo "Listing all downloaded artifacts..."
+          ls -R build/reports/
 
       - name: Organize coverage reports
         run: |
+          echo "Organizing coverage reports..."
           # Create the directories where jacocoTestReport expects to find the reports
           mkdir -p app/build/jacoco/
           mkdir -p app/build/outputs/code_coverage/debugAndroidTest/connected/
           
-          # Find and move the unit test .exec file
-          find build/reports/unit-test-coverage -name '*.exec' -exec mv {} app/build/jacoco/testDebugUnitTest.exec \;
+          # Find and move the single unit test .exec file
+          find build/reports/unit-test-coverage -name '*.exec' -exec mv {} app/build/jacoco/testDebugUnitTest.exec \; || echo "No unit test coverage found."
           
-          # Find and move all instrumentation .ec files
-          find build/reports/instrumentation-coverage -name '*.ec' -exec mv {} app/build/outputs/code_coverage/debugAndroidTest/connected/ \;
+          # Find and move ALL instrumentation .ec files from ALL shard directories
+          # This command searches all subdirectories of build/reports/ for .ec files
+          find build/reports/ -type f -name '*.ec' -exec mv -t app/build/outputs/code_coverage/debugAndroidTest/connected/ {} + || echo "No instrumentation coverage found."
           
           echo "Coverage files organized."
+          echo "Final instrumentation coverage files:"
+          ls -l app/build/outputs/code_coverage/debugAndroidTest/connected/
 
       - name: Generate Combined Coverage Report
         run: |

@@ -112,7 +112,7 @@ class GalleryButtonTest {
   }
 
   private class FakePickMultipleVisualMediaContract
-  private constructor(private val shouldSucceed: Boolean = true) :
+  private constructor(shouldSucceed: Boolean = true) :
       ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>>() {
 
     val list: List<@JvmSuppressWildcards Uri> =

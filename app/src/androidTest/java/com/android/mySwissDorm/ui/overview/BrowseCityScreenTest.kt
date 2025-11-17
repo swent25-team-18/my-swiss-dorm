@@ -97,7 +97,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             startDate = Timestamp.now(),
             description = "",
             imageUrls = emptyList(),
-            status = RentalStatus.POSTED)
+            status = RentalStatus.POSTED,
+            location = resLaus.location)
     listingLaus2 =
         listingLaus1.copy(
             uid = "laus2", ownerId = otherUid, title = "Lausanne Studio 2", areaInM2 = 22)
@@ -106,7 +107,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             uid = "zurich1",
             ownerId = otherUid,
             title = "Zurich Room",
-            residencyName = resZurich.name)
+            residencyName = resZurich.name,
+            location = resZurich.location)
 
     runTest {
       switchToUser(FakeUser.FakeUser1)

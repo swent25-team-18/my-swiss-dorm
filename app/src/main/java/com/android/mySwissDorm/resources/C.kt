@@ -163,7 +163,8 @@ object C {
   }
 
   object GalleryButtonTag {
-    const val TAG = "galleryButtonTag"
+    const val SINGLE_TAG = "singleGalleryButtonTag"
+    const val MULTIPLE_TAG = "multipleGalleryButtonTag"
   }
 
   object CustomLocationDialogTags {

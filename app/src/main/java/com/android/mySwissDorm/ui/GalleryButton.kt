@@ -63,7 +63,7 @@ fun GalleryButton(
       }
   Button(
       onClick = { galleryLauncher.launch("image/*") },
-      modifier = modifier.testTag(tag = C.GalleryButtonTag.TAG),
+      modifier = modifier.testTag(tag = C.GalleryButtonTag.SINGLE_TAG),
       enabled = enabled,
       shape = shape,
       colors = colors,
@@ -93,19 +93,21 @@ fun GalleryButtonMultiplePick(
 ) {
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePicturesContract) { uris ->
-        onSelect(
-            uris.map {
-              Photo(
-                  image = it,
-                  fileName = UUID.randomUUID().toString() + it.path!!.substringAfterLast('.'))
-            })
+        if (uris.isNotEmpty()) {
+          onSelect(
+              uris.map {
+                Photo(
+                    image = it,
+                    fileName = UUID.randomUUID().toString() + it.path!!.substringAfterLast('.'))
+              })
+        }
       }
   Button(
       onClick = {
         galleryLauncher.launch(
             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
       },
-      modifier = modifier.testTag(tag = C.GalleryButtonTag.TAG),
+      modifier = modifier.testTag(tag = C.GalleryButtonTag.MULTIPLE_TAG),
       enabled = enabled,
       shape = shape,
       colors = colors,

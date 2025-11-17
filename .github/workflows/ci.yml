@@ -125,8 +125,8 @@ jobs:
     strategy:
       fail-fast: false # Don't cancel other shards if one fails so we keep testing everything
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7] # Creates 4 parallel jobs
-        total-shards: [8]     #  total number of shards
+        shard: [0, 1, 2, 3] # Creates 4 parallel jobs
+        total-shards: [4]     #  total number of shards
 
     steps:
       - name: Checkout

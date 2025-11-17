@@ -206,7 +206,7 @@ fun DefaultGalleryButtonMultiplePick(
       choosePicturesContract = choosePicturesContract) {
         Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
         Spacer(Modifier.width(8.dp))
-        Text(text = stringResource(R.string.gallery_button_default_text))
+        Text(text = stringResource(R.string.gallery_button_default_multiple_text))
       }
 }
 

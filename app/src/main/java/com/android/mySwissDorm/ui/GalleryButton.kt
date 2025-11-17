@@ -37,6 +37,14 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import java.util.UUID
 
+/**
+ * This button takes a single picture from the gallery and if the selection is successful, the
+ * [onSelect] is executed with the picture wrap in a [Photo]
+ *
+ * @param onSelect the lambda executed with the resulting photo only if the selection is successful
+ *
+ * The other parameters follow are just transitive to the wrapped [Button]
+ */
 @Composable
 fun GalleryButton(
     onSelect: (Photo) -> Unit,
@@ -75,6 +83,14 @@ fun GalleryButton(
       }
 }
 
+/**
+ * This button can take multiple pictures from the gallery and if the selection is not empty, the
+ * [onSelect] lambda is executed with the resulting [Photo]s.
+ *
+ * @param onSelect the lambda executed when the resulting selection contains at least one element.
+ *
+ * The other parameters are transitive to the [Button] wrapped in this composable.
+ */
 @Composable
 fun GalleryButtonMultiplePick(
     onSelect: (List<Photo>) -> Unit,
@@ -119,6 +135,7 @@ fun GalleryButtonMultiplePick(
       }
 }
 
+/** Provides a default style of [GalleryButton] */
 @Composable
 fun DefaultGalleryButton(
     onSelect: (Photo) -> Unit,
@@ -155,6 +172,7 @@ fun DefaultGalleryButton(
       }
 }
 
+/** Provides a default style of [GalleryButtonMultiplePick] */
 @Composable
 fun DefaultGalleryButtonMultiplePick(
     onSelect: (List<Photo>) -> Unit,

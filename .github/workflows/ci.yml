@@ -164,7 +164,9 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
+          script: |  # Allowing execute permission on adb since it failed by chance one time (making it more robust)
+            chmod +x $ANDROID_HOME/platform-tools/adb   
+            echo "Generated AVD snapshot for caching."
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -192,7 +194,7 @@ jobs:
             echo "Firebase emulators not configured, skipping emulator startup..."
           fi
 
-      - name: Run instrumentation tests (Shard ${{ matrix.shard }})
+      - name: Run instrumentation tests (Part ${{ matrix.shard }})
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34

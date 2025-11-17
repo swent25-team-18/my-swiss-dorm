@@ -119,15 +119,8 @@ jobs:
 
   # Job 4: Runs slow instrumentation tests on an emulator
   instrumentation-tests:
-    name: Instrumentation Tests (Part ${{ matrix.shard }})
+    name: Instrumentation Tests
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false # Don't cancel other shards if one fails so we keep testing everything
-      matrix:
-        shard: [0, 1, 2, 3] # Creates 4 parallel jobs
-        total-shards: [4]     #  total number of shards
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -153,22 +146,18 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-34-${{ matrix.shard }}
-
+          key: avd-34
       - name: create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
-            api-level: 34
-            target: google_apis
-            arch: x86_64
-            force-avd-creation: false
-            emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-            disable-animations: false
-            script: |
-              sudo chmod +x $ANDROID_HOME/platform-tools/adb
-              echo "Generated AVD snapshot for caching."
-
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -195,8 +184,7 @@ jobs:
           else
             echo "Firebase emulators not configured, skipping emulator startup..."
           fi
-
-      - name: Run instrumentation tests (Part ${{ matrix.shard }})
+      - name: Run instrumentation tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -205,14 +193,11 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            sudo chmod +x $ANDROID_HOME/platform-tools/adb
-            ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.numShards=${{ matrix.total-shards }} -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} --parallel --build-cache
-
-      - name: Upload instrumentation coverage (Shard ${{ matrix.shard }})
+          script: ./gradlew connectedCheck --parallel --build-cache
+      - name: Upload instrumentation coverage
         uses: actions/upload-artifact@v4
         with:
-          name: instrumentation-coverage-${{ matrix.shard }}
+          name: instrumentation-coverage
           path: "app/build/outputs/code_coverage/debugAndroidTest/connected/**/*.ec"
           retention-days: 1
 
@@ -221,12 +206,13 @@ jobs:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: [static-checks, unit-tests, firebase-rules, instrumentation-tests]
+    # 'if: always()' ensures this job runs even if test jobs fail, so you can see partial results
     if: always()
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Sonar needs full history
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
@@ -252,27 +238,21 @@ jobs:
           path: build/reports/
 
       - name: List downloaded files (for debugging)
-        run: |
-          echo "Listing all downloaded artifacts..."
-          ls -R build/reports/
+        run: ls -R build/reports/
 
       - name: Organize coverage reports
         run: |
-          echo "Organizing coverage reports..."
           # Create the directories where jacocoTestReport expects to find the reports
           mkdir -p app/build/jacoco/
           mkdir -p app/build/outputs/code_coverage/debugAndroidTest/connected/
           
-          # Find and move the single unit test .exec file
-          find build/reports/unit-test-coverage -name '*.exec' -exec mv {} app/build/jacoco/testDebugUnitTest.exec \; || echo "No unit test coverage found."
+          # Find and move the unit test .exec file
+          find build/reports/unit-test-coverage -name '*.exec' -exec mv {} app/build/jacoco/testDebugUnitTest.exec \;
           
-          # Find and move ALL instrumentation .ec files from ALL shard directories
-          # This command searches all subdirectories of build/reports/ for .ec files
-          find build/reports/ -type f -name '*.ec' -exec mv -t app/build/outputs/code_coverage/debugAndroidTest/connected/ {} + || echo "No instrumentation coverage found."
+          # Find and move all instrumentation .ec files
+          find build/reports/instrumentation-coverage -name '*.ec' -exec mv {} app/build/outputs/code_coverage/debugAndroidTest/connected/ \;
           
           echo "Coverage files organized."
-          echo "Final instrumentation coverage files:"
-          ls -l app/build/outputs/code_coverage/debugAndroidTest/connected/
 
       - name: Generate Combined Coverage Report
         run: |

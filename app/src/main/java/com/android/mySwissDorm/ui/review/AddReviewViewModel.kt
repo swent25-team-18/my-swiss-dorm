@@ -10,8 +10,8 @@ import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
-import com.android.mySwissDorm.ui.forms.AbstractAddFormViewModel
-import com.android.mySwissDorm.ui.forms.AddFormUiState
+import com.android.mySwissDorm.ui.utils.AbstractAddFormViewModel
+import com.android.mySwissDorm.ui.utils.AddFormUiState
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth

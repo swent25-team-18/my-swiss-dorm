@@ -1,4 +1,4 @@
-package com.android.mySwissDorm.ui.forms
+package com.android.mySwissDorm.ui.utils
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

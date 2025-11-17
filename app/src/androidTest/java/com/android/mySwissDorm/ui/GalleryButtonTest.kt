@@ -15,6 +15,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import junit.framework.TestCase.assertTrue
 import kotlin.collections.emptyList
@@ -53,7 +54,7 @@ class GalleryButtonTest {
 
       fun failure() = FakeGetContentContract(false)
 
-      const val FAKE_URI = "content://fake.uri/image"
+      const val FAKE_URI = "content://fake.uri/image.png"
     }
   }
 
@@ -76,12 +77,12 @@ class GalleryButtonTest {
   @Test
   fun testClickChoosePictureSucceedGalleryButton() {
     val clicked = mutableStateOf(false)
-    val uri = mutableStateOf(Uri.EMPTY)
+    val photo = mutableStateOf(Photo(image = Uri.EMPTY, fileName = "incorrect"))
     composeTestRule.setContent {
       GalleryButton(
           onSelect = {
             clicked.value = true
-            uri.value = it.image
+            photo.value = it
           },
           choosePictureContract = FakeGetContentContract.success())
     }
@@ -90,7 +91,7 @@ class GalleryButtonTest {
     galleryButtonNode.performClick()
 
     composeTestRule.waitUntil(5_000) {
-      clicked.value && uri.value.toString() == FakeGetContentContract.FAKE_URI
+      clicked.value && photo.value.image.toString() == FakeGetContentContract.FAKE_URI
     }
   }
 
@@ -142,8 +143,8 @@ class GalleryButtonTest {
 
       fun failure() = FakePickMultipleVisualMediaContract(false)
 
-      const val FAKE_URI = "content://fake.uri/image"
-      const val FAKE_URI2 = "content://fake.uri/image2"
+      const val FAKE_URI = "content://fake.uri/image.jpg"
+      const val FAKE_URI2 = "content://fake.uri/image2.png"
     }
   }
 
@@ -162,12 +163,12 @@ class GalleryButtonTest {
   @Test
   fun testClickChoosePictureSucceedGalleryButtonMultiple() {
     val clicked = mutableStateOf(false)
-    val uri = mutableStateListOf<String>()
+    val photos = mutableStateListOf<Photo>()
     composeTestRule.setContent {
       GalleryButtonMultiplePick(
           onSelect = {
             clicked.value = true
-            uri.addAll(it.map { uri -> uri.image.toString() })
+            photos.addAll(it)
           },
           choosePicturesContract = FakePickMultipleVisualMediaContract.success())
     }
@@ -177,8 +178,10 @@ class GalleryButtonTest {
 
     composeTestRule.waitUntil(5_000) {
       clicked.value &&
-          uri.contains(FakePickMultipleVisualMediaContract.FAKE_URI) &&
-          uri.contains(FakePickMultipleVisualMediaContract.FAKE_URI2)
+          photos
+              .map { it.image.toString() }
+              .contains(FakePickMultipleVisualMediaContract.FAKE_URI) &&
+          photos.map { it.image.toString() }.contains(FakePickMultipleVisualMediaContract.FAKE_URI2)
     }
   }
 
@@ -197,5 +200,37 @@ class GalleryButtonTest {
     composeTestRule.waitForIdle()
 
     assertTrue(notClicked.value)
+  }
+
+  @Test
+  fun testGalleryButtonMultipleCorrectFileName() {
+    val photos = mutableStateListOf<Photo>()
+    composeTestRule.setContent {
+      GalleryButtonMultiplePick(
+          onSelect = { photos.addAll(it) },
+          choosePicturesContract = FakePickMultipleVisualMediaContract.success())
+    }
+    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
+    galleryButtonNode.assertIsDisplayed()
+    galleryButtonNode.performClick()
+
+    composeTestRule.waitUntil(5_000) {
+      photos.isNotEmpty() &&
+          photos.map { it.fileName.contains(".") }.reduce { acc, bool -> acc && bool }
+    }
+  }
+
+  @Test
+  fun testGalleryButtonCorrectFileName() {
+    val photo = mutableStateOf<Photo>(Photo(image = Uri.EMPTY, fileName = "incorrect"))
+    composeTestRule.setContent {
+      GalleryButton(
+          onSelect = { photo.value = it }, choosePictureContract = FakeGetContentContract.success())
+    }
+    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG)
+    galleryButtonNode.assertIsDisplayed()
+    galleryButtonNode.performClick()
+
+    composeTestRule.waitUntil(5_000) { photo.value.fileName.contains(".") }
   }
 }

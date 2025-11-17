@@ -66,7 +66,8 @@ fun GalleryButton(
           onSelect(
               Photo(
                   image = uri,
-                  fileName = UUID.randomUUID().toString() + uri.path!!.substringAfterLast('.')))
+                  fileName =
+                      UUID.randomUUID().toString() + "." + uri.path!!.substringAfterLast('.')))
         }
       }
   Button(

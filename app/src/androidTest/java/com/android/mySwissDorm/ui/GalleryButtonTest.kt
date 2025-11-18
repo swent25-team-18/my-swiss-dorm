@@ -3,8 +3,10 @@ package com.android.mySwissDorm.ui
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -13,8 +15,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import junit.framework.TestCase.assertTrue
+import kotlin.collections.emptyList
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,7 +54,7 @@ class GalleryButtonTest {
 
       fun failure() = FakeGetContentContract(false)
 
-      const val FAKE_URI = "content://fake.uri/image"
+      const val FAKE_URI = "content://fake.uri/image.png"
     }
   }
 
@@ -59,53 +63,174 @@ class GalleryButtonTest {
   @get:Rule val composeTestRule = createComposeRule()
 
   @Test
-  fun testEveryThingIsDisplayed() {
+  fun testEveryThingIsDisplayedGalleryButton() {
     composeTestRule.setContent {
       GalleryButton(onSelect = {}) {
         Text(text = "HelloWorld!", modifier = Modifier.testTag(tag = simpleTestTag))
       }
     }
 
-    composeTestRule.onNodeWithTag(C.GalleryButtonTag.TAG).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG).assertIsDisplayed()
     composeTestRule.onNodeWithTag(simpleTestTag, useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
-  fun testClickChoosePictureSucceed() {
+  fun testClickChoosePictureSucceedGalleryButton() {
     val clicked = mutableStateOf(false)
-    val uri = mutableStateOf(Uri.EMPTY)
+    val photo = mutableStateOf(Photo(image = Uri.EMPTY, fileName = "incorrect"))
     composeTestRule.setContent {
       GalleryButton(
           onSelect = {
             clicked.value = true
-            uri.value = it.image
+            photo.value = it
           },
           choosePictureContract = FakeGetContentContract.success())
     }
-    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.TAG)
+    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG)
     galleryButtonNode.assertIsDisplayed()
     galleryButtonNode.performClick()
 
     composeTestRule.waitUntil(5_000) {
-      clicked.value && uri.value.toString() == FakeGetContentContract.FAKE_URI
+      clicked.value && photo.value.image.toString() == FakeGetContentContract.FAKE_URI
     }
   }
 
   @Test
-  fun testClickedChoosePictureFail() {
+  fun testClickedChoosePictureFailGalleryButton() {
     val notClicked = mutableStateOf(true)
-    val uri = mutableStateOf(Uri.EMPTY)
     composeTestRule.setContent {
       DefaultGalleryButton(
           onSelect = { notClicked.value = false },
           choosePictureContract = FakeGetContentContract.failure())
     }
-    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.TAG)
+    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG)
     galleryButtonNode.assertIsDisplayed()
     galleryButtonNode.performClick()
 
     composeTestRule.waitForIdle()
 
-    assertTrue(notClicked.value && uri.value == Uri.EMPTY)
+    assertTrue(notClicked.value)
+  }
+
+  private class FakePickMultipleVisualMediaContract
+  private constructor(shouldSucceed: Boolean = true) :
+      ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>>() {
+
+    val list: List<@JvmSuppressWildcards Uri> =
+        if (shouldSucceed) {
+          listOf(Uri.parse(FAKE_URI), Uri.parse(FAKE_URI2))
+        } else {
+          emptyList()
+        }
+
+    override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent {
+      return Intent()
+    }
+
+    override fun parseResult(resultCode: Int, intent: Intent?): List<@JvmSuppressWildcards Uri> {
+      return list
+    }
+
+    override fun getSynchronousResult(
+        context: Context,
+        input: PickVisualMediaRequest
+    ): SynchronousResult<List<@JvmSuppressWildcards Uri>>? {
+      return SynchronousResult(list)
+    }
+
+    companion object {
+      fun success() = FakePickMultipleVisualMediaContract(true)
+
+      fun failure() = FakePickMultipleVisualMediaContract(false)
+
+      const val FAKE_URI = "content://fake.uri/image.jpg"
+      const val FAKE_URI2 = "content://fake.uri/image2.png"
+    }
+  }
+
+  @Test
+  fun testEveryThingIsDisplayedGalleryButtonMultiple() {
+    composeTestRule.setContent {
+      GalleryButtonMultiplePick(onSelect = {}) {
+        Text(text = "Hello!", modifier = Modifier.testTag(tag = simpleTestTag))
+      }
+    }
+
+    composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(simpleTestTag, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun testClickChoosePictureSucceedGalleryButtonMultiple() {
+    val clicked = mutableStateOf(false)
+    val photos = mutableStateListOf<Photo>()
+    composeTestRule.setContent {
+      GalleryButtonMultiplePick(
+          onSelect = {
+            clicked.value = true
+            photos.addAll(it)
+          },
+          choosePicturesContract = FakePickMultipleVisualMediaContract.success())
+    }
+    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
+    galleryButtonNode.assertIsDisplayed()
+    galleryButtonNode.performClick()
+
+    composeTestRule.waitUntil(5_000) {
+      clicked.value &&
+          photos
+              .map { it.image.toString() }
+              .contains(FakePickMultipleVisualMediaContract.FAKE_URI) &&
+          photos.map { it.image.toString() }.contains(FakePickMultipleVisualMediaContract.FAKE_URI2)
+    }
+  }
+
+  @Test
+  fun testClickedChoosePictureFailGalleryButtonMultiple() {
+    val notClicked = mutableStateOf(true)
+    composeTestRule.setContent {
+      DefaultGalleryButtonMultiplePick(
+          onSelect = { notClicked.value = false },
+          choosePicturesContract = FakePickMultipleVisualMediaContract.failure())
+    }
+    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
+    galleryButtonNode.assertIsDisplayed()
+    galleryButtonNode.performClick()
+
+    composeTestRule.waitForIdle()
+
+    assertTrue(notClicked.value)
+  }
+
+  @Test
+  fun testGalleryButtonMultipleCorrectFileName() {
+    val photos = mutableStateListOf<Photo>()
+    composeTestRule.setContent {
+      GalleryButtonMultiplePick(
+          onSelect = { photos.addAll(it) },
+          choosePicturesContract = FakePickMultipleVisualMediaContract.success())
+    }
+    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
+    galleryButtonNode.assertIsDisplayed()
+    galleryButtonNode.performClick()
+
+    composeTestRule.waitUntil(5_000) {
+      photos.isNotEmpty() &&
+          photos.map { it.fileName.contains(".") }.reduce { acc, bool -> acc && bool }
+    }
+  }
+
+  @Test
+  fun testGalleryButtonCorrectFileName() {
+    val photo = mutableStateOf<Photo>(Photo(image = Uri.EMPTY, fileName = "incorrect"))
+    composeTestRule.setContent {
+      GalleryButton(
+          onSelect = { photo.value = it }, choosePictureContract = FakeGetContentContract.success())
+    }
+    val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG)
+    galleryButtonNode.assertIsDisplayed()
+    galleryButtonNode.performClick()
+
+    composeTestRule.waitUntil(5_000) { photo.value.fileName.contains(".") }
   }
 }

@@ -40,9 +40,10 @@ class MainActivity : ComponentActivity() {
     // If savedPreference is null, we leave it null to follow system theme
     ThemePreferenceState.updatePreference(savedPreference)
 
-    Log.d("", Screen.topLevel.joinToString { it.name })
     setContent {
-      PhotoRepositoryProvider.initialize(LocalContext.current)
+      val context = LocalContext.current
+      PhotoRepositoryProvider.initialize(context)
+      Log.d("", Screen.topLevel.joinToString { context.getString(it.nameId) })
 
       MySwissDormAppTheme {
         Surface(

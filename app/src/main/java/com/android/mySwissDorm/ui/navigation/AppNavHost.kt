@@ -25,6 +25,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
@@ -171,7 +172,7 @@ fun AppNavHost(
               latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
               longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
               title = backStackEntry.arguments?.getString("title") ?: "Location",
-              name = backStackEntry.arguments?.getString("name") ?: "Location",
+              nameId = backStackEntry.arguments?.getInt("name") ?: R.string.location,
               onGoBack = { navController.popBackStack() })
         }
 

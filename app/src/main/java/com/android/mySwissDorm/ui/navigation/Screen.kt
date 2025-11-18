@@ -1,38 +1,41 @@
 package com.android.mySwissDorm.ui.navigation
 
+import androidx.annotation.StringRes
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 
 sealed class Screen(
     val route: String,
-    val name: String,
+    @StringRes val nameId: Int,
     val isTopLevelDestination: Boolean = false,
 ) {
   // Auth flow
-  data object SignIn : Screen("signIn", "Sign In")
+  data object SignIn : Screen("signIn", R.string.screen_sign_in)
 
-  data object SignUp : Screen("signUp", "Sign Up")
+  data object SignUp : Screen("signUp", R.string.screen_sign_up)
 
   // Bottom bar (top-level) destinations — order matters
-  data object Homepage : Screen("homepage", "Homepage", isTopLevelDestination = true)
+  data object Homepage : Screen("homepage", R.string.screen_homepage, isTopLevelDestination = true)
 
-  data object Inbox : Screen("inbox", "Inbox", isTopLevelDestination = true)
+  data object Inbox : Screen("inbox", R.string.screen_inbox, isTopLevelDestination = true)
 
-  data object Settings : Screen("settings", "Settings", isTopLevelDestination = true)
+  data object Settings : Screen("settings", R.string.screen_settings, isTopLevelDestination = true)
 
   // Secondary (non-bottom-bar) destinations
-  data object AddListing : Screen("addListing", "Add Listing")
+  data object AddListing : Screen("addListing", R.string.screen_add_listing)
 
-  data object AddReview : Screen("addReview", "Add Review")
+  data object AddReview : Screen("addReview", R.string.screen_add_review)
 
-  data object Admin : Screen("admin", "Admin")
+  data object Admin : Screen("admin", R.string.screen_admin)
 
-  data object ProfileContributions : Screen("profileContributions", "Profile Contributions")
+  data object ProfileContributions :
+      Screen("profileContributions", R.string.screen_profile_contributions)
 
   data class BrowseOverview(private val location: Location, private val startTab: Int = 1) :
       Screen(
           route =
               "browseOverview/${location.name}/${location.latitude}/${location.longitude}/$startTab",
-          name = "Location") {
+          nameId = R.string.screen_browse_overview) {
 
     companion object {
       const val route = "browseOverview/{name}/{lat}/{lng}/{startTab}"
@@ -40,7 +43,7 @@ sealed class Screen(
   }
 
   data class EditReview(val reviewUid: String) :
-      Screen(route = "editReview/${reviewUid}", name = "Edit Review") {
+      Screen(route = "editReview/${reviewUid}", nameId = R.string.screen_edit_review) {
 
     companion object {
       const val route = "editReview/{reviewUid}"
@@ -48,7 +51,9 @@ sealed class Screen(
   }
 
   data class ReviewsByResidencyOverview(private val residencyName: String) :
-      Screen(route = "reviewsByResidencyOverview/$residencyName", name = "Reviews") {
+      Screen(
+          route = "reviewsByResidencyOverview/$residencyName",
+          nameId = R.string.screen_reviews_by_residency_overview) {
 
     companion object {
       const val route = "reviewsByResidencyOverview/{residencyName}"
@@ -56,34 +61,34 @@ sealed class Screen(
   }
 
   data class ListingOverview(val listingUid: String) :
-      Screen(route = "listingOverview/${listingUid}", name = "Listing") {
+      Screen(route = "listingOverview/${listingUid}", nameId = R.string.screen_listing_overview) {
     companion object {
       const val route = "listingOverview/{listingUid}"
     }
   }
 
   data class EditListing(val listingUid: String) :
-      Screen(route = "editListing/${listingUid}", name = "Edit Listing") {
+      Screen(route = "editListing/${listingUid}", nameId = R.string.screen_edit_listing) {
     companion object {
       const val route = "editListing/{listingUid}"
     }
   }
 
   data class ReviewOverview(val reviewUid: String) :
-      Screen(route = "reviewOverview/${reviewUid}", name = "Review") {
+      Screen(route = "reviewOverview/${reviewUid}", nameId = R.string.screen_review_overview) {
     companion object {
       const val route = "reviewOverview/{reviewUid}"
     }
   }
 
   data class ViewUserProfile(val userId: String) :
-      Screen(route = "viewProfile/${userId}", name = "View Profile") {
+      Screen(route = "viewProfile/${userId}", nameId = R.string.screen_view_user_profile) {
     companion object {
       const val route = "viewProfile/{userId}"
     }
   }
 
-  data object Profile : Screen(route = "profile", name = "Profile")
+  data object Profile : Screen(route = "profile", nameId = R.string.screen_profile)
 
   companion object {
     // Compute on access so objects are definitely initialized

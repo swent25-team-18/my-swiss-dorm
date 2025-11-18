@@ -35,10 +35,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.LightGray
@@ -99,7 +101,7 @@ fun ReviewsByResidencyScreen(
                 reviewsState.items.isEmpty() -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "No reviews yet.",
+                        text = stringResource(R.string.reviews_by_residency_no_reviews_yet),
                         color = TextColor,
                         modifier = Modifier.testTag(C.ReviewsByResidencyTag.EMPTY))
                   }
@@ -177,7 +179,7 @@ private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically) {
                           Text(
-                              text = "Review :",
+                              text = stringResource(R.string.reviews_by_residency_review),
                               color = TextColor,
                           )
                           Text(
@@ -202,7 +204,8 @@ private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
                   }
                   Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     Text(
-                        text = "Posted by ${data.fullNameOfPoster}",
+                        text =
+                            "${stringResource(R.string.reviews_by_residency_posted_by)} ${data.fullNameOfPoster}",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Light,
                         color = TextColor,

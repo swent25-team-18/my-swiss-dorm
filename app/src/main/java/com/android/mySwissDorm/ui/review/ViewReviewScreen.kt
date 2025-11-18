@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -74,7 +76,7 @@ fun ViewReviewScreen(
     onGoBack: () -> Unit = {},
     onEdit: () -> Unit = {},
     onViewProfile: (ownerId: String) -> Unit = {},
-    onViewMap: (latitude: Double, longitude: Double, title: String, name: String) -> Unit =
+    onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit =
         { _, _, _, _ ->
         }
 ) {
@@ -99,7 +101,7 @@ fun ViewReviewScreen(
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Review Details") },
+            title = { Text(stringResource(R.string.view_review_title)) },
             navigationIcon = {
               IconButton(onClick = { onGoBack() }) {
                 Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -129,14 +131,14 @@ fun ViewReviewScreen(
 
               // build the AnnotatedString tagging the name
               val annotatedPostedByString = buildAnnotatedString {
-                append("Posted by ")
+                append("${stringResource(R.string.view_review_posted_by)} ")
 
                 // pushStringAnnotation to "tag" this part of the string
                 pushStringAnnotation(tag = tagProfile, annotation = review.ownerId)
                 // apply the style to the name
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
                   append(fullNameOfPoster)
-                  if (isOwner) append(" (You)")
+                  if (isOwner) append(" ${stringResource(R.string.view_review_posted_by_you)}")
                 }
                 // stop tagging
                 pop()
@@ -173,21 +175,22 @@ fun ViewReviewScreen(
               // Bullet section
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.BULLETS)) {
                 BulletRow("${review.roomType}")
-                BulletRow("${review.pricePerMonth}.-/month")
+                BulletRow(
+                    "${review.pricePerMonth}${stringResource(R.string.view_review_price_per_month)}")
                 BulletRow("${review.areaInM2}m²")
                 DisplayGrade(review.grade, 24.dp)
               }
 
               // Actual review
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.REVIEW_TEXT)) {
-                Text("Review :", fontWeight = FontWeight.SemiBold)
+                Text("${stringResource(R.string.review)}:", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(3.dp))
                 Text(review.reviewText, style = MaterialTheme.typography.bodyLarge)
               }
 
               // Photos placeholder
               PlaceholderBlock(
-                  text = "PHOTOS (Not implemented yet)",
+                  text = "${stringResource(R.string.photos)} (Not implemented yet)",
                   height = 220.dp,
                   modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
               // Location placeholder
@@ -200,11 +203,13 @@ fun ViewReviewScreen(
                     modifier =
                         Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewReviewTags.LOCATION),
                     onMapClick = {
-                      onViewMap(location.latitude, location.longitude, review.title, "Review")
+                      onViewMap(
+                          location.latitude, location.longitude, review.title, R.string.review)
                     })
               } else {
                 PlaceholderBlock(
-                    text = "LOCATION (Not available)",
+                    text =
+                        "${stringResource(R.string.location)} (${stringResource(R.string.not_available)})",
                     height = 180.dp,
                     modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
               }
@@ -226,7 +231,10 @@ fun ViewReviewScreen(
                               disabledContainerColor = BackGroundColor,
                               disabledContentColor = BackGroundColor),
                   ) {
-                    Text("Edit", style = MaterialTheme.typography.titleMedium, color = TextColor)
+                    Text(
+                        stringResource(R.string.edit),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TextColor)
                   }
                 }
               }

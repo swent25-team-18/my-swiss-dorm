@@ -23,11 +23,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -121,7 +123,7 @@ fun ViewUserProfileScreen(
                   Button(
                       onClick = { if (ownerId != null) realVm?.loadProfile(ownerId) },
                       modifier = Modifier.testTag(T.RETRY_BTN)) {
-                        Text("Retry")
+                        Text(stringResource(R.string.retry))
                       }
                 }
               }
@@ -199,7 +201,7 @@ fun ViewUserProfileScreen(
                                     tint = TextColor)
                                 Spacer(Modifier.width(12.dp))
                                 Text(
-                                    text = "Send a message",
+                                    text = stringResource(R.string.view_user_profile_send_message),
                                     style = MaterialTheme.typography.bodyLarge.copy(),
                                     color = TextColor)
                               }
@@ -215,7 +217,9 @@ fun ViewUserProfileScreen(
                     val buttonColor = if (isBlocked) MainColor else Color(0xFFFF4444)
                     val textColor = if (isBlocked) BackGroundColor else Color.White
                     val iconColor = textColor
-                    val buttonText = if (isBlocked) "Unblock user" else "Block user"
+                    val buttonText =
+                        if (isBlocked) stringResource(R.string.view_user_profile_unblock_user)
+                        else stringResource(R.string.view_user_profile_block_user)
 
                     Surface(
                         onClick = {

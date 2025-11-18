@@ -32,10 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -80,7 +82,7 @@ fun CustomLocationDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
                   Text(
-                      "Enter Custom Location",
+                      stringResource(R.string.custom_location_dialog_enter_input),
                       color = TextColor,
                       fontSize = 20.sp,
                       fontWeight = FontWeight.Bold,
@@ -96,7 +98,9 @@ fun CustomLocationDialog(
                             contentDescription = "My Location",
                             tint = MainColor)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "Use my current location", color = MainColor)
+                        Text(
+                            text = stringResource(R.string.custom_location_dialog_current_location),
+                            color = MainColor)
                       }
                   ExposedDropdownMenuBox(
                       expanded = showDropdown && locationSuggestions.isNotEmpty(),
@@ -108,7 +112,7 @@ fun CustomLocationDialog(
                               onValueChange(it)
                               showDropdown = true
                             },
-                            label = { Text("Location") },
+                            label = { Text(stringResource(R.string.location)) },
                             colors =
                                 OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = MainColor,
@@ -148,7 +152,9 @@ fun CustomLocationDialog(
 
                               if (locationSuggestions.size > 3) {
                                 DropdownMenuItem(
-                                    text = { Text("More...") },
+                                    text = {
+                                      Text(stringResource(R.string.custom_location_dialog_more))
+                                    },
                                     onClick = { /* Optionally show more results */}, // TODO
                                     modifier =
                                         Modifier.testTag(C.CustomLocationDialogTags.MORE_OPTION))
@@ -165,7 +171,7 @@ fun CustomLocationDialog(
                       enabled = currentLocation != null,
                       colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                       modifier = Modifier.testTag(C.CustomLocationDialogTags.CONFIRM_BUTTON)) {
-                        Text("Confirm", color = White)
+                        Text(stringResource(R.string.confirm), color = White)
                       }
                 }
             IconButton(

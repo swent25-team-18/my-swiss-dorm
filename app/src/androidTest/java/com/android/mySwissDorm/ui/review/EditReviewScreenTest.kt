@@ -2,14 +2,16 @@ package com.android.mySwissDorm.ui.review
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.filter
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithContentDescription
-import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -32,6 +34,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import java.util.UUID
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -45,8 +48,6 @@ import org.junit.runner.RunWith
  * End-to-end UI+VM tests for EditReviewScreen using Firestore emulator. Seeding uses
  * editReview(upsert) because create API is not available. All tests are made with the help of AI
  */
-@get:Rule val composeTestRule = createComposeRule()
-
 @RunWith(AndroidJUnit4::class)
 class EditReviewScreenTest : FirestoreTest() {
 
@@ -279,12 +280,15 @@ class EditReviewScreenTest : FirestoreTest() {
     setContentFor(vm, review1!!.uid)
 
     composeRule.waitUntil(5_000) {
-      composeRule
-          .onAllNodes(
-              hasTestTag(C.EditReviewTags.REVIEW_TITLE) and hasSetTextAction(),
-              useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+      runCatching {
+            composeRule
+                .onAllNodes(
+                    hasTestTag(C.EditReviewTags.REVIEW_TITLE) and hasSetTextAction(),
+                    useUnmergedTree = true)
+                .onFirst()
+                .assertExists()
+          }
+          .isSuccess
     }
 
     editable("reviewTitleField").replaceText("Cozy Studio Review - Updated")
@@ -299,7 +303,7 @@ class EditReviewScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun delete_icon_removes_document_and_emits_residency_name() = runTest {
+  fun delete_icon_shows_confirmation_dialog() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val id = seedReviewUpsert()
 
@@ -307,24 +311,340 @@ class EditReviewScreenTest : FirestoreTest() {
     var deletedResidencyName: String? = null
     setContentFor(vm, id, onDelete = { deletedResidencyName = it })
 
+    // Wait for the screen to load and delete button to appear
     composeRule.waitUntil(5_000) {
-      composeRule
-          .onAllNodesWithContentDescription("Delete", useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+      runCatching {
+            composeRule.onNodeWithTag("deleteButton", useUnmergedTree = true).assertExists()
+          }
+          .isSuccess
+    }
+
+    // Click delete button using testTag - should show confirmation dialog
+    composeRule.onNodeWithTag("deleteButton", useUnmergedTree = true).performClick()
+    composeRule.waitForIdle()
+
+    // Wait for confirmation dialog to appear - try both merged and unmerged tree
+    // Material3 AlertDialog might render at different levels
+    composeRule.waitUntil(10_000) {
+      val withUnmerged =
+          runCatching {
+                composeRule.onNodeWithText("Delete review?", useUnmergedTree = true).assertExists()
+              }
+              .isSuccess
+      val withoutUnmerged =
+          runCatching {
+                composeRule.onNodeWithText("Delete review?", useUnmergedTree = false).assertExists()
+              }
+              .isSuccess
+      withUnmerged || withoutUnmerged
+    }
+
+    // Verify dialog elements exist - use simpler onNodeWithText with fallback
+    // Try both unmerged and merged tree
+    val titleFound =
+        try {
+          composeRule.onNodeWithText("Delete review?", useUnmergedTree = true).assertExists()
+          true
+        } catch (e: Exception) {
+          try {
+            composeRule.onNodeWithText("Delete review?", useUnmergedTree = false).assertExists()
+            true
+          } catch (e2: Exception) {
+            false
+          }
+        }
+    assertTrue("Dialog title not found", titleFound)
+
+    // Check body text - use substring match
+    val bodyFound =
+        try {
+          composeRule
+              .onNodeWithText(
+                  "This will permanently delete your review",
+                  substring = true,
+                  useUnmergedTree = true)
+              .assertExists()
+          true
+        } catch (e: Exception) {
+          try {
+            composeRule
+                .onNodeWithText(
+                    "This will permanently delete your review",
+                    substring = true,
+                    useUnmergedTree = false)
+                .assertExists()
+            true
+          } catch (e2: Exception) {
+            false
+          }
+        }
+    assertTrue("Dialog body text not found", bodyFound)
+
+    // Verify buttons exist - look for clickable Delete button
+    composeRule.waitUntil(5_000) {
+      val withUnmerged =
+          runCatching {
+                composeRule
+                    .onAllNodesWithText("Delete", useUnmergedTree = true)
+                    .filter(hasClickAction())
+                    .onFirst()
+                    .assertExists()
+              }
+              .isSuccess
+      val withoutUnmerged =
+          runCatching {
+                composeRule
+                    .onAllNodesWithText("Delete", useUnmergedTree = false)
+                    .filter(hasClickAction())
+                    .onFirst()
+                    .assertExists()
+              }
+              .isSuccess
+      withUnmerged || withoutUnmerged
+    }
+
+    // Find Cancel button
+    composeRule.waitUntil(5_000) {
+      val withUnmerged =
+          runCatching {
+                composeRule
+                    .onAllNodesWithText("Cancel", useUnmergedTree = true)
+                    .filter(hasClickAction())
+                    .onFirst()
+                    .assertExists()
+              }
+              .isSuccess
+      val withoutUnmerged =
+          runCatching {
+                composeRule
+                    .onAllNodesWithText("Cancel", useUnmergedTree = false)
+                    .filter(hasClickAction())
+                    .onFirst()
+                    .assertExists()
+              }
+              .isSuccess
+      withUnmerged || withoutUnmerged
+    }
+  }
+
+  @Test
+  fun cancel_delete_dialog_does_not_delete_review() = runBlocking {
+    switchToUser(FakeUser.FakeUser1)
+    val id = seedReviewUpsert()
+
+    val vm = EditReviewViewModel(reviewId = id)
+    var deletedResidencyName: String? = null
+    setContentFor(vm, id, onDelete = { deletedResidencyName = it })
+
+    // Wait for delete button to appear
+    composeRule.waitUntil(5_000) {
+      runCatching {
+            composeRule.onNodeWithTag("deleteButton", useUnmergedTree = true).assertExists()
+          }
+          .isSuccess
     }
 
     val beforeCount = getAllReviewsByUserCount(Firebase.auth.currentUser!!.uid)
     val beforeCountAllUsers = getReviewCount()
 
-    composeRule.onNodeWithContentDescription("Delete", useUnmergedTree = true).performClick()
+    // Click delete button using testTag to show dialog
+    composeRule.onNodeWithTag("deleteButton", useUnmergedTree = true).performClick()
+    composeRule.waitForIdle()
 
-    composeRule.waitUntil(2_000) { deletedResidencyName != null }
+    // Wait for dialog to appear - try both merged and unmerged tree
+    composeRule.waitUntil(10_000) {
+      val withUnmerged =
+          runCatching {
+                composeRule.onNodeWithText("Delete review?", useUnmergedTree = true).assertExists()
+              }
+              .isSuccess
+      val withoutUnmerged =
+          runCatching {
+                composeRule.onNodeWithText("Delete review?", useUnmergedTree = false).assertExists()
+              }
+              .isSuccess
+      withUnmerged || withoutUnmerged
+    }
+
+    // Wait for Cancel button to be available - try both merged and unmerged
+    composeRule.waitUntil(10_000) {
+      val withUnmerged =
+          runCatching {
+                composeRule
+                    .onAllNodesWithText("Cancel", useUnmergedTree = true)
+                    .filter(hasClickAction())
+                    .onFirst()
+                    .assertExists()
+              }
+              .isSuccess
+      val withoutUnmerged =
+          runCatching {
+                composeRule
+                    .onAllNodesWithText("Cancel", useUnmergedTree = false)
+                    .filter(hasClickAction())
+                    .onFirst()
+                    .assertExists()
+              }
+              .isSuccess
+      withUnmerged || withoutUnmerged
+    }
+
+    // Click Cancel button - try unmerged first, then merged
+    val cancelClicked =
+        try {
+          composeRule
+              .onAllNodesWithText("Cancel", useUnmergedTree = false)
+              .filter(hasClickAction())
+              .onFirst()
+              .assertIsDisplayed()
+              .performClick()
+          true
+        } catch (e: Exception) {
+          try {
+            composeRule
+                .onAllNodesWithText("Cancel", useUnmergedTree = true)
+                .filter(hasClickAction())
+                .onFirst()
+                .assertIsDisplayed()
+                .performClick()
+            true
+          } catch (e2: Exception) {
+            false
+          }
+        }
+    assertTrue("Could not click Cancel button", cancelClicked)
+    composeRule.waitForIdle()
+
+    // Wait a bit to ensure deletion didn't happen
+    delay(500)
+
+    // Verify review still exists and onDelete was not called
+    assertEquals(null, deletedResidencyName)
+    val afterCount = getAllReviewsByUserCount(Firebase.auth.currentUser!!.uid)
+    val afterCountAllUsers = getReviewCount()
+    assertEquals(beforeCount, afterCount)
+    assertEquals(beforeCountAllUsers, afterCountAllUsers)
+
+    // Verify review still exists in Firestore
+    val review = ReviewsRepositoryProvider.repository.getReview(id)
+    assertEquals(id, review.uid)
+  }
+
+  @Test
+  fun confirm_delete_dialog_deletes_review_and_emits_residency_name() = runBlocking {
+    switchToUser(FakeUser.FakeUser1)
+    val id = seedReviewUpsert()
+
+    val vm = EditReviewViewModel(reviewId = id)
+    var deletedResidencyName: String? = null
+    setContentFor(vm, id, onDelete = { deletedResidencyName = it })
+
+    // Wait for delete button to appear
+    composeRule.waitUntil(5_000) {
+      runCatching {
+            composeRule.onNodeWithTag("deleteButton", useUnmergedTree = true).assertExists()
+          }
+          .isSuccess
+    }
+
+    val beforeCount = getAllReviewsByUserCount(Firebase.auth.currentUser!!.uid)
+    val beforeCountAllUsers = getReviewCount()
+
+    // Click delete button using testTag to show dialog
+    composeRule.onNodeWithTag("deleteButton", useUnmergedTree = true).performClick()
+    composeRule.waitForIdle()
+
+    // Wait for dialog to appear - try both merged and unmerged tree
+    composeRule.waitUntil(10_000) {
+      val withUnmerged =
+          runCatching {
+                composeRule.onNodeWithText("Delete review?", useUnmergedTree = true).assertExists()
+              }
+              .isSuccess
+      val withoutUnmerged =
+          runCatching {
+                composeRule.onNodeWithText("Delete review?", useUnmergedTree = false).assertExists()
+              }
+              .isSuccess
+      withUnmerged || withoutUnmerged
+    }
+
+    // Wait for Delete button to be available in the dialog - try both merged and unmerged
+    // The dialog button should be clickable, the icon description is not
+    composeRule.waitUntil(10_000) {
+      val withUnmerged =
+          runCatching {
+                composeRule
+                    .onAllNodesWithText("Delete", useUnmergedTree = true)
+                    .filter(hasClickAction())
+                    .onFirst()
+                    .assertExists()
+              }
+              .isSuccess
+      val withoutUnmerged =
+          runCatching {
+                composeRule
+                    .onAllNodesWithText("Delete", useUnmergedTree = false)
+                    .filter(hasClickAction())
+                    .onFirst()
+                    .assertExists()
+              }
+              .isSuccess
+      withUnmerged || withoutUnmerged
+    }
+
+    // Click Delete button in dialog - try unmerged first, then merged
+    val deleteClicked =
+        try {
+          composeRule
+              .onAllNodesWithText("Delete", useUnmergedTree = false)
+              .filter(hasClickAction())
+              .onFirst()
+              .assertIsDisplayed()
+              .performClick()
+          true
+        } catch (e: Exception) {
+          try {
+            composeRule
+                .onAllNodesWithText("Delete", useUnmergedTree = true)
+                .filter(hasClickAction())
+                .onFirst()
+                .assertIsDisplayed()
+                .performClick()
+            true
+          } catch (e2: Exception) {
+            false
+          }
+        }
+    assertTrue("Could not click Delete button in dialog", deleteClicked)
+    composeRule.waitForIdle()
+
+    // Wait for deletion to complete - deletion is async, so wait longer
+    composeRule.waitUntil(10_000) { deletedResidencyName != null }
     assertEquals(resTest.name, deletedResidencyName)
+
+    // Verify review was deleted from repository
+    var tries = 0
+    while (tries < 30) {
+      val exception =
+          kotlin
+              .runCatching { ReviewsRepositoryProvider.repository.getReview(id) }
+              .exceptionOrNull()
+      if (exception != null) break
+      delay(100)
+      tries++
+    }
+
+    // Verify review was deleted
     val finalCount = getAllReviewsByUserCount(Firebase.auth.currentUser!!.uid)
     val finalCountAllUsers = getReviewCount()
     assertEquals(beforeCount - 1, finalCount)
     assertEquals(beforeCountAllUsers - 1, finalCountAllUsers)
+
+    // Verify review no longer exists in Firestore
+    val exception =
+        kotlin.runCatching { ReviewsRepositoryProvider.repository.getReview(id) }.exceptionOrNull()
+    assertTrue(exception != null)
   }
 
   @Test
@@ -334,12 +654,15 @@ class EditReviewScreenTest : FirestoreTest() {
     setContentFor(vm, review1!!.uid)
 
     composeRule.waitUntil(5_000) {
-      composeRule
-          .onAllNodes(
-              hasTestTag(C.EditReviewTags.PRICE_FIELD) and hasSetTextAction(),
-              useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+      runCatching {
+            composeRule
+                .onAllNodes(
+                    hasTestTag(C.EditReviewTags.PRICE_FIELD) and hasSetTextAction(),
+                    useUnmergedTree = true)
+                .onFirst()
+                .assertExists()
+          }
+          .isSuccess
     }
     editable(C.EditReviewTags.PRICE_FIELD).performTextClearance()
     editable(C.EditReviewTags.PRICE_FIELD).performTextInput("abc")

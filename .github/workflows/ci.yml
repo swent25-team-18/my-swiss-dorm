@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-
   pull_request:
     types:
       - opened
@@ -13,63 +12,22 @@ on:
       - reopened
 
 jobs:
-  ci:
-    name: CI
-    # Execute the CI on the course's runners
+  # Job 1: Runs fast static checks like formatting and linting
+  static-checks:
+    name: Static Checks (ktfmt, Lint)
     runs-on: ubuntu-latest
-
     steps:
-      # First step : Checkout the repository on the runner
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of Sonar analysis (if we use Sonar Later)
-
-
-      # Kernel-based Virtual Machine (KVM) is an open source virtualization technology built into Linux. Enabling it allows the Android emulator to run faster.
-      - name: Enable KVM group perms
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
-
-      # Caching is a very useful part of a CI, as a workflow is executed in a clean environment every time,
-      # this means that one would need to re-download and re-process gradle files for every run. Which is very time consuming.
-      #
-      # To avoid that, we cache the the gradle folder to reuse it later.
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
-
-      # Cache the Emulator, if the cache does not hit, create the emulator
-      - name: AVD cache
-        uses: actions/cache@v4
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-34
-
-      - name: create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
-
-      # Load secrets
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -79,22 +37,62 @@ jobs:
           echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
           echo "$KEYSTORE_PROPERTIES" | base64 --decode > ./keystore.properties
           echo "$KEYSTORE" | base64 --decode > ./keystore.jks
-      
-
-      - name: Grant execute permission for gradlew
+      - name: KTFmt Check
         run: |
-          chmod +x ./gradlew
+          ./gradlew ktfmtCheck
+      - name: Assemble
+        run: |
+          # To run the CI with debug information, add --info
+          ./gradlew assemble lint --parallel --build-cache
 
-      # Install NodeJS
+  # Job 2: Runs unit tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+      - name: Decode secrets
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+        run: |
+          echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
+          echo "$KEYSTORE_PROPERTIES" | base64 --decode > ./keystore.properties
+          echo "$KEYSTORE" | base64 --decode > ./keystore.jks
+      - name: Run tests
+        run: |
+          ./gradlew check --parallel --build-cache
+      - name: Upload unit test coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-coverage
+          path: "app/build/jacoco/testDebugUnitTest.exec"
+          retention-days: 1
+
+  # Job 3: Runs Firebase rules tests
+  firebase-rules:
+    name: Firebase Rules Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      # Install Firebase CLI
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
-
       - name: Firestore Security Rules tests
         run: |
           if [ ! -e "firebase.json" ]; then # Check if firebase.json exists
@@ -120,25 +118,78 @@ jobs:
           else
             echo "Waning: Firestore rules file not found in firebase/firestore."
           fi
+          # Add your actual 'firebase emulators:exec "..."' command here if it was missing
+          # For example: firebase emulators:exec "npm test" --project demo-project
 
-      # Check formatting
-      - name: KTFmt Check
+  # Job 4: Runs slow instrumentation tests on an emulator
+  instrumentation-tests:
+    name: Instrumentation Tests (Part ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false # Don't cancel other shards if one fails so we keep testing everything
+      matrix:
+        shard: [0, 1, 2, 3] # Creates 4 parallel jobs
+        total-shards: [4]     #  total number of shards
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Enable KVM group perms
         run: |
-          ./gradlew ktfmtCheck
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-${{ matrix.shard }}
 
-      # This step runs gradle commands to build the application
-      - name: Assemble
+      - name: create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: |
+            sudo chmod +x $ANDROID_HOME/platform-tools/adb
+            echo "Generated AVD snapshot for caching."
+
+      - name: Decode secrets
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
+          KEYSTORE: ${{ secrets.KEYSTORE }}
         run: |
-          # To run the CI with debug information, add --info
-          ./gradlew assemble lint --parallel --build-cache
-
-      # Run Unit tests
-      - name: Run tests
-        run: |
-          # To run the CI with debug information, add --info
-          ./gradlew check --parallel --build-cache
-
-      # Start Firebase emulators for instrumentation tests
+          echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
+          echo "$KEYSTORE_PROPERTIES" | base64 --decode > ./keystore.properties
+          echo "$KEYSTORE" | base64 --decode > ./keystore.jks
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
       - name: Start Firebase emulators
         run: |
           if [ -e "firebase.json" ] && jq -e '.emulators' firebase.json >/dev/null; then
@@ -149,8 +200,7 @@ jobs:
             echo "Firebase emulators not configured, skipping emulator startup..."
           fi
 
-      # Run connected tests on the emulator
-      - name: run tests
+      - name: Run instrumentation tests (Part ${{ matrix.shard }})
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -159,10 +209,76 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew connectedCheck --parallel --build-cache
+          script: |
+            sudo chmod +x $ANDROID_HOME/platform-tools/adb
+            ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.numShards=${{ matrix.total-shards }} -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} --parallel --build-cache
 
-      # This step generates the coverage report which will be uploaded to sonar
-      - name: Generate Coverage Report
+      - name: Upload instrumentation coverage (Part ${{ matrix.shard }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumentation-coverage-${{ matrix.shard }}
+          path: "app/build/outputs/code_coverage/debugAndroidTest/connected/**/*.ec"
+          retention-days: 1
+
+  # Job 5: "Fan-in" job to combine reports and run analysis
+  sonar-analysis:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: [static-checks, unit-tests, firebase-rules, instrumentation-tests]
+    if: always()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+      - name: Decode secrets
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+        run: |
+          echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
+          echo "$KEYSTORE_PROPERTIES" | base64 --decode > ./keystore.properties
+          echo "$KEYSTORE" | base64 --decode > ./keystore.jks
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: build/reports/
+
+      - name: List downloaded files (for debugging)
+        run: |
+          echo "Listing all downloaded artifacts..."
+          ls -R build/reports/
+
+      - name: Organize coverage reports
+        run: |
+          echo "Organizing coverage reports..."
+          # Create the directories where jacocoTestReport expects to find the reports
+          mkdir -p app/build/jacoco/
+          mkdir -p app/build/outputs/code_coverage/debugAndroidTest/connected/
+          
+          # Find and move the single unit test .exec file
+          find build/reports/unit-test-coverage -name '*.exec' -exec mv {} app/build/jacoco/testDebugUnitTest.exec \; || echo "No unit test coverage found."
+          
+          # Find and move ALL instrumentation .ec files from ALL shard directories
+          # This command searches all subdirectories of build/reports/ for .ec files
+          find build/reports/ -type f -name '*.ec' -exec mv -t app/build/outputs/code_coverage/debugAndroidTest/connected/ {} + || echo "No instrumentation coverage found."
+          
+          echo "Coverage files organized."
+          echo "Final instrumentation coverage files:"
+          ls -l app/build/outputs/code_coverage/debugAndroidTest/connected/
+
+      - name: Generate Combined Coverage Report
         run: |
           ./gradlew jacocoTestReport
 
@@ -172,10 +288,9 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
-      # Upload the various reports to sonar
+
       - name: Upload report to SonarCloud
         uses: SonarSource/sonarcloud-github-action@v2
         env:
-         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        #run: ./gradlew sonar --parallel --build-cache
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -53,6 +54,8 @@ class NavigationActionsTest : FirestoreTest() {
         composable(Screen.ReviewOverview.route) {}
         composable(Screen.ReviewsByResidencyOverview.route) {}
         composable(Screen.ProfileContributions.route) {}
+        composable(Screen.EditListing.route) {}
+        composable(Screen.ListingOverview.route) {}
       }
     }
     composeTestRule.waitForIdle()
@@ -588,6 +591,74 @@ class NavigationActionsTest : FirestoreTest() {
           "Should fallback to ProfileContributions if navigation fails",
           Screen.ProfileContributions.route,
           currentRoute)
+    }
+  }
+
+  @Test
+  fun editReview_save_navigatesToReviewOverview() = runTest {
+    val reviewUid = "test-review-save"
+
+    composeTestRule.waitForIdle()
+
+    // 1. Go to EditReview first
+    composeTestRule.runOnUiThread { navController.navigate(Screen.EditReview(reviewUid).route) }
+    composeTestRule.waitForIdle()
+
+    // 2. Simulate the save navigation logic from AppNavHost:
+    //    - navigate to ReviewOverview with popUpTo EditReview (inclusive)
+    //    This ensures ReviewOverview is added before EditReview is popped
+    composeTestRule.runOnUiThread {
+      navController.navigate(Screen.ReviewOverview(reviewUid).route) {
+        popUpTo(Screen.EditReview.route) { inclusive = true }
+        launchSingleTop = true
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // 3. Verify we are on ReviewOverview with the right argument
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentBackStackEntry?.destination?.route
+      assertTrue(
+          "Should navigate to ReviewOverview after saving review. Current route: $currentRoute",
+          currentRoute?.startsWith("reviewOverview/") == true)
+
+      val backStackEntry = navController.currentBackStackEntry
+      val reviewUidArg = backStackEntry?.arguments?.getString("reviewUid")
+      assertEquals("Review UID should match", reviewUid, reviewUidArg)
+    }
+  }
+
+  @Test
+  fun editListing_save_navigatesToListingOverview() = runTest {
+    val listingUid = "test-listing-save"
+
+    composeTestRule.waitForIdle()
+
+    // 1. Go to EditListing first
+    composeTestRule.runOnUiThread { navController.navigate(Screen.EditListing(listingUid).route) }
+    composeTestRule.waitForIdle()
+
+    // 2. Simulate the save navigation logic from AppNavHost:
+    //    - navigate to ListingOverview with popUpTo EditListing (inclusive)
+    //    This ensures ListingOverview is added before EditListing is popped
+    composeTestRule.runOnUiThread {
+      navController.navigate(Screen.ListingOverview(listingUid).route) {
+        popUpTo(Screen.EditListing.route) { inclusive = true }
+        launchSingleTop = true
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // 3. Verify we are on ListingOverview with the right argument
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentBackStackEntry?.destination?.route
+      assertTrue(
+          "Should navigate to ListingOverview after saving listing. Current route: $currentRoute",
+          currentRoute?.startsWith("listingOverview/") == true)
+
+      val backStackEntry = navController.currentBackStackEntry
+      val listingUidArg = backStackEntry?.arguments?.getString("listingUid")
+      assertEquals("Listing UID should match", listingUid, listingUidArg)
     }
   }
 }

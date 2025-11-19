@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import com.android.mySwissDorm.BuildConfig
 import java.io.File
-import okio.FileNotFoundException
 
 /**
  * An implementation of [PhotoRepository] on disk.
@@ -22,8 +21,8 @@ class PhotoRepositoryLocal(private val context: Context) : PhotoRepository {
   override suspend fun retrievePhoto(uid: String): Photo {
     val file: File =
         photosDir.listFiles()?.firstOrNull() { it.name == uid }
-            ?: throw FileNotFoundException("Photo with uid $uid does not exist")
-    if (!file.exists()) throw FileNotFoundException("Photo with uid $uid does not exist")
+            ?: throw NoSuchElementException("Photo with uid $uid does not exist")
+    if (!file.exists()) throw NoSuchElementException("Photo with uid $uid does not exist")
     return Photo(
         image = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", file),
         fileName = uid)

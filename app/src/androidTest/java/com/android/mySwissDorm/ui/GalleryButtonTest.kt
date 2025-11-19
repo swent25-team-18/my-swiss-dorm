@@ -22,18 +22,19 @@ import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import junit.framework.TestCase.assertTrue
 import kotlin.collections.emptyList
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class GalleryButtonTest {
-  private var fakeUri: String
-  private var fakeUri2: String
+  private lateinit var fakeUri: String
+  private lateinit var fakeUri2: String
 
-  init {
-    val context = InstrumentationRegistry.getInstrumentation().context
-
+  @Before
+  fun setUp() {
     val value1 =
         ContentValues().apply {
           put(MediaStore.Images.Media.DISPLAY_NAME, "image.jpg")
@@ -48,15 +49,27 @@ class GalleryButtonTest {
           put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
         }
 
-    fakeUri =
-        context.contentResolver
-            .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, value1)
-            .toString()
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      val context = InstrumentationRegistry.getInstrumentation().context
+      fakeUri =
+          context.contentResolver
+              .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, value1)
+              .toString()
 
-    fakeUri2 =
-        context.contentResolver
-            .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, value2)
-            .toString()
+      fakeUri2 =
+          context.contentResolver
+              .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, value2)
+              .toString()
+    }
+  }
+
+  @After
+  fun tearDown() {
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      val context = InstrumentationRegistry.getInstrumentation().context
+      assert(context.contentResolver.delete(Uri.parse(fakeUri), null, null) > 0)
+      assert(context.contentResolver.delete(Uri.parse(fakeUri2), null, null) > 0)
+    }
   }
 
   private inner class FakeGetContentContract(private val shouldSucceed: Boolean = true) :

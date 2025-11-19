@@ -219,7 +219,6 @@ private fun getFileNameFromUri(context: Context, uri: Uri): String {
       fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
     }
   } ?: throw IllegalArgumentException()
-  cursorQuery.close()
   return UUID.randomUUID().toString() + "." + fileName.substringAfterLast('.')
 }
 

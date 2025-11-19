@@ -199,7 +199,8 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
             "pricePerMonth" to 1000.0,
             "areaInM2" to 20.0,
             "imageUrls" to emptyList<String>(),
-            "downvotedBy" to emptyList<String>())
+            "downvotedBy" to emptyList<String>(),
+            "isAnonymous" to false)
     // Note: upvotedBy is intentionally missing
 
     FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
@@ -228,7 +229,8 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
             "pricePerMonth" to 1000.0,
             "areaInM2" to 20.0,
             "imageUrls" to emptyList<String>(),
-            "upvotedBy" to emptyList<String>())
+            "upvotedBy" to emptyList<String>(),
+            "isAnonymous" to false)
     // Note: downvotedBy is intentionally missing
 
     FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
@@ -268,12 +270,12 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun reviewWithoutIsAnonymousField_defaultsToFalse() = runTest {
+  fun reviewWithoutIsAnonymousField_throwsException() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val ownerId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
 
-    // Write a document without isAnonymous field (old schema simulation for backward compatibility)
+    // Write a document without isAnonymous field (old schema simulation)
     val id = repo.getNewUid()
     val data =
         mapOf(
@@ -293,9 +295,8 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
 
     FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
 
-    // Should load successfully with isAnonymous defaulting to false
-    val loaded = repo.getReview(id)
-    assertEquals(false, loaded.isAnonymous)
+    // Should throw an exception when isAnonymous field is missing to preserve privacy
+    assertEquals(true, runCatching { repo.getReview(id) }.isFailure)
   }
 
   @Test

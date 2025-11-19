@@ -24,6 +24,43 @@ import io.getstream.chat.android.compose.ui.theme.ChatTheme
 import io.getstream.chat.android.compose.viewmodel.messages.MessagesViewModelFactory
 import kotlinx.coroutines.delay
 
+/**
+ * Chat screen displaying the full messaging interface for a specific channel.
+ *
+ * This screen provides a complete chat experience using Stream Chat's [MessagesScreen] composable,
+ * which includes:
+ * - Message list with automatic scrolling to latest messages
+ * - Message input field for typing and sending messages
+ * - Message reactions, replies, and other interactive features
+ * - User avatars and message timestamps
+ * - Back button to navigate to the channels list
+ *
+ * ## Connection Management
+ * The screen automatically handles Stream Chat connection:
+ * - Checks if the user is already connected to Stream Chat
+ * - If not connected, attempts to connect using the current Firebase user's profile information
+ * - Shows a loading indicator with "Connecting to chat..." message during connection
+ * - Only displays the chat interface once connection is established
+ *
+ * ## Preview Mode
+ * When running in Android Studio's preview mode, displays a simplified fake UI instead of
+ * attempting to connect to Stream Chat. This prevents preview errors and allows designers to see
+ * the layout structure.
+ *
+ * ## Behavior
+ * - Creates a [MessagesViewModelFactory] for the specified channel ID
+ * - Limits message history to the last 30 messages for performance
+ * - Handles connection errors gracefully, attempting to proceed even if connection fails (in case
+ *   connection was already in progress)
+ * - Uses Stream Chat's default theme via [ChatTheme]
+ *
+ * @param channelId The channel CID (Channel ID) to display. This should be in the format
+ *   "messaging:channel-id" or just the channel ID if it's already a full CID. The channel ID is
+ *   typically obtained from [ChannelsScreen] when a user clicks on a channel item.
+ * @param onBackClick Callback invoked when the user presses the back button. This should navigate
+ *   back to the channels list screen.
+ * @param modifier The modifier to be applied to the root composable.
+ */
 @Composable
 fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier = Modifier) {
   val isPreview = LocalInspectionMode.current
@@ -101,6 +138,12 @@ fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier 
   }
 }
 
+/**
+ * Preview composable for [MyChatScreen] used in Android Studio's design preview.
+ *
+ * This preview uses a fake channel ID and does not require actual Stream Chat connection, allowing
+ * designers to see the chat screen layout without running the full app.
+ */
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MyChatScreenPreview() {

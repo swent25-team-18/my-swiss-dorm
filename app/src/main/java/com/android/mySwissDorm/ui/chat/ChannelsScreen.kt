@@ -52,10 +52,41 @@ object ChannelsScreenTestTags {
 }
 
 /**
- * Channels screen with:
- * - Search bar at the top
- * - Channel list showing other user's name and last message
- * - Requested messages button in the top bar
+ * Channels screen displaying a WhatsApp-like interface for browsing and searching chat channels.
+ *
+ * This screen provides the main entry point for the chat feature, displaying a list of all
+ * messaging channels where the current user is a member. It includes:
+ * - A search bar for filtering channels by user name or message content
+ * - A list of channels showing the other user's avatar, name, last message preview, and timestamp
+ * - A requested messages button in the top bar with an optional badge showing pending count
+ * - Automatic connection to Stream Chat if the user is not already connected
+ * - Automatic creation of a test channel if no channels exist (for development/testing)
+ *
+ * ## Features
+ * - **Search**: Real-time filtering of channels by user name or last message content
+ * - **Channel Display**: Shows other user's avatar, name, last message preview, timestamp, and
+ *   unread message count badge
+ * - **Connection Management**: Automatically connects the user to Stream Chat if not already
+ *   connected, using profile information from Firebase
+ * - **Loading States**: Displays a loading indicator while fetching channels
+ * - **Empty States**: Shows appropriate messages when no channels exist or search yields no results
+ *
+ * ## Behavior
+ * - Requires the user to be signed in via Firebase Auth. Shows a sign-in prompt if not
+ *   authenticated.
+ * - Automatically queries Stream Chat for channels where the current user is a member.
+ * - If no channels exist and no test channel has been created, automatically creates a test
+ *   self-chat channel for development purposes.
+ * - Filters channels in real-time as the user types in the search bar.
+ * - Each channel item is clickable and navigates to the chat screen via [onChannelClick].
+ *
+ * @param modifier The modifier to be applied to the root Column composable.
+ * @param onChannelClick Callback invoked when a channel item is clicked. Receives the channel CID
+ *   (Channel ID) as a parameter, which should be used to navigate to the chat screen.
+ * @param onRequestedMessagesClick Callback invoked when the requested messages button is clicked.
+ *   This should navigate to the requested messages screen.
+ * @param requestedMessagesCount The number of pending requested messages to display as a badge on
+ *   the requested messages button. If 0, no badge is shown. If greater than 99, displays "99+".
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -300,11 +331,32 @@ fun ChannelsScreen(
 }
 
 /**
- * A channel list item that displays:
- * - Other user's avatar and name
- * - Last message preview
- * - Timestamp
- * - Unread message count badge
+ * A channel list item composable that displays a single chat channel in the channels list.
+ *
+ * This item shows a WhatsApp-like channel preview with:
+ * - The other user's avatar (or a default placeholder if no image is available)
+ * - The other user's name (or "Unknown User" if not available)
+ * - The last message preview (or "No messages yet" if the channel is empty)
+ * - A formatted timestamp of the last message (e.g., "2m ago", "Yesterday", "Jan 15")
+ * - An unread message count badge (only shown if there are unread messages)
+ *
+ * ## Unread Count Calculation
+ * The unread count is calculated manually by comparing the last read message position with the
+ * total number of messages in the channel. This is necessary because the Stream Chat SDK doesn't
+ * expose unreadCount directly in the Channel object.
+ *
+ * ## Styling
+ * - Uses the app's theme colors: [TextColor] for text, [MainColor] for the unread badge
+ * - Avatar is displayed as a circular image (56dp)
+ * - Text is truncated with ellipsis if it exceeds available space
+ * - A horizontal divider separates each channel item
+ *
+ * @param channel The Stream Chat [Channel] object containing channel data, members, and messages.
+ * @param currentUserId The Firebase user ID of the current user, used to identify the "other" user
+ *   in the channel and calculate unread counts.
+ * @param onChannelClick Callback invoked when this channel item is clicked. Receives the channel
+ *   CID (Channel ID) as a parameter.
+ * @param modifier The modifier to be applied to the root Row composable.
  */
 @Composable
 private fun ChannelItem(
@@ -416,7 +468,20 @@ private fun ChannelItem(
   HorizontalDivider()
 }
 
-/** Formats a timestamp into a human-readable string (e.g., "2m ago", "Yesterday", "Jan 15") */
+/**
+ * Formats a timestamp into a human-readable relative time string.
+ *
+ * Returns a formatted string based on how long ago the timestamp occurred:
+ * - Less than 1 minute: "Just now"
+ * - Less than 1 hour: "{minutes}m ago" (e.g., "5m ago")
+ * - Less than 24 hours: "{hours}h ago" (e.g., "3h ago")
+ * - Exactly 1 day: "Yesterday"
+ * - Less than 7 days: "{days}d ago" (e.g., "2d ago")
+ * - 7 or more days: Formatted date in "MMM dd" format (e.g., "Jan 15")
+ *
+ * @param timestamp The [Date] object to format.
+ * @return A human-readable string representing the relative time or formatted date.
+ */
 private fun formatMessageTime(timestamp: Date): String {
   val now = Date()
   val diff = now.time - timestamp.time

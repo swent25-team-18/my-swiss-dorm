@@ -34,7 +34,6 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import java.util.UUID
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -428,7 +427,7 @@ class EditReviewScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun cancel_delete_dialog_does_not_delete_review() = runBlocking {
+  fun cancel_delete_dialog_does_not_delete_review() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val id = seedReviewUpsert()
 
@@ -531,7 +530,7 @@ class EditReviewScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun confirm_delete_dialog_deletes_review_and_emits_residency_name() = runBlocking {
+  fun confirm_delete_dialog_deletes_review_and_emits_residency_name() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val id = seedReviewUpsert()
 

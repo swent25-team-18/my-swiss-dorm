@@ -49,6 +49,10 @@ class NavigationActionsTest : FirestoreTest() {
         composable(Screen.BrowseOverview.route) {}
         composable(Screen.Settings.route) {}
         composable(Screen.Inbox.route) {}
+        composable(Screen.EditReview.route) {}
+        composable(Screen.ReviewOverview.route) {}
+        composable(Screen.ReviewsByResidencyOverview.route) {}
+        composable(Screen.ProfileContributions.route) {}
       }
     }
     composeTestRule.waitForIdle()
@@ -334,6 +338,256 @@ class NavigationActionsTest : FirestoreTest() {
           "navigateToHomepageDirectly should navigate to Homepage when user has no location",
           Screen.Homepage.route,
           navController.currentBackStackEntry?.destination?.route)
+    }
+  }
+
+  @Test
+  fun deleteReview_fromReviewOverview_navigatesToReviewsByResidencyOverview() = runTest {
+    val reviewUid = "test-review-123"
+    val residencyName = "Test Residency"
+
+    composeTestRule.waitForIdle()
+
+    // Navigate to ReviewOverview first
+    composeTestRule.runOnUiThread { navController.navigate(Screen.ReviewOverview(reviewUid).route) }
+    composeTestRule.waitForIdle()
+
+    // Navigate to EditReview
+    composeTestRule.runOnUiThread { navController.navigate(Screen.EditReview(reviewUid).route) }
+    composeTestRule.waitForIdle()
+
+    // Verify we're on EditReview
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should be on EditReview",
+          Screen.EditReview.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+
+    // Simulate the deletion navigation logic from AppNavHost:
+    // 1. Pop EditReview from backstack (inclusive = true)
+    composeTestRule.runOnUiThread {
+      navController.popBackStack(Screen.EditReview.route, inclusive = true)
+    }
+    composeTestRule.waitForIdle()
+
+    // 2. Check if we're now on ReviewOverview and pop it too
+    composeTestRule.runOnUiThread {
+      var currentRoute = navController.currentDestination?.route
+      if (currentRoute?.startsWith("reviewOverview/") == true) {
+        navController.popBackStack()
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // 3. Navigate to ReviewsByResidencyOverview (not already there)
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentDestination?.route
+      if (currentRoute?.startsWith("reviewsByResidencyOverview/") != true &&
+          currentRoute != Screen.ProfileContributions.route) {
+        navActions.navigateTo(Screen.ReviewsByResidencyOverview(residencyName))
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // Verify we're on ReviewsByResidencyOverview
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentBackStackEntry?.destination?.route
+      assertEquals(
+          "Should navigate to ReviewsByResidencyOverview after deleting review",
+          Screen.ReviewsByResidencyOverview.route,
+          currentRoute)
+
+      // Verify the residency name argument
+      val backStackEntry = navController.currentBackStackEntry
+      val residencyNameArg = backStackEntry?.arguments?.getString("residencyName")
+      assertEquals("Residency name should match", residencyName, residencyNameArg)
+    }
+  }
+
+  @Test
+  fun deleteReview_fromProfileContributions_staysOnProfileContributions() = runTest {
+    val reviewUid = "test-review-456"
+
+    composeTestRule.waitForIdle()
+
+    // Navigate to ProfileContributions first
+    composeTestRule.runOnUiThread { navController.navigate(Screen.ProfileContributions.route) }
+    composeTestRule.waitForIdle()
+
+    // Navigate to EditReview
+    composeTestRule.runOnUiThread { navController.navigate(Screen.EditReview(reviewUid).route) }
+    composeTestRule.waitForIdle()
+
+    // Verify we're on EditReview
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should be on EditReview",
+          Screen.EditReview.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+
+    // Simulate the deletion navigation logic from AppNavHost:
+    // 1. Pop EditReview from backstack (inclusive = true)
+    composeTestRule.runOnUiThread {
+      navController.popBackStack(Screen.EditReview.route, inclusive = true)
+    }
+    composeTestRule.waitForIdle()
+
+    // 2. Check if we're now on ReviewOverview and pop it too (shouldn't be in this case)
+    composeTestRule.runOnUiThread {
+      var currentRoute = navController.currentDestination?.route
+      if (currentRoute?.startsWith("reviewOverview/") == true) {
+        navController.popBackStack()
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // 3. Check if already on ProfileContributions - should stay there
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentDestination?.route
+      // Should not navigate since we're already on ProfileContributions
+      if (currentRoute?.startsWith("reviewsByResidencyOverview/") != true &&
+          currentRoute != Screen.ProfileContributions.route) {
+        // This branch shouldn't execute, but if it does, navigate
+        navActions.navigateTo(Screen.ProfileContributions)
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // Verify we're still on ProfileContributions
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentBackStackEntry?.destination?.route
+      assertEquals(
+          "Should stay on ProfileContributions after deleting review",
+          Screen.ProfileContributions.route,
+          currentRoute)
+    }
+  }
+
+  @Test
+  fun deleteReview_fromReviewsByResidencyOverview_staysOnReviewsByResidencyOverview() = runTest {
+    val reviewUid = "test-review-789"
+    val residencyName = "Test Residency"
+
+    composeTestRule.waitForIdle()
+
+    // Navigate to ReviewsByResidencyOverview first
+    composeTestRule.runOnUiThread {
+      navController.navigate(Screen.ReviewsByResidencyOverview(residencyName).route)
+    }
+    composeTestRule.waitForIdle()
+
+    // Navigate to EditReview
+    composeTestRule.runOnUiThread { navController.navigate(Screen.EditReview(reviewUid).route) }
+    composeTestRule.waitForIdle()
+
+    // Verify we're on EditReview
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should be on EditReview",
+          Screen.EditReview.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+
+    // Simulate the deletion navigation logic from AppNavHost:
+    // 1. Pop EditReview from backstack (inclusive = true)
+    composeTestRule.runOnUiThread {
+      navController.popBackStack(Screen.EditReview.route, inclusive = true)
+    }
+    composeTestRule.waitForIdle()
+
+    // 2. Check if we're now on ReviewOverview and pop it too (shouldn't be in this case)
+    composeTestRule.runOnUiThread {
+      var currentRoute = navController.currentDestination?.route
+      if (currentRoute?.startsWith("reviewOverview/") == true) {
+        navController.popBackStack()
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // 3. Check if already on ReviewsByResidencyOverview - should stay there
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentDestination?.route
+      // Should not navigate since we're already on ReviewsByResidencyOverview
+      if (currentRoute?.startsWith("reviewsByResidencyOverview/") != true &&
+          currentRoute != Screen.ProfileContributions.route) {
+        // This branch shouldn't execute, but if it does, navigate
+        navActions.navigateTo(Screen.ReviewsByResidencyOverview(residencyName))
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // Verify we're still on ReviewsByResidencyOverview
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentBackStackEntry?.destination?.route
+      assertEquals(
+          "Should stay on ReviewsByResidencyOverview after deleting review",
+          Screen.ReviewsByResidencyOverview.route,
+          currentRoute)
+
+      // Verify the residency name argument is preserved
+      val backStackEntry = navController.currentBackStackEntry
+      val residencyNameArg = backStackEntry?.arguments?.getString("residencyName")
+      assertEquals("Residency name should match", residencyName, residencyNameArg)
+    }
+  }
+
+  @Test
+  fun deleteReview_navigationFailure_fallsBackToProfileContributions() = runTest {
+    val reviewUid = "test-review-fallback"
+    val invalidResidencyName = "" // Empty string might cause navigation issues
+
+    composeTestRule.waitForIdle()
+
+    // Navigate to ReviewOverview first
+    composeTestRule.runOnUiThread { navController.navigate(Screen.ReviewOverview(reviewUid).route) }
+    composeTestRule.waitForIdle()
+
+    // Navigate to EditReview
+    composeTestRule.runOnUiThread { navController.navigate(Screen.EditReview(reviewUid).route) }
+    composeTestRule.waitForIdle()
+
+    // Simulate the deletion navigation logic from AppNavHost:
+    // 1. Pop EditReview from backstack (inclusive = true)
+    composeTestRule.runOnUiThread {
+      navController.popBackStack(Screen.EditReview.route, inclusive = true)
+    }
+    composeTestRule.waitForIdle()
+
+    // 2. Check if we're now on ReviewOverview and pop it too
+    composeTestRule.runOnUiThread {
+      var currentRoute = navController.currentDestination?.route
+      if (currentRoute?.startsWith("reviewOverview/") == true) {
+        navController.popBackStack()
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // 3. Try to navigate to ReviewsByResidencyOverview, but simulate failure and fallback
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentDestination?.route
+      if (currentRoute?.startsWith("reviewsByResidencyOverview/") != true &&
+          currentRoute != Screen.ProfileContributions.route) {
+        try {
+          // Try navigation with potentially invalid data
+          navActions.navigateTo(Screen.ReviewsByResidencyOverview(invalidResidencyName))
+        } catch (e: Exception) {
+          // If navigation fails, fallback to ProfileContributions
+          navActions.navigateTo(Screen.ProfileContributions)
+        }
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // Verify we're on ProfileContributions (fallback)
+    composeTestRule.runOnUiThread {
+      val currentRoute = navController.currentBackStackEntry?.destination?.route
+      // Should be on ProfileContributions as fallback
+      assertEquals(
+          "Should fallback to ProfileContributions if navigation fails",
+          Screen.ProfileContributions.route,
+          currentRoute)
     }
   }
 }

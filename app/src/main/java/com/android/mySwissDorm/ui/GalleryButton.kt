@@ -1,6 +1,8 @@
 package com.android.mySwissDorm.ui
 
+import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -24,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -60,14 +63,11 @@ fun GalleryButton(
         ActivityResultContracts.GetContent(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
+  val context = LocalContext.current
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePictureContract) {
         it?.let { uri ->
-          onSelect(
-              Photo(
-                  image = uri,
-                  fileName =
-                      UUID.randomUUID().toString() + "." + uri.path!!.substringAfterLast('.')))
+          onSelect(Photo(image = uri, fileName = getFileNameFromUri(context = context, uri = uri)))
         }
       }
   Button(
@@ -108,15 +108,13 @@ fun GalleryButtonMultiplePick(
         ActivityResultContracts.PickMultipleVisualMedia(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
+  val context = LocalContext.current
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePicturesContract) { uris ->
         if (uris.isNotEmpty()) {
           onSelect(
               uris.map {
-                Photo(
-                    image = it,
-                    fileName =
-                        UUID.randomUUID().toString() + "." + it.path!!.substringAfterLast('.'))
+                Photo(image = it, fileName = getFileNameFromUri(context = context, uri = it))
               })
         }
       }
@@ -210,6 +208,18 @@ fun DefaultGalleryButtonMultiplePick(
         Spacer(Modifier.width(8.dp))
         Text(text = stringResource(R.string.gallery_button_default_multiple_text))
       }
+}
+
+private fun getFileNameFromUri(context: Context, uri: Uri): String {
+  require(uri.scheme == "content")
+  var fileName = ""
+  val cursorQuery = context.contentResolver.query(uri, null, null, null)
+  cursorQuery?.use { cursor ->
+    if (cursor.moveToFirst()) {
+      fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+    }
+  } ?: throw IllegalArgumentException()
+  return UUID.randomUUID().toString() + "." + fileName.substringAfterLast('.')
 }
 
 @Preview

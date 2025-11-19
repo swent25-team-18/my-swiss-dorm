@@ -12,6 +12,9 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
+import com.android.mySwissDorm.model.review.VoteType
+import com.android.mySwissDorm.model.review.computeDownvoteChange
+import com.android.mySwissDorm.model.review.computeUpvoteChange
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,14 +43,17 @@ data class ViewReviewUIState(
     val fullNameOfPoster: String = "",
     val errorMsg: String? = null,
     val isOwner: Boolean = false,
-    val locationOfReview: Location = Location(name = "", latitude = 0.0, longitude = 0.0)
+    val locationOfReview: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
+    val netScore: Int = 0,
+    val userVote: VoteType = VoteType.NONE
 )
 
 class ViewReviewViewModel(
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val profilesRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val residencyRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository
+        ResidenciesRepositoryProvider.repository,
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewReviewUIState())
   val uiState: StateFlow<ViewReviewUIState> = _uiState.asStateFlow()
@@ -84,14 +90,98 @@ class ViewReviewViewModel(
         val review = reviewsRepository.getReview(reviewId)
         val ownerUserInfo = profilesRepository.getProfile(review.ownerId).userInfo
         val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
-        val isOwner = FirebaseAuth.getInstance().currentUser?.uid == review.ownerId
+        val currentUserId = auth.currentUser?.uid
+        val isOwner = currentUserId == review.ownerId
+
         _uiState.update {
-          it.copy(review = review, fullNameOfPoster = fullNameOfPoster, isOwner = isOwner)
+          it.copy(
+              review = review,
+              fullNameOfPoster = fullNameOfPoster,
+              isOwner = isOwner,
+              netScore = review.getNetScore(),
+              userVote = review.getUserVote(currentUserId))
         }
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)
         setErrorMsg("Failed to load Review: ${e.message}")
       }
+    }
+  }
+
+  /**
+   * Applies an upvote to the currently loaded review.
+   *
+   * Performs optimistic UI update, then calls the repository. On failure, reverts the optimistic
+   * update.
+   */
+  fun upvoteReview() {
+    val currentUserId = auth.currentUser?.uid ?: return
+    val reviewId = _uiState.value.review.uid
+
+    // Optimistic update
+    _uiState.update { state ->
+      val (newVote, scoreDelta) = computeUpvoteChange(state.userVote)
+      state.copy(netScore = state.netScore + scoreDelta, userVote = newVote)
+    }
+
+    viewModelScope.launch {
+      try {
+        reviewsRepository.upvoteReview(reviewId, currentUserId)
+        updateVoteState(reviewId, currentUserId)
+      } catch (e: Exception) {
+        Log.e("ViewReviewViewModel", "Failed to upvote review", e)
+        // Revert optimistic update by reloading
+        loadReview(reviewId)
+      }
+    }
+  }
+
+  /**
+   * Applies a downvote to the currently loaded review.
+   *
+   * Performs optimistic UI update, then calls the repository. On failure, reverts the optimistic
+   * update.
+   */
+  fun downvoteReview() {
+    val currentUserId = auth.currentUser?.uid ?: return
+    val reviewId = _uiState.value.review.uid
+
+    // Optimistic update
+    _uiState.update { state ->
+      val (newVote, scoreDelta) = computeDownvoteChange(state.userVote)
+      state.copy(netScore = state.netScore + scoreDelta, userVote = newVote)
+    }
+
+    viewModelScope.launch {
+      try {
+        reviewsRepository.downvoteReview(reviewId, currentUserId)
+        updateVoteState(reviewId, currentUserId)
+      } catch (e: Exception) {
+        Log.e("ViewReviewViewModel", "Failed to downvote review", e)
+        // Revert optimistic update by reloading
+        loadReview(reviewId)
+      }
+    }
+  }
+
+  /**
+   * Helper function to update the vote state after a successful vote operation.
+   *
+   * @param reviewId The unique identifier of the review to update.
+   * @param currentUserId The unique identifier of the current user.
+   */
+  private suspend fun updateVoteState(reviewId: String, currentUserId: String) {
+    try {
+      val updatedReview = reviewsRepository.getReview(reviewId)
+      _uiState.update {
+        it.copy(
+            netScore = updatedReview.getNetScore(),
+            userVote = updatedReview.getUserVote(currentUserId))
+      }
+    } catch (e: Exception) {
+      Log.e("ViewReviewViewModel", "Failed to update vote state for review $reviewId", e)
+      // If we can't get the updated review, reload it
+      loadReview(reviewId)
     }
   }
 }

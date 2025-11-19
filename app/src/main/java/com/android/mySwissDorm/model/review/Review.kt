@@ -38,4 +38,24 @@ data class Review(
     val imageUrls: List<String>,
     val upvotedBy: List<String> = emptyList(),
     val downvotedBy: List<String> = emptyList(),
-)
+) {
+  /**
+   * Computes the net vote score (upvotes - downvotes) for this review.
+   *
+   * @return The net score as an integer.
+   */
+  fun getNetScore(): Int = upvotedBy.size - downvotedBy.size
+
+  /**
+   * Determines the vote type for a given user on this review.
+   *
+   * @param userId The unique identifier of the user to check.
+   * @return The [VoteType] for the user, or [VoteType.NONE] if the user hasn't voted.
+   */
+  fun getUserVote(userId: String?): VoteType =
+      when {
+        userId != null && userId in upvotedBy -> VoteType.UPVOTE
+        userId != null && userId in downvotedBy -> VoteType.DOWNVOTE
+        else -> VoteType.NONE
+      }
+}

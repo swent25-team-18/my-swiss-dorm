@@ -92,6 +92,125 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
     db.collection(REVIEWS_COLLECTION_PATH).document(reviewId).delete().await()
   }
 
+  /**
+   * Applies an upvote to the review by the given user.
+   *
+   * Uses a Firestore transaction to ensure atomicity. If the user has already upvoted, the upvote
+   * is removed. If the user has downvoted, the downvote is removed and replaced with an upvote.
+   *
+   * @throws Exception if the review is not found or if the user is the owner of the review.
+   */
+  override suspend fun upvoteReview(reviewId: String, userId: String) {
+    updateVoteLists(reviewId, userId) { newUpvotedBy, newDownvotedBy ->
+      when {
+        userId in newUpvotedBy -> {
+          // Already upvoted: remove upvote
+          newUpvotedBy.remove(userId)
+        }
+        userId in newDownvotedBy -> {
+          // Downvoted: remove downvote and add upvote
+          newDownvotedBy.remove(userId)
+          newUpvotedBy.add(userId)
+        }
+        else -> {
+          // No vote: add upvote
+          newUpvotedBy.add(userId)
+        }
+      }
+    }
+  }
+
+  /**
+   * Applies a downvote to the review by the given user.
+   *
+   * Uses a Firestore transaction to ensure atomicity. If the user has already downvoted, the
+   * downvote is removed. If the user has upvoted, the upvote is removed and replaced with a
+   * downvote.
+   *
+   * @throws Exception if the review is not found or if the user is the owner of the review.
+   */
+  override suspend fun downvoteReview(reviewId: String, userId: String) {
+    updateVoteLists(reviewId, userId) { newUpvotedBy, newDownvotedBy ->
+      when {
+        userId in newDownvotedBy -> {
+          // Already downvoted: remove downvote
+          newDownvotedBy.remove(userId)
+        }
+        userId in newUpvotedBy -> {
+          // Upvoted: remove upvote and add downvote
+          newUpvotedBy.remove(userId)
+          newDownvotedBy.add(userId)
+        }
+        else -> {
+          // No vote: add downvote
+          newDownvotedBy.add(userId)
+        }
+      }
+    }
+  }
+
+  /**
+   * Removes any existing vote (upvote or downvote) from the review by the given user.
+   *
+   * Uses a Firestore transaction to ensure atomicity.
+   *
+   * @throws Exception if the review is not found or if the user is the owner of the review.
+   */
+  override suspend fun removeVote(reviewId: String, userId: String) {
+    updateVoteLists(reviewId, userId) { newUpvotedBy, newDownvotedBy ->
+      newUpvotedBy.remove(userId)
+      newDownvotedBy.remove(userId)
+    }
+  }
+
+  /**
+   * Helper function that performs the common transaction logic for vote operations.
+   *
+   * Validates the review exists and the user is not the owner, then applies the vote modification
+   * logic provided by [voteModifier].
+   *
+   * @param reviewId The unique identifier of the review.
+   * @param userId The unique identifier of the user casting the vote.
+   * @param voteModifier A function that modifies the upvotedBy and downvotedBy lists based on the
+   *   vote operation.
+   * @throws Exception if the review is not found or if the user is the owner of the review.
+   */
+  private suspend fun updateVoteLists(
+      reviewId: String,
+      userId: String,
+      voteModifier: (MutableList<String>, MutableList<String>) -> Unit
+  ) {
+    db.runTransaction { transaction ->
+          val docRef = db.collection(REVIEWS_COLLECTION_PATH).document(reviewId)
+          val snapshot = transaction.get(docRef)
+
+          if (!snapshot.exists()) {
+            throw Exception("ReviewsRepositoryFirestore: Review $reviewId not found")
+          }
+
+          val ownerId = snapshot.getString("ownerId")
+          if (ownerId == userId) {
+            throw Exception("ReviewsRepositoryFirestore: Users cannot vote on their own reviews")
+          }
+
+          @Suppress("UNCHECKED_CAST")
+          val upvotedBy =
+              (snapshot.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+          @Suppress("UNCHECKED_CAST")
+          val downvotedBy =
+              (snapshot.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+
+          val newUpvotedBy = upvotedBy.toMutableList()
+          val newDownvotedBy = downvotedBy.toMutableList()
+
+          voteModifier(newUpvotedBy, newDownvotedBy)
+
+          transaction.update(docRef, "upvotedBy", newUpvotedBy)
+          transaction.update(docRef, "downvotedBy", newDownvotedBy)
+        }
+        .await()
+  }
+
   // Converts a Firestore DocumentSnapshot into a Review instance.
   private fun documentToReview(document: DocumentSnapshot): Review? {
     return try {

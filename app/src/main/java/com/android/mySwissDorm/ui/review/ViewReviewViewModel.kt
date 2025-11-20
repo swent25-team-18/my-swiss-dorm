@@ -62,17 +62,26 @@ class ViewReviewViewModel(
     _uiState.update { it.copy(errorMsg = errorMsg) }
   }
 
+  /**
+   * Loads the location of the review's residency and updates the UI state.
+   *
+   * This function must never crash the process; if anything fails we just log and keep the default
+   * location.
+   */
   fun setLocationOfReview(reviewUid: String) {
-    try {
-      viewModelScope.launch {
+    viewModelScope.launch {
+      try {
         val review = reviewsRepository.getReview(reviewUid)
         val residency = residencyRepository.getResidency(review.residencyName)
-        _uiState.value = _uiState.value.copy(locationOfReview = residency.location)
+        _uiState.update { it.copy(locationOfReview = residency.location) }
+      } catch (e: Exception) {
+        Log.e("ViewReviewViewModel", "Failed to load location for review $reviewUid", e)
+        // Optionally surface as errorMsg if you want:
+        // setErrorMsg("Failed to load location")
       }
-    } catch (e: Exception) {
-      Log.e("MyViewModel", "Failed to load location", e)
     }
   }
+
   /**
    * Loads a Review by its ID and updates the UI state.
    *

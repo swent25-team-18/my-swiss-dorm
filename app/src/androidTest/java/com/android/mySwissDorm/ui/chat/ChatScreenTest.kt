@@ -1,6 +1,8 @@
 package com.android.mySwissDorm.ui.chat
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.chat.StreamChatProvider
@@ -63,5 +65,53 @@ class ChatScreenTest {
 
     // Screen should compose with the provided channel ID
     // This verifies the parameter is accepted and used in LaunchedEffect
+  }
+
+  /**
+   * Test 3: Chat screen displays loading state Verifies that "Connecting to chat..." message is
+   * displayed during connection
+   */
+  @Test
+  fun chatScreen_displaysLoadingState() {
+    compose.setContent {
+      MySwissDormAppTheme { MyChatScreen(channelId = "messaging:test-channel", onBackClick = {}) }
+    }
+
+    // Wait for loading state to appear
+    compose.waitUntil(timeoutMillis = 3_000) {
+      try {
+        compose.onNodeWithText("Connecting to chat...", substring = true).assertIsDisplayed()
+        true
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    // Verify loading message is displayed
+    compose.onNodeWithText("Connecting to chat...", substring = true).assertIsDisplayed()
+  }
+
+  /**
+   * Test 4: Chat screen shows connecting message text Verifies the exact text content of the
+   * loading state
+   */
+  @Test
+  fun chatScreen_showsConnectingMessage() {
+    compose.setContent {
+      MySwissDormAppTheme { MyChatScreen(channelId = "messaging:test-channel", onBackClick = {}) }
+    }
+
+    // Wait a bit for the screen to initialize
+    compose.waitUntil(timeoutMillis = 2_000) {
+      try {
+        compose.onNodeWithText("Connecting to chat...", substring = true).assertIsDisplayed()
+        true
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    // Verify the connecting message text
+    compose.onNodeWithText("Connecting to chat...", substring = true).assertIsDisplayed()
   }
 }

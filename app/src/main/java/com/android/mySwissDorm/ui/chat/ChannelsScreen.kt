@@ -350,7 +350,7 @@ fun ChannelsScreen(
  * @param modifier The modifier to be applied to the root Row composable.
  */
 @Composable
-private fun ChannelItem(
+internal fun ChannelItem(
     channel: Channel,
     currentUserId: String,
     onChannelClick: (String) -> Unit,
@@ -473,7 +473,7 @@ private fun ChannelItem(
  * @param timestamp The [Date] object to format.
  * @return A human-readable string representing the relative time or formatted date.
  */
-private fun formatMessageTime(timestamp: Date): String {
+internal fun formatMessageTime(timestamp: Date): String {
   val now = Date()
   val diff = now.time - timestamp.time
   val minutes = diff / (1000 * 60)

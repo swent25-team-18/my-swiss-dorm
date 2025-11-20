@@ -72,9 +72,15 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
 
   /** Inserts a new [review] document or overwrites an existing document with the same id. */
   override suspend fun addReview(review: Review) {
-    // Convert Sets to Lists for Firestore storage
+    // Convert Sets to Lists for Firestore storage and ensure isAnonymous is explicitly saved
+    // (Firestore may skip default values, but isAnonymous must always be present for privacy)
     val data = reviewToFirestoreMap(review)
     db.collection(REVIEWS_COLLECTION_PATH).document(review.uid).set(data).await()
+    // Explicitly update isAnonymous to ensure it's always present (even if false)
+    db.collection(REVIEWS_COLLECTION_PATH)
+        .document(review.uid)
+        .update("isAnonymous", review.isAnonymous)
+        .await()
   }
 
   /**
@@ -86,9 +92,15 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
     if (newValue.uid != reviewId) {
       throw Exception("ReviewsRepositoryFirestore: Provided reviewId does not match newValue.uid")
     }
-    // Convert Sets to Lists for Firestore storage
+    // Convert Sets to Lists for Firestore storage and ensure isAnonymous is explicitly saved
+    // (Firestore may skip default values, but isAnonymous must always be present for privacy)
     val data = reviewToFirestoreMap(newValue)
     db.collection(REVIEWS_COLLECTION_PATH).document(reviewId).set(data).await()
+    // Explicitly update isAnonymous to ensure it's always present (even if false)
+    db.collection(REVIEWS_COLLECTION_PATH)
+        .document(reviewId)
+        .update("isAnonymous", newValue.isAnonymous)
+        .await()
   }
 
   /**
@@ -109,7 +121,8 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
         "areaInM2" to review.areaInM2,
         "imageUrls" to review.imageUrls,
         "upvotedBy" to review.upvotedBy.toList(),
-        "downvotedBy" to review.downvotedBy.toList())
+        "downvotedBy" to review.downvotedBy.toList(),
+        "isAnonymous" to review.isAnonymous)
   }
 
   /** Deletes the review document with the given [reviewId]. */
@@ -259,10 +272,21 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
           (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: return null
 
       // Read from Firestore as List, then convert to Set to deduplicate and match domain model
+      // Return null if these fields are missing (required for backward compatibility checks)
+      // Check if fields exist in the document data - if they don't exist, return null
+      val data = document.data ?: return null
+      if (!data.containsKey("upvotedBy")) return null
+      if (!data.containsKey("downvotedBy")) return null
+      @Suppress("UNCHECKED_CAST")
       val upvotedByList =
-          (document.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
+          (document.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+      @Suppress("UNCHECKED_CAST")
       val downvotedByList =
-          (document.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
+          (document.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+      val isAnonymous =
+          document.getBoolean("isAnonymous")
+              ?: throw Exception(
+                  "ReviewsRepositoryFirestore: isAnonymous field not found in document. This field is required to preserve privacy.")
 
       val upvotedBy = upvotedByList.toSet()
       val downvotedBy = downvotedByList.toSet()
@@ -280,7 +304,8 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
           areaInM2 = areaInM2,
           imageUrls = imageUrls,
           upvotedBy = upvotedBy,
-          downvotedBy = downvotedBy)
+          downvotedBy = downvotedBy,
+          isAnonymous = isAnonymous)
     } catch (e: Exception) {
       Log.e("ReviewsRepositoryFirestore", "Error converting document to Review", e)
       null

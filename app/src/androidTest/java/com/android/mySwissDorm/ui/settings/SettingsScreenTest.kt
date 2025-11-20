@@ -303,7 +303,6 @@ class SettingsScreenTest : FirestoreTest() {
 
     val scrollTag = C.SettingsTags.SETTINGS_SCROLL
     val nightShiftTag = C.SettingsTags.switch("Dark mode")
-    val anonymousTag = C.SettingsTags.switch("Anonymous")
 
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
     compose.waitUntilTagExists(nightShiftTag)
@@ -333,24 +332,8 @@ class SettingsScreenTest : FirestoreTest() {
         false
       }
     }
-
-    compose.scrollUntilDisplayed(scrollTag, anonymousTag)
-    compose
-        .onNodeWithTag(anonymousTag, useUnmergedTree = true)
-        .assert(hasStateDescription("Off"))
-        .performClick()
-    compose.waitForIdle()
-    // Wait for state to update
-    compose.waitUntil(2_000) {
-      try {
-        compose
-            .onNodeWithTag(anonymousTag, useUnmergedTree = true)
-            .assert(hasStateDescription("On"))
-        true
-      } catch (e: AssertionError) {
-        false
-      }
-    }
+    // Note: Anonymous toggle was removed from SettingsScreen and moved to review creation/editing
+    // screens
   }
 
   @Test

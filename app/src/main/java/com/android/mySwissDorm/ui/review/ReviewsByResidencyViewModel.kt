@@ -81,18 +81,22 @@ class ReviewsByResidencyViewModel(
         val currentUserId = auth.currentUser?.uid
         val mapped =
             all.map {
-              val userInfo =
-                  try {
-                    profilesRepository.getProfile(it.ownerId).userInfo
-                  } catch (e: Exception) {
-                    Log.w(
-                        "ReviewsByResidencyViewModel",
-                        "Could not fetch profile with userId ${it.ownerId}",
-                        e)
-                    null
+              val fullName =
+                  if (it.isAnonymous) {
+                    "anonymous"
+                  } else {
+                    val userInfo =
+                        try {
+                          profilesRepository.getProfile(it.ownerId).userInfo
+                        } catch (e: Exception) {
+                          Log.w(
+                              "ReviewsByResidencyViewModel",
+                              "Could not fetch profile with userId ${it.ownerId}",
+                              e)
+                          null
+                        }
+                    userInfo?.let { "${userInfo.name} ${userInfo.lastName}" } ?: "Unknown"
                   }
-              val fullName = userInfo?.let { "${userInfo.name} ${userInfo.lastName}" } ?: "Unknown"
-
               ReviewCardUI(
                   title = it.title,
                   grade = it.grade,

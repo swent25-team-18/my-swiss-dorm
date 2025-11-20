@@ -426,7 +426,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun emptyState_showsNoResidenciesYet() {
+  fun emptyState_showsNoResidenciesYet() = runTest {
     compose.setContent {
       BrowseCityScreen(location = Location("Geneva", 46.2044, 6.1432))
     } // no Geneva data
@@ -826,5 +826,90 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         .onNodeWithTag(C.BrowseCityTags.ERROR)
         .assertIsDisplayed()
         .assertTextContains("Boom", substring = true)
+  }
+
+  @Test
+  fun anonymousReview_showsAnonymousInResidencyCard() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    // Create a review with a timestamp that's definitely later than reviewVortex2
+    // reviewVortex2 has postedAt = Timestamp(Timestamp.now().seconds + 10, 0)
+    // So we use a timestamp that's 30 seconds after the base time
+    val baseTime = Timestamp.now()
+    val anonymousReview =
+        reviewVortex1.copy(
+            uid = reviewsRepo.getNewUid(),
+            ownerId = ownerUid,
+            postedAt = Timestamp(baseTime.seconds + 30, 0), // Definitely later than reviewVortex2
+            isAnonymous = true)
+    reviewsRepo.addReview(anonymousReview)
+
+    vm.loadResidencies(lausanneLocation)
+    compose.setContent { BrowseCityScreen(location = lausanneLocation, browseCityViewModel = vm) }
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+    compose.waitUntil(5_000) { vm.uiState.value.residencies.items.isNotEmpty() }
+
+    // Wait for loading to complete
+    compose.waitUntil(5_000) { !vm.uiState.value.residencies.loading }
+
+    compose
+        .onNodeWithTag(C.BrowseCityTags.residencyCard(vortex.name))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // Wait for the review poster name to appear
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.reviewPosterName(vortex.name), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewPosterName(vortex.name), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextContains("anonymous", substring = true, ignoreCase = true)
+  }
+
+  @Test
+  fun nonAnonymousReview_showsActualNameInResidencyCard() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    // Create a review with a timestamp that's definitely later than reviewVortex2
+    val baseTime = Timestamp.now()
+    val nonAnonymousReview =
+        reviewVortex1.copy(
+            uid = reviewsRepo.getNewUid(),
+            ownerId = ownerUid,
+            postedAt = Timestamp(baseTime.seconds + 30, 0), // Definitely later than reviewVortex2
+            isAnonymous = false)
+    reviewsRepo.addReview(nonAnonymousReview)
+
+    vm.loadResidencies(lausanneLocation)
+    compose.setContent { BrowseCityScreen(location = lausanneLocation, browseCityViewModel = vm) }
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+    compose.waitUntil(5_000) { vm.uiState.value.residencies.items.isNotEmpty() }
+
+    // Wait for loading to complete
+    compose.waitUntil(5_000) { !vm.uiState.value.residencies.loading }
+
+    compose
+        .onNodeWithTag(C.BrowseCityTags.residencyCard(vortex.name))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // Wait for the review poster name to appear
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.BrowseCityTags.reviewPosterName(vortex.name), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose
+        .onNodeWithTag(C.BrowseCityTags.reviewPosterName(vortex.name), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextContains("Bob", substring = true, ignoreCase = true)
+        .assertTextContains("King", substring = true, ignoreCase = true)
   }
 }

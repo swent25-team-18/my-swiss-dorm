@@ -25,6 +25,8 @@ import com.google.firebase.Timestamp
  *   appears only once.
  * @property downvotedBy Set of user IDs who downvoted this review. Uses a Set to ensure each user
  *   ID appears only once.
+ * @property isAnonymous Whether the review was posted anonymously. If true, the username should not
+ *   be displayed.
  */
 data class Review(
     val uid: String,
@@ -40,6 +42,7 @@ data class Review(
     val imageUrls: List<String>,
     val upvotedBy: Set<String> = emptySet(),
     val downvotedBy: Set<String> = emptySet(),
+    val isAnonymous: Boolean = false,
 ) {
   /**
    * Computes the net vote score (upvotes - downvotes) for this review.

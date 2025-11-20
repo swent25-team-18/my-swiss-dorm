@@ -53,7 +53,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
@@ -83,7 +82,7 @@ fun ViewReviewScreen(
   val uiState by viewReviewViewModel.uiState.collectAsState()
   val review = uiState.review
   val fullNameOfPoster = uiState.fullNameOfPoster
-  val errorMsg = uiState.errorMsg
+  val errorMsg = uiState.errorMsg //
   val isOwner = uiState.isOwner
 
   val context = LocalContext.current
@@ -118,9 +117,8 @@ fun ViewReviewScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
                   text = review.title,
-                  fontSize = 28.sp,
-                  fontWeight = FontWeight.SemiBold,
-                  lineHeight = 32.sp,
+                  style =
+                      MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                   modifier = Modifier.testTag(C.ViewReviewTags.TITLE),
                   color = TextColor)
 
@@ -130,8 +128,6 @@ fun ViewReviewScreen(
               // build the AnnotatedString tagging the name
               val annotatedPostedByString = buildAnnotatedString {
                 append("Posted by ")
-
-                // pushStringAnnotation to "tag" this part of the string
                 pushStringAnnotation(tag = tagProfile, annotation = review.ownerId)
                 // apply the style to the name
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
@@ -140,7 +136,6 @@ fun ViewReviewScreen(
                 }
                 // stop tagging
                 pop()
-
                 append(" ${formatRelative(review.postedAt)}")
               }
 
@@ -154,21 +149,30 @@ fun ViewReviewScreen(
                           color = MaterialTheme.colorScheme.onSurfaceVariant),
                   onTextLayout = { textLayoutResult = it },
                   modifier =
-                      Modifier.testTag(C.ViewReviewTags.POSTED_BY).pointerInput(Unit) {
-                        detectTapGestures { pos ->
-                          val l = textLayoutResult ?: return@detectTapGestures
-                          val offset = l.getOffsetForPosition(pos)
+                      Modifier.testTag(C.ViewReviewTags.POSTED_BY)
+                          .then(
+                              // Only make clickable if review is not anonymous (privacy)
+                              if (!review.isAnonymous) {
+                                Modifier.pointerInput(Unit) {
+                                  detectTapGestures { pos ->
+                                    val l = textLayoutResult ?: return@detectTapGestures
+                                    val offset = l.getOffsetForPosition(pos)
 
-                          // find any annotations at that exact offset
-                          annotatedPostedByString
-                              .getStringAnnotations(start = offset, end = offset)
-                              .firstOrNull { it.tag == tagProfile } // Check if it's our tag
-                              ?.let { annotation ->
-                                // trigger the callback with the stored ownerId
-                                onViewProfile(annotation.item)
-                              }
-                        }
-                      })
+                                    // find any annotations at that exact offset
+                                    annotatedPostedByString
+                                        .getStringAnnotations(start = offset, end = offset)
+                                        .firstOrNull {
+                                          it.tag == tagProfile
+                                        } // Check if it's our tag
+                                        ?.let { annotation ->
+                                          // trigger the callback with the stored ownerId
+                                          onViewProfile(annotation.item)
+                                        }
+                                  }
+                                }
+                              } else {
+                                Modifier
+                              }))
 
               // Bullet section
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.BULLETS)) {
@@ -254,7 +258,7 @@ private fun SectionCard(
 @Composable
 private fun BulletRow(text: String) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-    Text("•", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+    Text("•", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(end = 8.dp))
     Text(text, style = MaterialTheme.typography.bodyLarge, color = TextColor)
   }
 }

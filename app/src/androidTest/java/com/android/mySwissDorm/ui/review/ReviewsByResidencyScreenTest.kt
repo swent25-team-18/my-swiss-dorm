@@ -248,4 +248,67 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
     compose.onNodeWithTag(C.ReviewsByResidencyTag.ROOT).assertIsDisplayed()
     compose.onNodeWithTag(C.ReviewsByResidencyTag.ERROR).assertIsDisplayed()
   }
+
+  @Test
+  fun anonymousReview_showsAnonymousInList() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val anonymousReviewUid = "anonymousReview1"
+    val anonymousReview = review1.copy(uid = anonymousReviewUid, isAnonymous = true)
+    reviewsRepo.addReview(anonymousReview)
+
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.isNotEmpty() }
+
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewPosterName(anonymousReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals("Posted by anonymous")
+  }
+
+  @Test
+  fun nonAnonymousReview_showsActualNameInList() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val nonAnonymousReviewUid = "nonAnonymousReview1"
+    val nonAnonymousReview = review1.copy(uid = nonAnonymousReviewUid, isAnonymous = false)
+    reviewsRepo.addReview(nonAnonymousReview)
+
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.isNotEmpty() }
+
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewPosterName(nonAnonymousReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals("Posted by Bob King") // Full name of FakeUser1
+  }
+
+  @Test
+  fun mixedAnonymousAndNonAnonymousReviews_displayCorrectly() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val anonymousReviewUid = "anonymousReview2"
+    val nonAnonymousReviewUid = "nonAnonymousReview2"
+    val anonymousReview = review1.copy(uid = anonymousReviewUid, isAnonymous = true)
+    val nonAnonymousReview = review2.copy(uid = nonAnonymousReviewUid, isAnonymous = false)
+
+    reviewsRepo.addReview(anonymousReview)
+    reviewsRepo.addReview(nonAnonymousReview)
+
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.size >= 2 }
+
+    // Check anonymous review shows "anonymous"
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewPosterName(anonymousReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals("Posted by anonymous")
+
+    // Check non-anonymous review shows actual name
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewPosterName(nonAnonymousReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals("Posted by Bob King")
+  }
 }

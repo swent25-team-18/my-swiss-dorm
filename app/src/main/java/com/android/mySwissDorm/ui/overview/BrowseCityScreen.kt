@@ -972,7 +972,9 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                                       style = MaterialTheme.typography.bodySmall,
                                       fontWeight = FontWeight.Light,
                                       color = TextColor,
-                                  )
+                                      modifier =
+                                          Modifier.testTag(
+                                              C.BrowseCityTags.reviewPosterName(data.title)))
                                 }
                           }
                     }

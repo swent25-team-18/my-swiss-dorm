@@ -1,5 +1,8 @@
 import java.io.FileInputStream
 import java.util.Properties
+import org.gradle.api.tasks.testing.Test
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -136,7 +139,6 @@ android {
 }
 
 dependencies {
-
     // Core
     implementation(libs.core.ktx)
     implementation(libs.androidx.core.ktx)
@@ -181,12 +183,12 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.storage)
 
-    // Credential Manager (for Google Sign-In)
+    // Credential Manager
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
 
-    // Networking with OkHttp
+    // Networking
     implementation(libs.okhttp)
 
     

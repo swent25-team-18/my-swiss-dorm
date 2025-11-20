@@ -134,9 +134,6 @@ fun AppNavHost(
 
       LaunchedEffect(Unit) { isAdmin = adminRepo.isCurrentUserAdmin() }
       SettingsScreen(
-          onItemClick = {
-            Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
-          },
           onProfileClick = { navActions.navigateTo(Screen.Profile) },
           navigationActions = navActions,
           onAdminClick = { navActions.navigateTo(Screen.Admin) },

@@ -2,7 +2,6 @@ package com.android.mySwissDorm.ui.review
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -36,17 +36,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
@@ -144,31 +140,19 @@ fun ViewReviewScreen(
                 append(" ${formatRelative(review.postedAt)}")
               }
 
-              // remember the TextLayoutResult
-              var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-
-              Text(
+              // Make the whole line clickable and trigger onViewProfile when the name is tapped
+              ClickableText(
                   text = annotatedPostedByString,
                   style =
                       MaterialTheme.typography.bodyMedium.copy(
                           color = MaterialTheme.colorScheme.onSurfaceVariant),
-                  onTextLayout = { textLayoutResult = it },
-                  modifier =
-                      Modifier.testTag(C.ViewReviewTags.POSTED_BY).pointerInput(Unit) {
-                        detectTapGestures { pos ->
-                          val l = textLayoutResult ?: return@detectTapGestures
-                          val offset = l.getOffsetForPosition(pos)
-
-                          // find any annotations at that exact offset
-                          annotatedPostedByString
-                              .getStringAnnotations(start = offset, end = offset)
-                              .firstOrNull { it.tag == tagProfile } // Check if it's our tag
-                              ?.let { annotation ->
-                                // trigger the callback with the stored ownerId
-                                onViewProfile(annotation.item)
-                              }
-                        }
-                      })
+                  modifier = Modifier.testTag(C.ViewReviewTags.POSTED_BY),
+                  onClick = { offset ->
+                    annotatedPostedByString
+                        .getStringAnnotations(start = offset, end = offset)
+                        .firstOrNull { it.tag == tagProfile }
+                        ?.let { annotation -> onViewProfile(annotation.item) }
+                  })
 
               // Bullet section
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.BULLETS)) {
@@ -190,6 +174,7 @@ fun ViewReviewScreen(
                   text = "PHOTOS (Not implemented yet)",
                   height = 220.dp,
                   modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
+
               // Location placeholder
               viewReviewViewModel.setLocationOfReview(reviewUid)
               val location = uiState.locationOfReview

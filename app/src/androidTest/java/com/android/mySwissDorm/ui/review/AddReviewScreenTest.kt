@@ -73,7 +73,8 @@ class AddReviewScreenTest : FirestoreTest() {
     composeTestRule.onNodeWithTag("sizeField").performScrollTo().assertIsDisplayed()
 
     composeTestRule
-        .onNodeWithText("Please complete all required fields (valid grade, size, price, etc.) or sign in")
+        .onNodeWithText(
+            "Please complete all required fields (valid grade, size, price, etc.) or sign in")
         .assertIsDisplayed()
     composeTestRule.onNodeWithText("Submit Review").assertIsNotEnabled()
   }
@@ -134,7 +135,8 @@ class AddReviewScreenTest : FirestoreTest() {
     assertTrue(viewModel.uiState.value.isFormValid)
     composeTestRule.onNodeWithText("Submit Review").assertIsEnabled()
     composeTestRule
-        .onNodeWithText("Please complete all required fields (valid grade, size, price, etc.) or sign in.")
+        .onNodeWithText(
+            "Please complete all required fields (valid grade, size, price, etc.) or sign in.")
         .assertDoesNotExist()
     composeTestRule.onNodeWithText("Submit Review").performClick()
     advanceUntilIdle() // Used AI for this line

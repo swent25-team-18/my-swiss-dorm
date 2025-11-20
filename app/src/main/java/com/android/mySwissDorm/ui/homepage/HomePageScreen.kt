@@ -62,6 +62,7 @@ object HomePageScreenTestTags {
   const val SEARCH_BAR = "searchBar"
   const val SEARCH_BAR_TEXT_FIELD = "searchBarTextField"
   const val CITIES_LIST = "citiesList"
+  const val LOCATION_SELECTION = "homePageLocationSelection"
 
   fun getTestTagForCityCard(cityName: String): String = "cityCard${cityName}"
 
@@ -135,7 +136,9 @@ fun HomePageScreen(
 
           TextButton(
               onClick = { homePageViewModel.onCustomLocationClick() },
-              modifier = Modifier.align(Alignment.CenterHorizontally)) {
+              modifier =
+                  Modifier.align(Alignment.CenterHorizontally)
+                      .testTag(HomePageScreenTestTags.LOCATION_SELECTION)) {
                 Icon(
                     imageVector = Icons.Default.Place,
                     contentDescription = "Custom Location",

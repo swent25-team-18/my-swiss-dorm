@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -23,11 +24,12 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
-import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
+import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +42,8 @@ fun AddListingScreen(
   val listingUIState by addListingViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
   var showDatePicker by remember { mutableStateOf(false) }
+  val context = LocalContext.current
+  val onUseCurrentLocationClick = onUserLocationClickFunc(context, addListingViewModel)
 
   Scaffold(
       topBar = {
@@ -62,7 +66,10 @@ fun AddListingScreen(
                 onClick = { addListingViewModel.submitForm(onConfirm) },
                 enabled = ui.isFormValid,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(52.dp)
+                        .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
                   Text("Confirm listing", color = Color.White)
                 }
@@ -91,7 +98,8 @@ fun AddListingScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp, vertical = 10.dp)
-                .verticalScroll(scrollState),
+                .verticalScroll(scrollState)
+                .testTag(C.AddListingScreenTags.ROOT),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               TitleField(
                   value = ui.title,
@@ -102,12 +110,35 @@ fun AddListingScreen(
                   selected = ui.residencyName,
                   onSelected = { addListingViewModel.setResidency(it) },
                   residencies = ui.residencies,
+                  isListing = true,
                   accentColor = MainColor)
 
               HousingTypeDropdown(
                   selected = ui.housingType,
                   onSelected = { addListingViewModel.setHousingType(it) },
                   accentColor = MainColor)
+
+              if (ui.residencyName == "Private Accommodation") {
+                OutlinedButton(
+                    onClick = { addListingViewModel.onCustomLocationClick(ui.customLocation) },
+                    modifier =
+                        Modifier.testTag(C.AddListingScreenTags.CUSTOM_LOCATION_BUTTON)
+                            .fillMaxWidth()
+                            .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          verticalAlignment = Alignment.CenterVertically) {
+                            Text("Location", color = TextColor)
+                            Text(
+                                ui.customLocation?.name ?: "Select location",
+                                color = TextColor,
+                                style = MaterialTheme.typography.bodyMedium)
+                          }
+                    }
+              }
 
               // Inline validations -> map to external error keys for uniform error text
               val sizeErrKey =
@@ -193,5 +224,35 @@ fun AddListingScreen(
             initialDate = ui.startDate,
             onDismiss = { showDatePicker = false },
             onDateSelected = { timestamp -> addListingViewModel.setStartDate(timestamp) })
+
+        // Custom Location Dialog
+        if (ui.showCustomLocationDialog) {
+          val onValueChange =
+              remember<(String) -> Unit> {
+                { query -> addListingViewModel.setCustomLocationQuery(query) }
+              }
+          val onDropDownLocationSelect =
+              remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+                { location -> addListingViewModel.setCustomLocation(location) }
+              }
+          val onDismiss = remember { { addListingViewModel.dismissCustomLocationDialog() } }
+          val onConfirm =
+              remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+                { location ->
+                  addListingViewModel.setCustomLocation(location)
+                  addListingViewModel.dismissCustomLocationDialog()
+                }
+              }
+
+          CustomLocationDialog(
+              value = ui.customLocationQuery,
+              currentLocation = ui.customLocation,
+              locationSuggestions = ui.locationSuggestions,
+              onValueChange = onValueChange,
+              onDropDownLocationSelect = onDropDownLocationSelect,
+              onDismiss = onDismiss,
+              onConfirm = onConfirm,
+              onUseCurrentLocationClick = onUseCurrentLocationClick)
+        }
       }
 }

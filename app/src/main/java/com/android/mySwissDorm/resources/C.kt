@@ -57,6 +57,7 @@ object C {
     const val EDIT_BTN = "viewListingEditBtn"
     const val BLOCKED_NOTICE = "viewListingBlockedNotice"
     const val BLOCKED_BACK_BTN = "viewListingBlockedBackBtn"
+    const val BACK_BTN = "viewListingBackBtn"
   }
 
   object ViewReviewTags {
@@ -162,7 +163,8 @@ object C {
   }
 
   object GalleryButtonTag {
-    const val TAG = "galleryButtonTag"
+    const val SINGLE_TAG = "singleGalleryButtonTag"
+    const val MULTIPLE_TAG = "multipleGalleryButtonTag"
   }
 
   object CustomLocationDialogTags {
@@ -175,6 +177,20 @@ object C {
     fun locationSuggestion(index: Int): String = "customLocationDialogSuggestion$index"
 
     const val MORE_OPTION = "customLocationDialogMoreOption"
+  }
+
+  object AddReviewTags {
+    const val TITLE_FIELD = "reviewTitleField"
+    const val RESIDENCY_DROPDOWN = "residencyDropdown"
+    const val SIZE_FIELD = "sizeField"
+    const val PRICE_FIELD = "priceField"
+    const val DESC_FIELD = "descField"
+    const val GRADE_FIELD = "gradeField"
+    const val SUBMIT_BUTTON = "submitButton"
+  }
+
+  object StarRatingBarTags {
+    fun getStarTag(starIndex: Int) = "starTag_$starIndex"
   }
 
   object EditReviewTags {
@@ -203,11 +219,14 @@ object C {
   }
 
   object AddListingScreenTags {
+    const val ROOT = "addListingRoot"
     const val TITLE_FIELD = "titleField"
     const val SIZE_FIELD = "sizeField"
     const val PRICE_FIELD = "priceField"
     const val START_DATE_FIELD = "startDateField"
     const val DESC_FIELD = "descField"
+    const val CONFIRM_BUTTON = "confirmButton"
+    const val CUSTOM_LOCATION_BUTTON = "customLocationButton"
   }
 
   object EditListingScreenTags {
@@ -218,6 +237,7 @@ object C {
     const val DESC_FIELD = "descField"
     const val DELETE_BUTTON = "deleteButton"
     const val SAVE_BUTTON = "saveButton"
+    const val CUSTOM_LOCATION_BUTTON = "customLocationButton"
   }
 
   object AdminPageTags {
@@ -254,5 +274,12 @@ object C {
     fun deleteButtonTag(uri: Uri): String = "ImageGridDeleteButton$uri"
 
     const val ICON_DELETE_CONTENT_DESC: String = "Remove image"
+  }
+
+  object SanitizedResidencyDropdownTags {
+    const val RESIDENCY_DROPDOWN_BOX = "sanitizedResidencyDropdownBox"
+    const val PRIVATE_ACCOMMODATION = "privateAccommodation"
+
+    fun getResidencyTag(residencyName: String) = "sanitizedResidencyDropdown_$residencyName"
   }
 }

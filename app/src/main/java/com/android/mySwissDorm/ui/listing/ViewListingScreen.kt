@@ -81,12 +81,14 @@ fun ViewListingScreen(
         CenterAlignedTopAppBar(
             title = { Text("Listing Details") },
             navigationIcon = {
-              IconButton(onClick = { onGoBack() }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = MainColor)
-              }
+              IconButton(
+                  onClick = { onGoBack() },
+                  modifier = Modifier.testTag(C.ViewListingTags.BACK_BTN)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MainColor)
+                  }
             })
       },
       content = { paddingValues ->

@@ -3,16 +3,39 @@ package com.android.mySwissDorm.model.review
 import com.android.mySwissDorm.model.rental.RoomType
 import com.google.firebase.Timestamp
 
+/**
+ * Domain model representing a review of a room or residency.
+ *
+ * This class is persisted in Firestore (see [ReviewsRepositoryFirestore]) and is used throughout
+ * the UI layer. New fields should be given sensible defaults to keep backward compatibility with
+ * existing documents.
+ *
+ * @property uid Unique identifier of the review document.
+ * @property ownerId Identifier of the user who created the review.
+ * @property postedAt Timestamp indicating when the review was created.
+ * @property title Short textual title summarizing the review.
+ * @property reviewText Full textual content of the review.
+ * @property grade Rating of the room, between 1.0 and 5.0.
+ * @property residencyName Name of the residency the review refers to.
+ * @property roomType Type of room being reviewed.
+ * @property pricePerMonth Monthly rent price of the room.
+ * @property areaInM2 Area of the room in square meters.
+ * @property imageUrls List of image URLs attached to the review.
+ * @property upvotedBy List of user IDs who upvoted this review.
+ * @property downvotedBy List of user IDs who downvoted this review.
+ */
 data class Review(
-    val uid: String, // Unique uid of the Review
-    val ownerId: String, // Id of the owner (=the one who posts the review) of the review
-    val postedAt: Timestamp, // Timestamp at which the Review has been posted
-    val title: String, // Title of the review
-    val reviewText: String, // Content of the review
-    val grade: Double, // Grade of the room that is reviewed, between 1.0 and 5.0
-    val residencyName: String, // Name of the residency of the room
-    val roomType: RoomType, // Type of room in the review
-    val pricePerMonth: Double, // Price per month of the room
-    val areaInM2: Int, // Area of the room
-    val imageUrls: List<String>, // List of images URL that can be added to the review
+    val uid: String,
+    val ownerId: String,
+    val postedAt: Timestamp,
+    val title: String,
+    val reviewText: String,
+    val grade: Double,
+    val residencyName: String,
+    val roomType: RoomType,
+    val pricePerMonth: Double,
+    val areaInM2: Int,
+    val imageUrls: List<String>,
+    val upvotedBy: List<String> = emptyList(),
+    val downvotedBy: List<String> = emptyList(),
 )

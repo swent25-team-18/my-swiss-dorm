@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
@@ -45,7 +47,8 @@ data class ViewListingUIState(
     val contactMessage: String = "",
     val isOwner: Boolean = false,
     val isBlockedByOwner: Boolean = false,
-    val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0)
+    val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
+    val images: List<Photo> = emptyList()
 )
 
 class ViewListingViewModel(
@@ -108,14 +111,23 @@ class ViewListingViewModel(
             } else {
               false
             }
-
+        val photos =
+            listing.imageUrls.mapNotNull { fileName ->
+              try {
+                PhotoRepositoryProvider.cloud_repository.retrievePhoto(fileName)
+              } catch (_: NoSuchElementException) {
+                Log.d("ViewListingViewModel", "Failed to retrieve the photo : $fileName")
+                null
+              }
+            }
         _uiState.update {
           it.copy(
               listing = listing,
               fullNameOfPoster = fullNameOfPoster,
               isOwner = isOwner,
               isBlockedByOwner = isBlockedByOwner,
-              locationOfListing = listing.location)
+              locationOfListing = listing.location,
+              images = photos)
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)

@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.listing
 
-import AddListingViewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider

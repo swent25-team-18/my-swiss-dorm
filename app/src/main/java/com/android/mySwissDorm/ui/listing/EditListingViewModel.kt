@@ -1,7 +1,10 @@
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -13,6 +16,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
+import okio.FileNotFoundException
 
 class EditListingViewModel(
     rentalListingRepository: RentalListingRepository = RentalListingRepositoryProvider.repository,
@@ -25,6 +29,28 @@ class EditListingViewModel(
         locationRepository = locationRepository) {
 
   override val logTag = "EditListingViewModel"
+  val deletedPhotos = mutableListOf<String>()
+  val newPhotos = mutableListOf<Photo>()
+
+  override fun addPhoto(photo: Photo) {
+    if (deletedPhotos.contains(photo.fileName)) {
+      deletedPhotos.remove(photo.fileName)
+    } else {
+      newPhotos.add(photo)
+    }
+    super.addPhoto(photo)
+  }
+
+  override fun removePhoto(uri: Uri, removeFromLocal: Boolean) {
+    if (newPhotos.map { it.image }.contains(uri)) {
+      newPhotos.remove(newPhotos.find { it.image == uri })
+    } else {
+      deletedPhotos.add(
+          _uiState.value.pickedImages.find { it.image == uri }?.fileName
+              ?: throw NoSuchElementException())
+    }
+    super.removePhoto(uri, removeFromLocal)
+  }
 
   fun getRentalListing(rentalPostID: String) {
     viewModelScope.launch {
@@ -32,6 +58,15 @@ class EditListingViewModel(
         val listing = rentalListingRepository.getRentalListing(rentalPostID)
         val isPrivateAccommodation = listing.residencyName == "Private Accommodation"
         val listingLocation = listing.location
+        val photos =
+            listing.imageUrls.mapNotNull { fileName ->
+              try {
+                PhotoRepositoryProvider.cloud_repository.retrievePhoto(fileName)
+              } catch (_: FileNotFoundException) {
+                Log.d(logTag, "Failed to retrieve the photo : $fileName")
+                null
+              }
+            }
 
         _uiState.value =
             uiState.value.copy(
@@ -42,7 +77,7 @@ class EditListingViewModel(
                 sizeSqm = listing.areaInM2.toString(),
                 startDate = listing.startDate,
                 description = listing.description,
-                pickedImages = listing.imageUrls,
+                pickedImages = photos,
                 mapLat = listingLocation.latitude,
                 mapLng = listingLocation.longitude,
                 customLocation = if (isPrivateAccommodation) listingLocation else null,
@@ -80,7 +115,7 @@ class EditListingViewModel(
             areaInM2 = state.sizeSqm.toDouble().toInt(),
             startDate = state.startDate,
             description = state.description,
-            imageUrls = state.pickedImages,
+            imageUrls = state.pickedImages.map { it.fileName },
             status = RentalStatus.POSTED,
             location = location)
 
@@ -92,12 +127,20 @@ class EditListingViewModel(
         setErrorMsg("Failed to edit rental listing: ${e.message}")
       }
     }
+    viewModelScope.launch {
+      newPhotos.forEach { PhotoRepositoryProvider.cloud_repository.uploadPhoto(it) }
+      deletedPhotos.forEach { PhotoRepositoryProvider.cloud_repository.deletePhoto(it) }
+      Log.d(logTag, "Removed : ${deletedPhotos.size}, Added : ${newPhotos.size}")
+    }
     clearErrorMsg()
     return true
   }
 
   fun deleteRentalListing(rentalPostID: String) {
     viewModelScope.launch {
+      _uiState.value.pickedImages.forEach {
+        PhotoRepositoryProvider.cloud_repository.deletePhoto(it.fileName)
+      }
       try {
         rentalListingRepository.deleteRentalListing(rentalPostId = rentalPostID)
       } catch (e: Exception) {

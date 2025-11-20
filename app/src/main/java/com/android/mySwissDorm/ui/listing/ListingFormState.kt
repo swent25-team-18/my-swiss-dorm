@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.listing
 
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.ui.InputSanitizers
@@ -16,7 +17,7 @@ data class ListingFormState(
     val sizeSqm: String = "",
     val startDate: Timestamp = Timestamp.now(),
     val description: String = "",
-    val pickedImages: List<String> = emptyList(),
+    val pickedImages: List<Photo> = emptyList(),
     val mapLat: Double? = null,
     val mapLng: Double? = null,
     val errorMsg: String? = null,

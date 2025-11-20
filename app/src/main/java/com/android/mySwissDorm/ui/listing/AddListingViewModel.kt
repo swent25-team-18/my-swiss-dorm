@@ -1,6 +1,9 @@
+package com.android.mySwissDorm.ui.listing
+
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -8,7 +11,6 @@ import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.ui.InputSanitizers
-import com.android.mySwissDorm.ui.listing.BaseListingFormViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
@@ -61,13 +63,14 @@ class AddListingViewModel(
             areaInM2 = sizeRes.value!!.roundToInt(),
             startDate = state.startDate,
             description = descRes.value!!,
-            imageUrls = emptyList(),
+            imageUrls = state.pickedImages.map { it.fileName },
             status = RentalStatus.POSTED,
             location = location)
 
     viewModelScope.launch {
       try {
         rentalListingRepository.addRentalListing(listingToAdd)
+        state.pickedImages.forEach { PhotoRepositoryProvider.cloud_repository.uploadPhoto(it) }
         clearErrorMsg()
         onConfirm(listingToAdd)
       } catch (e: Exception) {

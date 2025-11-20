@@ -74,7 +74,7 @@ class AddReviewScreenTest : FirestoreTest() {
 
     composeTestRule
         .onNodeWithText(
-            "Please complete all required fields (valid grade, size, price, etc.) or sign in")
+            "Please complete all required fields (valid grade, size, price, etc.) or sign in.")
         .assertIsDisplayed()
     composeTestRule.onNodeWithText("Submit Review").assertIsNotEnabled()
   }

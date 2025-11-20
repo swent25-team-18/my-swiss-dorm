@@ -10,7 +10,6 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -1017,6 +1016,5 @@ class EditReviewScreenTest : FirestoreTest() {
     // Verify that the anonymous status is loaded correctly
     assertEquals(true, vm.uiState.value.isAnonymous)
     composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).assertIsDisplayed()
->>>>>>> origin/main
   }
 }

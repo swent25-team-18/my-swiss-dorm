@@ -189,15 +189,6 @@ fun ViewReviewScreen(
                 Text(review.reviewText, style = MaterialTheme.typography.bodyLarge)
               }
 
-              // Vote section (always shown, but disabled for owner)
-              VoteButtons(
-                  netScore = uiState.netScore,
-                  userVote = uiState.userVote,
-                  isOwner = isOwner,
-                  onUpvote = { viewReviewViewModel.upvoteReview() },
-                  onDownvote = { viewReviewViewModel.downvoteReview() },
-                  modifier = Modifier.testTag(C.ViewReviewTags.VOTE_BUTTONS))
-
               // Photos placeholder
               PlaceholderBlock(
                   text = "PHOTOS (Not implemented yet)",
@@ -221,6 +212,23 @@ fun ViewReviewScreen(
                     height = 180.dp,
                     modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
               }
+
+              // Vote section (always shown, but disabled for owner) - at the bottom of the review
+              Column(
+                  modifier = Modifier.fillMaxWidth().testTag(C.ViewReviewTags.VOTE_BUTTONS),
+                  horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Was this review helpful?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextColor,
+                        modifier = Modifier.padding(bottom = 8.dp))
+                    VoteButtons(
+                        netScore = uiState.netScore,
+                        userVote = uiState.userVote,
+                        isOwner = isOwner,
+                        onUpvote = { viewReviewViewModel.upvoteReview() },
+                        onDownvote = { viewReviewViewModel.downvoteReview() })
+                  }
 
               if (isOwner) {
                 // Owner sees an Edit button centered
@@ -335,7 +343,7 @@ private fun VoteButtons(
     modifier: Modifier = Modifier
 ) {
   Row(
-      modifier = modifier.fillMaxWidth(),
+      modifier = modifier,
       horizontalArrangement = Arrangement.Center,
       verticalAlignment = Alignment.CenterVertically) {
         // Upvote button
@@ -345,7 +353,7 @@ private fun VoteButtons(
             modifier = Modifier.testTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON)) {
               Icon(
                   imageVector = Icons.Filled.ArrowUpward,
-                  contentDescription = "Upvote",
+                  contentDescription = "Helpful",
                   tint =
                       if (userVote == VoteType.UPVOTE) {
                         MainColor
@@ -355,7 +363,7 @@ private fun VoteButtons(
                   modifier = Modifier.size(32.dp))
             }
 
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(16.dp))
 
         // Net score display
         Text(
@@ -363,10 +371,10 @@ private fun VoteButtons(
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = TextColor,
-            modifier = Modifier.testTag(C.ViewReviewTags.VOTE_SCORE).width(40.dp),
+            modifier = Modifier.testTag(C.ViewReviewTags.VOTE_SCORE),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(16.dp))
 
         // Downvote button
         IconButton(
@@ -375,7 +383,7 @@ private fun VoteButtons(
             modifier = Modifier.testTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON)) {
               Icon(
                   imageVector = Icons.Filled.ArrowDownward,
-                  contentDescription = "Downvote",
+                  contentDescription = "Not helpful",
                   tint =
                       if (userVote == VoteType.DOWNVOTE) {
                         MainColor

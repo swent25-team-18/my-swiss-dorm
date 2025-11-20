@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.model.review.VoteType
@@ -179,6 +180,7 @@ private fun ReviewCard(
                           textAlign = TextAlign.Start,
                           color = TextColor,
                           maxLines = 1,
+                          overflow = TextOverflow.Ellipsis,
                           modifier =
                               Modifier.fillMaxWidth(0.6f)
                                   .testTag(C.ReviewsByResidencyTag.reviewTitle(data.reviewUid)))
@@ -231,9 +233,12 @@ private fun ReviewCard(
                                 fontWeight = FontWeight.Light,
                                 color = TextColor,
                                 maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier =
-                                    Modifier.testTag(
-                                        C.ReviewsByResidencyTag.reviewPosterName(data.reviewUid)))
+                                    Modifier.weight(1f, fill = false)
+                                        .testTag(
+                                            C.ReviewsByResidencyTag.reviewPosterName(
+                                                data.reviewUid)))
 
                             // Vote buttons (always shown, but disabled for owner)
                             CompactVoteButtons(
@@ -264,52 +269,52 @@ private fun CompactVoteButtons(
 ) {
   Row(
       modifier = modifier,
-      horizontalArrangement = Arrangement.spacedBy(4.dp),
+      horizontalArrangement = Arrangement.spacedBy(2.dp),
       verticalAlignment = Alignment.CenterVertically) {
         // Upvote button
         IconButton(
             onClick = onUpvote,
             enabled = !isOwner,
             modifier =
-                Modifier.size(32.dp).testTag(C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON)) {
+                Modifier.size(28.dp).testTag(C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON)) {
               Icon(
                   imageVector = Icons.Filled.ArrowUpward,
-                  contentDescription = "Upvote",
+                  contentDescription = "Helpful",
                   tint =
                       if (userVote == VoteType.UPVOTE) {
                         MainColor
                       } else {
                         TextColor.copy(alpha = 0.6f)
                       },
-                  modifier = Modifier.size(20.dp))
+                  modifier = Modifier.size(18.dp))
             }
 
         // Net score display
         Text(
             text = netScore.toString(),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             color = TextColor,
-            modifier = Modifier.testTag(C.ReviewsByResidencyTag.COMPACT_VOTE_SCORE).width(24.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            modifier = Modifier.testTag(C.ReviewsByResidencyTag.COMPACT_VOTE_SCORE),
+            textAlign = TextAlign.Center)
 
         // Downvote button
         IconButton(
             onClick = onDownvote,
             enabled = !isOwner,
             modifier =
-                Modifier.size(32.dp)
+                Modifier.size(28.dp)
                     .testTag(C.ReviewsByResidencyTag.COMPACT_VOTE_DOWNVOTE_BUTTON)) {
               Icon(
                   imageVector = Icons.Filled.ArrowDownward,
-                  contentDescription = "Downvote",
+                  contentDescription = "Not helpful",
                   tint =
                       if (userVote == VoteType.DOWNVOTE) {
                         MainColor
                       } else {
                         TextColor.copy(alpha = 0.6f)
                       },
-                  modifier = Modifier.size(20.dp))
+                  modifier = Modifier.size(18.dp))
             }
       }
 }

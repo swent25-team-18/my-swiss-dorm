@@ -104,6 +104,7 @@ fun AddReviewScreen(
                   onSelected = { addReviewViewModel.setResidencyName(it) },
                   residencies = ui.residencies,
                   accentColor = MainColor,
+                  isListing = false,
                   modifier = Modifier.testTag(C.AddReviewTags.RESIDENCY_DROPDOWN).fillMaxWidth())
 
               HousingTypeDropdown(

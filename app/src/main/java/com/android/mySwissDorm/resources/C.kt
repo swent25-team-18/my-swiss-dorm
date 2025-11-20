@@ -163,7 +163,8 @@ object C {
   }
 
   object GalleryButtonTag {
-    const val TAG = "galleryButtonTag"
+    const val SINGLE_TAG = "singleGalleryButtonTag"
+    const val MULTIPLE_TAG = "multipleGalleryButtonTag"
   }
 
   object CustomLocationDialogTags {
@@ -225,6 +226,7 @@ object C {
     const val START_DATE_FIELD = "startDateField"
     const val DESC_FIELD = "descField"
     const val CONFIRM_BUTTON = "confirmButton"
+    const val CUSTOM_LOCATION_BUTTON = "customLocationButton"
   }
 
   object EditListingScreenTags {
@@ -235,6 +237,7 @@ object C {
     const val DESC_FIELD = "descField"
     const val DELETE_BUTTON = "deleteButton"
     const val SAVE_BUTTON = "saveButton"
+    const val CUSTOM_LOCATION_BUTTON = "customLocationButton"
   }
 
   object AdminPageTags {
@@ -275,6 +278,7 @@ object C {
 
   object SanitizedResidencyDropdownTags {
     const val RESIDENCY_DROPDOWN_BOX = "sanitizedResidencyDropdownBox"
+    const val PRIVATE_ACCOMMODATION = "privateAccommodation"
 
     fun getResidencyTag(residencyName: String) = "sanitizedResidencyDropdown_$residencyName"
   }

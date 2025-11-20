@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.listing
 
+import EditListingViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -31,7 +33,9 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
+import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 
 /**
  * Edit screen for an existing rental listing.
@@ -75,6 +79,8 @@ fun EditListingScreen(
   val listingUIState by editListingViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
   var showDatePicker by remember { mutableStateOf(false) }
+  val context = LocalContext.current
+  val onUseCurrentLocationClick = onUserLocationClickFunc(context, editListingViewModel)
 
   Scaffold(
       topBar = {
@@ -169,12 +175,35 @@ fun EditListingScreen(
                   selected = ui.residencyName,
                   onSelected = { editListingViewModel.setResidency(it) },
                   residencies = ui.residencies,
+                  isListing = true,
                   accentColor = MainColor)
 
               HousingTypeDropdown(
                   selected = ui.housingType,
                   onSelected = { editListingViewModel.setHousingType(it) },
                   accentColor = MainColor)
+
+              if (ui.residencyName == "Private Accommodation") {
+                OutlinedButton(
+                    onClick = { editListingViewModel.onCustomLocationClick(ui.customLocation) },
+                    modifier =
+                        Modifier.testTag(C.EditListingScreenTags.CUSTOM_LOCATION_BUTTON)
+                            .fillMaxWidth()
+                            .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          verticalAlignment = Alignment.CenterVertically) {
+                            Text("Location", color = TextColor)
+                            Text(
+                                ui.customLocation?.name ?: "Select location",
+                                color = TextColor,
+                                style = MaterialTheme.typography.bodyMedium)
+                          }
+                    }
+              }
 
               val sizeErrKey =
                   ui.sizeSqm
@@ -259,5 +288,35 @@ fun EditListingScreen(
             initialDate = ui.startDate,
             onDismiss = { showDatePicker = false },
             onDateSelected = { timestamp -> editListingViewModel.setStartDate(timestamp) })
+
+        // Custom Location Dialog
+        if (ui.showCustomLocationDialog) {
+          val onValueChange =
+              remember<(String) -> Unit> {
+                { query -> editListingViewModel.setCustomLocationQuery(query) }
+              }
+          val onDropDownLocationSelect =
+              remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+                { location -> editListingViewModel.setCustomLocation(location) }
+              }
+          val onDismiss = remember { { editListingViewModel.dismissCustomLocationDialog() } }
+          val onConfirm =
+              remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+                { location ->
+                  editListingViewModel.setCustomLocation(location)
+                  editListingViewModel.dismissCustomLocationDialog()
+                }
+              }
+
+          CustomLocationDialog(
+              value = ui.customLocationQuery,
+              currentLocation = ui.customLocation,
+              locationSuggestions = ui.locationSuggestions,
+              onValueChange = onValueChange,
+              onDropDownLocationSelect = onDropDownLocationSelect,
+              onDismiss = onDismiss,
+              onConfirm = onConfirm,
+              onUseCurrentLocationClick = onUseCurrentLocationClick)
+        }
       }
 }

@@ -267,16 +267,18 @@ jobs:
           mkdir -p app/build/jacoco/
           mkdir -p app/build/outputs/code_coverage/debugAndroidTest/connected/
           
-          # Find and move the single unit test .exec file
-          find build/reports/unit-test-coverage -name '*.exec' -exec mv {} app/build/jacoco/testDebugUnitTest.exec \; || echo "No unit test coverage found."
-          
-          # Find and move ALL instrumentation .ec files from ALL shard directories
-          # This command searches all subdirectories of build/reports/ for .ec files
-          find build/reports/ -type f -name '*.ec' -exec mv -t app/build/outputs/code_coverage/debugAndroidTest/connected/ {} + || echo "No instrumentation coverage found."
+          find build/reports -name '*.exec' -exec mv {} app/build/jacoco/testDebugUnitTest.exec \; || echo "No unit test coverage found."
+         
+          i=0
+          find build/reports -type f -name '*.ec' | while read file; do
+            echo "Moving shard $i: $file"
+            mv "$file" "app/build/outputs/code_coverage/debugAndroidTest/connected/coverage-shard_$i.ec"
+            ((i++))
+          done
           
           echo "Coverage files organized."
-          echo "Final instrumentation coverage files:"
-          ls -l app/build/outputs/code_coverage/debugAndroidTest/connected/
+          ls -R app/build/outputs/code_coverage/
+          ls -R app/build/jacoco/
 
       - name: Generate Combined Coverage Report
         run: |

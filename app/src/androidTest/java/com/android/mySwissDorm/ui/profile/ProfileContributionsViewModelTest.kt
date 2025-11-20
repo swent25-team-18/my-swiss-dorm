@@ -138,6 +138,15 @@ class ProfileContributionsViewModelTest {
 
                   override suspend fun deleteReview(reviewId: String) =
                       throw UnsupportedOperationException()
+
+                  override suspend fun upvoteReview(reviewId: String, userId: String) =
+                      throw UnsupportedOperationException()
+
+                  override suspend fun downvoteReview(reviewId: String, userId: String) =
+                      throw UnsupportedOperationException()
+
+                  override suspend fun removeVote(reviewId: String, userId: String) =
+                      throw UnsupportedOperationException()
                 })
 
     vm.load(force = true)

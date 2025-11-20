@@ -239,6 +239,7 @@
 
     <!-- GalleryButton -->
     <string name="gallery_button_default_text">Choisir une image</string>
+    <string name="gallery_button_default_multiple_text">Choisir des images</string>
 
     <!-- SanitizedTextFields -->
     <string name="sanitized_text_fields_email_placeholder">nom@domaine.com</string>

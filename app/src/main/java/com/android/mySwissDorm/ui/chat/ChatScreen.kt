@@ -71,7 +71,7 @@ fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier 
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)) {
           Text("Chat with: $channelId (preview)")
-          repeat(4) { Text("Message $it: lorem ipsum…") }
+          repeat(4) { Text("Message $it: Hello") }
         }
   } else {
     val context = LocalContext.current

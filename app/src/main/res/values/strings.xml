@@ -201,6 +201,7 @@
     <!-- AddReviewScreen -->
     <string name="add_review_title">Add Review</string>
     <string name="add_review_submit">Submit Review</string>
+    <string name="add_review_post_anonymously">Post anonymously</string>
     <string name="add_review_invalid_form_text">Please complete all required fields (valid grade, size, price, etc.).</string>
     <string name="add_review_invalid_size_text">Enter 1.0–1000.0 with one decimal (e.g., 18.5).</string>
     <string name="add_review_invalid_price_text">Enter an integer between 1 and 10\'000.</string>

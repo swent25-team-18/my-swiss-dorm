@@ -1,6 +1,8 @@
 package com.android.mySwissDorm.model.photo
 
+import android.content.Context
 import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import java.io.File
 
@@ -17,8 +19,17 @@ data class Photo(val image: Uri, val fileName: String) {
       val file =
           File.createTempFile(
               fileName.substringBeforeLast('.'), "." + fileName.substringAfterLast('.'))
-      file.deleteOnExit()
       return Photo(image = file.toUri(), fileName = fileName)
+    }
+
+    fun createCapturablePhoto(context: Context, fileName: String): Photo {
+      val file =
+          File.createTempFile(
+              fileName.substringBeforeLast('.'),
+              "." + fileName.substringAfterLast('.'),
+              context.cacheDir)
+      val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+      return Photo(image = uri, fileName = fileName)
     }
   }
 }

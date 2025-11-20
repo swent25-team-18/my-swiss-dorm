@@ -169,7 +169,6 @@ fun SettingsScreenContent(
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
   var readReceipts by remember { mutableStateOf(true) }
-  var anonymous by remember { mutableStateOf(false) }
 
   // Dark mode preference - connected to theme
   val (darkModePreference, setDarkModePreference) = rememberDarkModePreference()
@@ -417,11 +416,6 @@ fun SettingsScreenContent(
                               label = stringResource(R.string.settings_dark_mode),
                               checked = nightShift,
                               onCheckedChange = { enabled -> setDarkModePreference(enabled) })
-                          SoftDivider()
-                          SettingSwitchRow(
-                              label = stringResource(R.string.anonymous),
-                              checked = anonymous,
-                              onCheckedChange = { anonymous = it })
                         }
 
                         // ---- Admin ------------------------------------------------------------

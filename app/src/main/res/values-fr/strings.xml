@@ -203,6 +203,7 @@
     <!-- AddReviewScreen -->
     <string name="add_review_title">Ajouter un avis</string>
     <string name="add_review_submit">Publier l’avis</string>
+    <string name="add_review_post_anonymously">Poster anonymement</string>
     <string name="add_review_invalid_form_text">Veuillez remplir tous les champs requis (note, taille, prix, etc. valides).</string>
     <string name="add_review_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
     <string name="add_review_invalid_price_text">Entrez un entier entre 1 et 10\'000.</string>

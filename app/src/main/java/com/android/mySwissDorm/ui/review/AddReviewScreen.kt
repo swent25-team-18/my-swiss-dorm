@@ -30,6 +30,7 @@ import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,7 +68,7 @@ fun AddReviewScreen(
                 modifier =
                     Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
-                  Text(stringResource(R.string.add_review_submit), color = Color.White)
+                  Text(stringResource(R.string.add_review_submit), color = White)
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid) {
@@ -171,6 +172,24 @@ fun AddReviewScreen(
                         modifier = Modifier.testTag(C.AddReviewTags.GRADE_FIELD))
                   }
 
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        text = stringResource(R.string.add_review_post_anonymously),
+                        color = TextColor,
+                        style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = ui.isAnonymous,
+                        onCheckedChange = { addReviewViewModel.setIsAnonymous(it) },
+                        colors =
+                            SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = MainColor,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
+                  }
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,

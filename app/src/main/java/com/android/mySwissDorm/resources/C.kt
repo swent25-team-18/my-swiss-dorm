@@ -118,6 +118,8 @@ object C {
 
     fun reviewText(reviewUid: String) = "browseCityReviewText_$reviewUid"
 
+    fun reviewPosterName(residencyName: String) = "browseCityReviewPosterName_$residencyName"
+
     // Filter tags
     const val FILTER_CHIP_ROW = "browseCityFilterChipRow"
     const val FILTER_CHIP_ROOM_TYPE = "browseCityFilterChipRoomType"
@@ -274,6 +276,15 @@ object C {
     fun deleteButtonTag(uri: Uri): String = "ImageGridDeleteButton$uri"
 
     const val ICON_DELETE_CONTENT_DESC: String = "Remove image"
+  }
+
+  object ChannelsScreenTestTags {
+    const val ROOT = "channelsScreenRoot"
+    const val SEARCH_BAR = "channelsSearchBar"
+    const val REQUESTED_MESSAGES_BUTTON = "requestedMessagesButton"
+    const val CHANNELS_LIST = "channelsList"
+    const val EMPTY_STATE = "channelsEmptyState"
+    const val LOADING_INDICATOR = "channelsLoadingIndicator"
   }
 
   object SanitizedResidencyDropdownTags {

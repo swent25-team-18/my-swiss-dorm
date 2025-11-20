@@ -169,8 +169,8 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     val original =
         reviewVortex1.copy(
             ownerId = ownerId,
-            upvotedBy = listOf(ownerId, "other-user"),
-            downvotedBy = listOf("downvoter-1"))
+            upvotedBy = setOf(ownerId, "other-user"),
+            downvotedBy = setOf("downvoter-1"))
 
     repo.addReview(original)
     val loaded = repo.getReview(original.uid)
@@ -199,7 +199,8 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
             "pricePerMonth" to 1000.0,
             "areaInM2" to 20.0,
             "imageUrls" to emptyList<String>(),
-            "downvotedBy" to emptyList<String>())
+            "downvotedBy" to emptyList<String>(),
+            "isAnonymous" to false)
     // Note: upvotedBy is intentionally missing
 
     FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
@@ -228,12 +229,295 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
             "pricePerMonth" to 1000.0,
             "areaInM2" to 20.0,
             "imageUrls" to emptyList<String>(),
-            "upvotedBy" to emptyList<String>())
+            "upvotedBy" to emptyList<String>(),
+            "isAnonymous" to false)
     // Note: downvotedBy is intentionally missing
 
     FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
 
     // Should return null (and getReview throws when null)
     assertEquals(true, runCatching { repo.getReview(id) }.isFailure)
+  }
+
+  @Test
+  fun reviewWithIsAnonymousTrue_isSavedAndLoaded() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    val anonymousReview = reviewVortex1.copy(ownerId = ownerId, isAnonymous = true)
+
+    repo.addReview(anonymousReview)
+    val loaded = repo.getReview(anonymousReview.uid)
+
+    assertEquals(true, loaded.isAnonymous)
+    assertEquals(anonymousReview, loaded)
+  }
+
+  @Test
+  fun reviewWithIsAnonymousFalse_isSavedAndLoaded() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    val nonAnonymousReview = reviewVortex1.copy(ownerId = ownerId, isAnonymous = false)
+
+    repo.addReview(nonAnonymousReview)
+    val loaded = repo.getReview(nonAnonymousReview.uid)
+
+    assertEquals(false, loaded.isAnonymous)
+    assertEquals(nonAnonymousReview, loaded)
+  }
+
+  @Test
+  fun reviewWithoutIsAnonymousField_throwsException() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    // Write a document without isAnonymous field (old schema simulation)
+    val id = repo.getNewUid()
+    val data =
+        mapOf(
+            "ownerId" to ownerId,
+            "postedAt" to Timestamp.now(),
+            "title" to "Title",
+            "reviewText" to "Text",
+            "grade" to 4.0,
+            "residencyName" to "Vortex",
+            "roomType" to RoomType.STUDIO.name,
+            "pricePerMonth" to 1000.0,
+            "areaInM2" to 20.0,
+            "imageUrls" to emptyList<String>(),
+            "upvotedBy" to emptyList<String>(),
+            "downvotedBy" to emptyList<String>())
+    // Note: isAnonymous is intentionally missing
+
+    FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
+
+    // Should throw an exception when isAnonymous field is missing to preserve privacy
+    assertEquals(true, runCatching { repo.getReview(id) }.isFailure)
+  }
+
+  @Test
+  fun editReview_preservesIsAnonymousField() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    val originalReview = reviewVortex1.copy(ownerId = ownerId, isAnonymous = true)
+    repo.addReview(originalReview)
+
+    val editedReview =
+        originalReview.copy(
+            title = "Modified Title", isAnonymous = false) // Change anonymous status
+
+    repo.editReview(originalReview.uid, editedReview)
+    val loaded = repo.getReview(originalReview.uid)
+
+    assertEquals(false, loaded.isAnonymous)
+    assertEquals("Modified Title", loaded.title)
+  }
+
+  @Test
+  fun upvoteReviewAddsUpvote() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    repo.addReview(review)
+
+    switchToUser(FakeUser.FakeUser2)
+    val voterId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    repo.upvoteReview(review.uid, voterId)
+    val loaded = repo.getReview(review.uid)
+
+    assertEquals(true, voterId in loaded.upvotedBy)
+    assertEquals(false, voterId in loaded.downvotedBy)
+    assertEquals(1, loaded.upvotedBy.size)
+    assertEquals(0, loaded.downvotedBy.size)
+  }
+
+  @Test
+  fun upvoteReviewTogglesOffIfAlreadyUpvoted() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val voterId = "voter-id"
+    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = setOf(voterId))
+    repo.addReview(review)
+
+    repo.upvoteReview(review.uid, voterId)
+    val loaded = repo.getReview(review.uid)
+
+    assertEquals(false, voterId in loaded.upvotedBy)
+    assertEquals(0, loaded.upvotedBy.size)
+  }
+
+  @Test
+  fun upvoteReviewSwitchesFromDownvoteToUpvote() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val voterId = "voter-id"
+    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = setOf(voterId))
+    repo.addReview(review)
+
+    repo.upvoteReview(review.uid, voterId)
+    val loaded = repo.getReview(review.uid)
+
+    assertEquals(true, voterId in loaded.upvotedBy)
+    assertEquals(false, voterId in loaded.downvotedBy)
+    assertEquals(1, loaded.upvotedBy.size)
+    assertEquals(0, loaded.downvotedBy.size)
+  }
+
+  @Test
+  fun downvoteReviewAddsDownvote() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    repo.addReview(review)
+
+    switchToUser(FakeUser.FakeUser2)
+    val voterId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    repo.downvoteReview(review.uid, voterId)
+    val loaded = repo.getReview(review.uid)
+
+    assertEquals(false, voterId in loaded.upvotedBy)
+    assertEquals(true, voterId in loaded.downvotedBy)
+    assertEquals(0, loaded.upvotedBy.size)
+    assertEquals(1, loaded.downvotedBy.size)
+  }
+
+  @Test
+  fun downvoteReviewTogglesOffIfAlreadyDownvoted() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val voterId = "voter-id"
+    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = setOf(voterId))
+    repo.addReview(review)
+
+    repo.downvoteReview(review.uid, voterId)
+    val loaded = repo.getReview(review.uid)
+
+    assertEquals(false, voterId in loaded.downvotedBy)
+    assertEquals(0, loaded.downvotedBy.size)
+  }
+
+  @Test
+  fun downvoteReviewSwitchesFromUpvoteToDownvote() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val voterId = "voter-id"
+    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = setOf(voterId))
+    repo.addReview(review)
+
+    repo.downvoteReview(review.uid, voterId)
+    val loaded = repo.getReview(review.uid)
+
+    assertEquals(false, voterId in loaded.upvotedBy)
+    assertEquals(true, voterId in loaded.downvotedBy)
+    assertEquals(0, loaded.upvotedBy.size)
+    assertEquals(1, loaded.downvotedBy.size)
+  }
+
+  @Test
+  fun removeVoteRemovesUpvote() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val voterId = "voter-id"
+    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = setOf(voterId))
+    repo.addReview(review)
+
+    repo.removeVote(review.uid, voterId)
+    val loaded = repo.getReview(review.uid)
+
+    assertEquals(false, voterId in loaded.upvotedBy)
+    assertEquals(false, voterId in loaded.downvotedBy)
+  }
+
+  @Test
+  fun removeVoteRemovesDownvote() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val voterId = "voter-id"
+    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = setOf(voterId))
+    repo.addReview(review)
+
+    repo.removeVote(review.uid, voterId)
+    val loaded = repo.getReview(review.uid)
+
+    assertEquals(false, voterId in loaded.upvotedBy)
+    assertEquals(false, voterId in loaded.downvotedBy)
+  }
+
+  @Test
+  fun upvoteReviewPreventsSelfVoting() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    repo.addReview(review)
+
+    assertEquals(true, runCatching { repo.upvoteReview(review.uid, ownerId) }.isFailure)
+  }
+
+  @Test
+  fun downvoteReviewPreventsSelfVoting() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    repo.addReview(review)
+
+    assertEquals(true, runCatching { repo.downvoteReview(review.uid, ownerId) }.isFailure)
+  }
+
+  @Test
+  fun removeVotePreventsSelfVoting() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    repo.addReview(review)
+
+    assertEquals(true, runCatching { repo.removeVote(review.uid, ownerId) }.isFailure)
+  }
+
+  @Test
+  fun upvoteReviewFailsForNonExistentReview() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val voterId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    assertEquals(true, runCatching { repo.upvoteReview("non-existent-id", voterId) }.isFailure)
+  }
+
+  @Test
+  fun downvoteReviewFailsForNonExistentReview() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val voterId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    assertEquals(true, runCatching { repo.downvoteReview("non-existent-id", voterId) }.isFailure)
+  }
+
+  @Test
+  fun removeVoteFailsForNonExistentReview() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val voterId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    assertEquals(true, runCatching { repo.removeVote("non-existent-id", voterId) }.isFailure)
   }
 }

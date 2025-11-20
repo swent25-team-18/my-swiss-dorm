@@ -12,6 +12,7 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -175,5 +176,84 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
     waitForReviewsToLoad(vm)
     val card = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!
     assertEquals(1, card.netScore) // 2 upvotes - 1 downvote = 1
+  }
+
+  @Test
+  fun upvoteReviewWhenNotLoggedIn_doesNothing() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    ReviewsRepositoryProvider.repository.addReview(review)
+
+    // Sign out to test early return
+    FirebaseEmulator.auth.signOut()
+
+    val vm = ReviewsByResidencyViewModel()
+    vm.loadReviews("Vortex")
+    waitForReviewsToLoad(vm)
+
+    val initialState = vm.uiState.value
+    val initialCard = initialState.reviews.items.find { it.reviewUid == review.uid }!!
+
+    // Try to upvote when not logged in - should do nothing
+    vm.upvoteReview(review.uid)
+
+    delay(200)
+    val afterState = vm.uiState.value
+    val afterCard = afterState.reviews.items.find { it.reviewUid == review.uid }!!
+
+    // State should be unchanged
+    assertEquals(initialCard.netScore, afterCard.netScore)
+    assertEquals(initialCard.userVote, afterCard.userVote)
+  }
+
+  @Test
+  fun downvoteReviewWhenNotLoggedIn_doesNothing() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    ReviewsRepositoryProvider.repository.addReview(review)
+
+    // Sign out to test early return
+    FirebaseEmulator.auth.signOut()
+
+    val vm = ReviewsByResidencyViewModel()
+    vm.loadReviews("Vortex")
+    waitForReviewsToLoad(vm)
+
+    val initialState = vm.uiState.value
+    val initialCard = initialState.reviews.items.find { it.reviewUid == review.uid }!!
+
+    // Try to downvote when not logged in - should do nothing
+    vm.downvoteReview(review.uid)
+
+    delay(200)
+    val afterState = vm.uiState.value
+    val afterCard = afterState.reviews.items.find { it.reviewUid == review.uid }!!
+
+    // State should be unchanged
+    assertEquals(initialCard.netScore, afterCard.netScore)
+    assertEquals(initialCard.userVote, afterCard.userVote)
+  }
+
+  @Test
+  fun loadReviewsHandlesProfileFetchFailure() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    // Create a review with a valid ownerId
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    ReviewsRepositoryProvider.repository.addReview(review)
+
+    // Delete the profile to simulate a missing profile scenario
+    ProfileRepositoryProvider.repository.deleteProfile(ownerId)
+
+    switchToUser(FakeUser.FakeUser2)
+    val vm = ReviewsByResidencyViewModel()
+    vm.loadReviews("Vortex")
+
+    // Wait for load to complete (should handle profile fetch failure gracefully)
+    waitForReviewsToLoad(vm)
+
+    // Should still load the review, but with "Unknown" as the name
+    val card = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }
+    assertNotNull("Review should be loaded even if profile fetch fails", card)
+    assertEquals("Unknown", card!!.fullNameOfPoster)
   }
 }

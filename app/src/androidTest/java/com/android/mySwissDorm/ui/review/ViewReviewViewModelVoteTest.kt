@@ -172,4 +172,76 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
     assertEquals(1, state.netScore) // 2 upvotes - 1 downvote = 1
     assertEquals(VoteType.UPVOTE, state.userVote) // voterId is in upvotedBy
   }
+
+  @Test
+  fun upvoteReviewWhenNotLoggedIn_doesNothing() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    ReviewsRepositoryProvider.repository.addReview(review)
+
+    // Sign out to test early return
+    FirebaseEmulator.auth.signOut()
+
+    val vm = ViewReviewViewModel()
+    vm.loadReview(review.uid)
+    waitForReviewToLoad(vm, review.uid)
+
+    val initialState = vm.uiState.value
+
+    // Try to upvote when not logged in - should do nothing
+    vm.upvoteReview()
+
+    delay(200)
+    val afterState = vm.uiState.value
+
+    // State should be unchanged
+    assertEquals(initialState.netScore, afterState.netScore)
+    assertEquals(initialState.userVote, afterState.userVote)
+  }
+
+  @Test
+  fun downvoteReviewWhenNotLoggedIn_doesNothing() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val review = reviewVortex1.copy(ownerId = ownerId)
+    ReviewsRepositoryProvider.repository.addReview(review)
+
+    // Sign out to test early return
+    FirebaseEmulator.auth.signOut()
+
+    val vm = ViewReviewViewModel()
+    vm.loadReview(review.uid)
+    waitForReviewToLoad(vm, review.uid)
+
+    val initialState = vm.uiState.value
+
+    // Try to downvote when not logged in - should do nothing
+    vm.downvoteReview()
+
+    delay(200)
+    val afterState = vm.uiState.value
+
+    // State should be unchanged
+    assertEquals(initialState.netScore, afterState.netScore)
+    assertEquals(initialState.userVote, afterState.userVote)
+  }
+
+  @Test
+  fun downvoteTogglesOff() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = listOf(voterId))
+    ReviewsRepositoryProvider.repository.addReview(review)
+
+    switchToUser(FakeUser.FakeUser2)
+    val vm = ViewReviewViewModel()
+    vm.loadReview(review.uid)
+
+    waitForReviewToLoad(vm, review.uid)
+    assertEquals(VoteType.DOWNVOTE, vm.uiState.value.userVote)
+
+    vm.downvoteReview()
+
+    delay(1500)
+    assertEquals(VoteType.NONE, vm.uiState.value.userVote)
+    assertEquals(0, vm.uiState.value.netScore)
+  }
 }

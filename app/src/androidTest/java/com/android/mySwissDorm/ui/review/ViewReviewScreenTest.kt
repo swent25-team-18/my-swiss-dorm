@@ -245,10 +245,14 @@ class ViewReviewScreenTest : FirestoreTest() {
           })
     }
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.locationOfReview.latitude != 0.0 }
+    compose.waitUntil(10_000) {
+      vm.uiState.value.review.uid == review1.uid &&
+          vm.uiState.value.locationOfReview.latitude != 0.0
+    }
     val expectedLocation = vm.uiState.value.locationOfReview
     scrollListTo(C.ViewReviewTags.LOCATION)
     compose.onNodeWithTag(C.ViewReviewTags.LOCATION).performClick()
+    compose.waitForIdle()
     assert(callbackCalled) { "onViewMap callback was not triggered." }
     assertEquals(expectedLocation.latitude, capturedLat)
     assertEquals(expectedLocation.longitude, capturedLon)
@@ -277,7 +281,10 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun showsPostedByYouWhenOwner() {
     setOwnerReview()
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    compose.waitUntil(5_000) {
+      vm.uiState.value.review.uid == review1.uid && vm.uiState.value.fullNameOfPoster.isNotBlank()
+    }
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
     compose
         .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
         .assertIsDisplayed()
@@ -327,13 +334,14 @@ class ViewReviewScreenTest : FirestoreTest() {
     assertTrue(
         "Should contain 'Posted by anonymous'",
         postedByText.contains("Posted by anonymous", ignoreCase = true))
+    // After the fix, "(You)" should always show for the owner, even if anonymous
     assertTrue(
-        "Should NOT contain '(You)' for anonymous review",
-        !postedByText.contains("(You)", ignoreCase = true))
+        "Should contain '(You)' for owner's anonymous review",
+        postedByText.contains("(You)", ignoreCase = true))
   }
 
   @Test
-  fun anonymousReview_doesNotShowYouTagEvenWhenOwner() {
+  fun anonymousReview_showsYouTagWhenOwner() {
     setAnonymousOwnerReview()
     waitForScreenRoot()
     compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReviewOwned.uid }
@@ -350,9 +358,10 @@ class ViewReviewScreenTest : FirestoreTest() {
             ?.text ?: ""
 
     assertTrue("Should contain 'anonymous'", postedByText.contains("anonymous", ignoreCase = true))
+    // After the fix, "(You)" should always show for the owner, even if anonymous
     assertTrue(
-        "Should NOT contain '(You)' even when owner",
-        !postedByText.contains("(You)", ignoreCase = true))
+        "Should contain '(You)' when owner views their anonymous review",
+        postedByText.contains("(You)", ignoreCase = true))
   }
 
   @Test

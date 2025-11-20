@@ -134,8 +134,7 @@ fun ViewReviewScreen(
                 // apply the style to the name
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
                   append(fullNameOfPoster)
-                  // Only show "(You)" if the review is not anonymous (privacy)
-                  if (isOwner && !review.isAnonymous) append(" (You)")
+                  if (isOwner) append(" (You)")
                 }
                 // stop tagging
                 pop()
@@ -152,21 +151,30 @@ fun ViewReviewScreen(
                           color = MaterialTheme.colorScheme.onSurfaceVariant),
                   onTextLayout = { textLayoutResult = it },
                   modifier =
-                      Modifier.testTag(C.ViewReviewTags.POSTED_BY).pointerInput(Unit) {
-                        detectTapGestures { pos ->
-                          val l = textLayoutResult ?: return@detectTapGestures
-                          val offset = l.getOffsetForPosition(pos)
+                      Modifier.testTag(C.ViewReviewTags.POSTED_BY)
+                          .then(
+                              // Only make clickable if review is not anonymous (privacy)
+                              if (!review.isAnonymous) {
+                                Modifier.pointerInput(Unit) {
+                                  detectTapGestures { pos ->
+                                    val l = textLayoutResult ?: return@detectTapGestures
+                                    val offset = l.getOffsetForPosition(pos)
 
-                          // find any annotations at that exact offset
-                          annotatedPostedByString
-                              .getStringAnnotations(start = offset, end = offset)
-                              .firstOrNull { it.tag == tagProfile } // Check if it's our tag
-                              ?.let { annotation ->
-                                // trigger the callback with the stored ownerId
-                                onViewProfile(annotation.item)
-                              }
-                        }
-                      })
+                                    // find any annotations at that exact offset
+                                    annotatedPostedByString
+                                        .getStringAnnotations(start = offset, end = offset)
+                                        .firstOrNull {
+                                          it.tag == tagProfile
+                                        } // Check if it's our tag
+                                        ?.let { annotation ->
+                                          // trigger the callback with the stored ownerId
+                                          onViewProfile(annotation.item)
+                                        }
+                                  }
+                                }
+                              } else {
+                                Modifier
+                              }))
 
               // Bullet section
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.BULLETS)) {

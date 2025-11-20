@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
@@ -48,6 +49,8 @@ class ViewReviewScreenTest : FirestoreTest() {
   private lateinit var review2: Review
 
   private lateinit var vm: ViewReviewViewModel
+
+  private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
   override fun createRepositories() {
     profilesRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
@@ -204,12 +207,12 @@ class ViewReviewScreenTest : FirestoreTest() {
       ViewReviewScreen(
           viewReviewViewModel = vm,
           reviewUid = review1.uid,
-          onViewMap = { lat, lon, title, name ->
+          onViewMap = { lat, lon, title, nameId ->
             callbackCalled = true
             capturedLat = lat
             capturedLon = lon
             capturedTitle = title
-            capturedName = name
+            capturedName = context.getString(nameId)
           })
     }
     waitForScreenRoot()
@@ -261,7 +264,7 @@ class ViewReviewScreenTest : FirestoreTest() {
         .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
         .assertIsDisplayed()
         .assertTextEquals(
-            "Posted by ${vm.uiState.value.fullNameOfPoster} ${formatRelative(vm.uiState.value.review.postedAt)}")
+            "Posted by ${vm.uiState.value.fullNameOfPoster} ${formatRelative(vm.uiState.value.review.postedAt, context = context)}")
   }
 
   @Test

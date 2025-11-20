@@ -163,7 +163,8 @@ fun ViewListingScreen(
                   // stop tagging
                   pop()
 
-                  append(" ${formatRelative(listing.postedAt)}")
+                  val context = LocalContext.current
+                  append(" ${formatRelative(listing.postedAt, context = context)}")
                 }
 
                 // remember the TextLayoutResult

@@ -220,6 +220,13 @@
     <string name="custom_location_dialog_current_location">Use my current location</string>
     <string name="custom_location_dialog_more">More…</string>
 
+    <!-- DateTimeUI -->
+    <string name="date_time_ui_x_seconds_ago">%1$ds ago</string>
+    <string name="date_time_ui_x_minutes_ago">%1$d min ago</string>
+    <string name="date_time_ui_x_hours_ago">%1$dh ago</string>
+    <string name="date_time_ui_x_days_ago">%1$dd ago</string>
+    <string name="date_time_ui_on_date">on %1$s</string>
+
     <!-- AddPhotoButton -->
     <string name="add_photo_button_take_photo">Take a photo</string>
     <string name="add_photo_button_from_gallery">Choose from gallery</string>

@@ -1,4 +1,4 @@
-<!-- This file was translated from strings-en.xml by an AI -->
+<!-- This file was translated from values/strings.xml by an AI -->
 
 <resources>
     <!-- Basic words -->
@@ -94,13 +94,13 @@
     <string name="confirm_listing">Confirmer l’annonce</string>
     <string name="add_listing_invalid_form_text">Veuillez remplir tous les champs requis (taille, prix et date de début valides).</string>
     <string name="add_listing_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
-    <string name="add_listing_invalid_price_text">Entrez un entier entre 1 et 10'000.</string>
+    <string name="add_listing_invalid_price_text">Entrez un entier entre 1 et 10\'000.</string>
 
     <!-- EditListingScreen -->
     <string name="edit_listing_title">Modifier l’annonce</string>
     <string name="edit_listing_invalid_form_text">Veuillez remplir tous les champs requis (taille, prix et date de début valides).</string>
     <string name="edit_listing_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
-    <string name="edit_listing_invalid_price_text">Entrez un entier entre 1 et 10'000.</string>
+    <string name="edit_listing_invalid_price_text">Entrez un entier entre 1 et 10\'000.</string>
 
     <!-- ViewListingScreen -->
     <string name="view_listing_title">Détails de l’annonce</string>
@@ -178,14 +178,14 @@
     <string name="add_review_submit">Publier l’avis</string>
     <string name="add_review_invalid_form_text">Veuillez remplir tous les champs requis (note, taille, prix, etc. valides).</string>
     <string name="add_review_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
-    <string name="add_review_invalid_price_text">Entrez un entier entre 1 et 10'000.</string>
+    <string name="add_review_invalid_price_text">Entrez un entier entre 1 et 10\'000.</string>
     <string name="add_review_rating">Note : </string>
 
     <!-- EditReviewScreen -->
     <string name="edit_review_title">Modifier l’avis</string>
     <string name="edit_review_invalid_form_text">Veuillez remplir tous les champs requis (taille, prix et date de début valides).</string>
     <string name="edit_review_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
-    <string name="edit_review_invalid_price_text">Entrez un entier entre 1 et 10'000.</string>
+    <string name="edit_review_invalid_price_text">Entrez un entier entre 1 et 10\'000.</string>
     <string name="edit_review_rating">Note : </string>
 
     <!-- ReviewsByResidencyScreen -->
@@ -221,6 +221,13 @@
     <string name="custom_location_dialog_enter_input">Entrer une localisation personnalisée</string>
     <string name="custom_location_dialog_current_location">Utiliser ma position actuelle</string>
     <string name="custom_location_dialog_more">Plus…</string>
+
+    <!-- DateTimeUI -->
+    <string name="date_time_ui_x_seconds_ago">il y a %1$ds</string>
+    <string name="date_time_ui_x_minutes_ago">il y a %1$d min</string>
+    <string name="date_time_ui_x_hours_ago">il y a %1$dh</string>
+    <string name="date_time_ui_x_days_ago">il y a %1$dj</string>
+    <string name="date_time_ui_on_date">le %1$s</string>
 
     <!-- AddPhotoButton -->
     <string name="add_photo_button_take_photo">Prendre une photo</string>

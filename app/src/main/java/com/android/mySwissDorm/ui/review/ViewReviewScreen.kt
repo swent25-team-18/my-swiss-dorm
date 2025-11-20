@@ -143,7 +143,8 @@ fun ViewReviewScreen(
                 // stop tagging
                 pop()
 
-                append(" ${formatRelative(review.postedAt)}")
+                val context = LocalContext.current
+                append(" ${formatRelative(review.postedAt, context = context)}")
               }
 
               // remember the TextLayoutResult

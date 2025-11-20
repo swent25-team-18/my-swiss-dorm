@@ -117,7 +117,8 @@ fun ViewReviewScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
                   text = review.title,
-                  style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                  style =
+                      MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                   modifier = Modifier.testTag(C.ViewReviewTags.TITLE),
                   color = TextColor)
 

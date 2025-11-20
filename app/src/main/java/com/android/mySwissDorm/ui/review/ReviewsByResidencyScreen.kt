@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Gray
+import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
@@ -133,7 +134,7 @@ private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
                   Modifier.height(140.dp)
                       .fillMaxWidth(0.35F)
                       .clip(RoundedCornerShape(12.dp))
-                      .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                      .background(LightGray)
                       .testTag(C.ReviewsByResidencyTag.reviewImagePlaceholder(data.reviewUid))) {
                 Text(
                     "IMAGE",

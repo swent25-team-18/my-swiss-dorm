@@ -28,6 +28,7 @@ import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,7 +66,7 @@ fun AddReviewScreen(
                 modifier =
                     Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
-                  Text("Submit Review", color = MaterialTheme.colorScheme.onPrimary)
+                  Text("Submit Review", color = White)
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid) {

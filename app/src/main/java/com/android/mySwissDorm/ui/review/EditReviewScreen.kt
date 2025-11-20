@@ -27,6 +27,7 @@ import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
 
 /**
@@ -125,7 +126,7 @@ fun EditReviewScreen(
                       modifier =
                           Modifier.weight(1f).height(52.dp).testTag("saveButton"), // ← add this
                       shape = RoundedCornerShape(16.dp)) {
-                        Text("Save", color = MaterialTheme.colorScheme.onPrimary)
+                        Text("Save", color = White)
                       }
                 }
             Spacer(Modifier.height(8.dp))

@@ -83,7 +83,7 @@ fun ViewReviewScreen(
   val uiState by viewReviewViewModel.uiState.collectAsState()
   val review = uiState.review
   val fullNameOfPoster = uiState.fullNameOfPoster
-  val errorMsg = uiState.errorMsg
+  val errorMsg = uiState.errorMsg //
   val isOwner = uiState.isOwner
 
   val context = LocalContext.current

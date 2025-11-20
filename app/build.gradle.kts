@@ -53,6 +53,15 @@ android {
             useSupportLibrary = true
         }
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        val numShards = providers.gradleProperty("android.testInstrumentationRunnerArguments.numShards")
+        if (numShards.isPresent) {
+            testInstrumentationRunnerArguments["numShards"] = numShards.get()
+        }
+
+        val shardIndex = providers.gradleProperty("android.testInstrumentationRunnerArguments.shardIndex")
+        if (shardIndex.isPresent) {
+            testInstrumentationRunnerArguments["shardIndex"] = shardIndex.get()
+        }
     }
 
     buildTypes {
@@ -227,11 +236,11 @@ tasks.withType<Test> {
 }
 
 tasks.register("jacocoTestReport", JacocoReport::class) {
-    mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
+    dependsOn("testDebugUnitTest")
 
     reports {
-        xml.required = true
-        html.required = true
+        xml.required.set(true)
+        html.required.set(true)
     }
 
     val fileFilter = listOf(
@@ -243,17 +252,26 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
         "android/**/*.*",
         "**/sigchecks/**",
     )
-    val debugTree = fileTree("${project.buildDir}/tmp/kotlin-classes/debug") {
+    val debugTree = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
         exclude(fileFilter)
     }
-    val mainSrc = "${project.projectDir}/src/main/java"
+    val mainSrc = "${layout.projectDirectory}/src/main/java"
 
     sourceDirectories.setFrom(files(mainSrc))
     classDirectories.setFrom(files(debugTree))
-    executionData.setFrom(fileTree(project.buildDir) {
-        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
-        include("outputs/code_coverage/debugAndroidTest/connected/*/coverage.ec")
+    executionData.setFrom(fileTree(layout.buildDirectory.get()) {
+        include("jacoco/testDebugUnitTest.exec")
+        include("outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
     })
+}
+sonar {
+    properties {
+        property("sonar.projectKey", "swent25-team-18")
+        property("sonar.organization", "swent25-team-18")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.coverage.jacoco.xmlReportPaths", "${layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml")
+        property("sonar.exclusions", "**/*.webp, **/*.png, **/*.ttf")
+    }
 }
 
 configurations.forEach { configuration ->

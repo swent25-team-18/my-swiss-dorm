@@ -111,7 +111,7 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
   @Test
   fun upvoteReviewTogglesOff() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = listOf(voterId))
+    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = setOf(voterId))
     ReviewsRepositoryProvider.repository.addReview(review)
 
     switchToUser(FakeUser.FakeUser2)
@@ -161,7 +161,7 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
   @Test
   fun upvoteSwitchesFromDownvote() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = listOf(voterId))
+    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = setOf(voterId))
     ReviewsRepositoryProvider.repository.addReview(review)
 
     switchToUser(FakeUser.FakeUser2)
@@ -187,7 +187,7 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val review =
         reviewVortex1.copy(
-            ownerId = ownerId, upvotedBy = listOf("user1", "user2"), downvotedBy = listOf("user3"))
+            ownerId = ownerId, upvotedBy = setOf("user1", "user2"), downvotedBy = setOf("user3"))
     ReviewsRepositoryProvider.repository.addReview(review)
 
     switchToUser(FakeUser.FakeUser2)

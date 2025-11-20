@@ -169,8 +169,8 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     val original =
         reviewVortex1.copy(
             ownerId = ownerId,
-            upvotedBy = listOf(ownerId, "other-user"),
-            downvotedBy = listOf("downvoter-1"))
+            upvotedBy = setOf(ownerId, "other-user"),
+            downvotedBy = setOf("downvoter-1"))
 
     repo.addReview(original)
     val loaded = repo.getReview(original.uid)
@@ -264,7 +264,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     val ownerId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
     val voterId = "voter-id"
-    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = listOf(voterId))
+    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = setOf(voterId))
     repo.addReview(review)
 
     repo.upvoteReview(review.uid, voterId)
@@ -280,7 +280,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     val ownerId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
     val voterId = "voter-id"
-    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = listOf(voterId))
+    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = setOf(voterId))
     repo.addReview(review)
 
     repo.upvoteReview(review.uid, voterId)
@@ -319,7 +319,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     val ownerId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
     val voterId = "voter-id"
-    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = listOf(voterId))
+    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = setOf(voterId))
     repo.addReview(review)
 
     repo.downvoteReview(review.uid, voterId)
@@ -335,7 +335,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     val ownerId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
     val voterId = "voter-id"
-    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = listOf(voterId))
+    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = setOf(voterId))
     repo.addReview(review)
 
     repo.downvoteReview(review.uid, voterId)
@@ -353,7 +353,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     val ownerId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
     val voterId = "voter-id"
-    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = listOf(voterId))
+    val review = reviewVortex1.copy(ownerId = ownerId, upvotedBy = setOf(voterId))
     repo.addReview(review)
 
     repo.removeVote(review.uid, voterId)
@@ -369,7 +369,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     val ownerId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
     val voterId = "voter-id"
-    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = listOf(voterId))
+    val review = reviewVortex1.copy(ownerId = ownerId, downvotedBy = setOf(voterId))
     repo.addReview(review)
 
     repo.removeVote(review.uid, voterId)

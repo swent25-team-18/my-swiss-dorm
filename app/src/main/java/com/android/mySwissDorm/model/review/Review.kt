@@ -21,8 +21,10 @@ import com.google.firebase.Timestamp
  * @property pricePerMonth Monthly rent price of the room.
  * @property areaInM2 Area of the room in square meters.
  * @property imageUrls List of image URLs attached to the review.
- * @property upvotedBy List of user IDs who upvoted this review.
- * @property downvotedBy List of user IDs who downvoted this review.
+ * @property upvotedBy Set of user IDs who upvoted this review. Uses a Set to ensure each user ID
+ *   appears only once.
+ * @property downvotedBy Set of user IDs who downvoted this review. Uses a Set to ensure each user
+ *   ID appears only once.
  */
 data class Review(
     val uid: String,
@@ -36,8 +38,8 @@ data class Review(
     val pricePerMonth: Double,
     val areaInM2: Int,
     val imageUrls: List<String>,
-    val upvotedBy: List<String> = emptyList(),
-    val downvotedBy: List<String> = emptyList(),
+    val upvotedBy: Set<String> = emptySet(),
+    val downvotedBy: Set<String> = emptySet(),
 ) {
   /**
    * Computes the net vote score (upvotes - downvotes) for this review.

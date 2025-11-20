@@ -72,7 +72,9 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
 
   /** Inserts a new [review] document or overwrites an existing document with the same id. */
   override suspend fun addReview(review: Review) {
-    db.collection(REVIEWS_COLLECTION_PATH).document(review.uid).set(review).await()
+    // Convert Sets to Lists for Firestore storage
+    val data = reviewToFirestoreMap(review)
+    db.collection(REVIEWS_COLLECTION_PATH).document(review.uid).set(data).await()
   }
 
   /**
@@ -84,7 +86,30 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
     if (newValue.uid != reviewId) {
       throw Exception("ReviewsRepositoryFirestore: Provided reviewId does not match newValue.uid")
     }
-    db.collection(REVIEWS_COLLECTION_PATH).document(reviewId).set(newValue).await()
+    // Convert Sets to Lists for Firestore storage
+    val data = reviewToFirestoreMap(newValue)
+    db.collection(REVIEWS_COLLECTION_PATH).document(reviewId).set(data).await()
+  }
+
+  /**
+   * Converts a [Review] domain model to a Map suitable for Firestore storage.
+   *
+   * Converts Sets to Lists since Firestore only supports Lists.
+   */
+  private fun reviewToFirestoreMap(review: Review): Map<String, Any?> {
+    return mapOf(
+        "ownerId" to review.ownerId,
+        "postedAt" to review.postedAt,
+        "title" to review.title,
+        "reviewText" to review.reviewText,
+        "grade" to review.grade,
+        "residencyName" to review.residencyName,
+        "roomType" to review.roomType.name,
+        "pricePerMonth" to review.pricePerMonth,
+        "areaInM2" to review.areaInM2,
+        "imageUrls" to review.imageUrls,
+        "upvotedBy" to review.upvotedBy.toList(),
+        "downvotedBy" to review.downvotedBy.toList())
   }
 
   /** Deletes the review document with the given [reviewId]. */
@@ -171,14 +196,14 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
    *
    * @param reviewId The unique identifier of the review.
    * @param userId The unique identifier of the user casting the vote.
-   * @param voteModifier A function that modifies the upvotedBy and downvotedBy lists based on the
+   * @param voteModifier A function that modifies the upvotedBy and downvotedBy sets based on the
    *   vote operation.
    * @throws Exception if the review is not found or if the user is the owner of the review.
    */
   private suspend fun updateVoteLists(
       reviewId: String,
       userId: String,
-      voteModifier: (MutableList<String>, MutableList<String>) -> Unit
+      voteModifier: (MutableSet<String>, MutableSet<String>) -> Unit
   ) {
     db.runTransaction { transaction ->
           val docRef = db.collection(REVIEWS_COLLECTION_PATH).document(reviewId)
@@ -193,20 +218,23 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
             throw Exception("ReviewsRepositoryFirestore: Users cannot vote on their own reviews")
           }
 
+          // Read from Firestore as List (Firestore stores arrays as lists)
           @Suppress("UNCHECKED_CAST")
-          val upvotedBy =
+          val upvotedByList =
               (snapshot.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
           @Suppress("UNCHECKED_CAST")
-          val downvotedBy =
+          val downvotedByList =
               (snapshot.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
 
-          val newUpvotedBy = upvotedBy.toMutableList()
-          val newDownvotedBy = downvotedBy.toMutableList()
+          // Convert to Set to deduplicate and work with domain model
+          val newUpvotedBy = upvotedByList.toMutableSet()
+          val newDownvotedBy = downvotedByList.toMutableSet()
 
           voteModifier(newUpvotedBy, newDownvotedBy)
 
-          transaction.update(docRef, "upvotedBy", newUpvotedBy)
-          transaction.update(docRef, "downvotedBy", newDownvotedBy)
+          // Convert back to List for Firestore storage
+          transaction.update(docRef, "upvotedBy", newUpvotedBy.toList())
+          transaction.update(docRef, "downvotedBy", newDownvotedBy.toList())
         }
         .await()
   }
@@ -230,10 +258,14 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
       val imageUrls =
           (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: return null
 
-      val upvotedBy =
+      // Read from Firestore as List, then convert to Set to deduplicate and match domain model
+      val upvotedByList =
           (document.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
-      val downvotedBy =
+      val downvotedByList =
           (document.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
+
+      val upvotedBy = upvotedByList.toSet()
+      val downvotedBy = downvotedByList.toSet()
 
       return Review(
           uid = uid,

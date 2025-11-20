@@ -42,6 +42,13 @@ abstract class FirestoreTest : TestCase() {
     auth.signInWithCredential(firebaseCred).await()
   }
 
+  suspend fun signInAnonymous() {
+    if (auth.currentUser != null) {
+      auth.signOut()
+    }
+    auth.signInAnonymously().await()
+  }
+
   init {
     assert(FirebaseEmulator.isRunning) { "FirebaseEmulator must be running for these tests" }
   }

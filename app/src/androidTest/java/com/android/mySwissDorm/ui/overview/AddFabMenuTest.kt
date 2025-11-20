@@ -12,9 +12,15 @@ class AddFabMenuTest {
 
   @get:Rule val composeRule = createComposeRule()
 
-  private fun setUnderTest(onAddListing: () -> Unit = {}, onAddReview: () -> Unit = {}) {
+  private fun setUnderTest(
+      onAddListing: () -> Unit = {},
+      onAddReview: () -> Unit = {},
+      isGuest: Boolean = false
+  ) {
     composeRule.setContent {
-      MySwissDormAppTheme { AddFabMenu(onAddListing = onAddListing, onAddReview = onAddReview) }
+      MySwissDormAppTheme {
+        AddFabMenu(onAddListing = onAddListing, onAddReview = onAddReview, isGuest = isGuest)
+      }
     }
   }
 
@@ -101,6 +107,17 @@ class AddFabMenuTest {
         1,
         reviewClicks,
     )
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).assertDoesNotExist()
+    composeRule.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).assertDoesNotExist()
+  }
+
+  @Test
+  fun guest_user_sees_gray_fab_and_cannot_open_menu() {
+    setUnderTest(isGuest = true)
+    val fabNode = composeRule.onNodeWithTag(C.BrowseCityTags.FABMENU)
+    fabNode.assertExists().assertIsDisplayed()
+    fabNode.performClick()
+    composeRule.waitForIdle()
     composeRule.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).assertDoesNotExist()
     composeRule.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).assertDoesNotExist()
   }

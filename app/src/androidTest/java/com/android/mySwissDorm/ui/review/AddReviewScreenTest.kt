@@ -154,4 +154,26 @@ class AddReviewScreenTest : FirestoreTest() {
     val actualArea = (doc.getLong("areaInM2") ?: 0L).toInt()
     assertEquals(expectedArea, actualArea)
   }
+
+  @Test
+  fun guest_user_sees_disabled_button_and_warning() = run {
+    runTest { signInAnonymous() }
+    setContent()
+    composeTestRule
+        .onNodeWithTag("reviewTitleField")
+        .performScrollTo()
+        .performTextInput("Guest Attempt")
+    composeTestRule.onNodeWithText("Review").performScrollTo().performTextInput("Guest Desc")
+    composeTestRule.onNodeWithTag("priceField").performScrollTo().performTextInput("1000")
+    composeTestRule.onNodeWithTag("sizeField").performScrollTo().performTextInput("20.0")
+    viewModel.setResidencyName("Vortex")
+    viewModel.setRoomType(RoomType.STUDIO)
+    viewModel.setGrade(4.0)
+    runTest { composeTestRule.awaitIdle() }
+    composeTestRule.onNodeWithText("Submit Review").assertIsNotEnabled()
+    composeTestRule
+        .onNodeWithText(
+            "Please complete all required fields (valid grade, size, price, etc.) or sign in.")
+        .assertIsDisplayed()
+  }
 }

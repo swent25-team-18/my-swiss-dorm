@@ -191,4 +191,20 @@ class AddListingViewModelTest : FirestoreTest() {
         assertNotEquals(
             "Please select a location for Private Accommodation", vm.uiState.value.errorMsg)
       }
+  // test for guest mode in add listing
+  @Test
+  fun submitForm_guest_user_cannot_submit_and_sets_error() = runTest {
+    signInAnonymous()
+    val vm = freshVM()
+    vm.setTitle("Cozy studio")
+    vm.setDescription("Nice place")
+    vm.setResidency("Vortex")
+    vm.setHousingType(RoomType.STUDIO)
+    vm.setSizeSqm("25.0")
+    vm.setPrice("1200.0")
+    vm.setStartDate(Timestamp.now())
+    assertTrue("Form itself should be valid", vm.uiState.value.isFormValid)
+    vm.submitForm { fail("onConfirm must not be called for guest users") }
+    assertEquals("Guest users cannot create listings", vm.uiState.value.errorMsg)
+  }
 }

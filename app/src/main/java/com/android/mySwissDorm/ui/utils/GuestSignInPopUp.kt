@@ -27,11 +27,11 @@ import com.android.mySwissDorm.ui.theme.TextColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit) {
+fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
   Scaffold(
       topBar = {
         TopAppBar(
-            title = { Text("Profile") },
+            title = { Text(title) },
             navigationIcon = {
               IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

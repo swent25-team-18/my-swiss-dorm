@@ -476,4 +476,33 @@ class SettingsScreenTest : FirestoreTest() {
         false,
         savedProfile.userSettings.darkMode)
   }
+
+  @Test
+  fun guestMode_displaysSignUpButtonAndHidesDelete() = runTest {
+    signInAnonymous()
+    setContentWithVm()
+    compose.waitForIdle()
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    compose.scrollUntilTextDisplayed(scrollTag, "SIGN UP TO CREATE ACCOUNT")
+    compose.onNodeWithText("SIGN UP TO CREATE ACCOUNT").assertIsDisplayed()
+    compose.onNodeWithText("DELETE MY ACCOUNT").assertDoesNotExist()
+  }
+
+  @Test
+  fun guestMode_defaultTogglesState() = runTest {
+    signInAnonymous()
+    setContentWithVm()
+    compose.waitForIdle()
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    compose.scrollUntilTextDisplayed(scrollTag, "Notifications")
+    val msgSwitch = C.SettingsTags.switch("Show notifications for messages")
+    compose.scrollUntilDisplayed(scrollTag, msgSwitch)
+    compose.onNodeWithTag(msgSwitch, useUnmergedTree = true).assert(hasStateDescription("Off"))
+    compose.scrollUntilTextDisplayed(scrollTag, "Privacy")
+    val readReceiptsSwitch = C.SettingsTags.switch("Read receipts")
+    compose.scrollUntilDisplayed(scrollTag, readReceiptsSwitch)
+    compose
+        .onNodeWithTag(readReceiptsSwitch, useUnmergedTree = true)
+        .assert(hasStateDescription("On"))
+  }
 }

@@ -256,7 +256,8 @@ fun AppNavHost(
       if (currentUser != null && currentUser.isAnonymous) {
         SignInPopUp(
             onSignInClick = { navActions.navigateTo(Screen.SignIn) },
-            onBack = { navActions.goBack() })
+            onBack = { navActions.goBack() },
+            title = "My contribution")
       } else {
         ProfileContributionsScreen(
             contributions = ui.items,
@@ -416,7 +417,8 @@ fun AppNavHost(
       if (currentUser != null && currentUser.isAnonymous) {
         SignInPopUp(
             onSignInClick = { navActions.navigateTo(Screen.SignIn) },
-            onBack = { navActions.goBack() })
+            onBack = { navActions.goBack() },
+            title = "Profile")
       } else {
         ProfileScreen(
             onBack = { navActions.goBack() },

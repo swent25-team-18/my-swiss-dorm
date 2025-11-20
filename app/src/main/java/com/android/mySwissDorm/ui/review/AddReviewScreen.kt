@@ -37,7 +37,7 @@ fun AddReviewScreen(
     addReviewViewModel: AddReviewViewModel = viewModel(),
     onConfirm: (Review) -> Unit,
     onBack: () -> Unit
-) {
+) { //
   val reviewUIState by addReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
 

@@ -16,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import junit.framework.TestCase.assertTrue
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -104,7 +105,10 @@ class CameraButtonTest {
     val cameraButtonNode = composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG)
     cameraButtonNode.assertIsDisplayed()
     cameraButtonNode.performClick()
-
-    composeTestRule.waitUntil(5_000) { photoCaptured.value?.image?.scheme == "content" }
+    composeTestRule.waitForIdle()
+    assertNotNull(photoCaptured.value)
+    composeTestRule.waitUntil("CameraButton should pass a Photo with a content Uri scheme", 5_000) {
+      photoCaptured.value?.image?.scheme == "content"
+    }
   }
 }

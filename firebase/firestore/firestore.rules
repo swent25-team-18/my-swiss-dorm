@@ -43,6 +43,21 @@ service cloud.firestore {
         allow delete: if request.auth.uid == resource.data.ownerId;
         allow read: if true;
     }
+    match /requestedMessages/{messageId} {
+        // Users can create requested messages where they are the sender
+        allow create: if request.auth != null
+                      && request.resource.data.fromUserId == request.auth.uid;
+        // Users can read messages where they are the sender or receiver
+        allow read: if request.auth != null
+                    && (resource.data.fromUserId == request.auth.uid
+                        || resource.data.toUserId == request.auth.uid);
+        // Users can update messages where they are the receiver (to approve/reject)
+        allow update: if request.auth != null
+                      && resource.data.toUserId == request.auth.uid;
+        // Users can delete their own sent messages (optional, for cleanup)
+        allow delete: if request.auth != null
+                      && resource.data.fromUserId == request.auth.uid;
+    }
     match /config/{allPath=**} {
         allow read, write: if true;
     }

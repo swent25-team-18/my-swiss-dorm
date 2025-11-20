@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.authentification
 
 import android.content.Context
+import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
@@ -8,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseUser
@@ -57,6 +59,20 @@ class SignInViewModel(
         authRepository.signInWithGoogle(credential).fold({ user ->
           val isRegistered = runCatching { profileRepository.getProfile(user.uid) }.isSuccess
           if (isRegistered) {
+            // Connect to Stream Chat
+            viewModelScope.launch {
+              try {
+                val profile = profileRepository.getProfile(user.uid)
+                StreamChatProvider.connectUser(
+                    firebaseUserId = user.uid,
+                    displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}",
+                    imageUrl = "")
+              } catch (e: Exception) {
+                // Log error but don't block sign-in
+                Log.e("SignInViewModel", "Failed to connect to Stream Chat", e)
+              }
+            }
+
             _uiState.update {
               it.copy(isLoading = false, user = user, errMsg = null, signedOut = false)
             }

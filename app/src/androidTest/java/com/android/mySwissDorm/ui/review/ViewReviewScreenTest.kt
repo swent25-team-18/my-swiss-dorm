@@ -193,7 +193,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     }
     scrollListTo(C.ViewReviewTags.LOCATION)
     compose.onNodeWithTag(C.ViewReviewTags.LOCATION).assertIsDisplayed()
-    compose.onNodeWithText("LOCATION (Not available)").assertIsDisplayed()
+    compose.onNodeWithText("Location (Not available)").assertIsDisplayed()
   }
 
   @Test

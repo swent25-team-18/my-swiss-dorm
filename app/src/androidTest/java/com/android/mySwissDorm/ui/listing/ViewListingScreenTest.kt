@@ -384,6 +384,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     assertEquals(expectedListing.title, capturedTitle)
     assertEquals("Listing", capturedName)
   }
+
   @Test
   fun guestMode_showsSignInMessage_andHidesInteractiveElements() = runTest {
     signInAnonymous()
@@ -393,12 +394,11 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
     compose.waitUntil(5_000) { vm.uiState.value.isGuest }
-    compose.onNodeWithTag(C.ViewListingTags.LOCATION)
-      .performScrollTo()
-      .assertIsDisplayed()
-    compose.onNodeWithText("Sign in to contact the owner and apply.")
-      .performScrollTo()
-      .assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION).performScrollTo().assertIsDisplayed()
+    compose
+        .onNodeWithText("Sign in to contact the owner and apply.")
+        .performScrollTo()
+        .assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).assertDoesNotExist()
     compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
     compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN).assertDoesNotExist()

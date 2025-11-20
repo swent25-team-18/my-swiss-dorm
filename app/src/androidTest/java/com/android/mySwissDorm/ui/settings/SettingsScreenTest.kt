@@ -40,10 +40,16 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   /** Set content with our explicit VM. */
-  private fun setContentWithVm(onContributionClick: () -> Unit = {},onProfileClick: () -> Unit = {} ) {
+  private fun setContentWithVm(
+      onContributionClick: () -> Unit = {},
+      onProfileClick: () -> Unit = {}
+  ) {
     val vm = makeVm()
     compose.setContent {
-      MySwissDormAppTheme { SettingsScreen(vm = vm, onContributionClick = onContributionClick, onProfileClick = onProfileClick) }
+      MySwissDormAppTheme {
+        SettingsScreen(
+            vm = vm, onContributionClick = onContributionClick, onProfileClick = onProfileClick)
+      }
     }
   }
 
@@ -505,25 +511,28 @@ class SettingsScreenTest : FirestoreTest() {
         .onNodeWithTag(readReceiptsSwitch, useUnmergedTree = true)
         .assert(hasStateDescription("On"))
   }
-    @Test
-    fun guestMode_profileClick_doesNotTriggerCallback() = runTest {
-        signInAnonymous()
-        var profileClicked = false
-        setContentWithVm(onProfileClick = { profileClicked = true })
-        compose.waitForIdle()
-        compose.onNodeWithText("View profile", useUnmergedTree = true).performClick()
-        compose.waitForIdle()
-        assert(!profileClicked) { "Profile click callback should not be triggered in guest mode" }
-    }
 
-    @Test
-    fun guestMode_contributionsClick_doesNotTriggerCallback() = runTest {
-        signInAnonymous()
-        var contributionClicked = false
-        setContentWithVm(onContributionClick = { contributionClicked = true })
-        compose.waitForIdle()
-        compose.onNodeWithText("View profile", useUnmergedTree = true).performScrollTo().performClick()
-        compose.waitForIdle()
-        assert(!contributionClicked) { "Contributions click callback should not be triggered in guest mode" }
+  @Test
+  fun guestMode_profileClick_doesNotTriggerCallback() = runTest {
+    signInAnonymous()
+    var profileClicked = false
+    setContentWithVm(onProfileClick = { profileClicked = true })
+    compose.waitForIdle()
+    compose.onNodeWithText("View profile", useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    assert(!profileClicked) { "Profile click callback should not be triggered in guest mode" }
+  }
+
+  @Test
+  fun guestMode_contributionsClick_doesNotTriggerCallback() = runTest {
+    signInAnonymous()
+    var contributionClicked = false
+    setContentWithVm(onContributionClick = { contributionClicked = true })
+    compose.waitForIdle()
+    compose.onNodeWithText("View profile", useUnmergedTree = true).performScrollTo().performClick()
+    compose.waitForIdle()
+    assert(!contributionClicked) {
+      "Contributions click callback should not be triggered in guest mode"
     }
+  }
 }

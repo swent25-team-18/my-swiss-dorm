@@ -89,7 +89,7 @@ fun SignInScreen(
               modifier = Modifier.testTag(C.Tag.SIGN_IN_LOG_IN_BUTTON)) {
                 Text(text = stringResource(R.string.login_in_text))
               }
-          Spacer(modifier = Modifier.height(8.dp))
+          Spacer(modifier = Modifier.height(5.dp))
           TextButton(
               onClick = {
                 if (!uiState.isLoading) {
@@ -97,7 +97,7 @@ fun SignInScreen(
                 }
               },
               modifier = Modifier.testTag(C.Tag.SIGN_IN_GUEST_BUTTON)) {
-                Text(text = ("Continue as guest"), color = LightGray)
+                Text(text = ("Continue as guest"), color = Color.Gray)
               }
 
           Spacer(modifier = Modifier.height(225.dp))

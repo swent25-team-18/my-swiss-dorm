@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
@@ -34,7 +35,7 @@ fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
             title = { Text(title) },
             navigationIcon = {
               IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon( imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MainColor)
               }
             })
       }) { paddingValues ->
@@ -43,8 +44,9 @@ fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center) {
               Surface(
-                  color = MainColor,
+                  color = BackGroundColor,
                   contentColor = TextColor,
+
                   shape = RoundedCornerShape(16.dp),
                   modifier = Modifier.fillMaxWidth(0.8f).padding(16.dp)) {
                     Column(
@@ -54,12 +56,12 @@ fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
                           Text(
                               text = "Sign in to create a profile",
                               style = MaterialTheme.typography.titleMedium,
-                              color = TextColor // Text color TextColor
+                              color = TextColor
                               )
                           Button(
                               onClick = onSignInClick,
-                              colors = ButtonDefaults.buttonColors(containerColor = TextColor)) {
-                                Text("Sign In", color = MainColor)
+                              colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
+                                Text("Sign In", color = BackGroundColor)
                               }
                         }
                   }

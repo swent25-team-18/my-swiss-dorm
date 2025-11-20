@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.navigation
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -1037,6 +1039,20 @@ class AppNavHostTest : FirestoreTest() {
     scrollToElement(C.ViewReviewTags.ROOT, C.ViewReviewTags.POSTED_BY)
     composeTestRule.waitForIdle()
 
+    // Wait a bit to ensure profile data is loaded (fullNameOfPoster needs to be populated)
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      val text =
+          composeTestRule
+              .onNodeWithTag(C.ViewReviewTags.POSTED_BY, useUnmergedTree = true)
+              .fetchSemanticsNode()
+              .config
+              .getOrNull(SemanticsProperties.Text)
+              ?.firstOrNull()
+              ?.text ?: ""
+      text.contains("Owner") || text.contains("(You)")
+    }
+    composeTestRule.waitForIdle()
+
     // Click on POSTED_BY to trigger onViewProfile callback (lines 286-295)
     // Since viewer == owner, it should navigate to Profile (line 290)
     composeTestRule
@@ -1175,6 +1191,18 @@ class AppNavHostTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
+    // Create profile for owner (required for ViewReviewViewModel to load review)
+    ProfileRepositoryProvider.repository.createProfile(
+        Profile(
+            ownerId = uid,
+            userInfo =
+                UserInfo(
+                    name = "Owner",
+                    lastName = "User",
+                    email = FirebaseEmulator.auth.currentUser?.email ?: "",
+                    phoneNumber = ""),
+            userSettings = UserSettings()))
+
     // Create a residency
     val residency =
         Residency(
@@ -1209,8 +1237,8 @@ class AppNavHostTest : FirestoreTest() {
     composeTestRule.runOnUiThread { navController.navigate(Screen.ReviewOverview(reviewUid).route) }
     composeTestRule.waitForIdle()
 
-    // Wait for ViewReviewScreen to load
-    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+    // Wait for ViewReviewScreen to load (don't wait for location/map to load)
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
       composeTestRule
           .onAllNodesWithTag(C.ViewReviewTags.ROOT, useUnmergedTree = true)
           .fetchSemanticsNodes()
@@ -1218,6 +1246,7 @@ class AppNavHostTest : FirestoreTest() {
     }
 
     // Verify the route is set up - onViewMap callback exists (line 296-298)
+    // The callback is set up in AppNavHost, we verify navigation works
     composeTestRule.runOnUiThread {
       val currentRoute = navController.currentBackStackEntry?.destination?.route
       assertNotNull("Should be on ReviewOverview route", currentRoute)

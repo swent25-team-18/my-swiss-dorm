@@ -107,6 +107,7 @@ class ViewReviewViewModel(
                 ownerUserInfo.name + " " + ownerUserInfo.lastName
               } catch (e: Exception) {
                 Log.w("ViewReviewViewModel", "Could not fetch profile for review owner", e)
+                setErrorMsg("Failed to load Review: Profile not found")
                 "Unknown"
               }
             }
@@ -118,7 +119,8 @@ class ViewReviewViewModel(
               fullNameOfPoster = fullNameOfPoster,
               isOwner = isOwner,
               netScore = review.getNetScore(),
-              userVote = review.getUserVote(currentUserId))
+              userVote = review.getUserVote(currentUserId),
+              errorMsg = it.errorMsg) // Preserve error message if it was set
         }
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)

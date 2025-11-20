@@ -1018,3 +1018,4 @@ class EditReviewScreenTest : FirestoreTest() {
     composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).assertIsDisplayed()
   }
 }
+//

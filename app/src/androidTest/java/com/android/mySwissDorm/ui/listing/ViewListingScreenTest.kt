@@ -384,6 +384,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
     // And that metadata is correct
     assertEquals(expectedListing.title, capturedTitle)
-    assertEquals("Listing", capturedName)
+    assertEquals("Listing Location", capturedName)
   }
 }

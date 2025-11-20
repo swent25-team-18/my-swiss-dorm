@@ -3,10 +3,12 @@ package com.android.mySwissDorm.ui.review
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
@@ -380,44 +382,94 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
     compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
 
-    compose.waitUntil(5_000) {
+    // Wait for the ViewModel to load reviews
+    compose.waitUntil(10_000) { testVm.uiState.value.reviews.items.isNotEmpty() }
+
+    // Wait for the specific review to load and be ready with all conditions met
+    compose.waitUntil(10_000) {
       val item = testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
       item != null && !item.isOwner && item.userVote == VoteType.NONE
     }
 
+    // Additional wait to ensure UI is fully rendered
+    compose.waitForIdle()
+
     val initialItem =
-        testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }!!
+        testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
+            ?: throw AssertionError("Review item not found after wait")
     val initialScore = initialItem.netScore
+    val initialVote = initialItem.userVote
 
-    // Click the upvote button
+    // Scroll to the vote buttons to ensure they are visible on screen
+    // This is critical for CI where screen size might be different and items may be off-screen
+    val voteButtonsTag = C.ReviewsByResidencyTag.reviewVoteButtons(otherUserReview.uid)
+
+    // Wait for the vote buttons to exist in the tree
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(voteButtonsTag, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll the LazyColumn to make the vote buttons visible
+    // This is essential for CI where the review might be below the fold and require scrolling
     compose
-        .onNodeWithTag(
-            C.ReviewsByResidencyTag.reviewVoteButtons(otherUserReview.uid), useUnmergedTree = true)
-        .assertIsDisplayed()
+        .onNodeWithTag(C.ReviewsByResidencyTag.REVIEW_LIST, useUnmergedTree = true)
+        .performScrollToNode(hasTestTag(voteButtonsTag))
+    compose.waitForIdle()
 
-    // Find and click the upvote button within this review's vote section
-    val upvoteButtons =
-        compose.onAllNodesWithTag(
-            C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+    // Verify the vote buttons are now visible after scrolling
+    val voteButtonsContainer = compose.onNodeWithTag(voteButtonsTag, useUnmergedTree = true)
+    voteButtonsContainer.assertIsDisplayed()
+
+    // Wait for upvote button to be available
+    val upvoteButtonTag = C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON
+    compose.waitUntil(5_000) {
+      val nodes =
+          compose.onAllNodesWithTag(upvoteButtonTag, useUnmergedTree = true).fetchSemanticsNodes()
+      nodes.isNotEmpty()
+    }
+    compose.waitForIdle()
+
+    // After scrolling to the specific review's vote buttons container,
+    // find and click the upvote button. Since there are multiple reviews with upvote buttons,
+    // we use onAllNodesWithTag and click the first one. The scroll ensures the correct
+    // review's button is visible and accessible.
+    val upvoteButtons = compose.onAllNodesWithTag(upvoteButtonTag, useUnmergedTree = true)
     val nodes = upvoteButtons.fetchSemanticsNodes()
-    if (nodes.isNotEmpty()) {
-      upvoteButtons[0].performClick()
+    assert(nodes.isNotEmpty()) { "Upvote button should be available" }
 
-      // Wait for the vote to be registered
-      compose.waitUntil(5_000) {
-        val updatedItem =
-            testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
-        updatedItem != null &&
-            (updatedItem.userVote == VoteType.UPVOTE || updatedItem.netScore != initialScore)
-      }
+    // Click the first available upvote button
+    // Note: The onClick callback is bound to the specific review's UID in the UI,
+    // and we verify below that the state change is for otherUserReview
+    upvoteButtons[0].performClick()
+    compose.waitForIdle()
 
-      // Verify the vote was registered
-      val finalItem =
+    // Wait for the vote to be registered
+    // The optimistic update should happen immediately in the ViewModel
+    // We check for either vote type change or score change to be more lenient
+    compose.waitUntil(10_000) {
+      val updatedItem =
           testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
-      assert(finalItem != null) { "Review item should still exist" }
-      assert(finalItem!!.userVote == VoteType.UPVOTE || finalItem.netScore > initialScore) {
-        "Vote should be registered"
-      }
+      if (updatedItem == null) return@waitUntil false
+      // Check if vote state changed OR score changed (optimistic update)
+      val voteChanged = updatedItem.userVote != initialVote
+      val scoreChanged = updatedItem.netScore != initialScore
+      voteChanged || scoreChanged
+    }
+
+    // Verify the vote was registered for the correct review
+    val finalItem = testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
+    assert(finalItem != null) { "Review item should still exist" }
+
+    // Verify either the vote type changed to UPVOTE or the score increased
+    val voteRegistered =
+        finalItem!!.userVote == VoteType.UPVOTE || finalItem.netScore > initialScore
+    assert(voteRegistered) {
+      "Vote should be registered for review ${otherUserReview.uid}. " +
+          "Initial: vote=$initialVote, score=$initialScore. " +
+          "Final: vote=${finalItem.userVote}, score=${finalItem.netScore}"
     }
   }
 

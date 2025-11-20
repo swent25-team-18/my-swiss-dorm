@@ -53,7 +53,8 @@ fun ViewListingScreen(
         { _, _, _, _ ->
         }
 ) {
-  LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid) }
+  val context = LocalContext.current
+  LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid, context) }
 
   val listingUIState by viewListingViewModel.uiState.collectAsState()
   val listing = listingUIState.listing
@@ -67,8 +68,6 @@ fun ViewListingScreen(
   val canApply = hasMessage && !isBlockedByOwner
   // Button color: violet if blocked, red (MainColor) if normal
   val buttonColor = if (isBlockedByOwner && hasMessage) Color(0xFF9C27B0) else MainColor
-
-  val context = LocalContext.current
 
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {

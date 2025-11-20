@@ -119,9 +119,9 @@ fun SettingsScreen(
         onItemClick(it)
       },
       onProfileClick = onProfileClick,
-      onDeleteAccount = { vm.deleteAccount { _, _ -> } },
+      onDeleteAccount = { vm.deleteAccount({ _, _ -> }, context) },
       onContributionClick = onContributionClick,
-      onUnblockUser = { uid -> vm.unblockUser(uid) },
+      onUnblockUser = { uid -> vm.unblockUser(uid, context) },
       navigationActions = navigationActions,
       isAdmin = isAdmin,
       onAdminClick = onAdminClick)

@@ -1,8 +1,10 @@
 package com.android.mySwissDorm.ui.review
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -78,7 +80,7 @@ class ViewReviewViewModel(
    *
    * @param reviewId The ID of the Review to be loaded.
    */
-  fun loadReview(reviewId: String) {
+  fun loadReview(reviewId: String, context: Context) {
     viewModelScope.launch {
       try {
         val review = reviewsRepository.getReview(reviewId)
@@ -90,7 +92,8 @@ class ViewReviewViewModel(
         }
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)
-        setErrorMsg("Failed to load Review: ${e.message}")
+        setErrorMsg(
+            "${context.getString(R.string.view_review_failed_to_load_review)}: ${e.message}")
       }
     }
   }

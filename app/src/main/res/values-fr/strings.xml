@@ -22,6 +22,7 @@
     <string name="go_back">Retour</string>
     <string name="homepage">Page d’accueil</string>
     <string name="identifier">Identifiant</string>
+    <string name="image">Image</string>
     <string name="language">Langue</string>
     <string name="last_name">Nom</string>
     <string name="listing">Annonce</string>
@@ -55,6 +56,7 @@
     <string name="starting">Commence</string>
     <string name="title">Titre</string>
     <string name="unblock">Débloquer</string>
+    <string name="unexpected_error">Erreur inattendue</string>
     <string name="university">Université</string>
     <string name="user">Utilisateur</string>
     <string name="website">Site web</string>
@@ -69,6 +71,11 @@
     <string name="app_name">MySwissDorm</string>
     <string name="login_in_text">Connexion</string>
     <string name="create_account_text">Pas de compte ? Inscris-toi !</string>
+
+    <!-- SignInViewModel -->
+    <string name="sign_in_not_registered">Ce compte n\'est pas enregistré</string>
+    <string name="sign_in_auth_cancelled">Authentification annulée</string>
+    <string name="sign_in_failed_to_get_credentials">Échec de l\'obtention des identifiants</string>
 
     <!-- SignUpScreen -->
     <string name="sign_up_first_name_placeholder">Prénom</string>
@@ -91,6 +98,7 @@
 
     <!-- AddListingScreen -->
     <string name="add_listing_text">Ajouter une annonce</string>
+    <string name="add_listing_select_location">Sélectionner l’emplacement</string>
     <string name="confirm_listing">Confirmer l’annonce</string>
     <string name="add_listing_invalid_form_text">Veuillez remplir tous les champs requis (taille, prix et date de début valides).</string>
     <string name="add_listing_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
@@ -112,6 +120,20 @@
     <string name="view_listing_contact_announcer">Contacter l’annonceur</string>
     <string name="view_listing_apply_now">Postuler maintenant !</string>
     <string name="view_listing_listing_location">Localisation de l’annonce</string>
+
+    <!-- ViewListingViewModel -->
+    <string name="view_listing_failed_to_load_listings">Échec du chargement de l’annonce</string>
+
+    <!-- AppNavHost -->
+    <string name="app_nav_host_not_implemented_yet">Pas encore implémenté</string>
+    <string name="app_nav_host_residency_name_is_null">Le nom de la résidence est nul</string>
+    <string name="app_nav_host_listing_uid_is_null">listingUid est nul</string>
+    <string name="app_nav_host_review_uid_is_null">reviewUid est nul</string>
+    <string name="app_nav_host_review_saved">Avis enregistré</string>
+    <string name="app_nav_host_listing_saved">Annonce enregistrée</string>
+    <string name="app_nav_host_review_deleted">Avis supprimé</string>
+    <string name="app_nav_host_listing_deleted">Annonce supprimée</string>
+    <string name="app_nav_host_could_not_load_profile">Impossible de charger le profil, ID utilisateur manquant</string>
 
     <!-- Screen -->
     <string name="screen_sign_in">Connexion</string>
@@ -173,6 +195,11 @@
     <string name="view_user_profile_block_user">Bloquer l’utilisateur</string>
     <string name="view_user_profile_unblock_user">Débloquer l’utilisateur</string>
 
+    <!-- ViewUserProfileViewModel -->
+    <string name="view_user_profile_not_signed_in">Non connecté</string>
+    <string name="view_user_profile_failed_to_block_user">Échec du blocage de l’utilisateur</string>
+    <string name="view_user_profile_failed_to_unblock_user">Échec du déblocage de l’utilisateur</string>
+
     <!-- AddReviewScreen -->
     <string name="add_review_title">Ajouter un avis</string>
     <string name="add_review_submit">Publier l’avis</string>
@@ -199,6 +226,9 @@
     <string name="view_review_posted_by_you"> (Vous)</string>
     <string name="view_review_price_per_month">.-/mois</string>
 
+    <!-- ViewReviewViewModel -->
+    <string name="view_review_failed_to_load_review">Échec du chargement de l’avis</string>
+
     <!-- SettingsScreen -->
     <string name="settings_title">Paramètres</string>
     <string name="settings_view_profile">Voir le profil</string>
@@ -217,6 +247,12 @@
     <string name="settings_delete_dialog_title">Supprimer le compte ?</string>
     <string name="settings_delete_dialog_text">Cela supprimera définitivement votre compte. Vous devrez peut-être vous réauthentifier.</string>
 
+    <!-- SettingsViewModel -->
+    <string name="settings_not_signed_in">Non connecté</string>
+    <string name="settings_re_authenticate_to_delete">Veuillez vous réauthentifier pour supprimer votre compte.</string>
+    <string name="settings_failed_to_block_user">Échec du blocage de l’utilisateur</string>
+    <string name="settings_failed_to_unblock_user">Échec du déblocage de l’utilisateur</string>
+
     <!-- CustomLocationDialog -->
     <string name="custom_location_dialog_enter_input">Entrer une localisation personnalisée</string>
     <string name="custom_location_dialog_current_location">Utiliser ma position actuelle</string>
@@ -228,6 +264,10 @@
     <string name="date_time_ui_x_hours_ago">il y a %1$dh</string>
     <string name="date_time_ui_x_days_ago">il y a %1$dj</string>
     <string name="date_time_ui_on_date">le %1$s</string>
+
+    <!-- DeviceLocation -->
+    <string name="device_location_could_not_get_location">Impossible d’obtenir la localisation. Le GPS est-il activé ?</string>
+    <string name="device_location_permission_denied_cannot_get_location">Permission refusée. Impossible d’obtenir la localisation.</string>
 
     <!-- AddPhotoButton -->
     <string name="add_photo_button_take_photo">Prendre une photo</string>

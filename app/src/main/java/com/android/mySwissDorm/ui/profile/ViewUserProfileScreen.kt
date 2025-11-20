@@ -229,13 +229,15 @@ fun ViewUserProfileScreen(
                                   targetUid,
                                   onError = { errorMsg ->
                                     Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
-                                  })
+                                  },
+                                  context = context)
                             } else {
                               realVm.blockUser(
                                   targetUid,
                                   onError = { errorMsg ->
                                     Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
-                                  })
+                                  },
+                                  context = context)
                             }
                           }
                         },

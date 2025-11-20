@@ -80,15 +80,14 @@ fun ViewReviewScreen(
         { _, _, _, _ ->
         }
 ) {
-  LaunchedEffect(reviewUid) { viewReviewViewModel.loadReview(reviewUid) }
+  val context = LocalContext.current
+  LaunchedEffect(reviewUid) { viewReviewViewModel.loadReview(reviewUid, context) }
 
   val uiState by viewReviewViewModel.uiState.collectAsState()
   val review = uiState.review
   val fullNameOfPoster = uiState.fullNameOfPoster
   val errorMsg = uiState.errorMsg
   val isOwner = uiState.isOwner
-
-  val context = LocalContext.current
 
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {

@@ -6,6 +6,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
@@ -66,7 +67,7 @@ class SignInViewModel(
               it.copy(
                   isLoading = false,
                   user = null,
-                  errMsg = "This account is not registered",
+                  errMsg = context.getString(R.string.sign_in_not_registered),
                   signedOut = true)
             }
           }
@@ -81,7 +82,7 @@ class SignInViewModel(
           it.copy(
               isLoading = false,
               user = null,
-              errMsg = "Authentification cancelled",
+              errMsg = context.getString(R.string.sign_in_auth_cancelled),
               signedOut = true)
         }
       } catch (e: GetCredentialException) {
@@ -89,7 +90,8 @@ class SignInViewModel(
           it.copy(
               isLoading = false,
               user = null,
-              errMsg = "Failed to get credentials: ${e.localizedMessage}",
+              errMsg =
+                  "${context.getString(R.string.sign_in_failed_to_get_credentials)}: ${e.localizedMessage}",
               signedOut = true)
         }
       } catch (e: Exception) {
@@ -97,7 +99,7 @@ class SignInViewModel(
           it.copy(
               isLoading = false,
               user = null,
-              errMsg = "Unexpected error: ${e.localizedMessage}",
+              errMsg = "${context.getString(R.string.unexpected_error)}: ${e.localizedMessage}",
               signedOut = true)
         }
       }

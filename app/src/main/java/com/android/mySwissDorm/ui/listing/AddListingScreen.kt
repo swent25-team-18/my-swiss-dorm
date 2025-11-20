@@ -133,9 +133,10 @@ fun AddListingScreen(
                           modifier = Modifier.fillMaxWidth(),
                           horizontalArrangement = Arrangement.SpaceBetween,
                           verticalAlignment = Alignment.CenterVertically) {
-                            Text("Location", color = TextColor)
+                            Text(stringResource(R.string.location), color = TextColor)
                             Text(
-                                ui.customLocation?.name ?: "Select location",
+                                ui.customLocation?.name
+                                    ?: stringResource(R.string.add_listing_select_location),
                                 color = TextColor,
                                 style = MaterialTheme.typography.bodyMedium)
                           }

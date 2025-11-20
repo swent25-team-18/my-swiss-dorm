@@ -20,6 +20,7 @@
     <string name="go_back">Go Back</string>
     <string name="homepage">Homepage</string>
     <string name="identifier">Identifier</string>
+    <string name="image">Image</string>
     <string name="language">Language</string>
     <string name="last_name">Last name</string>
     <string name="listing">Listing</string>
@@ -53,6 +54,7 @@
     <string name="starting">Starting</string>
     <string name="title">Title</string>
     <string name="unblock">Unblock</string>
+    <string name="unexpected_error">Unexpected error</string>
     <string name="university">University</string>
     <string name="user">User</string>
     <string name="website">Website</string>
@@ -67,6 +69,11 @@
     <string name="app_name">MySwissDorm</string>
     <string name="login_in_text">Log In</string>
     <string name="create_account_text">Don\'t have an account? Sign up !</string>
+
+    <!-- SignInViewModel -->
+    <string name="sign_in_not_registered">This account is not registered</string>
+    <string name="sign_in_auth_cancelled">Authentification cancelled</string>
+    <string name="sign_in_failed_to_get_credentials">Failed to get credentials</string>
 
     <!-- SignUpScreen -->
     <string name="sign_up_first_name_placeholder">First Name</string>
@@ -89,6 +96,7 @@
 
     <!-- AddListingScreen -->
     <string name="add_listing_text">Add Listing</string>
+    <string name="add_listing_select_location">Select location</string>
     <string name="confirm_listing">Confirm listing</string>
     <string name="add_listing_invalid_form_text">Please complete all required fields (valid size, price, and starting date).</string>
     <string name="add_listing_invalid_size_text">Enter 1.0–1000.0 with one decimal (e.g., 18.5).</string>
@@ -110,6 +118,20 @@
     <string name="view_listing_contact_announcer">Contact the announcer</string>
     <string name="view_listing_apply_now">Apply now !</string>
     <string name="view_listing_listing_location">Listing Location</string>
+
+    <!-- ViewListingViewModel -->
+    <string name="view_listing_failed_to_load_listings">Failed to load Listing</string>
+
+    <!-- AppNavHost -->
+    <string name="app_nav_host_not_implemented_yet">Not implemented yet</string>
+    <string name="app_nav_host_residency_name_is_null">Residency name is null</string>
+    <string name="app_nav_host_listing_uid_is_null">listingUid is null</string>
+    <string name="app_nav_host_review_uid_is_null">reviewUid is null</string>
+    <string name="app_nav_host_review_saved">Review saved</string>
+    <string name="app_nav_host_listing_saved">Listing saved</string>
+    <string name="app_nav_host_review_deleted">Review deleted</string>
+    <string name="app_nav_host_listing_deleted">Listing deleted</string>
+    <string name="app_nav_host_could_not_load_profile">Could not load profile, user ID missing</string>
 
     <!-- Screen -->
     <string name="screen_sign_in">Sign In</string>
@@ -171,6 +193,11 @@
     <string name="view_user_profile_block_user">Block user</string>
     <string name="view_user_profile_unblock_user">Unblock user</string>
 
+    <!-- ViewUserProfileViewModel -->
+    <string name="view_user_profile_not_signed_in">Not signed in</string>
+    <string name="view_user_profile_failed_to_block_user">Failed to block user</string>
+    <string name="view_user_profile_failed_to_unblock_user">Failed to unblock user</string>
+
     <!-- AddReviewScreen -->
     <string name="add_review_title">Add Review</string>
     <string name="add_review_submit">Submit Review</string>
@@ -197,6 +224,9 @@
     <string name="view_review_posted_by_you"> (You)</string>
     <string name="view_review_price_per_month">.-/month</string>
 
+    <!-- ViewReviewViewModel -->
+    <string name="view_review_failed_to_load_review">Failed to load Review</string>
+
     <!-- SettingsScreen -->
     <string name="settings_title">Settings</string>
     <string name="settings_view_profile">View profile</string>
@@ -215,6 +245,12 @@
     <string name="settings_delete_dialog_title">Delete account?</string>
     <string name="settings_delete_dialog_text">This will permanently remove your account. You may need to re-authenticate.</string>
 
+    <!-- SettingsViewModel -->
+    <string name="settings_not_signed_in">Not signed in</string>
+    <string name="settings_re_authenticate_to_delete">Please re-authenticate to delete your account.</string>
+    <string name="settings_failed_to_block_user">Failed to block user</string>
+    <string name="settings_failed_to_unblock_user">Failed to unblock user</string>
+
     <!-- CustomLocationDialog -->
     <string name="custom_location_dialog_enter_input">Enter Custom Location</string>
     <string name="custom_location_dialog_current_location">Use my current location</string>
@@ -226,6 +262,10 @@
     <string name="date_time_ui_x_hours_ago">%1$dh ago</string>
     <string name="date_time_ui_x_days_ago">%1$dd ago</string>
     <string name="date_time_ui_on_date">on %1$s</string>
+
+    <!-- DeviceLocation -->
+    <string name="device_location_could_not_get_location">Could not get location. Is GPS on?</string>
+    <string name="device_location_permission_denied_cannot_get_location">Permission denied. Cannot get location.</string>
 
     <!-- AddPhotoButton -->
     <string name="add_photo_button_take_photo">Take a photo</string>

@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.blocked_implementation
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
@@ -27,7 +29,7 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class SettingsViewModelBlockedTest : FirestoreTest() {
-
+  private val context = ApplicationProvider.getApplicationContext<Context>()
   private lateinit var currentUserUid: String
   private lateinit var blockedUser1Uid: String
 
@@ -142,7 +144,7 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
     assertEquals(0, vm.uiState.value.blockedContacts.size)
 
     // Block a user
-    vm.blockUser(blockedUser1Uid)
+    vm.blockUser(blockedUser1Uid, context)
     awaitUntil { vm.uiState.value.blockedContacts.isNotEmpty() }
 
     // Verify user is in blocked list
@@ -180,7 +182,7 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
     assertEquals(1, vm.uiState.value.blockedContacts.size)
 
     // Unblock the user
-    vm.unblockUser(blockedUser1Uid)
+    vm.unblockUser(blockedUser1Uid, context)
     awaitUntil { vm.uiState.value.blockedContacts.isEmpty() }
 
     // Verify user is removed from blocked list
@@ -208,7 +210,7 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
     assertEquals(0, vm.uiState.value.blockedContacts.size)
 
     // Block a user
-    vm.blockUser(blockedUser1Uid)
+    vm.blockUser(blockedUser1Uid, context)
     awaitUntil { vm.uiState.value.blockedContacts.size == 1 }
 
     val blockedContacts = vm.uiState.value.blockedContacts

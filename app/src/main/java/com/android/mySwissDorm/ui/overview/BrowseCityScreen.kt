@@ -832,7 +832,7 @@ private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
                       .clip(RoundedCornerShape(12.dp))
                       .background(Color(0xFFEAEAEA))) {
                 Text(
-                    "IMAGE",
+                    stringResource(R.string.image),
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray)
@@ -879,7 +879,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                           .clip(RoundedCornerShape(12.dp))
                           .background(Color(0xFFEAEAEA))) {
                     Text(
-                        "IMAGE",
+                        stringResource(R.string.image),
                         modifier = Modifier.align(Alignment.Center),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray)

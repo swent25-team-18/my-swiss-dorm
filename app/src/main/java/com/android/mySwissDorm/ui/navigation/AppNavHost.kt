@@ -125,7 +125,11 @@ fun AppNavHost(
     }
 
     composable(Screen.Inbox.route) {
-      Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
+      Toast.makeText(
+              context,
+              context.getString(R.string.app_nav_host_not_implemented_yet),
+              Toast.LENGTH_SHORT)
+          .show()
       navActions.navigateTo(Screen.Homepage)
     }
 
@@ -136,7 +140,11 @@ fun AppNavHost(
       LaunchedEffect(Unit) { isAdmin = adminRepo.isCurrentUserAdmin() }
       SettingsScreen(
           onItemClick = {
-            Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_not_implemented_yet),
+                    Toast.LENGTH_SHORT)
+                .show()
           },
           onProfileClick = { navActions.navigateTo(Screen.Profile) },
           navigationActions = navActions,
@@ -248,7 +256,11 @@ fun AppNavHost(
       }
           ?: run {
             Log.e("AppNavHost", "residencyName is null")
-            Toast.makeText(context, "residencyName is null", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_residency_name_is_null),
+                    Toast.LENGTH_SHORT)
+                .show()
           }
     }
 
@@ -259,7 +271,13 @@ fun AppNavHost(
         ViewListingScreen(
             listingUid = it,
             onGoBack = { navActions.goBack() },
-            onApply = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
+            onApply = {
+              Toast.makeText(
+                      context,
+                      context.getString(R.string.app_nav_host_not_implemented_yet),
+                      Toast.LENGTH_SHORT)
+                  .show()
+            },
             onEdit = { navActions.navigateTo(Screen.EditListing(it)) },
             onViewProfile = { ownerId ->
               val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -275,7 +293,11 @@ fun AppNavHost(
       }
           ?: run {
             Log.e("AppNavHost", "listingUid is null")
-            Toast.makeText(context, "listingUid is null", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_listing_uid_is_null),
+                    Toast.LENGTH_SHORT)
+                .show()
           }
     }
 
@@ -303,7 +325,11 @@ fun AppNavHost(
       }
           ?: run {
             Log.e("AppNavHost", "reviewUid is null")
-            Toast.makeText(context, "reviewUid is null", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_review_uid_is_null),
+                    Toast.LENGTH_SHORT)
+                .show()
           }
     }
 
@@ -320,12 +346,20 @@ fun AppNavHost(
           onConfirm = {
             navActions.navigateTo(Screen.ReviewOverview(id))
             navController.popBackStack(Screen.EditReview.route, inclusive = true)
-            Toast.makeText(context, "Review saved", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_review_saved),
+                    Toast.LENGTH_SHORT)
+                .show()
           },
           onDelete = { residencyName ->
             navActions.navigateTo(Screen.ReviewsByResidencyOverview(residencyName))
             navController.popBackStack(Screen.EditReview.route, inclusive = true)
-            Toast.makeText(context, "Review deleted", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_review_deleted),
+                    Toast.LENGTH_SHORT)
+                .show()
           })
     }
 
@@ -338,13 +372,20 @@ fun AppNavHost(
             ownerId = it,
             onBack = { navActions.goBack() },
             onSendMessage = {
-              Toast.makeText(context, "Messaging not implemented yet", Toast.LENGTH_SHORT).show()
+              Toast.makeText(
+                      context,
+                      context.getString(R.string.app_nav_host_not_implemented_yet),
+                      Toast.LENGTH_SHORT)
+                  .show()
             })
       }
           ?: run {
             // Handle error if userId is missing
             Log.e("AppNavHost", "User ID is null for ViewUserProfile route")
-            Toast.makeText(context, "Could not load profile, user ID missing", Toast.LENGTH_SHORT)
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_could_not_load_profile),
+                    Toast.LENGTH_SHORT)
                 .show()
             navActions.goBack()
           }
@@ -359,12 +400,20 @@ fun AppNavHost(
           onConfirm = {
             navActions.navigateTo(Screen.ListingOverview(id))
             navController.popBackStack(Screen.EditListing.route, inclusive = true)
-            Toast.makeText(context, "Listing saved", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_listing_saved),
+                    Toast.LENGTH_SHORT)
+                .show()
           },
           onDelete = {
             navActions.navigateTo(Screen.Homepage)
             navController.popBackStack(Screen.EditListing.route, inclusive = true)
-            Toast.makeText(context, "Listing deleted", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_listing_deleted),
+                    Toast.LENGTH_SHORT)
+                .show()
           })
     }
 
@@ -380,7 +429,11 @@ fun AppNavHost(
             navigationViewModel.determineInitialDestination()
           },
           onChangeProfilePicture = {
-            Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_not_implemented_yet),
+                    Toast.LENGTH_SHORT)
+                .show()
           })
     }
   }

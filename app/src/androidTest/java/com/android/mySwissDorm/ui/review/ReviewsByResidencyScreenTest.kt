@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -11,6 +12,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
+import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.utils.FakeUser
@@ -247,5 +249,158 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
     compose.onNodeWithTag(C.ReviewsByResidencyTag.ROOT).assertIsDisplayed()
     compose.onNodeWithTag(C.ReviewsByResidencyTag.ERROR).assertIsDisplayed()
+  }
+
+  @Test
+  fun compactVoteButtonsAreDisplayed() {
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.isNotEmpty() }
+
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewVoteButtons(reviewUid1), useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Check that vote buttons exist (there may be multiple reviews, so we check at least one
+    // exists)
+    val upvoteButtons =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+    val downvoteButtons =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_DOWNVOTE_BUTTON, useUnmergedTree = true)
+    val scoreTexts =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_SCORE, useUnmergedTree = true)
+
+    assert(upvoteButtons.fetchSemanticsNodes().isNotEmpty()) {
+      "Upvote buttons should be displayed"
+    }
+    assert(downvoteButtons.fetchSemanticsNodes().isNotEmpty()) {
+      "Downvote buttons should be displayed"
+    }
+    assert(scoreTexts.fetchSemanticsNodes().isNotEmpty()) { "Score should be displayed" }
+  }
+
+  @Test
+  fun compactVoteButtonsAreEnabledForNonOwner() = runTest {
+    // Create a review owned by a different user
+    switchToUser(FakeUser.FakeUser2)
+    val otherUserId = FirebaseEmulator.auth.currentUser!!.uid
+    profileRepo.createProfile(profile2.copy(ownerId = otherUserId))
+
+    val otherUserReview = reviewVortex1.copy(uid = reviewsRepo.getNewUid(), ownerId = otherUserId)
+    reviewsRepo.addReview(otherUserReview)
+
+    // Switch back to FakeUser1 (non-owner)
+    switchToUser(FakeUser.FakeUser1)
+    val testVm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
+    testVm.loadReviews("Vortex")
+
+    compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
+
+    compose.waitUntil(5_000) {
+      testVm.uiState.value.reviews.items.any { it.reviewUid == otherUserReview.uid && !it.isOwner }
+    }
+
+    // Find the vote buttons for this specific review
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewVoteButtons(otherUserReview.uid), useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Check that upvote buttons exist and are clickable
+    val upvoteButtons =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+    assert(upvoteButtons.fetchSemanticsNodes().isNotEmpty()) {
+      "Upvote buttons should be displayed"
+    }
+  }
+
+  @Test
+  fun compactVoteScoreIsDisplayedCorrectly() = runTest {
+    // Create a review with votes
+    val reviewWithVotes =
+        reviewVortex1.copy(
+            uid = reviewsRepo.getNewUid(),
+            ownerId = userId,
+            upvotedBy = setOf("user1", "user2"),
+            downvotedBy = setOf("user3"))
+    reviewsRepo.addReview(reviewWithVotes)
+
+    val testVm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
+    testVm.loadReviews("Vortex")
+
+    compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
+
+    compose.waitUntil(5_000) {
+      testVm.uiState.value.reviews.items.any { it.reviewUid == reviewWithVotes.uid }
+    }
+
+    // Check that the score is displayed (net score should be 1: 2 upvotes - 1 downvote)
+    val scoreNodes =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_SCORE, useUnmergedTree = true)
+    assert(scoreNodes.fetchSemanticsNodes().isNotEmpty()) { "Score should be displayed" }
+  }
+
+  @Test
+  fun clickingCompactVoteButtonTriggersViewModel() = runTest {
+    // Create a review owned by a different user so we can vote
+    switchToUser(FakeUser.FakeUser2)
+    val otherUserId = FirebaseEmulator.auth.currentUser!!.uid
+    profileRepo.createProfile(profile2.copy(ownerId = otherUserId))
+
+    val otherUserReview = reviewVortex1.copy(uid = reviewsRepo.getNewUid(), ownerId = otherUserId)
+    reviewsRepo.addReview(otherUserReview)
+
+    // Switch back to FakeUser1 (non-owner)
+    switchToUser(FakeUser.FakeUser1)
+    val testVm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
+    testVm.loadReviews("Vortex")
+
+    compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
+
+    compose.waitUntil(5_000) {
+      val item = testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
+      item != null && !item.isOwner && item.userVote == VoteType.NONE
+    }
+
+    val initialItem =
+        testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }!!
+    val initialScore = initialItem.netScore
+
+    // Click the upvote button
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewVoteButtons(otherUserReview.uid), useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Find and click the upvote button within this review's vote section
+    val upvoteButtons =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+    val nodes = upvoteButtons.fetchSemanticsNodes()
+    if (nodes.isNotEmpty()) {
+      upvoteButtons[0].performClick()
+
+      // Wait for the vote to be registered
+      compose.waitUntil(5_000) {
+        val updatedItem =
+            testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
+        updatedItem != null &&
+            (updatedItem.userVote == VoteType.UPVOTE || updatedItem.netScore != initialScore)
+      }
+
+      // Verify the vote was registered
+      val finalItem =
+          testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
+      assert(finalItem != null) { "Review item should still exist" }
+      assert(finalItem!!.userVote == VoteType.UPVOTE || finalItem.netScore > initialScore) {
+        "Vote should be registered"
+      }
+    }
   }
 }

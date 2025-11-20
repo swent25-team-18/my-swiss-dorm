@@ -65,7 +65,7 @@ fun AddReviewScreen(
                 modifier =
                     Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
-                  Text("Submit Review", color = Color.White)
+                  Text("Submit Review", color = MaterialTheme.colorScheme.onPrimary)
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid) {
@@ -102,6 +102,7 @@ fun AddReviewScreen(
                   onSelected = { addReviewViewModel.setResidencyName(it) },
                   residencies = ui.residencies,
                   accentColor = MainColor,
+                  isListing = false,
                   modifier = Modifier.testTag(C.AddReviewTags.RESIDENCY_DROPDOWN).fillMaxWidth())
 
               HousingTypeDropdown(

@@ -53,7 +53,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
@@ -118,9 +117,7 @@ fun ViewReviewScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
                   text = review.title,
-                  fontSize = 28.sp,
-                  fontWeight = FontWeight.SemiBold,
-                  lineHeight = 32.sp,
+                  style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                   modifier = Modifier.testTag(C.ViewReviewTags.TITLE),
                   color = TextColor)
 
@@ -260,7 +257,7 @@ private fun SectionCard(
 @Composable
 private fun BulletRow(text: String) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-    Text("•", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+    Text("•", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(end = 8.dp))
     Text(text, style = MaterialTheme.typography.bodyLarge, color = TextColor)
   }
 }

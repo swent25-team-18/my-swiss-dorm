@@ -45,19 +45,16 @@ class RentalListingRepositoryFirestore(
   ): List<RentalListing> {
     val allListings = getAllRentalListings()
     return allListings.filter { listing ->
-      val listingLocation =
-          try {
-            residenciesRepository.getResidency(listing.residencyName).location
-          } catch (e: Exception) {
-            // AI helped me return the correct value in case of error
-            Log.e(
-                "RentalListingRepoFirestore",
-                "Error fetching residency for listing ${listing.uid}",
-                e)
-            return@filter false
-          }
-      val distance = location.distanceTo(listingLocation)
-      distance <= radius
+      try {
+        val distance = location.distanceTo(listing.location)
+        distance <= radius
+      } catch (e: Exception) {
+        Log.e(
+            "RentalListingRepoFirestore",
+            "Error calculating distance for listing ${listing.uid}",
+            e)
+        false
+      }
     }
   }
 
@@ -69,18 +66,56 @@ class RentalListingRepositoryFirestore(
   }
 
   override suspend fun addRentalListing(rentalPost: RentalListing) {
+    val rentalData =
+        mapOf(
+            "uid" to rentalPost.uid,
+            "ownerId" to rentalPost.ownerId,
+            "postedAt" to rentalPost.postedAt,
+            "residencyName" to rentalPost.residencyName,
+            "title" to rentalPost.title,
+            "roomType" to rentalPost.roomType.name,
+            "pricePerMonth" to rentalPost.pricePerMonth,
+            "areaInM2" to rentalPost.areaInM2,
+            "startDate" to rentalPost.startDate,
+            "description" to rentalPost.description,
+            "imageUrls" to rentalPost.imageUrls,
+            "status" to rentalPost.status.name,
+            "location" to
+                mapOf(
+                    "name" to rentalPost.location.name,
+                    "latitude" to rentalPost.location.latitude,
+                    "longitude" to rentalPost.location.longitude))
     rentalListingDb
         .collection(RENTAL_LISTINGS_COLLECTION)
         .document(rentalPost.uid)
-        .set(rentalPost)
+        .set(rentalData)
         .await()
   }
 
   override suspend fun editRentalListing(rentalPostId: String, newValue: RentalListing) {
+    val rentalData =
+        mapOf(
+            "uid" to newValue.uid,
+            "ownerId" to newValue.ownerId,
+            "postedAt" to newValue.postedAt,
+            "residencyName" to newValue.residencyName,
+            "title" to newValue.title,
+            "roomType" to newValue.roomType.name,
+            "pricePerMonth" to newValue.pricePerMonth,
+            "areaInM2" to newValue.areaInM2,
+            "startDate" to newValue.startDate,
+            "description" to newValue.description,
+            "imageUrls" to newValue.imageUrls,
+            "status" to newValue.status.name,
+            "location" to
+                mapOf(
+                    "name" to newValue.location.name,
+                    "latitude" to newValue.location.latitude,
+                    "longitude" to newValue.location.longitude))
     rentalListingDb
         .collection(RENTAL_LISTINGS_COLLECTION)
         .document(rentalPostId)
-        .set(newValue)
+        .set(rentalData)
         .await()
   }
 
@@ -94,7 +129,7 @@ class RentalListingRepositoryFirestore(
    * @param document The Firestore document to convert.
    * @return The RentalListing object.
    */
-  private fun documentToRentalListing(document: DocumentSnapshot): RentalListing? {
+  private suspend fun documentToRentalListing(document: DocumentSnapshot): RentalListing? {
     return try {
       val uid = document.id
       val title = document.getString("title") ?: return null
@@ -114,6 +149,26 @@ class RentalListingRepositoryFirestore(
       val imageUrls =
           (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
       val residencyName = document.getString("residencyName") ?: return null
+      val locationData = document.get("location") as? Map<*, *>
+      val location =
+          locationData?.let {
+            Location(
+                name = it["name"] as? String ?: return null,
+                latitude = it["latitude"] as? Double ?: return null,
+                longitude = it["longitude"] as? Double ?: return null)
+          }
+              ?: run {
+                // Fallback: try to get location from residency for backward compatibility
+                try {
+                  residenciesRepository.getResidency(residencyName).location
+                } catch (e: Exception) {
+                  Log.w(
+                      "RentalListingRepoFirestore",
+                      "Could not get location from document or residency for listing $uid",
+                      e)
+                  return null
+                }
+              }
 
       RentalListing(
           uid = uid,
@@ -128,7 +183,7 @@ class RentalListingRepositoryFirestore(
           startDate = startDate,
           imageUrls = imageUrls,
           status = status,
-      )
+          location = location)
     } catch (e: Exception) {
       Log.e("RentalListingsRepositoryFirestore", "Error converting document to RentalListing", e)
       null

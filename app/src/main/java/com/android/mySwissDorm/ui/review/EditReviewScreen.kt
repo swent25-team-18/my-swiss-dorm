@@ -125,7 +125,7 @@ fun EditReviewScreen(
                       modifier =
                           Modifier.weight(1f).height(52.dp).testTag("saveButton"), // ← add this
                       shape = RoundedCornerShape(16.dp)) {
-                        Text("Save", color = Color.White)
+                        Text("Save", color = MaterialTheme.colorScheme.onPrimary)
                       }
                 }
             Spacer(Modifier.height(8.dp))
@@ -163,6 +163,7 @@ fun EditReviewScreen(
                   onSelected = { editReviewViewModel.setResidencyName(it) },
                   residencies = ui.residencies,
                   accentColor = MainColor,
+                  isListing = false,
                   modifier = Modifier.testTag("residencyDropdown").fillMaxWidth())
 
               HousingTypeDropdown(

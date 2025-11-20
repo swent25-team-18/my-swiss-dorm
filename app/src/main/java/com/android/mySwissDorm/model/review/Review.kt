@@ -21,8 +21,12 @@ import com.google.firebase.Timestamp
  * @property pricePerMonth Monthly rent price of the room.
  * @property areaInM2 Area of the room in square meters.
  * @property imageUrls List of image URLs attached to the review.
- * @property upvotedBy List of user IDs who upvoted this review.
- * @property downvotedBy List of user IDs who downvoted this review.
+ * @property upvotedBy Set of user IDs who upvoted this review. Uses a Set to ensure each user ID
+ *   appears only once.
+ * @property downvotedBy Set of user IDs who downvoted this review. Uses a Set to ensure each user
+ *   ID appears only once.
+ * @property isAnonymous Whether the review was posted anonymously. If true, the username should not
+ *   be displayed.
  */
 data class Review(
     val uid: String,
@@ -36,6 +40,27 @@ data class Review(
     val pricePerMonth: Double,
     val areaInM2: Int,
     val imageUrls: List<String>,
-    val upvotedBy: List<String> = emptyList(),
-    val downvotedBy: List<String> = emptyList(),
-)
+    val upvotedBy: Set<String> = emptySet(),
+    val downvotedBy: Set<String> = emptySet(),
+    val isAnonymous: Boolean = false,
+) {
+  /**
+   * Computes the net vote score (upvotes - downvotes) for this review.
+   *
+   * @return The net score as an integer.
+   */
+  fun getNetScore(): Int = upvotedBy.size - downvotedBy.size
+
+  /**
+   * Determines the vote type for a given user on this review.
+   *
+   * @param userId The unique identifier of the user to check.
+   * @return The [VoteType] for the user, or [VoteType.NONE] if the user hasn't voted.
+   */
+  fun getUserVote(userId: String?): VoteType =
+      when {
+        userId != null && userId in upvotedBy -> VoteType.UPVOTE
+        userId != null && userId in downvotedBy -> VoteType.DOWNVOTE
+        else -> VoteType.NONE
+      }
+}

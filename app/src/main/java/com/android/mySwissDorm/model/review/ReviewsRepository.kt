@@ -59,4 +59,37 @@ interface ReviewsRepository {
    * @throws Exception if the review item is not found.
    */
   suspend fun deleteReview(reviewId: String)
+
+  /**
+   * Applies an upvote to the review by the given user.
+   *
+   * If the user has already upvoted, the upvote is removed. If the user has downvoted, the downvote
+   * is removed and replaced with an upvote.
+   *
+   * @param reviewId The unique identifier of the review to upvote.
+   * @param userId The unique identifier of the user casting the vote.
+   * @throws Exception if the review is not found or if the user is the owner of the review.
+   */
+  suspend fun upvoteReview(reviewId: String, userId: String)
+
+  /**
+   * Applies a downvote to the review by the given user.
+   *
+   * If the user has already downvoted, the downvote is removed. If the user has upvoted, the upvote
+   * is removed and replaced with a downvote.
+   *
+   * @param reviewId The unique identifier of the review to downvote.
+   * @param userId The unique identifier of the user casting the vote.
+   * @throws Exception if the review is not found or if the user is the owner of the review.
+   */
+  suspend fun downvoteReview(reviewId: String, userId: String)
+
+  /**
+   * Removes any existing vote (upvote or downvote) from the review by the given user.
+   *
+   * @param reviewId The unique identifier of the review to remove the vote from.
+   * @param userId The unique identifier of the user whose vote should be removed.
+   * @throws Exception if the review is not found or if the user is the owner of the review.
+   */
+  suspend fun removeVote(reviewId: String, userId: String)
 }

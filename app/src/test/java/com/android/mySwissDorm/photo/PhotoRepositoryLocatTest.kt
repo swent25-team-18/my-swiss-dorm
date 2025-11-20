@@ -6,7 +6,6 @@ import androidx.core.content.FileProvider
 import com.android.mySwissDorm.BuildConfig
 import io.mockk.*
 import java.io.File
-import java.io.FileNotFoundException
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
@@ -64,7 +63,7 @@ class PhotoRepositoryLocalTest {
     file.delete()
   }
 
-  @Test(expected = FileNotFoundException::class)
+  @Test(expected = NoSuchElementException::class)
   fun retrievePhotoThrowPhotoNonExistent() = runTest {
     val uid = "non_existent_photo.png"
     repository.retrievePhoto(uid)

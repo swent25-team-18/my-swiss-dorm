@@ -13,8 +13,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import junit.framework.TestCase.assertTrue
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -90,5 +92,23 @@ class CameraButtonTest {
     composeTestRule.waitForIdle()
 
     assertTrue(notClicked.value)
+  }
+
+  @Test
+  fun testCameraUseContentSchemeForPhoto() {
+    val photoCaptured = mutableStateOf<Photo?>(null)
+    composeTestRule.setContent {
+      CameraButton(
+          onSave = { photoCaptured.value = it },
+          takePictureContract = FakeTakePictureContract.success())
+    }
+    val cameraButtonNode = composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG)
+    cameraButtonNode.assertIsDisplayed()
+    cameraButtonNode.performClick()
+    composeTestRule.waitForIdle()
+    assertNotNull(photoCaptured.value)
+    composeTestRule.waitUntil("CameraButton should pass a Photo with a content Uri scheme", 5_000) {
+      photoCaptured.value?.image?.scheme == "content"
+    }
   }
 }

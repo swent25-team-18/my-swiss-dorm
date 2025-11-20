@@ -31,6 +31,7 @@ data class AddReviewUiState(
     val pricePerMonth: String = "",
     val areaInM2: String = "",
     val imageUrls: List<String> = emptyList(),
+    val isAnonymous: Boolean = false,
 ) {
   val isFormValid: Boolean
     get() {
@@ -96,6 +97,10 @@ class AddReviewViewModel(
     _uiState.value = _uiState.value.copy(imageUrls = imageUrls)
   }
 
+  fun setIsAnonymous(isAnonymous: Boolean) {
+    _uiState.value = _uiState.value.copy(isAnonymous = isAnonymous)
+  }
+
   init {
     loadResidencies()
   }
@@ -137,6 +142,7 @@ class AddReviewViewModel(
             pricePerMonth = priceRes.value!!.toDouble(),
             areaInM2 = areaRes.value!!.roundToInt(),
             imageUrls = state.imageUrls,
+            isAnonymous = state.isAnonymous,
         )
 
     viewModelScope.launch {

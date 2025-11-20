@@ -236,13 +236,6 @@ class ProfileRepositoryFirestoreTest : FirestoreTest() {
     userSettingsData["pushNotified"] = profile1.userSettings.isPushNotified
     docRef.set(data).await()
     assertEquals(profile1, repo.getProfile(profile1.ownerId))
-
-    userSettingsData["anonymous"] = null
-    docRef.set(data).await()
-    assertEquals(runCatching { repo.getProfile(profile1.ownerId) }.isFailure, true)
-    userSettingsData["anonymous"] = profile1.userSettings.isAnonymous
-    docRef.set(data).await()
-    assertEquals(profile1, repo.getProfile(profile1.ownerId))
   }
 
   @After

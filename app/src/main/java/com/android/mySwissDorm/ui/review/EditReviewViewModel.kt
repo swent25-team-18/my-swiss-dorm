@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
  * @property pricePerMonth The monthly rent price as a string (for input field).
  * @property areaInM2 The area in square meters as a string (for input field).
  * @property imageUrls The list of image URLs associated with the review.
+ * @property isAnonymous Whether the review should be posted anonymously.
  */
 data class EditReviewUiState(
     val postedAt: Timestamp,
@@ -52,6 +53,7 @@ data class EditReviewUiState(
     val pricePerMonth: String = "",
     val areaInM2: String = "",
     val imageUrls: List<String> = emptyList(),
+    val isAnonymous: Boolean = false,
 ) {
   /**
    * Indicates whether all form fields are valid and the form can be submitted.
@@ -185,6 +187,15 @@ class EditReviewViewModel(
   }
 
   /**
+   * Updates the anonymous status of the review.
+   *
+   * @param isAnonymous Whether the review should be posted anonymously.
+   */
+  fun setIsAnonymous(isAnonymous: Boolean) {
+    _uiState.value = _uiState.value.copy(isAnonymous = isAnonymous)
+  }
+
+  /**
    * Loads a review by its ID and updates the UI state.
    *
    * This method fetches the review from the repository and populates the form fields with the
@@ -211,7 +222,8 @@ class EditReviewViewModel(
                 roomType = review.roomType,
                 pricePerMonth = review.pricePerMonth.toString(),
                 areaInM2 = review.areaInM2.toString(),
-                imageUrls = review.imageUrls)
+                imageUrls = review.imageUrls,
+                isAnonymous = review.isAnonymous)
         // If residencies haven't been loaded yet, load them now
         if (currentResidencies.isEmpty()) {
           loadResidencies()
@@ -312,7 +324,8 @@ class EditReviewViewModel(
                 roomType = state.roomType,
                 pricePerMonth = state.pricePerMonth.toDouble(),
                 areaInM2 = state.areaInM2.toInt(),
-                imageUrls = state.imageUrls))
+                imageUrls = state.imageUrls,
+                isAnonymous = state.isAnonymous))
 
     return true
   }

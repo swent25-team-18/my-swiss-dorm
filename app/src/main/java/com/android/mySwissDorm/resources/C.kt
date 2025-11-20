@@ -255,4 +255,13 @@ object C {
 
     const val ICON_DELETE_CONTENT_DESC: String = "Remove image"
   }
+
+  object ChannelsScreenTestTags {
+    const val ROOT = "channelsScreenRoot"
+    const val SEARCH_BAR = "channelsSearchBar"
+    const val REQUESTED_MESSAGES_BUTTON = "requestedMessagesButton"
+    const val CHANNELS_LIST = "channelsList"
+    const val EMPTY_STATE = "channelsEmptyState"
+    const val LOADING_INDICATOR = "channelsLoadingIndicator"
+  }
 }

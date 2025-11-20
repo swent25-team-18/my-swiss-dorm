@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -40,16 +41,6 @@ import io.getstream.chat.android.models.Filters
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.delay
-
-/** Test tags for ChannelsScreen, used for UI testing. */
-object ChannelsScreenTestTags {
-  const val ROOT = "channelsScreenRoot"
-  const val SEARCH_BAR = "channelsSearchBar"
-  const val REQUESTED_MESSAGES_BUTTON = "requestedMessagesButton"
-  const val CHANNELS_LIST = "channelsList"
-  const val EMPTY_STATE = "channelsEmptyState"
-  const val LOADING_INDICATOR = "channelsLoadingIndicator"
-}
 
 /**
  * Channels screen displaying a WhatsApp-like interface for browsing and searching chat channels.
@@ -223,7 +214,7 @@ fun ChannelsScreen(
         }
       }
 
-  Column(modifier = modifier.fillMaxSize().testTag(ChannelsScreenTestTags.ROOT)) {
+  Column(modifier = modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.ROOT)) {
     // Top bar with Requested Messages button
     TopAppBar(
         title = {
@@ -234,7 +225,7 @@ fun ChannelsScreen(
         actions = {
           IconButton(
               onClick = onRequestedMessagesClick,
-              modifier = Modifier.testTag(ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON)) {
+              modifier = Modifier.testTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON)) {
                 BadgedBox(
                     badge = {
                       if (requestedMessagesCount > 0) {
@@ -276,7 +267,7 @@ fun ChannelsScreen(
           },
           leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MainColor) },
           modifier =
-              Modifier.testTag(ChannelsScreenTestTags.SEARCH_BAR)
+              Modifier.testTag(C.ChannelsScreenTestTags.SEARCH_BAR)
                   .fillMaxWidth()
                   .clip(RoundedCornerShape(24.dp))
                   .focusRequester(focusRequester)
@@ -304,13 +295,13 @@ fun ChannelsScreen(
     // Channel list
     if (isLoading) {
       Box(
-          modifier = Modifier.fillMaxSize().testTag(ChannelsScreenTestTags.LOADING_INDICATOR),
+          modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.LOADING_INDICATOR),
           contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = MainColor)
           }
     } else if (filteredChannels.isEmpty()) {
       Box(
-          modifier = Modifier.fillMaxSize().testTag(ChannelsScreenTestTags.EMPTY_STATE),
+          modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.EMPTY_STATE),
           contentAlignment = Alignment.Center) {
             Text(
                 text = if (searchQuery.isBlank()) "No chats yet" else "No chats found",
@@ -318,7 +309,7 @@ fun ChannelsScreen(
                 color = TextColor.copy(alpha = 0.7f))
           }
     } else {
-      LazyColumn(modifier = Modifier.testTag(ChannelsScreenTestTags.CHANNELS_LIST)) {
+      LazyColumn(modifier = Modifier.testTag(C.ChannelsScreenTestTags.CHANNELS_LIST)) {
         items(filteredChannels) { channel ->
           ChannelItem(
               channel = channel,

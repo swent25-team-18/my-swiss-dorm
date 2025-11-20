@@ -134,7 +134,8 @@ fun ViewReviewScreen(
                 // apply the style to the name
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
                   append(fullNameOfPoster)
-                  if (isOwner) append(" (You)")
+                  // Only show "(You)" if the review is not anonymous (privacy)
+                  if (isOwner && !review.isAnonymous) append(" (You)")
                 }
                 // stop tagging
                 pop()

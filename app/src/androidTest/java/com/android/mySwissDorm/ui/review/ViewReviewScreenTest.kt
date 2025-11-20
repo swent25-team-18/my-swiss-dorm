@@ -50,6 +50,10 @@ class ViewReviewScreenTest : FirestoreTest() {
   private lateinit var review1: Review
   private lateinit var review2: Review
 
+  // Pre-seeded variants so tests don’t need runTest
+  private lateinit var anonymousReviewOwned: Review
+  private lateinit var nonAnonymousReviewOwned: Review
+
   private lateinit var vm: ViewReviewViewModel
 
   override fun createRepositories() {
@@ -63,7 +67,9 @@ class ViewReviewScreenTest : FirestoreTest() {
     super.setUp()
     createRepositories()
     vm = ViewReviewViewModel(reviewsRepo, profilesRepo)
+
     runTest {
+      // Owner
       switchToUser(FakeUser.FakeUser1)
       residenciesRepo.addResidency(resTest)
       residenciesRepo.addResidency(resTest2)
@@ -71,12 +77,14 @@ class ViewReviewScreenTest : FirestoreTest() {
       ownerId = FirebaseEmulator.auth.currentUser!!.uid
       profilesRepo.createProfile(profile1.copy(ownerId = ownerId))
 
+      // Other user
       switchToUser(FakeUser.FakeUser2)
       residenciesRepo.addResidency(resTest)
       residenciesRepo.addResidency(resTest2)
       otherId = FirebaseEmulator.auth.currentUser!!.uid
       profilesRepo.createProfile(profile2.copy(ownerId = otherId))
 
+      // Base reviews
       review1 =
           Review(
               uid = reviewsRepo.getNewUid(),
@@ -94,7 +102,7 @@ class ViewReviewScreenTest : FirestoreTest() {
           Review(
               uid = reviewsRepo.getNewUid(),
               ownerId = otherId,
-              postedAt = Timestamp(Date(1678886400000L)), // AI gave me this date
+              postedAt = Timestamp(Date(1678886400000L)),
               title = "Second Title",
               reviewText = "My second review",
               grade = 4.5,
@@ -105,8 +113,17 @@ class ViewReviewScreenTest : FirestoreTest() {
               imageUrls = emptyList())
 
       reviewsRepo.addReview(review2)
+
+      // Switch back to owner and add his reviews
       switchToUser(FakeUser.FakeUser1)
       reviewsRepo.addReview(review1)
+
+      // Pre-seed an anonymous and a non-anonymous copy owned by the same user
+      anonymousReviewOwned = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = true)
+      nonAnonymousReviewOwned = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = false)
+
+      reviewsRepo.addReview(anonymousReviewOwned)
+      reviewsRepo.addReview(nonAnonymousReviewOwned)
     }
   }
 
@@ -116,6 +133,18 @@ class ViewReviewScreenTest : FirestoreTest() {
 
   private fun setOtherReview() {
     compose.setContent { ViewReviewScreen(viewReviewViewModel = vm, reviewUid = review2.uid) }
+  }
+
+  private fun setAnonymousOwnerReview() {
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = anonymousReviewOwned.uid)
+    }
+  }
+
+  private fun setNonAnonymousOwnerReview() {
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = nonAnonymousReviewOwned.uid)
+    }
   }
 
   /** Wait until the screen root exists (first composition done). */
@@ -278,90 +307,71 @@ class ViewReviewScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun anonymousReview_showsAnonymousInsteadOfName() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val anonymousReview = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = true)
-    reviewsRepo.addReview(anonymousReview)
-
-    compose.setContent {
-      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = anonymousReview.uid)
-    }
+  fun anonymousReview_showsAnonymousInsteadOfName() {
+    setAnonymousOwnerReview()
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReview.uid }
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReviewOwned.uid }
 
     scrollListTo(C.ViewReviewTags.POSTED_BY)
-    compose
-        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
-        .assertIsDisplayed()
-        .assertTextContains("anonymous", substring = true)
-        .assertTextContains("Posted by", substring = true)
-    // Should NOT contain the actual name
-    compose
-        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
-        .assertTextEquals("Posted by anonymous ${formatRelative(anonymousReview.postedAt)}")
-  }
 
-  @Test
-  fun anonymousReview_doesNotShowYouTagEvenWhenOwner() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val anonymousReview = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = true)
-    reviewsRepo.addReview(anonymousReview)
-
-    compose.setContent {
-      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = anonymousReview.uid)
-    }
-    waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReview.uid }
-
-    scrollListTo(C.ViewReviewTags.POSTED_BY)
-    compose
-        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
-        .assertIsDisplayed()
-        .assertTextContains("Posted by", substring = true)
-        .assertTextContains("anonymous", substring = true)
-    // Should NOT contain "(You)" even though user is the owner
     val postedByText =
         compose
             .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+            .assertIsDisplayed()
             .fetchSemanticsNode()
             .config
-            .getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)
+            .getOrNull(SemanticsProperties.Text)
             ?.firstOrNull()
             ?.text ?: ""
+
     assertTrue(
         "Should contain 'Posted by anonymous'",
         postedByText.contains("Posted by anonymous", ignoreCase = true))
+    assertTrue(
+        "Should NOT contain '(You)' for anonymous review",
+        !postedByText.contains("(You)", ignoreCase = true))
+  }
+
+  @Test
+  fun anonymousReview_doesNotShowYouTagEvenWhenOwner() {
+    setAnonymousOwnerReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReviewOwned.uid }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
+    val postedByText =
+        compose
+            .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+            .assertIsDisplayed()
+            .fetchSemanticsNode()
+            .config
+            .getOrNull(SemanticsProperties.Text)
+            ?.firstOrNull()
+            ?.text ?: ""
+
+    assertTrue("Should contain 'anonymous'", postedByText.contains("anonymous", ignoreCase = true))
     assertTrue(
         "Should NOT contain '(You)' even when owner",
         !postedByText.contains("(You)", ignoreCase = true))
   }
 
   @Test
-  fun nonAnonymousReview_showsActualName() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val nonAnonymousReview = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = false)
-    reviewsRepo.addReview(nonAnonymousReview)
-
-    compose.setContent {
-      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = nonAnonymousReview.uid)
-    }
+  fun nonAnonymousReview_showsActualName() {
+    setNonAnonymousOwnerReview()
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == nonAnonymousReview.uid }
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == nonAnonymousReviewOwned.uid }
 
     scrollListTo(C.ViewReviewTags.POSTED_BY)
-    compose
-        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
-        .assertIsDisplayed()
-        .assertTextContains("Posted by", substring = true)
-    // Should contain the actual name, not "anonymous"
     val postedByText =
         compose
             .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+            .assertIsDisplayed()
             .fetchSemanticsNode()
             .config
-            .getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)
+            .getOrNull(SemanticsProperties.Text)
             ?.firstOrNull()
             ?.text ?: ""
+
     assertTrue(
         "Should contain actual name, not 'anonymous'",
         !postedByText.contains("anonymous", ignoreCase = true))

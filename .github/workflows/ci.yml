@@ -273,7 +273,7 @@ jobs:
           find build/reports -type f -name '*.ec' | while read file; do
             echo "Moving shard $i: $file"
             mv "$file" "app/build/outputs/code_coverage/debugAndroidTest/connected/coverage-shard_$i.ec"
-            (i=$((i+1))
+            i=$((i+1))
           done
           
           echo "Coverage files organized."

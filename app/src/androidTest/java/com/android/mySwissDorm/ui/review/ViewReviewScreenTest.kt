@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
@@ -363,12 +364,11 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose
         .onNodeWithTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
         .assertIsDisplayed()
+        .assertIsNotEnabled()
     compose
         .onNodeWithTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON, useUnmergedTree = true)
         .assertIsDisplayed()
-    // Note: assertIsNotEnabled() doesn't exist, but we can check that the buttons exist and are
-    // displayed
-    // The enabled state is handled by the IconButton's enabled parameter
+        .assertIsNotEnabled()
   }
 
   @Test

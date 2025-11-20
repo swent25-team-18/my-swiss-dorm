@@ -35,7 +35,8 @@ private val defaultListing =
         description = "",
         imageUrls = emptyList(),
         status = RentalStatus.POSTED,
-        residencyName = "")
+        residencyName = "",
+        location = Location(name = "", latitude = 0.0, longitude = 0.0))
 
 data class ViewListingUIState(
     val listing: RentalListing = defaultListing,
@@ -71,8 +72,8 @@ class ViewListingViewModel(
     viewModelScope.launch {
       try {
         val listing = rentalListingRepository.getRentalListing(rentalUid)
-        val residency = residenciesRepository.getResidency(listing.residencyName)
-        _uiState.value = _uiState.value.copy(locationOfListing = residency.location)
+        // Use location directly from the listing (now stored in the model)
+        _uiState.value = _uiState.value.copy(locationOfListing = listing.location)
       } catch (e: Exception) {
         Log.e(
             "MyViewModel",
@@ -113,7 +114,8 @@ class ViewListingViewModel(
               listing = listing,
               fullNameOfPoster = fullNameOfPoster,
               isOwner = isOwner,
-              isBlockedByOwner = isBlockedByOwner)
+              isBlockedByOwner = isBlockedByOwner,
+              locationOfListing = listing.location)
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)

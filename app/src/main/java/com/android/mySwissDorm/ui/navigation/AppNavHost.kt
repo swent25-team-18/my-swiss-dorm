@@ -227,7 +227,15 @@ fun AppNavHost(
 
     composable(Screen.AddReview.route) {
       AddReviewScreen(
-          onConfirm = { navActions.navigateTo(Screen.Homepage) }, onBack = { navActions.goBack() })
+          onBack = { navActions.goBack() },
+          onConfirm = { created ->
+            navController.navigate(Screen.ReviewOverview(created.uid).route) {
+              // Remove AddReview so back from overview goes to whatever was before it (Homepage
+              // here)
+              popUpTo(Screen.AddReview.route) { inclusive = true }
+              launchSingleTop = true
+            }
+          })
     }
 
     composable(Screen.ProfileContributions.route) {

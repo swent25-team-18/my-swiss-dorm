@@ -10,20 +10,16 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.MySwissDormApp
-import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.authentification.AuthRepositoryFirebase
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
-import com.android.mySwissDorm.model.city.City
-import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
-import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
@@ -61,46 +57,10 @@ class Epic1Test : FirestoreTest() {
     UniversitiesRepositoryProvider.repository =
         UniversitiesRepositoryFirestore(FirebaseEmulator.firestore)
 
-    val cityLausanne =
-        City(
-            name = "Lausanne",
-            description =
-                "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.",
-            location = Location(name = "Lausanne", latitude = 46.5197, longitude = 6.6323),
-            imageId = R.drawable.lausanne)
-    val cityGeneva =
-        City(
-            name = "Geneva",
-            description = "Geneva is a global city, hosting numerous international organizations.",
-            location = Location(name = "Geneva", latitude = 46.2044, longitude = 6.1432),
-            imageId = R.drawable.geneve)
-    val cityZurich =
-        City(
-            name = "Zurich",
-            description = "Zurich is the largest city in Switzerland and a major financial hub.",
-            location = Location(name = "Zürich", latitude = 47.3769, longitude = 8.5417),
-            imageId = R.drawable.zurich)
-    val cityFribourg =
-        City(
-            name = "Fribourg",
-            description = "Fribourg is a bilingual city famous for its medieval architecture.",
-            location = Location(name = "Fribourg", latitude = 46.8065, longitude = 7.16197),
-            imageId = R.drawable.fribourg)
-    val resLaus =
-        Residency(
-            name = "Vortex",
-            description = "Vortex",
-            location = Location("Vortex", 46.52, 6.57),
-            city = "Lausanne",
-            email = null,
-            phone = null,
-            website = null)
-
-    val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
     runTest {
       switchToUser(FakeUser.FakeUser1)
       cities.forEach { CitiesRepositoryProvider.repository.addCity(it) }
-      ResidenciesRepositoryProvider.repository.addResidency(resLaus)
+      ResidenciesRepositoryProvider.repository.addResidency(vortex)
 
       rentalListing1 =
           rentalListing1.copy(

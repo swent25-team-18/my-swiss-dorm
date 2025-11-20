@@ -1,8 +1,11 @@
 package com.android.mySwissDorm.ui
 
+import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -23,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,6 +40,14 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import java.util.UUID
 
+/**
+ * This button takes a single picture from the gallery and if the selection is successful, the
+ * [onSelect] is executed with the picture wrap in a [Photo]
+ *
+ * @param onSelect the lambda executed with the resulting photo only if the selection is successful
+ *
+ * The other parameters follow are just transitive to the wrapped [Button]
+ */
 @Composable
 fun GalleryButton(
     onSelect: (Photo) -> Unit,
@@ -51,18 +63,16 @@ fun GalleryButton(
         ActivityResultContracts.GetContent(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
+  val context = LocalContext.current
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePictureContract) {
         it?.let { uri ->
-          onSelect(
-              Photo(
-                  image = uri,
-                  fileName = UUID.randomUUID().toString() + uri.path!!.substringAfterLast('.')))
+          onSelect(Photo(image = uri, fileName = getFileNameFromUri(context = context, uri = uri)))
         }
       }
   Button(
       onClick = { galleryLauncher.launch("image/*") },
-      modifier = modifier.testTag(tag = C.GalleryButtonTag.TAG),
+      modifier = modifier.testTag(tag = C.GalleryButtonTag.SINGLE_TAG),
       enabled = enabled,
       shape = shape,
       colors = colors,
@@ -74,6 +84,58 @@ fun GalleryButton(
       }
 }
 
+/**
+ * This button can take multiple pictures from the gallery and if the selection is not empty, the
+ * [onSelect] lambda is executed with the resulting [Photo]s.
+ *
+ * @param onSelect the lambda executed when the resulting selection contains at least one element.
+ *
+ * The other parameters are transitive to the [Button] wrapped in this composable.
+ */
+@Composable
+fun GalleryButtonMultiplePick(
+    onSelect: (List<Photo>) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = ButtonDefaults.shape,
+    colors: ButtonColors = ButtonDefaults.buttonColors(),
+    elevation: ButtonElevation? = ButtonDefaults.buttonElevation(),
+    border: BorderStroke? = null,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    choosePicturesContract:
+        ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>> =
+        ActivityResultContracts.PickMultipleVisualMedia(),
+    content: @Composable (RowScope.() -> Unit) = {}
+) {
+  val context = LocalContext.current
+  val galleryLauncher =
+      rememberLauncherForActivityResult(choosePicturesContract) { uris ->
+        if (uris.isNotEmpty()) {
+          onSelect(
+              uris.map {
+                Photo(image = it, fileName = getFileNameFromUri(context = context, uri = it))
+              })
+        }
+      }
+  Button(
+      onClick = {
+        galleryLauncher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+      },
+      modifier = modifier.testTag(tag = C.GalleryButtonTag.MULTIPLE_TAG),
+      enabled = enabled,
+      shape = shape,
+      colors = colors,
+      elevation = elevation,
+      border = border,
+      contentPadding = contentPadding,
+      interactionSource = interactionSource) {
+        content()
+      }
+}
+
+/** Provides a default style of [GalleryButton] */
 @Composable
 fun DefaultGalleryButton(
     onSelect: (Photo) -> Unit,
@@ -108,6 +170,56 @@ fun DefaultGalleryButton(
         Spacer(Modifier.width(8.dp))
         Text(text = stringResource(R.string.gallery_button_default_text))
       }
+}
+
+/** Provides a default style of [GalleryButtonMultiplePick] */
+@Composable
+fun DefaultGalleryButtonMultiplePick(
+    onSelect: (List<Photo>) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = RoundedCornerShape(14.dp),
+    colors: ButtonColors =
+        ButtonColors(
+            containerColor = TextBoxColor,
+            contentColor = MainColor,
+            disabledContentColor = TextColor,
+            disabledContainerColor = TextBoxColor),
+    elevation: ButtonElevation? = ButtonDefaults.buttonElevation(),
+    border: BorderStroke? = null,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    choosePicturesContract:
+        ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>> =
+        ActivityResultContracts.PickMultipleVisualMedia(),
+) {
+  GalleryButtonMultiplePick(
+      onSelect = onSelect,
+      modifier = modifier,
+      enabled = enabled,
+      shape = shape,
+      colors = colors,
+      elevation = elevation,
+      border = border,
+      contentPadding = contentPadding,
+      interactionSource = interactionSource,
+      choosePicturesContract = choosePicturesContract) {
+        Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
+        Spacer(Modifier.width(8.dp))
+        Text(text = stringResource(R.string.gallery_button_default_multiple_text))
+      }
+}
+
+private fun getFileNameFromUri(context: Context, uri: Uri): String {
+  require(uri.scheme == "content")
+  var fileName = ""
+  val cursorQuery = context.contentResolver.query(uri, null, null, null)
+  cursorQuery?.use { cursor ->
+    if (cursor.moveToFirst()) {
+      fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+    }
+  } ?: throw IllegalArgumentException()
+  return UUID.randomUUID().toString() + "." + fileName.substringAfterLast('.')
 }
 
 @Preview

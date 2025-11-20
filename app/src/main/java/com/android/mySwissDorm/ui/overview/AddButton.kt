@@ -50,9 +50,9 @@ import com.android.mySwissDorm.ui.theme.White
 fun AddFabMenu(modifier: Modifier = Modifier, onAddListing: () -> Unit, onAddReview: () -> Unit) {
   var expanded by remember { mutableStateOf(false) }
 
-  Box(modifier = modifier) {
+  Box(modifier = modifier.testTag(C.BrowseCityTags.FABSCRIM)) {
     AnimatedVisibility(visible = expanded, enter = fadeIn(), exit = fadeOut()) {
-      Box(Modifier.fillMaxSize().clickable { expanded = false }.testTag(C.BrowseCityTags.FABSCRIM))
+      Box(Modifier.fillMaxSize().clickable { expanded = false })
     }
 
     Column(

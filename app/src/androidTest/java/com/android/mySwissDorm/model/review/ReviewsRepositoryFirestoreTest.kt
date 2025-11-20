@@ -7,6 +7,7 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
 import junit.framework.TestCase
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -17,48 +18,6 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   }
 
   private val repo = ReviewsRepositoryProvider.repository
-
-  val review1 =
-      Review(
-          uid = repo.getNewUid(),
-          ownerId = "",
-          postedAt = Timestamp.now(),
-          title = "First Title",
-          reviewText = "My first review",
-          grade = 5.0,
-          residencyName = "Vortex",
-          roomType = RoomType.STUDIO,
-          pricePerMonth = 300.0,
-          areaInM2 = 64,
-          imageUrls = emptyList())
-
-  val review2 =
-      Review(
-          uid = repo.getNewUid(),
-          ownerId = "",
-          postedAt = Timestamp.now(),
-          title = "Second Title",
-          reviewText = "My second review",
-          grade = 4.0,
-          residencyName = "Atrium",
-          roomType = RoomType.APARTMENT,
-          pricePerMonth = 500.0,
-          areaInM2 = 32,
-          imageUrls = emptyList())
-
-  val review3 =
-      Review(
-          uid = repo.getNewUid(),
-          ownerId = "",
-          postedAt = Timestamp.now(),
-          title = "Third Title",
-          reviewText = "My third review",
-          grade = 2.0,
-          residencyName = "Vortex",
-          roomType = RoomType.COLOCATION,
-          pricePerMonth = 100.0,
-          areaInM2 = 16,
-          imageUrls = emptyList())
 
   @Before
   override fun setUp() {
@@ -82,7 +41,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   fun canAddAndGetReviewFromRepository() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val reviewToAdd =
-        review1.copy(
+        reviewVortex1.copy(
             ownerId =
                 FirebaseEmulator.auth.currentUser?.uid
                     ?: throw NullPointerException("No user logged in"))
@@ -94,12 +53,12 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   fun getAllReviewsWorks() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val firstReview =
-        review1.copy(
+        reviewVortex1.copy(
             ownerId =
                 FirebaseEmulator.auth.currentUser?.uid
                     ?: throw NullPointerException("No user logged in"))
     val secondReview =
-        review1.copy(
+        reviewVortex2.copy(
             ownerId =
                 FirebaseEmulator.auth.currentUser?.uid
                     ?: throw NullPointerException("No user logged in"))
@@ -113,15 +72,15 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val firstUserId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
-    val firstReview = review1.copy(ownerId = firstUserId)
-    val secondReview = review2.copy(ownerId = firstUserId)
+    val firstReview = reviewVortex1.copy(ownerId = firstUserId)
+    val secondReview = reviewWoko1.copy(ownerId = firstUserId)
     repo.addReview(firstReview)
     repo.addReview(secondReview)
 
     switchToUser(FakeUser.FakeUser2)
     val secondUserId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
-    val thirdReview = review3.copy(ownerId = secondUserId)
+    val thirdReview = reviewVortex2.copy(ownerId = secondUserId)
     repo.addReview(thirdReview)
 
     switchToUser(FakeUser.FakeUser1)
@@ -134,15 +93,15 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val firstUserId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
-    val firstReview = review1.copy(ownerId = firstUserId)
-    val secondReview = review2.copy(ownerId = firstUserId)
+    val firstReview = reviewVortex1.copy(ownerId = firstUserId)
+    val secondReview = reviewWoko1.copy(ownerId = firstUserId)
     repo.addReview(firstReview)
     repo.addReview(secondReview)
 
     switchToUser(FakeUser.FakeUser2)
     val secondUserId =
         FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
-    val thirdReview = review3.copy(ownerId = secondUserId)
+    val thirdReview = reviewVortex2.copy(ownerId = secondUserId)
     repo.addReview(thirdReview)
 
     switchToUser(FakeUser.FakeUser1)
@@ -154,7 +113,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   fun editReviewWorks() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val review =
-        review1.copy(
+        reviewVortex1.copy(
             ownerId =
                 FirebaseEmulator.auth.currentUser?.uid
                     ?: throw NullPointerException("No user logged in"))
@@ -174,12 +133,12 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   fun editReviewButDifferentUidFails() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val firstReview =
-        review1.copy(
+        reviewVortex1.copy(
             ownerId =
                 FirebaseEmulator.auth.currentUser?.uid
                     ?: throw NullPointerException("No user logged in"))
     val secondReview =
-        review2.copy(
+        reviewVortex2.copy(
             ownerId =
                 FirebaseEmulator.auth.currentUser?.uid
                     ?: throw NullPointerException("No user logged in"))
@@ -191,7 +150,7 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
   fun deleteReviewWorks() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val review =
-        review1.copy(
+        reviewVortex1.copy(
             ownerId =
                 FirebaseEmulator.auth.currentUser?.uid
                     ?: throw NullPointerException("No user logged in"))
@@ -199,5 +158,82 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     assertEquals(true, runCatching { repo.getReview(review.uid) }.isSuccess)
     repo.deleteReview(review.uid)
     assertEquals(true, runCatching { repo.getReview(review.uid) }.isFailure)
+  }
+
+  @Test
+  fun voteListsArePersistedAndLoaded() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    val original =
+        reviewVortex1.copy(
+            ownerId = ownerId,
+            upvotedBy = listOf(ownerId, "other-user"),
+            downvotedBy = listOf("downvoter-1"))
+
+    repo.addReview(original)
+    val loaded = repo.getReview(original.uid)
+
+    assertEquals(original.upvotedBy, loaded.upvotedBy)
+    assertEquals(original.downvotedBy, loaded.downvotedBy)
+  }
+
+  @Test
+  fun reviewWithoutUpvotedByReturnsNull() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    // Write a document without upvotedBy field (old schema simulation)
+    val id = repo.getNewUid()
+    val data =
+        mapOf(
+            "ownerId" to ownerId,
+            "postedAt" to Timestamp.now(),
+            "title" to "Title",
+            "reviewText" to "Text",
+            "grade" to 4.0,
+            "residencyName" to "Vortex",
+            "roomType" to RoomType.STUDIO.name,
+            "pricePerMonth" to 1000.0,
+            "areaInM2" to 20.0,
+            "imageUrls" to emptyList<String>(),
+            "downvotedBy" to emptyList<String>())
+    // Note: upvotedBy is intentionally missing
+
+    FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
+
+    // Should return null (and getReview throws when null)
+    assertEquals(true, runCatching { repo.getReview(id) }.isFailure)
+  }
+
+  @Test
+  fun reviewWithoutDownvotedByReturnsNull() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    // Write a document without downvotedBy field (old schema simulation)
+    val id = repo.getNewUid()
+    val data =
+        mapOf(
+            "ownerId" to ownerId,
+            "postedAt" to Timestamp.now(),
+            "title" to "Title",
+            "reviewText" to "Text",
+            "grade" to 4.0,
+            "residencyName" to "Vortex",
+            "roomType" to RoomType.STUDIO.name,
+            "pricePerMonth" to 1000.0,
+            "areaInM2" to 20.0,
+            "imageUrls" to emptyList<String>(),
+            "upvotedBy" to emptyList<String>())
+    // Note: downvotedBy is intentionally missing
+
+    FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
+
+    // Should return null (and getReview throws when null)
+    assertEquals(true, runCatching { repo.getReview(id) }.isFailure)
   }
 }

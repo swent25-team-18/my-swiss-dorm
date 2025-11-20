@@ -623,9 +623,10 @@ class EditReviewScreenTest : FirestoreTest() {
     composeRule.waitUntil(10_000) { deletedResidencyName != null }
     assertEquals(resTest.name, deletedResidencyName)
 
-    // Verify review was deleted from repository
+    // Wait for the ViewModel's coroutine to complete by waiting for the review to be deleted
+    // This ensures the viewModelScope coroutine finishes before the test completes
     var tries = 0
-    while (tries < 30) {
+    while (tries < 50) {
       val exception =
           kotlin
               .runCatching { ReviewsRepositoryProvider.repository.getReview(id) }

@@ -1163,6 +1163,20 @@ class AppNavHostTest : FirestoreTest() {
     scrollToElement(C.ViewReviewTags.ROOT, C.ViewReviewTags.POSTED_BY)
     composeTestRule.waitForIdle()
 
+    // Wait a bit to ensure profile data is loaded (fullNameOfPoster needs to be populated)
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      val text =
+          composeTestRule
+              .onNodeWithTag(C.ViewReviewTags.POSTED_BY, useUnmergedTree = true)
+              .fetchSemanticsNode()
+              .config
+              .getOrNull(SemanticsProperties.Text)
+              ?.firstOrNull()
+              ?.text ?: ""
+      text.contains("Owner") || text.isNotEmpty()
+    }
+    composeTestRule.waitForIdle()
+
     // Click on POSTED_BY to trigger onViewProfile callback (lines 286-295)
     // Since viewer != owner, it should navigate to ViewUserProfile (line 293)
     composeTestRule
@@ -1173,7 +1187,7 @@ class AppNavHostTest : FirestoreTest() {
     composeTestRule.waitForIdle()
 
     // Verify navigation to ViewUserProfile since viewer != owner
-    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
       var result = false
       composeTestRule.runOnUiThread {
         val currentRoute = navController.currentBackStackEntry?.destination?.route

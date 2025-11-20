@@ -30,6 +30,7 @@ import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +65,9 @@ fun AddListingScreen(
             val ui = listingUIState
             Button(
                 onClick = { addListingViewModel.submitForm(onConfirm) },
-                enabled = ui.isFormValid,
+                enabled =
+                    ui.isFormValid &&
+                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: false),
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth()
@@ -74,9 +77,9 @@ fun AddListingScreen(
                   Text("Confirm listing", color = Color.White)
                 }
             Spacer(Modifier.height(8.dp))
-            if (!ui.isFormValid) {
+            if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
-                  "Please complete all required fields (valid size, price, and starting date).",
+                  "Please complete all required fields (valid size, price, and starting date) or Sign-in if you're a guest.",
                   style = MaterialTheme.typography.bodySmall,
                   color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

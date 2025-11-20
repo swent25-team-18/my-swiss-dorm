@@ -103,4 +103,30 @@ class SignInViewModel(
       }
     }
   }
+
+  fun signInAnonymously() {
+    if (_uiState.value.isLoading) return
+
+    viewModelScope.launch {
+      _uiState.update { it.copy(isLoading = true, errMsg = null) }
+
+      authRepository
+          .signInAnonymously()
+          .fold(
+              onSuccess = { user ->
+                _uiState.update {
+                  it.copy(isLoading = false, user = user, errMsg = null, signedOut = false)
+                }
+              },
+              onFailure = { failure ->
+                _uiState.update {
+                  it.copy(
+                      isLoading = false,
+                      user = null,
+                      errMsg = failure.localizedMessage ?: "Guest login failed",
+                      signedOut = true)
+                }
+              })
+    }
+  }
 }

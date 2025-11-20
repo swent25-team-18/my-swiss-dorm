@@ -29,6 +29,7 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.StarRatingBar
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +61,9 @@ fun AddReviewScreen(
             val ui = reviewUIState
             Button(
                 onClick = { addReviewViewModel.submitReviewForm(onConfirm) },
-                enabled = ui.isFormValid,
+                enabled =
+                    ui.isFormValid &&
+                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: false),
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
@@ -68,9 +71,9 @@ fun AddReviewScreen(
                   Text("Submit Review", color = Color.White)
                 }
             Spacer(Modifier.height(8.dp))
-            if (!ui.isFormValid) {
+            if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
-                  "Please complete all required fields (valid grade, size, price, etc.).",
+                  "Please complete all required fields (valid grade, size, price, etc.) or sign in.",
                   style = MaterialTheme.typography.bodySmall,
                   color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

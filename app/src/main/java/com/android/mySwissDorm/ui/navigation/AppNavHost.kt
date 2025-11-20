@@ -48,6 +48,7 @@ import com.android.mySwissDorm.ui.review.ReviewsByResidencyScreen
 import com.android.mySwissDorm.ui.review.ViewReviewScreen
 import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.utils.SignInPopUp
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -131,17 +132,47 @@ fun AppNavHost(
     composable(Screen.Settings.route) {
       val adminRepo = remember { AdminRepository() }
       var isAdmin by remember { mutableStateOf(false) }
+      val currentUser = FirebaseAuth.getInstance().currentUser
+      val userAnonymous = currentUser != null && currentUser.isAnonymous
 
-      LaunchedEffect(Unit) { isAdmin = adminRepo.isCurrentUserAdmin() }
+      LaunchedEffect(Unit) {
+        isAdmin =
+            try {
+              if (currentUser != null && !currentUser.isAnonymous) {
+                adminRepo.isCurrentUserAdmin()
+              } else {
+                false
+              }
+            } catch (e: Exception) {
+              Log.e("AppNavHost", "Admin check failed", e)
+              false
+            }
+      }
       SettingsScreen(
           onItemClick = {
             Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
           },
-          onProfileClick = { navActions.navigateTo(Screen.Profile) },
+          onProfileClick = {
+            if (userAnonymous) {
+              Toast.makeText(context, "Sign in to create profile", Toast.LENGTH_SHORT).show()
+              navActions.navigateTo(Screen.Profile)
+            } else {
+              navActions.navigateTo(Screen.Profile)
+            }
+          },
           navigationActions = navActions,
           onAdminClick = { navActions.navigateTo(Screen.Admin) },
           isAdmin = isAdmin,
-          onContributionClick = { navActions.navigateTo(Screen.ProfileContributions) })
+          onContributionClick = {
+            if (userAnonymous) {
+              Toast.makeText(context, "Sign in to see your contributions", Toast.LENGTH_SHORT)
+                  .show()
+              navActions.navigateTo(Screen.ProfileContributions)
+            } else {
+              navActions.navigateTo(Screen.ProfileContributions)
+            }
+          },
+      )
     }
 
     // --- Secondary destinations ---
@@ -221,19 +252,28 @@ fun AppNavHost(
       val vm: ProfileContributionsViewModel = viewModel()
       val ui by vm.ui.collectAsState()
       LaunchedEffect(Unit) { vm.load(force = true) }
-      ProfileContributionsScreen(
-          contributions = ui.items,
-          onBackClick = { navActions.goBack() },
-          onContributionClick = { contribution ->
-            when (contribution.type) {
-              ContributionType.LISTING ->
-                  contribution.referenceId?.let {
-                    navActions.navigateTo(Screen.ListingOverview(it))
-                  }
-              ContributionType.REVIEW ->
-                  contribution.referenceId?.let { navActions.navigateTo(Screen.ReviewOverview(it)) }
-            }
-          })
+      val currentUser = FirebaseAuth.getInstance().currentUser
+      if (currentUser != null && currentUser.isAnonymous) {
+        SignInPopUp(
+            onSignInClick = { navActions.navigateTo(Screen.SignIn) },
+            onBack = { navActions.goBack() })
+      } else {
+        ProfileContributionsScreen(
+            contributions = ui.items,
+            onBackClick = { navActions.goBack() },
+            onContributionClick = { contribution ->
+              when (contribution.type) {
+                ContributionType.LISTING ->
+                    contribution.referenceId?.let {
+                      navActions.navigateTo(Screen.ListingOverview(it))
+                    }
+                ContributionType.REVIEW ->
+                    contribution.referenceId?.let {
+                      navActions.navigateTo(Screen.ReviewOverview(it))
+                    }
+              }
+            })
+      }
     }
 
     composable(Screen.ReviewsByResidencyOverview.route) { navBackStackEntry ->
@@ -372,15 +412,22 @@ fun AppNavHost(
     }
 
     composable(Screen.Profile.route) {
-      ProfileScreen(
-          onBack = { navActions.goBack() },
-          onLogout = {
-            AuthRepositoryProvider.repository.signOut()
-            navigationViewModel.determineInitialDestination()
-          },
-          onChangeProfilePicture = {
-            Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
-          })
+      val currentUser = FirebaseAuth.getInstance().currentUser
+      if (currentUser != null && currentUser.isAnonymous) {
+        SignInPopUp(
+            onSignInClick = { navActions.navigateTo(Screen.SignIn) },
+            onBack = { navActions.goBack() })
+      } else {
+        ProfileScreen(
+            onBack = { navActions.goBack() },
+            onLogout = {
+              AuthRepositoryProvider.repository.signOut()
+              navigationViewModel.determineInitialDestination()
+            },
+            onChangeProfilePicture = {
+              Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
+            })
+      }
     }
   }
 }

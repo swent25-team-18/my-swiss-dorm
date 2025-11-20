@@ -137,7 +137,8 @@ data class BrowseCityUiState(
     val customLocation: Location? = null,
     val locationSuggestions: List<Location> = emptyList(),
     val showCustomLocationDialog: Boolean = false,
-    val filterState: FilterState = FilterState()
+    val filterState: FilterState = FilterState(),
+    val isGuest: Boolean = false
 )
 
 /**
@@ -168,6 +169,10 @@ class BrowseCityViewModel(
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()
 
   private val maxDistanceToDisplay = 15.0
+
+  init {
+    _uiState.update { it.copy(isGuest = auth.currentUser?.isAnonymous ?: false) }
+  }
 
   fun loadListings(location: Location) {
     _uiState.update { it.copy(listings = it.listings.copy(loading = true, error = null)) }

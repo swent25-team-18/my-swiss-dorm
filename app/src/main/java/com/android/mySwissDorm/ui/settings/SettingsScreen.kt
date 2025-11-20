@@ -44,6 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
+import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
@@ -99,7 +100,7 @@ fun SettingsScreen(
     onContributionClick: () -> Unit = {}
 ) {
   val ui by vm.uiState.collectAsState()
-
+  vm.setIsGuest()
   LaunchedEffect(Unit) { vm.refresh() }
 
   val context = LocalContext.current
@@ -270,12 +271,12 @@ fun SettingsScreenContent(
                         CardBlock {
                           SettingSwitchRow(
                               label = "Show notifications for messages",
-                              checked = notificationsMessages,
+                              checked = if (ui.isGuest) false else notificationsMessages,
                               onCheckedChange = { notificationsMessages = it })
                           SoftDivider()
                           SettingSwitchRow(
                               label = "Show notifications for new listings",
-                              checked = notificationsListings,
+                              checked = if (ui.isGuest) false else notificationsListings,
                               onCheckedChange = { notificationsListings = it })
                         }
 
@@ -285,7 +286,7 @@ fun SettingsScreenContent(
                           OutlinedTextField(
                               value = ui.email,
                               onValueChange = {},
-                              label = { Text("Email address") },
+                              label = { Text("Guest") },
                               singleLine = true,
                               readOnly = true,
                               enabled = false,
@@ -320,7 +321,7 @@ fun SettingsScreenContent(
                         CardBlock {
                           SettingSwitchRow(
                               label = "Read receipts",
-                              checked = readReceipts,
+                              checked = if (ui.isGuest) true else readReceipts,
                               onCheckedChange = { readReceipts = it })
                           SoftDivider()
 
@@ -416,7 +417,7 @@ fun SettingsScreenContent(
                           SoftDivider()
                           SettingSwitchRow(
                               label = "Anonymous",
-                              checked = anonymous,
+                              checked = if (ui.isGuest) false else anonymous,
                               onCheckedChange = { anonymous = it })
                         }
 
@@ -453,25 +454,48 @@ fun SettingsScreenContent(
                           modifier =
                               Modifier.fillMaxWidth()
                                   .widthIn(max = if (maxW >= 600.dp) 600.dp else maxW)) {
-                            Button(
-                                onClick = { showDeleteConfirm = true },
-                                enabled = !ui.isDeleting,
-                                colors =
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = BackGroundColor,
-                                        contentColor = MainColor,
-                                        disabledContainerColor = BackGroundColor,
-                                        disabledContentColor = MainColor.copy(alpha = 0.5f)),
-                                shape = RoundedCornerShape(28.dp),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                border = BorderStroke(1.dp, MainColor.copy(alpha = 0.15f)),
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .padding(top = 8.dp)
-                                        .testTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
-                                        .navigationBarsPadding()) {
-                                  Text(if (ui.isDeleting) "DELETING…" else "DELETE MY ACCOUNT")
-                                }
+                            if (ui.isGuest) {
+                              Button(
+                                  onClick = { navigationActions?.navigateTo(Screen.SignIn) },
+                                  enabled = true,
+                                  colors =
+                                      ButtonDefaults.buttonColors(
+                                          containerColor = MainColor,
+                                          contentColor = White,
+                                          disabledContainerColor = MainColor.copy(alpha = 0.5f),
+                                          disabledContentColor = White),
+                                  shape = RoundedCornerShape(28.dp),
+                                  elevation =
+                                      ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                  modifier =
+                                      Modifier.fillMaxWidth()
+                                          .padding(top = 8.dp)
+                                          .testTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
+                                          .navigationBarsPadding()) {
+                                    Text("SIGN UP TO CREATE ACCOUNT")
+                                  }
+                            } else {
+                              Button(
+                                  onClick = { showDeleteConfirm = true },
+                                  enabled = !ui.isDeleting,
+                                  colors =
+                                      ButtonDefaults.buttonColors(
+                                          containerColor = BackGroundColor,
+                                          contentColor = MainColor,
+                                          disabledContainerColor = BackGroundColor,
+                                          disabledContentColor = MainColor.copy(alpha = 0.5f)),
+                                  shape = RoundedCornerShape(28.dp),
+                                  elevation =
+                                      ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                  border = BorderStroke(1.dp, MainColor.copy(alpha = 0.15f)),
+                                  modifier =
+                                      Modifier.fillMaxWidth()
+                                          .padding(top = 8.dp)
+                                          .testTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
+                                          .navigationBarsPadding()) {
+                                    Text(if (ui.isDeleting) "DELETING…" else "DELETE MY ACCOUNT")
+                                  }
+                            }
                           }
                     }
                   }

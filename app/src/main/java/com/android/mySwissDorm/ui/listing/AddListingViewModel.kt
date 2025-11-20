@@ -11,6 +11,7 @@ import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.listing.BaseListingFormViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
@@ -32,7 +33,11 @@ class AddListingViewModel(
 
   fun submitForm(onConfirm: (RentalListing) -> Unit) {
     val state = uiState.value
-
+    // will probably never reach this if but it's just here for security
+    if ((FirebaseAuth.getInstance().currentUser?.isAnonymous ?: false)) {
+      setErrorMsg("Guest users cannot create listings")
+      return
+    }
     if (!state.isFormValid) {
       setErrorMsg("At least one field is not valid")
       return

@@ -10,6 +10,8 @@ object C {
     const val SIGN_IN_SCREEN = "signInScreen"
     const val SIGN_IN_APP_LOGO = "signInAppLogo"
     const val SIGN_IN_LOG_IN_BUTTON = "signInLogInButton"
+
+    const val SIGN_IN_GUEST_BUTTON = "signInGuestButton"
     const val SIGN_IN_SIGN_UP_BUTTON = "signInSignUpButton"
     const val SIGN_UP_SCREEN = "signUpScreen"
     const val SIGN_UP_NAME_FIELD = "signUpNameField"

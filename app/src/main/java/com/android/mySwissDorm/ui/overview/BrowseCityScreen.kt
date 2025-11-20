@@ -133,7 +133,8 @@ fun BrowseCityScreen(
       startTab = startTab,
       onAddListingClick = { navigationActions?.navigateTo(Screen.AddListing) },
       onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
-      navigationActions = navigationActions)
+      navigationActions = navigationActions,
+      isGuest = uiState.isGuest)
 
   if (uiState.showCustomLocationDialog) {
     CustomLocationDialog(
@@ -197,7 +198,8 @@ private fun BrowseCityScreenUI(
     onAddListingClick: () -> Unit = {},
     onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
-    startTab: Int = 1
+    startTab: Int = 1,
+    isGuest: Boolean
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(startTab) } // 0 Reviews, 1 Listings
 
@@ -207,7 +209,8 @@ private fun BrowseCityScreenUI(
         AddFabMenu(
             onAddListing = onAddListingClick,
             onAddReview = onAddReviewClick,
-            modifier = Modifier.navigationBarsPadding().imePadding())
+            modifier = Modifier.navigationBarsPadding().imePadding(),
+            isGuest = isGuest)
       },
       topBar = {
         CenterAlignedTopAppBar(
@@ -1079,6 +1082,7 @@ private fun BrowseCityScreen_Preview() {
         onSetStartDateFilter = { _, _ -> },
         onSetSortByMostRecent = {},
         onToggleMostRecent = {},
-        onDismissFilterSheet = {})
+        onDismissFilterSheet = {},
+        isGuest = false)
   }
 }

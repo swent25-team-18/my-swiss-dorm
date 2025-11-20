@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
@@ -21,12 +22,16 @@ import okio.FileNotFoundException
 class EditListingViewModel(
     rentalListingRepository: RentalListingRepository = RentalListingRepositoryProvider.repository,
     residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
-    locationRepository: LocationRepository = LocationRepositoryProvider.repository
+    locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository
 ) :
     BaseListingFormViewModel(
         rentalListingRepository = rentalListingRepository,
         residenciesRepository = residenciesRepository,
-        locationRepository = locationRepository) {
+        locationRepository = locationRepository,
+        photoRepositoryLocal = photoRepositoryLocal,
+        photoRepositoryCloud = photoRepositoryCloud) {
 
   override val logTag = "EditListingViewModel"
   val deletedPhotos = mutableListOf<String>()
@@ -61,7 +66,7 @@ class EditListingViewModel(
         val photos =
             listing.imageUrls.mapNotNull { fileName ->
               try {
-                PhotoRepositoryProvider.cloud_repository.retrievePhoto(fileName)
+                photoRepositoryCloud.retrievePhoto(fileName)
               } catch (_: FileNotFoundException) {
                 Log.d(logTag, "Failed to retrieve the photo : $fileName")
                 null
@@ -128,8 +133,8 @@ class EditListingViewModel(
       }
     }
     viewModelScope.launch {
-      newPhotos.forEach { PhotoRepositoryProvider.cloud_repository.uploadPhoto(it) }
-      deletedPhotos.forEach { PhotoRepositoryProvider.cloud_repository.deletePhoto(it) }
+      newPhotos.forEach { photoRepositoryCloud.uploadPhoto(it) }
+      deletedPhotos.forEach { photoRepositoryCloud.deletePhoto(it) }
       Log.d(logTag, "Removed : ${deletedPhotos.size}, Added : ${newPhotos.size}")
     }
     clearErrorMsg()
@@ -138,9 +143,7 @@ class EditListingViewModel(
 
   fun deleteRentalListing(rentalPostID: String) {
     viewModelScope.launch {
-      _uiState.value.pickedImages.forEach {
-        PhotoRepositoryProvider.cloud_repository.deletePhoto(it.fileName)
-      }
+      _uiState.value.pickedImages.forEach { photoRepositoryCloud.deletePhoto(it.fileName) }
       try {
         rentalListingRepository.deleteRentalListing(rentalPostId = rentalPostID)
       } catch (e: Exception) {

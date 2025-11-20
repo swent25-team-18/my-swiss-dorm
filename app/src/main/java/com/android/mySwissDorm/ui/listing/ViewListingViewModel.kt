@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -56,7 +57,8 @@ class ViewListingViewModel(
         RentalListingRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository
+        ResidenciesRepositoryProvider.repository,
+    private val photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
@@ -114,7 +116,7 @@ class ViewListingViewModel(
         val photos =
             listing.imageUrls.mapNotNull { fileName ->
               try {
-                PhotoRepositoryProvider.cloud_repository.retrievePhoto(fileName)
+                photoRepositoryCloud.retrievePhoto(fileName)
               } catch (_: NoSuchElementException) {
                 Log.d("ViewListingViewModel", "Failed to retrieve the photo : $fileName")
                 null

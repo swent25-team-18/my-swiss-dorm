@@ -3,6 +3,7 @@ package com.android.mySwissDorm.ui.listing
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
@@ -20,12 +21,16 @@ import kotlinx.coroutines.launch
 class AddListingViewModel(
     rentalListingRepository: RentalListingRepository = RentalListingRepositoryProvider.repository,
     residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
-    locationRepository: LocationRepository = LocationRepositoryProvider.repository
+    locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository
 ) :
     BaseListingFormViewModel(
         rentalListingRepository = rentalListingRepository,
         residenciesRepository = residenciesRepository,
-        locationRepository = locationRepository) {
+        locationRepository = locationRepository,
+        photoRepositoryLocal = photoRepositoryLocal,
+        photoRepositoryCloud = photoRepositoryCloud) {
 
   init {
     // For Add, residency must be chosen
@@ -70,7 +75,7 @@ class AddListingViewModel(
     viewModelScope.launch {
       try {
         rentalListingRepository.addRentalListing(listingToAdd)
-        state.pickedImages.forEach { PhotoRepositoryProvider.cloud_repository.uploadPhoto(it) }
+        state.pickedImages.forEach { photoRepositoryCloud.uploadPhoto(it) }
         clearErrorMsg()
         onConfirm(listingToAdd)
       } catch (e: Exception) {

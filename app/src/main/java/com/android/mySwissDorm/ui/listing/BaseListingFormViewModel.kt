@@ -7,6 +7,7 @@ import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -26,6 +27,8 @@ abstract class BaseListingFormViewModel(
         RentalListingRepositoryProvider.repository,
     protected val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
+    protected val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    protected val photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository,
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository
 ) : BaseLocationSearchViewModel() {
 
@@ -116,7 +119,7 @@ abstract class BaseListingFormViewModel(
 
   open fun addPhoto(photo: Photo) {
     viewModelScope.launch {
-      PhotoRepositoryProvider.local_repository.uploadPhoto(photo)
+      photoRepositoryLocal.uploadPhoto(photo)
       val images = _uiState.value.pickedImages.toMutableList()
       images.add(photo)
       _uiState.value = _uiState.value.copy(pickedImages = images.toList())
@@ -130,7 +133,7 @@ abstract class BaseListingFormViewModel(
     if (removeFromLocal) {
       photo?.let {
         viewModelScope.launch {
-          if (PhotoRepositoryProvider.local_repository.deletePhoto(photo.fileName)) {
+          if (photoRepositoryLocal.deletePhoto(photo.fileName)) {
             _uiState.value = _uiState.value.copy(pickedImages = images.toList())
           }
         }

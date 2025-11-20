@@ -7,6 +7,7 @@ import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.map.distanceTo
+import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -155,6 +156,7 @@ data class BrowseCityUiState(
  * @property locationRepository The repository for searching locations.
  * @property profileRepository The repository for managing user profile data.
  * @property auth The Firebase Auth instance for getting the current user.
+ * @property photoRepositoryCloud The cloud abstraction of a photo repository
  */
 class BrowseCityViewModel(
     private val listingsRepository: RentalListingRepository =
@@ -164,7 +166,8 @@ class BrowseCityViewModel(
         ResidenciesRepositoryProvider.repository,
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository
 ) : BaseLocationSearchViewModel() {
   override val logTag = "BrowseCityViewModel"
   private val _uiState = MutableStateFlow(BrowseCityUiState())
@@ -271,7 +274,7 @@ class BrowseCityViewModel(
               if (listing.imageUrls.isNotEmpty()) {
                 val fileName = listing.imageUrls.first()
                 try {
-                  val photo = PhotoRepositoryProvider.cloud_repository.retrievePhoto(fileName)
+                  val photo = photoRepositoryCloud.retrievePhoto(fileName)
                   listingCardUI = listingCardUI.copy(image = photo.image)
                   Log.d(
                       "BrowseCityViewModel",

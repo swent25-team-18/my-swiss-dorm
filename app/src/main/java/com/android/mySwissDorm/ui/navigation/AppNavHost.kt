@@ -257,7 +257,7 @@ fun AppNavHost(
         SignInPopUp(
             onSignInClick = { navActions.navigateTo(Screen.SignIn) },
             onBack = { navActions.goBack() },
-            title = "My contribution")
+            title = "My contributions")
       } else {
         ProfileContributionsScreen(
             contributions = ui.items,

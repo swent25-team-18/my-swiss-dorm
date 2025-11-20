@@ -127,4 +127,19 @@ class BaseListingFormViewModelTest : FirestoreTest() {
       assertEquals(0, fakeLocalRepo.deleteCount)
     }
   }
+
+  @Test
+  fun removePhotoWhenNonExistingDoesNothing() {
+    val fakeLocalRepo = FakePhotoRepositoryLocal({ fakePhoto }, {}, true)
+    val vm = FakeBaseListingFormViewModel(photoRepositoryLocal = fakeLocalRepo)
+    runTest {
+      vm.removePhoto(uri = fakePhoto.image, removeFromLocal = false)
+      composeTestRule.waitUntil(
+          "The delete action should do nothing if the photo is not picked", 5000) {
+            0 == fakeLocalRepo.uploadCount &&
+                0 == fakeLocalRepo.retrieveCount &&
+                0 == fakeLocalRepo.deleteCount
+          }
+    }
+  }
 }

@@ -6,8 +6,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -45,6 +47,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private lateinit var listingZurich: RentalListing
 
   override fun createRepositories() {
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
     runBlocking {
       residenciesRepo.addResidency(vortex)
       residenciesRepo.addResidency(woko)

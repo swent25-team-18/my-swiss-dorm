@@ -1,6 +1,8 @@
 package com.android.mySwissDorm.ui.listing
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
@@ -31,6 +33,7 @@ import org.junit.runner.RunWith
 class AddListingViewModelTest : FirestoreTest() {
 
   override fun createRepositories() {
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
     RentalListingRepositoryProvider.repository =
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
   }

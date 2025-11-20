@@ -9,11 +9,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.MySwissDormApp
 import com.android.mySwissDorm.model.authentification.AuthRepositoryFirebase
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
@@ -56,6 +58,7 @@ class Epic1Test : FirestoreTest() {
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
     UniversitiesRepositoryProvider.repository =
         UniversitiesRepositoryFirestore(FirebaseEmulator.firestore)
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
 
     runTest {
       switchToUser(FakeUser.FakeUser1)

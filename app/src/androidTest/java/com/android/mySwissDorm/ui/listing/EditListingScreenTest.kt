@@ -17,6 +17,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
@@ -48,6 +50,7 @@ class EditListingScreenTest : FirestoreTest() {
   @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 
   override fun createRepositories() {
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
     RentalListingRepositoryProvider.repository =
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
 

@@ -4,11 +4,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.MySwissDormApp
 import com.android.mySwissDorm.model.authentification.AuthRepositoryFirebase
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
@@ -46,6 +48,7 @@ class Epic2Test : FirestoreTest() {
     ResidenciesRepositoryProvider.repository =
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
     ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
 
     // ---- SEED FIRESTORE (synchronously) ----
     switchToUser(FakeUser.FakeUser2)

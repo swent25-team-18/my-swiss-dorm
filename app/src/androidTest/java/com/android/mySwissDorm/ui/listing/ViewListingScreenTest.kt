@@ -13,7 +13,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.*
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
@@ -49,6 +51,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   private lateinit var otherListing: RentalListing
 
   override fun createRepositories() {
+    PhotoRepositoryProvider.initialize(
+        context = InstrumentationRegistry.getInstrumentation().context)
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     listingsRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
     residenciesRepo = ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)

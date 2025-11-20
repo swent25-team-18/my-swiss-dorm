@@ -321,20 +321,27 @@ class BrowseCityViewModel(
                         2.0 // Round to the nearest half unit (1.0, 1.5, 2.0, etc)
                   } else 0.0
               val latestReview = reviewsFiltered.maxByOrNull { review -> review.postedAt }
-              val ownerInfo =
-                  if (latestReview != null) {
-                    try {
-                      profileRepository.getProfile(latestReview.ownerId).userInfo
-                    } catch (e: Exception) {
-                      Log.w(
-                          "BrowseCiteViewModel",
-                          "Profile with ownerId ${latestReview.ownerId} not found",
-                          e)
-                      null
-                    }
-                  } else null
               val fullName =
-                  if (ownerInfo != null) "${ownerInfo.name} ${ownerInfo.lastName}" else "Unknown"
+                  if (latestReview != null) {
+                    // Check if the review is anonymous - if so, always show "anonymous"
+                    if (latestReview.isAnonymous) {
+                      "anonymous"
+                    } else {
+                      // Only fetch and show the actual name if the review is NOT anonymous
+                      val ownerInfo =
+                          try {
+                            profileRepository.getProfile(latestReview.ownerId).userInfo
+                          } catch (e: Exception) {
+                            Log.w(
+                                "BrowseCiteViewModel",
+                                "Profile with ownerId ${latestReview.ownerId} not found",
+                                e)
+                            null
+                          }
+                      if (ownerInfo != null) "${ownerInfo.name} ${ownerInfo.lastName}"
+                      else "Unknown"
+                    }
+                  } else "Unknown"
               ResidencyCardUI(
                   title = it.name,
                   meanGrade = meanGrade,

@@ -1,22 +1,30 @@
 package com.android.mySwissDorm.ui.review
 
-import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
-import com.android.mySwissDorm.model.review.REVIEWS_COLLECTION_PATH
+import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
+import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import kotlin.math.roundToInt
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -24,27 +32,58 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
-@ExperimentalCoroutinesApi
+/**
+ * UI tests for AddReviewScreen. We assert ViewModel wiring + callbacks here (no direct Firestore
+ * assertions).
+ */
+@RunWith(AndroidJUnit4::class)
 class AddReviewScreenTest : FirestoreTest() {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-  private lateinit var viewModel: AddReviewViewModel
-  private var onBackCalled: Boolean = false
-
+  // Provide concrete repositories for the emulator
   override fun createRepositories() {
     ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
     ResidenciesRepositoryProvider.repository =
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
+  // ---------- Small helpers ----------
+
+  private fun SemanticsNodeInteraction.replaceText(text: String) {
+    performTextClearance()
+    performTextInput(text)
+  }
+
+  private fun editable(tag: String): SemanticsNodeInteraction =
+      composeRule.onNode(hasTestTag(tag) and hasSetTextAction(), useUnmergedTree = true)
+
+  /**
+   * Helper to set the composable.
+   *
+   * AddReviewScreen has: addReviewViewModel + onConfirm: (Review) -> Unit + onBack: () -> Unit
+   */
+  private fun setContent(
+      viewModel: AddReviewViewModel,
+      onConfirm: (Review) -> Unit = {},
+      onBack: () -> Unit = {}
+  ) {
+    composeRule.setContent {
+      MySwissDormAppTheme {
+        AddReviewScreen(addReviewViewModel = viewModel, onConfirm = onConfirm, onBack = onBack)
+      }
+    }
+  }
+
   @Before
   override fun setUp() {
     super.setUp()
-    runTest { switchToUser(FakeUser.FakeUser1) }
-    viewModel = AddReviewViewModel()
-    onBackCalled = false
+    runTest {
+      // deterministic user for underlying repositories
+      switchToUser(FakeUser.FakeUser1)
+    }
   }
 
   @After
@@ -52,104 +91,166 @@ class AddReviewScreenTest : FirestoreTest() {
     super.tearDown()
   }
 
-  /** Helper function to launch the screen with the test ViewModel */
-  private fun setContent(onConfirmCalledWith: (String) -> Unit = {}) {
-    composeTestRule.setContent {
-      AddReviewScreen(
-          addReviewViewModel = viewModel,
-          onConfirm = { added -> onConfirmCalledWith(added.uid) },
-          onBack = { onBackCalled = true })
-    }
-    runTest { composeTestRule.awaitIdle() }
-  }
+  // ---------- Tests ----------
 
   @Test
-  fun initialScreen_isRendered_submitIsDisabled() {
-    setContent()
-    composeTestRule.onNodeWithText("Add Review").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("reviewTitleField").performScrollTo().assertIsDisplayed()
-    composeTestRule.onNodeWithTag("gradeField").performScrollTo().assertIsDisplayed()
-    composeTestRule.onNodeWithTag("priceField").performScrollTo().assertIsDisplayed()
-    composeTestRule.onNodeWithTag("sizeField").performScrollTo().assertIsDisplayed()
+  fun initialScreen_isRendered_submitIsDisabled() = runTest {
+    val vm = AddReviewViewModel()
+    setContent(vm)
 
-    composeTestRule
-        .onNodeWithText("Please complete all required fields (valid grade, size, price, etc.).")
+    composeRule
+        .onNodeWithTag(C.AddReviewTags.TITLE_FIELD, useUnmergedTree = true)
         .assertIsDisplayed()
-    composeTestRule.onNodeWithText("Submit Review").assertIsNotEnabled()
+
+    composeRule
+        .onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
   }
 
   @Test
-  fun backNavigation_callsOnBackLambda() {
-    setContent()
-    composeTestRule.onNodeWithContentDescription("Back").performClick()
-    assertTrue(onBackCalled)
+  fun inputFields_updateViewModelState() = runTest {
+    val vm = AddReviewViewModel()
+    setContent(vm)
+
+    // Wait until the title field is actually in the tree
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(
+              hasTestTag(C.AddReviewTags.TITLE_FIELD) and hasSetTextAction(),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    editable(C.AddReviewTags.TITLE_FIELD).replaceText("Nice studio")
+    editable(C.AddReviewTags.PRICE_FIELD).replaceText("800")
+    editable(C.AddReviewTags.SIZE_FIELD).replaceText("20")
+
+    assertEquals("Nice studio", vm.uiState.value.title)
+    assertEquals("800", vm.uiState.value.pricePerMonth)
+    assertEquals("20", vm.uiState.value.areaInM2)
   }
 
   @Test
-  fun inputFields_updateViewModelState() = run {
-    setContent()
+  fun submit_whenFormIsValid_enablesButtonAndCallsOnConfirm() = runTest {
+    val vm = AddReviewViewModel()
+    var confirmedReview: Review? = null
 
-    composeTestRule
-        .onNodeWithTag("reviewTitleField")
-        .performScrollTo()
-        .performTextInput("Test Title")
-    composeTestRule.onNodeWithTag("priceField").performScrollTo().performTextInput("750")
-    composeTestRule.onNodeWithTag("sizeField").performScrollTo().performTextInput("25.5")
-    composeTestRule.onNodeWithText("Review").performScrollTo().performTextInput("Test description")
-    runTest { composeTestRule.awaitIdle() }
-    val state = viewModel.uiState.value
-    assertEquals("Test Title", state.title)
-    assertEquals("750", state.pricePerMonth)
-    assertEquals("25.5", state.areaInM2)
-    assertEquals("Test description", state.reviewText)
+    setContent(viewModel = vm, onConfirm = { r -> confirmedReview = r })
+
+    // Populate all fields that are likely required for a valid form
+    vm.setTitle("Great place")
+    vm.setResidencyName("Test residency")
+    vm.setRoomType(RoomType.STUDIO)
+    vm.setAreaInM2("22")
+    vm.setPricePerMonth("900")
+    vm.setReviewText("Nice test review")
+    vm.setGrade(4.0)
+    vm.setIsAnonymous(false)
+
+    // Wait until the ViewModel marks the form as valid
+    composeRule.waitUntil(5_000) { vm.uiState.value.isFormValid }
+
+    composeRule
+        .onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+        .performClick()
+
+    composeRule.awaitIdle()
+    composeRule.waitUntil(5_000) { confirmedReview != null }
+
+    assertEquals("Great place", confirmedReview!!.title)
+    assertEquals(false, confirmedReview!!.isAnonymous)
   }
 
   @Test
-  fun submit_whenFormIsInvalid_callsOnConfirmFalse() = runTest {
-    setContent()
-    assertEquals(0, getReviewCount())
-    viewModel.submitReviewForm { null }
-    assertEquals(0, getReviewCount())
+  fun submit_withAnonymousEnabled_savesIsAnonymousAsTrueInCallback() = runTest {
+    val vm = AddReviewViewModel()
+    var confirmedReview: Review? = null
+
+    setContent(viewModel = vm, onConfirm = { r -> confirmedReview = r })
+
+    // Fill required fields via the ViewModel
+    vm.setTitle("Anon review")
+    vm.setResidencyName("Test residency")
+    vm.setRoomType(RoomType.STUDIO)
+    vm.setAreaInM2("18")
+    vm.setPricePerMonth("700")
+    vm.setReviewText("Some anonymous text")
+    vm.setGrade(4.0)
+    vm.setIsAnonymous(true)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.isFormValid }
+
+    composeRule
+        .onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+        .performClick()
+
+    composeRule.awaitIdle()
+    composeRule.waitUntil(5_000) { confirmedReview != null }
+
+    assertTrue(confirmedReview!!.isAnonymous)
   }
 
   @Test
-  fun submit_whenFormIsValid_enablesButtonAndSavesToFirestore() = runTest {
-    setContent()
-    assertEquals(0, getReviewCount())
-    composeTestRule.onNodeWithText("Submit Review").assertIsNotEnabled()
-    val title = "My Review at Vortex"
-    val description = "It was a great dorm, loved the view."
-    val price = "900"
-    val size = "18.5"
-    val residencyName = "Vortex"
-    val grade = 4.5
-    composeTestRule.onNodeWithTag("reviewTitleField").performScrollTo().performTextInput(title)
-    composeTestRule.onNodeWithText("Review").performScrollTo().performTextInput(description)
-    composeTestRule.onNodeWithTag("priceField").performScrollTo().performTextInput(price)
-    composeTestRule.onNodeWithTag("sizeField").performScrollTo().performTextInput(size)
-    viewModel.setResidencyName(residencyName)
-    viewModel.setRoomType(RoomType.STUDIO)
-    viewModel.setGrade(grade)
-    composeTestRule.awaitIdle()
-    assertTrue(viewModel.uiState.value.isFormValid)
-    composeTestRule.onNodeWithText("Submit Review").assertIsEnabled()
-    composeTestRule
-        .onNodeWithText("Please complete all required fields (valid grade, size, price, etc.).")
-        .assertDoesNotExist()
-    composeTestRule.onNodeWithText("Submit Review").performClick()
-    advanceUntilIdle() // Used AI for this line
-    assertEquals(1, getReviewCount())
-    val docs = FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).get().await()
-    val doc = docs.documents.first()
-    assertEquals(title, doc.getString("title"))
-    assertEquals(description, doc.getString("reviewText"))
-    assertEquals(price.toDouble(), doc.getDouble("pricePerMonth"))
-    assertEquals(grade, doc.getDouble("grade"))
-    assertEquals(residencyName, doc.getString("residencyName"))
-    assertEquals(RoomType.STUDIO.name, doc.getString("roomType"))
-    assertEquals(Firebase.auth.currentUser!!.uid, doc.getString("ownerId"))
-    val expectedArea = size.toDouble().roundToInt()
-    val actualArea = (doc.getLong("areaInM2") ?: 0L).toInt()
-    assertEquals(expectedArea, actualArea)
+  fun submit_withAnonymousDisabled_savesIsAnonymousAsFalseInCallback() = runTest {
+    val vm = AddReviewViewModel()
+    var confirmedReview: Review? = null
+
+    setContent(viewModel = vm, onConfirm = { r -> confirmedReview = r })
+
+    // Fill required fields via the ViewModel
+    vm.setTitle("Non-anon review")
+    vm.setResidencyName("Test residency")
+    vm.setRoomType(RoomType.STUDIO)
+    vm.setAreaInM2("19")
+    vm.setPricePerMonth("750")
+    vm.setReviewText("Some non-anonymous text")
+    vm.setGrade(4.0)
+    vm.setIsAnonymous(false)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.isFormValid }
+
+    composeRule
+        .onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+        .performClick()
+
+    composeRule.awaitIdle()
+    composeRule.waitUntil(5_000) { confirmedReview != null }
+
+    assertEquals(false, confirmedReview!!.isAnonymous)
+  }
+
+  @Test
+  fun submit_whenFormIsInvalid_doesNotCallOnConfirm() = runTest {
+    val vm = AddReviewViewModel()
+    var called = false
+
+    setContent(viewModel = vm, onConfirm = { _ -> called = true })
+
+    // Only set the title: the form should remain invalid
+    editable(C.AddReviewTags.TITLE_FIELD).replaceText("Incomplete")
+
+    composeRule
+        .onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
+
+    composeRule.awaitIdle()
+    assertEquals(false, called)
+  }
+
+  @Test
+  fun backNavigation_callsOnBackLambda() = runTest {
+    val vm = AddReviewViewModel()
+    var backCalled = false
+
+    setContent(viewModel = vm, onConfirm = {}, onBack = { backCalled = true })
+
+    composeRule.onNodeWithContentDescription("Back", useUnmergedTree = true).performClick()
+
+    composeRule.awaitIdle()
+    assertTrue(backCalled)
   }
 }

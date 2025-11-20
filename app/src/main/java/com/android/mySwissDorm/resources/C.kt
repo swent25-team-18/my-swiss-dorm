@@ -122,6 +122,8 @@ object C {
 
     fun reviewText(reviewUid: String) = "browseCityReviewText_$reviewUid"
 
+    fun reviewPosterName(residencyName: String) = "browseCityReviewPosterName_$residencyName"
+
     // Filter tags
     const val FILTER_CHIP_ROW = "browseCityFilterChipRow"
     const val FILTER_CHIP_ROOM_TYPE = "browseCityFilterChipRoomType"

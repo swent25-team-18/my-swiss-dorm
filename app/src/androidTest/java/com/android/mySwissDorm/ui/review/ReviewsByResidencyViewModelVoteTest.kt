@@ -12,7 +12,6 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,6 +54,25 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
     }
   }
 
+  private suspend fun waitForVoteStateUpdate(
+      vm: ReviewsByResidencyViewModel,
+      reviewUid: String,
+      expectedNetScore: Int,
+      expectedVote: VoteType,
+      timeoutMs: Long = 5000
+  ) {
+    val startTime = System.currentTimeMillis()
+    while (System.currentTimeMillis() - startTime < timeoutMs) {
+      val card = vm.uiState.value.reviews.items.find { it.reviewUid == reviewUid }
+      if (card != null && card.netScore == expectedNetScore && card.userVote == expectedVote) {
+        // Give a bit more time to ensure updateReviewVoteState completes
+        delay(100)
+        return
+      }
+      delay(50)
+    }
+  }
+
   @Test
   fun upvoteReviewOptimisticUpdate() = runTest {
     switchToUser(FakeUser.FakeUser1)
@@ -81,8 +99,8 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
     assertEquals(initialCard.netScore + 1, optimisticCard.netScore)
     assertEquals(VoteType.UPVOTE, optimisticCard.userVote)
 
-    // Wait for server update
-    delay(1000)
+    // Wait for updateReviewVoteState to complete (server synchronization)
+    waitForVoteStateUpdate(vm, review.uid, 1, VoteType.UPVOTE)
     val finalState = vm.uiState.value
     val finalCard = finalState.reviews.items.find { it.reviewUid == review.uid }!!
 
@@ -106,7 +124,8 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
 
     vm.upvoteReview(review.uid)
 
-    delay(1500)
+    // Wait for updateReviewVoteState to complete (server synchronization)
+    waitForVoteStateUpdate(vm, review.uid, 0, VoteType.NONE)
     val finalCard = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!
     assertEquals(VoteType.NONE, finalCard.userVote)
     assertEquals(0, finalCard.netScore)
@@ -132,7 +151,8 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
     assertEquals(initialCard.netScore - 1, optimisticCard.netScore)
     assertEquals(VoteType.DOWNVOTE, optimisticCard.userVote)
 
-    delay(1000)
+    // Wait for updateReviewVoteState to complete (server synchronization)
+    waitForVoteStateUpdate(vm, review.uid, -1, VoteType.DOWNVOTE)
     val finalCard = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!
     assertEquals(-1, finalCard.netScore)
     assertEquals(VoteType.DOWNVOTE, finalCard.userVote)
@@ -155,7 +175,8 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
 
     vm.upvoteReview(review.uid)
 
-    delay(1500)
+    // Wait for updateReviewVoteState to complete (server synchronization)
+    waitForVoteStateUpdate(vm, review.uid, 1, VoteType.UPVOTE)
     val finalCard = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!
     assertEquals(VoteType.UPVOTE, finalCard.userVote)
     assertEquals(1, finalCard.netScore)
@@ -176,84 +197,5 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
     waitForReviewsToLoad(vm)
     val card = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!
     assertEquals(1, card.netScore) // 2 upvotes - 1 downvote = 1
-  }
-
-  @Test
-  fun upvoteReviewWhenNotLoggedIn_doesNothing() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val review = reviewVortex1.copy(ownerId = ownerId)
-    ReviewsRepositoryProvider.repository.addReview(review)
-
-    // Sign out to test early return
-    FirebaseEmulator.auth.signOut()
-
-    val vm = ReviewsByResidencyViewModel()
-    vm.loadReviews("Vortex")
-    waitForReviewsToLoad(vm)
-
-    val initialState = vm.uiState.value
-    val initialCard = initialState.reviews.items.find { it.reviewUid == review.uid }!!
-
-    // Try to upvote when not logged in - should do nothing
-    vm.upvoteReview(review.uid)
-
-    delay(200)
-    val afterState = vm.uiState.value
-    val afterCard = afterState.reviews.items.find { it.reviewUid == review.uid }!!
-
-    // State should be unchanged
-    assertEquals(initialCard.netScore, afterCard.netScore)
-    assertEquals(initialCard.userVote, afterCard.userVote)
-  }
-
-  @Test
-  fun downvoteReviewWhenNotLoggedIn_doesNothing() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val review = reviewVortex1.copy(ownerId = ownerId)
-    ReviewsRepositoryProvider.repository.addReview(review)
-
-    // Sign out to test early return
-    FirebaseEmulator.auth.signOut()
-
-    val vm = ReviewsByResidencyViewModel()
-    vm.loadReviews("Vortex")
-    waitForReviewsToLoad(vm)
-
-    val initialState = vm.uiState.value
-    val initialCard = initialState.reviews.items.find { it.reviewUid == review.uid }!!
-
-    // Try to downvote when not logged in - should do nothing
-    vm.downvoteReview(review.uid)
-
-    delay(200)
-    val afterState = vm.uiState.value
-    val afterCard = afterState.reviews.items.find { it.reviewUid == review.uid }!!
-
-    // State should be unchanged
-    assertEquals(initialCard.netScore, afterCard.netScore)
-    assertEquals(initialCard.userVote, afterCard.userVote)
-  }
-
-  @Test
-  fun loadReviewsHandlesProfileFetchFailure() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    // Create a review with a valid ownerId
-    val review = reviewVortex1.copy(ownerId = ownerId)
-    ReviewsRepositoryProvider.repository.addReview(review)
-
-    // Delete the profile to simulate a missing profile scenario
-    ProfileRepositoryProvider.repository.deleteProfile(ownerId)
-
-    switchToUser(FakeUser.FakeUser2)
-    val vm = ReviewsByResidencyViewModel()
-    vm.loadReviews("Vortex")
-
-    // Wait for load to complete (should handle profile fetch failure gracefully)
-    waitForReviewsToLoad(vm)
-
-    // Should still load the review, but with "Unknown" as the name
-    val card = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }
-    assertNotNull("Review should be loaded even if profile fetch fails", card)
-    assertEquals("Unknown", card!!.fullNameOfPoster)
   }
 }

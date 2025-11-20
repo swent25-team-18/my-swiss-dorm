@@ -30,7 +30,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
-import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.Typography
 

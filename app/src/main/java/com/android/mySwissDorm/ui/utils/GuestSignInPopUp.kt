@@ -35,7 +35,10 @@ fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
             title = { Text(title) },
             navigationIcon = {
               IconButton(onClick = onBack) {
-                Icon( imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MainColor)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MainColor)
               }
             })
       }) { paddingValues ->
@@ -46,7 +49,6 @@ fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
               Surface(
                   color = BackGroundColor,
                   contentColor = TextColor,
-
                   shape = RoundedCornerShape(16.dp),
                   modifier = Modifier.fillMaxWidth(0.8f).padding(16.dp)) {
                     Column(
@@ -56,8 +58,7 @@ fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
                           Text(
                               text = "Sign in to create a profile",
                               style = MaterialTheme.typography.titleMedium,
-                              color = TextColor
-                              )
+                              color = TextColor)
                           Button(
                               onClick = onSignInClick,
                               colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {

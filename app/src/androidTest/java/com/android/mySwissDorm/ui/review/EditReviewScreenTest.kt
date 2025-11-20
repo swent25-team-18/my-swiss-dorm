@@ -666,9 +666,15 @@ class EditReviewScreenTest : FirestoreTest() {
           .isSuccess
     }
     editable(C.EditReviewTags.PRICE_FIELD).performTextClearance()
-    editable(C.EditReviewTags.PRICE_FIELD).performTextInput("abc")
-    composeRule.waitUntil(5_000) { !vm.uiState.value.isFormValid }
+    // Type "0" - it gets normalized to empty string, so error text won't show
+    // But we can verify the form becomes invalid
+    editable(C.EditReviewTags.PRICE_FIELD).performTextInput("0")
+    // Wait for state to update (price will become empty after normalization)
+    composeRule.waitUntil(10_000) { vm.uiState.value.pricePerMonth != "1200.0" }
     composeRule.waitForIdle()
+
+    // Verify form is invalid
+    composeRule.waitUntil(5_000) { !vm.uiState.value.isFormValid }
     composeRule
         .onNodeWithTag(C.EditReviewTags.SAVE_BUTTON, useUnmergedTree = true)
         .assertIsNotEnabled()
@@ -677,6 +683,47 @@ class EditReviewScreenTest : FirestoreTest() {
             "Please complete all required fields (valid size, price, and starting date).",
             useUnmergedTree = true)
         .assertExists()
+
+    // Error helper text only shows when price is not blank AND invalid
+    // Since "0" normalizes to empty, the error text won't appear
+    // To test error text, we'd need a value that stays non-empty but is invalid
+    // For now, we verify the form is invalid, which is the main behavior
+  }
+
+  @Test
+  fun invalid_size_shows_helper_text() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val vm = EditReviewViewModel(reviewId = review1!!.uid)
+    setContentFor(vm, review1!!.uid)
+
+    composeRule.waitUntil(5_000) {
+      runCatching {
+            composeRule
+                .onAllNodes(
+                    hasTestTag(C.EditReviewTags.SIZE_FIELD) and hasSetTextAction(),
+                    useUnmergedTree = true)
+                .onFirst()
+                .assertExists()
+          }
+          .isSuccess
+    }
+    editable(C.EditReviewTags.SIZE_FIELD).performTextClearance()
+    // Use a value that will remain after normalization but is invalid (e.g., "0.0" or "1001.0")
+    editable(C.EditReviewTags.SIZE_FIELD).performTextInput("0.0")
+    composeRule.waitUntil(5_000) {
+      vm.uiState.value.areaInM2 == "0.0" && !vm.uiState.value.isFormValid
+    }
+    composeRule.waitForIdle()
+    // Verify the error helper text for invalid size is shown
+    composeRule.waitUntil(5_000) {
+      runCatching {
+            composeRule
+                .onNodeWithText(
+                    "Enter 1.0–1000.0 with one decimal (e.g., 18.5).", useUnmergedTree = true)
+                .assertExists()
+          }
+          .isSuccess
+    }
   }
 
   @Test
@@ -686,6 +733,8 @@ class EditReviewScreenTest : FirestoreTest() {
     var backCalled = false
     setContentFor(vm, review1!!.uid, onBack = { backCalled = true })
 
+    // Wait for the screen to load and ViewModel to finish loading
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
     composeRule.waitUntil(5_000) {
       runCatching {
             composeRule.onNodeWithContentDescription("Back", useUnmergedTree = true).assertExists()
@@ -695,6 +744,7 @@ class EditReviewScreenTest : FirestoreTest() {
 
     composeRule.onNodeWithContentDescription("Back", useUnmergedTree = true).performClick()
     composeRule.waitForIdle()
+    composeRule.waitUntil(2_000) { backCalled }
     assertTrue("onBack should be called when back button is clicked", backCalled)
   }
 

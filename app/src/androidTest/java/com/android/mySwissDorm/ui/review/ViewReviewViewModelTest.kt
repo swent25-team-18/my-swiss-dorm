@@ -21,6 +21,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -270,5 +271,39 @@ class ViewReviewViewModelTest : FirestoreTest() {
         "Full name should match profile",
         "${profile1.userInfo.name} ${profile1.userInfo.lastName}",
         fullName)
+  }
+
+  @Test
+  fun loadReview_setsErrorMsg_whenProfileNotFound() = runBlocking {
+    switchToUser(FakeUser.FakeUser1)
+    // Create a review with a valid user first
+    val reviewWithValidUser = review1.copy(uid = reviewsRepo.getNewUid())
+    reviewsRepo.addReview(reviewWithValidUser)
+    delay(200)
+
+    // Now delete the profile so the review exists but profile doesn't
+    profilesRepo.deleteProfile(reviewWithValidUser.ownerId)
+    delay(200)
+
+    val vm = freshVM()
+    vm.loadReview(reviewWithValidUser.uid)
+
+    // Wait for error to be set
+    var tries = 0
+    while (tries < 200 && vm.uiState.value.errorMsg == null) {
+      delay(100)
+      tries++
+    }
+
+    // If still no error, wait a bit more
+    if (vm.uiState.value.errorMsg == null) {
+      delay(1000)
+    }
+
+    assertNotNull(
+        "Error message should be set when profile is not found", vm.uiState.value.errorMsg)
+    assertTrue(
+        "Error message should contain 'Failed to load Review'",
+        vm.uiState.value.errorMsg!!.contains("Failed to load Review"))
   }
 }

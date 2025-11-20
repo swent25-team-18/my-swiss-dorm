@@ -30,6 +30,7 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
 import java.util.Date
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -392,5 +393,52 @@ class ViewReviewScreenTest : FirestoreTest() {
     // The format is "${review.areaInM2}m²" so it will be "64m²"
     compose.onNodeWithText("64", substring = true).assertIsDisplayed()
     compose.onNodeWithText("m²", substring = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun errorMsg_showsToast_and_clearsError() = runTest {
+    var backCalled = false
+    val failingVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = failingVm,
+          reviewUid = "non-existent-review-${System.currentTimeMillis()}",
+          onGoBack = { backCalled = true })
+    }
+    waitForScreenRoot()
+    // Wait for error to be set and LaunchedEffect to trigger
+    compose.waitUntil(10_000) { backCalled && failingVm.uiState.value.errorMsg == null }
+    // Verify error was cleared after showing toast
+    assert(backCalled) { "onGoBack should be called when error occurs." }
+  }
+
+  @Test
+  fun locationPlaceholder_shown_whenLocationIsZero() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val resNoLocation =
+        resTest.copy(
+            name = "ZeroLocation",
+            location = Location(name = "ZeroLocation", latitude = 0.0, longitude = 0.0))
+    residenciesRepo.addResidency(resNoLocation)
+    delay(200)
+
+    val reviewNoLocation =
+        review1.copy(uid = reviewsRepo.getNewUid(), residencyName = "ZeroLocation")
+    reviewsRepo.addReview(reviewNoLocation)
+    delay(200)
+
+    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = reviewNoLocation.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == reviewNoLocation.uid &&
+          testVm.uiState.value.locationOfReview.latitude == 0.0 &&
+          testVm.uiState.value.locationOfReview.longitude == 0.0
+    }
+    scrollListTo(C.ViewReviewTags.LOCATION)
+    compose.onNodeWithTag(C.ViewReviewTags.LOCATION).assertIsDisplayed()
+    compose.onNodeWithText("LOCATION (Not available)").assertIsDisplayed()
   }
 }

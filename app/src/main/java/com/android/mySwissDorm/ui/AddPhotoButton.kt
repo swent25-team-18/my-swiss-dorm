@@ -34,9 +34,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -121,7 +123,7 @@ fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit)
                   shape = RoundedCornerShape(14.dp),
               ) {
                 Text(
-                    text = "Take a photo",
+                    text = stringResource(R.string.add_photo_button_take_photo),
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.testTag(C.AddPhotoButtonTags.CAMERA_BUTTON_TEXT))
               }
@@ -134,7 +136,7 @@ fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit)
                   shape = RoundedCornerShape(14.dp),
               ) {
                 Text(
-                    text = "Choose from gallery",
+                    text = stringResource(R.string.add_photo_button_from_gallery),
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.testTag(C.AddPhotoButtonTags.GALLERY_BUTTON_TEXT))
               }
@@ -163,6 +165,6 @@ fun DefaultAddPhotoButton(onSelectPhoto: (Photo) -> Unit) {
   ) {
     Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
     Spacer(Modifier.width(8.dp))
-    Text("Add pictures")
+    Text(stringResource(R.string.add_photo_button_default_text))
   }
 }

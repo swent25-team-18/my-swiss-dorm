@@ -1,7 +1,9 @@
 package com.android.mySwissDorm.ui.settings
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -98,10 +100,12 @@ class SettingsViewModel(
    * Deletes profile doc; then tries to delete auth user. If recent login is required, we surface an
    * error but still ensure flags reset.
    */
-  fun deleteAccount(onDone: (Boolean, String?) -> Unit) {
+  fun deleteAccount(onDone: (Boolean, String?) -> Unit, context: Context) {
     val user = auth.currentUser
     if (user == null) {
-      _ui.value = _ui.value.copy(errorMsg = "Not signed in", isDeleting = false)
+      _ui.value =
+          _ui.value.copy(
+              errorMsg = context.getString(R.string.settings_not_signed_in), isDeleting = false)
       onDone(false, "Not signed in")
       return
     }
@@ -117,7 +121,7 @@ class SettingsViewModel(
             .onFailure { e ->
               if (e is FirebaseAuthRecentLoginRequiredException) {
                 ok = false
-                msg = "Please re-authenticate to delete your account."
+                msg = context.getString(R.string.settings_re_authenticate_to_delete)
               } else {
                 ok = false
                 msg = e.message
@@ -134,12 +138,15 @@ class SettingsViewModel(
   }
 
   /** Add a user to the current user's blocked list in Firestore. */
-  fun blockUser(targetUid: String) {
+  fun blockUser(targetUid: String, context: Context) {
     val uid = auth.currentUser?.uid ?: return
     viewModelScope.launch {
       runCatching { profiles.addBlockedUser(uid, targetUid) }
           .onFailure { e ->
-            _ui.value = _ui.value.copy(errorMsg = "Failed to block user: ${e.message}")
+            _ui.value =
+                _ui.value.copy(
+                    errorMsg =
+                        "${context.getString(R.string.settings_failed_to_block_user)}: ${e.message}")
           }
       // Refresh to update the list
       refresh()
@@ -147,12 +154,15 @@ class SettingsViewModel(
   }
 
   /** Remove a user from the current user's blocked list in Firestore. */
-  fun unblockUser(targetUid: String) {
+  fun unblockUser(targetUid: String, context: Context) {
     val uid = auth.currentUser?.uid ?: return
     viewModelScope.launch {
       runCatching { profiles.removeBlockedUser(uid, targetUid) }
           .onFailure { e ->
-            _ui.value = _ui.value.copy(errorMsg = "Failed to unblock user: ${e.message}")
+            _ui.value =
+                _ui.value.copy(
+                    errorMsg =
+                        "${context.getString(R.string.settings_failed_to_unblock_user)}: ${e.message}")
           }
       // Refresh to update the list
       refresh()

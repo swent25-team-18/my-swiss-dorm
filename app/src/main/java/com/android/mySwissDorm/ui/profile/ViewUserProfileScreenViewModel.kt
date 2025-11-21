@@ -1,8 +1,10 @@
 package com.github.se.bootcamp.ui.profile
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -122,10 +124,10 @@ class ViewProfileScreenViewModel(
    * @param targetUid The UID of the user to block
    * @param onError Callback invoked when blocking fails, receives error message
    */
-  fun blockUser(targetUid: String, onError: (String) -> Unit = {}) {
+  fun blockUser(targetUid: String, onError: (String) -> Unit = {}, context: Context) {
     val uid = auth.currentUser?.uid
     if (uid == null) {
-      onError("Not signed in")
+      onError(context.getString(R.string.view_user_profile_not_signed_in))
       return
     }
 
@@ -137,7 +139,8 @@ class ViewProfileScreenViewModel(
         _ui.value = _ui.value.copy(isBlocked = true)
       } catch (e: Exception) {
         Log.e("ViewProfileScreenViewModel", "Error blocking user", e)
-        onError("Failed to block user: ${e.message}")
+        onError(
+            "${context.getString(R.string.view_user_profile_failed_to_block_user)}: ${e.message}")
       }
     }
   }
@@ -149,10 +152,10 @@ class ViewProfileScreenViewModel(
    * @param targetUid The UID of the user to unblock.
    * @param onError Callback invoked when unblocking fails, receives an error message.
    */
-  fun unblockUser(targetUid: String, onError: (String) -> Unit = {}) {
+  fun unblockUser(targetUid: String, onError: (String) -> Unit = {}, context: Context) {
     val uid = auth.currentUser?.uid
     if (uid == null) {
-      onError("Not signed in")
+      onError(context.getString(R.string.view_user_profile_not_signed_in))
       return
     }
 
@@ -162,7 +165,8 @@ class ViewProfileScreenViewModel(
         _ui.value = _ui.value.copy(isBlocked = false)
       } catch (e: Exception) {
         Log.e("ViewProfileScreenViewModel", "Error unblocking user", e)
-        onError("Failed to unblock user: ${e.message}")
+        onError(
+            "${context.getString(R.string.view_user_profile_failed_to_unblock_user)}: ${e.message}")
       }
     }
   }

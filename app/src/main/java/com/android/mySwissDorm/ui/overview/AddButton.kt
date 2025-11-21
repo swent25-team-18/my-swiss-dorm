@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.overview
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -35,8 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -76,7 +79,7 @@ fun AddFabMenu(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.End) {
                       FabMiniAction(
-                          text = "Add listing",
+                          textId = R.string.add_button_add_listing,
                           icon = {
                             Icon(Icons.Outlined.HomeWork, tint = White, contentDescription = null)
                           },
@@ -86,7 +89,7 @@ fun AddFabMenu(
                           },
                           tag = C.BrowseCityTags.FABMENULISTING)
                       FabMiniAction(
-                          text = "Add review",
+                          textId = R.string.add_button_add_review,
                           icon = {
                             Icon(Icons.Outlined.RateReview, tint = White, contentDescription = null)
                           },
@@ -115,7 +118,7 @@ fun AddFabMenu(
 
 @Composable
 private fun FabMiniAction(
-    text: String,
+    @StringRes textId: Int,
     icon: @Composable () -> Unit,
     onClick: () -> Unit,
     tag: String
@@ -133,7 +136,7 @@ private fun FabMiniAction(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
               icon()
               Spacer(modifier = Modifier.size(8.dp))
-              Text(text, color = White, fontWeight = FontWeight.Medium)
+              Text(stringResource(textId), color = White, fontWeight = FontWeight.Medium)
             }
       }
 }

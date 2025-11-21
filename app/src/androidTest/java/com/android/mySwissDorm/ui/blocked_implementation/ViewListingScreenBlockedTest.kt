@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.blocked_implementation
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -8,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.*
 import com.android.mySwissDorm.model.rental.*
@@ -43,6 +45,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
   private lateinit var ownerUid: String
   private lateinit var blockedUserUid: String
   private lateinit var ownerListing: RentalListing
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
@@ -200,7 +203,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
 
     // Load listing
-    vm.loadListing(ownerListing.uid)
+    vm.loadListing(ownerListing.uid, context)
 
     // Wait for blocked status to be determined
     waitUntil {
@@ -224,7 +227,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
 
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    vm.loadListing(ownerListing.uid)
+    vm.loadListing(ownerListing.uid, context)
 
     waitUntil { vm.uiState.value.isOwner }
 

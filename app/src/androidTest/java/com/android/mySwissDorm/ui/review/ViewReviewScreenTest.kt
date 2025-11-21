@@ -17,6 +17,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
@@ -59,6 +60,8 @@ class ViewReviewScreenTest : FirestoreTest() {
   private lateinit var nonAnonymousReviewOwned: Review
 
   private lateinit var vm: ViewReviewViewModel
+
+  private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
   override fun createRepositories() {
     profilesRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
@@ -230,7 +233,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     }
     scrollListTo(C.ViewReviewTags.LOCATION)
     compose.onNodeWithTag(C.ViewReviewTags.LOCATION).assertIsDisplayed()
-    compose.onNodeWithText("LOCATION (Not available)").assertIsDisplayed()
+    compose.onNodeWithText("Location (Not available)").assertIsDisplayed()
   }
 
   @Test
@@ -244,12 +247,12 @@ class ViewReviewScreenTest : FirestoreTest() {
       ViewReviewScreen(
           viewReviewViewModel = vm,
           reviewUid = review1.uid,
-          onViewMap = { lat, lon, title, name ->
+          onViewMap = { lat, lon, title, nameId ->
             callbackCalled = true
             capturedLat = lat
             capturedLon = lon
             capturedTitle = title
-            capturedName = name
+            capturedName = context.getString(nameId)
           })
     }
     waitForScreenRoot()
@@ -416,7 +419,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     // Use onNodeWithText to find text directly
     compose.onNodeWithText("First Title").assertIsDisplayed()
     // The text is "Review :" with a space before the colon
-    compose.onNodeWithText("Review :").assertIsDisplayed()
+    compose.onNodeWithText("Review:").assertIsDisplayed()
     compose.onNodeWithText("My first review").assertIsDisplayed()
   }
 
@@ -484,7 +487,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     }
     scrollListTo(C.ViewReviewTags.LOCATION)
     compose.onNodeWithTag(C.ViewReviewTags.LOCATION).assertIsDisplayed()
-    compose.onNodeWithText("LOCATION (Not available)").assertIsDisplayed()
+    compose.onNodeWithText("Location (Not available)").assertIsDisplayed()
   }
 
   @Test

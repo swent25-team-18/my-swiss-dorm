@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -47,11 +49,12 @@ fun ViewListingScreen(
     onApply: () -> Unit = {},
     onEdit: () -> Unit = {},
     onViewProfile: (ownerId: String) -> Unit = {},
-    onViewMap: (latitude: Double, longitude: Double, title: String, name: String) -> Unit =
+    onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit =
         { _, _, _, _ ->
         }
 ) {
-  LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid) }
+  val context = LocalContext.current
+  LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid, context) }
 
   val listingUIState by viewListingViewModel.uiState.collectAsState()
   val listing = listingUIState.listing
@@ -66,8 +69,6 @@ fun ViewListingScreen(
   // Button color: violet if blocked, red (MainColor) if normal
   val buttonColor = if (isBlockedByOwner && hasMessage) Color(0xFF9C27B0) else MainColor
 
-  val context = LocalContext.current
-
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {
       onGoBack()
@@ -79,7 +80,7 @@ fun ViewListingScreen(
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Listing Details") },
+            title = { Text(stringResource(R.string.view_listing_title)) },
             navigationIcon = {
               IconButton(
                   onClick = { onGoBack() },
@@ -104,12 +105,11 @@ fun ViewListingScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)) {
                       Text(
-                          text = "Listing unavailable",
+                          text = stringResource(R.string.view_listing_unavailable),
                           style = MaterialTheme.typography.titleLarge.copy(color = TextColor),
                           modifier = Modifier.testTag(C.ViewListingTags.BLOCKED_NOTICE))
                       Text(
-                          text =
-                              "You cannot view this listing because the owner has blocked you. If this is a mistake, manage your blocked contacts from Settings.",
+                          text = stringResource(R.string.view_listing_blocked_text),
                           style =
                               MaterialTheme.typography.bodyMedium.copy(
                                   color = MaterialTheme.colorScheme.onSurfaceVariant),
@@ -123,7 +123,7 @@ fun ViewListingScreen(
                           colors =
                               ButtonDefaults.buttonColors(
                                   containerColor = MainColor, contentColor = Color.White)) {
-                            Text("Go back")
+                            Text(stringResource(R.string.go_back))
                           }
                     }
               }
@@ -150,19 +150,20 @@ fun ViewListingScreen(
 
                 // build the AnnotatedString tagging the name
                 val annotatedPostedByString = buildAnnotatedString {
-                  append("Posted by ")
+                  append("${stringResource(R.string.view_listing_posted_by)} ")
 
                   // pushStringAnnotation to "tag" this part of the string
                   pushStringAnnotation(tag = tagProfile, annotation = listing.ownerId)
                   // apply the style to the name
                   withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
                     append(fullNameOfPoster)
-                    if (isOwner) append(" (You)")
+                    if (isOwner) append(" ${stringResource(R.string.view_listing_owner_is_you)}")
                   }
                   // stop tagging
                   pop()
 
-                  append(" ${formatRelative(listing.postedAt)}")
+                  val context = LocalContext.current
+                  append(" ${formatRelative(listing.postedAt, context = context)}")
                 }
 
                 // remember the TextLayoutResult
@@ -194,21 +195,23 @@ fun ViewListingScreen(
                 // Bullet section
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
                   BulletRow("${listing.roomType}")
-                  BulletRow("${listing.pricePerMonth}.-/month")
+                  BulletRow(
+                      "${listing.pricePerMonth}${stringResource(R.string.view_listing_price_per_month)}")
                   BulletRow("${listing.areaInM2}m²")
-                  BulletRow("Starting ${formatDate(listing.startDate)}")
+                  BulletRow("${stringResource(R.string.starting)} ${formatDate(listing.startDate)}")
                 }
 
                 // Description
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION)) {
-                  Text("Description :", fontWeight = FontWeight.SemiBold)
+                  Text(
+                      "${stringResource(R.string.description)} :", fontWeight = FontWeight.SemiBold)
                   Spacer(Modifier.height(3.dp))
                   Text(listing.description, style = MaterialTheme.typography.bodyLarge)
                 }
 
                 // Photos placeholder
                 PlaceholderBlock(
-                    text = "PHOTOS (Not implemented yet)",
+                    text = "${stringResource(R.string.photos)} (Not implemented yet)",
                     height = 220.dp,
                     modifier = Modifier.testTag(C.ViewListingTags.PHOTOS))
 
@@ -224,11 +227,16 @@ fun ViewListingScreen(
                               .height(180.dp)
                               .testTag(C.ViewListingTags.LOCATION),
                       onMapClick = {
-                        onViewMap(location.latitude, location.longitude, listing.title, "Listing")
+                        onViewMap(
+                            location.latitude,
+                            location.longitude,
+                            listing.title,
+                            R.string.view_listing_listing_location)
                       })
                 } else {
                   PlaceholderBlock(
-                      text = "LOCATION (Not available)",
+                      text =
+                          "${stringResource(R.string.location)} (${stringResource(R.string.not_available)})",
                       height = 180.dp,
                       modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
                 }
@@ -254,7 +262,7 @@ fun ViewListingScreen(
                                 .testTag(C.ViewListingTags.EDIT_BTN),
                         shape = RoundedCornerShape(16.dp)) {
                           Text(
-                              "Edit",
+                              stringResource(R.string.edit),
                               style = MaterialTheme.typography.titleMedium,
                               color = MainColor)
                         }
@@ -264,7 +272,9 @@ fun ViewListingScreen(
                   OutlinedTextField(
                       value = listingUIState.contactMessage,
                       onValueChange = { viewListingViewModel.setContactMessage(it) },
-                      placeholder = { Text("Contact the announcer") },
+                      placeholder = {
+                        Text(stringResource(R.string.view_listing_contact_announcer))
+                      },
                       modifier = Modifier.fillMaxWidth().testTag(C.ViewListingTags.CONTACT_FIELD),
                       shape = RoundedCornerShape(16.dp),
                       singleLine = false,
@@ -293,7 +303,7 @@ fun ViewListingScreen(
                                 disabledContainerColor = Color(0xFFEBD0CE),
                                 disabledContentColor = Color(0xFFFFFFFF))) {
                           Text(
-                              "Apply now !",
+                              stringResource(R.string.view_listing_apply_now),
                               color = Color.White,
                               style = MaterialTheme.typography.titleMedium)
                         }

@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -29,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.resources.C
@@ -135,7 +137,7 @@ private fun ProfileScreenContent(
         CenterAlignedTopAppBar(
             title = {
               Text(
-                  text = "Profile",
+                  text = stringResource(R.string.profile_title),
                   fontSize = 24.sp,
                   color = TextColor,
                   modifier = Modifier.testTag(C.Tag.PROFILE_SCREEN_TITLE))
@@ -203,7 +205,7 @@ private fun ProfileScreenContent(
                   modifier = Modifier.fillMaxWidth(),
                   horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     EditableTextField(
-                        label = "First name",
+                        label = stringResource(R.string.first_name),
                         value = if (state.isEditing) firstLocal else state.firstName,
                         onValueChange = {
                           if (it.length <= 20) firstLocal = it
@@ -213,7 +215,7 @@ private fun ProfileScreenContent(
                         modifier = Modifier.weight(1f))
 
                     EditableTextField(
-                        label = "Last name",
+                        label = stringResource(R.string.last_name),
                         value = if (state.isEditing) lastLocal else state.lastName,
                         onValueChange = {
                           if (it.length <= 20) lastLocal = it
@@ -225,7 +227,7 @@ private fun ProfileScreenContent(
 
               // Language dropdown (from Language enum)
               DropdownField(
-                  label = "Language",
+                  label = stringResource(R.string.language),
                   value = if (state.isEditing) languageLocal else state.language,
                   onValueChange = { languageLocal = it },
                   tag = "field_language",
@@ -235,7 +237,7 @@ private fun ProfileScreenContent(
 
               // Residence dropdown (from ResidencyName enum)
               DropdownField(
-                  label = "Residence",
+                  label = stringResource(R.string.residency),
                   value = if (state.isEditing) residenceLocal else state.residence,
                   onValueChange = {
                     residenceLocal = it
@@ -266,7 +268,10 @@ private fun ProfileScreenContent(
                         ButtonDefaults.buttonColors(
                             containerColor = MainColor, contentColor = BackGroundColor),
                     enabled = !state.isSaving) {
-                      Text(text = if (state.isSaving) "SAVING..." else "SAVE")
+                      Text(
+                          text =
+                              if (state.isSaving) stringResource(R.string.profile_saving)
+                              else stringResource(R.string.profile_save))
                     }
               } else {
                 Button(
@@ -280,7 +285,7 @@ private fun ProfileScreenContent(
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = BackGroundColor, contentColor = MainColor)) {
-                      Text(text = "LOGOUT", color = MainColor)
+                      Text(text = stringResource(R.string.profile_logout), color = MainColor)
                     }
               }
 

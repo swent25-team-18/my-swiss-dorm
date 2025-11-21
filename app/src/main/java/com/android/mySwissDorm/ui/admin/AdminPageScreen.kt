@@ -41,9 +41,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.SanitizedOutlinedTextField
@@ -89,7 +91,9 @@ fun AdminPageScreen(
   if (!canAccess) {
     // This won't show since only admins can view the admin page in settings but it's here for extra
     // security
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Admins only.") }
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      Text(stringResource(R.string.admin_page_admins_only))
+    }
     return
   }
 
@@ -101,7 +105,7 @@ fun AdminPageScreen(
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Admin Page") },
+            title = { Text(stringResource(R.string.admin_page_title)) },
             navigationIcon = {
               IconButton(onClick = onBack) {
                 Icon(
@@ -125,7 +129,7 @@ fun AdminPageScreen(
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                   } else {
-                    Text("Save", color = Color.White)
+                    Text(stringResource(R.string.save), color = Color.White)
                   }
                 }
             Spacer(Modifier.height(8.dp))
@@ -150,19 +154,19 @@ fun AdminPageScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 EntityChip(
-                    text = "City",
+                    text = stringResource(R.string.city),
                     selected = ui.selected == AdminPageViewModel.EntityType.CITY,
                     testTag = C.AdminPageTags.CHIP_CITY) {
                       vm.onTypeChange(AdminPageViewModel.EntityType.CITY)
                     }
                 EntityChip(
-                    text = "Residency",
+                    text = stringResource(R.string.residency),
                     selected = ui.selected == AdminPageViewModel.EntityType.RESIDENCY,
                     testTag = C.AdminPageTags.CHIP_RESIDENCY) {
                       vm.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
                     }
                 EntityChip(
-                    text = "University",
+                    text = stringResource(R.string.university),
                     selected = ui.selected == AdminPageViewModel.EntityType.UNIVERSITY,
                     testTag = C.AdminPageTags.CHIP_UNIVERSITY) {
                       vm.onTypeChange(AdminPageViewModel.EntityType.UNIVERSITY)
@@ -172,11 +176,11 @@ fun AdminPageScreen(
               SanitizedOutlinedTextField(
                   value = ui.name,
                   onValueChange = vm::onName,
-                  label = "Name",
+                  label = stringResource(R.string.name),
                   singleLine = true,
                   modifier = Modifier.fillMaxWidth(),
                   fieldType = InputSanitizers.FieldType.FirstName,
-                  placeholder = "Name",
+                  placeholder = stringResource(R.string.name),
                   imeAction = ImeAction.Next)
 
               // Entity-specific fields
@@ -186,20 +190,20 @@ fun AdminPageScreen(
                   SanitizedOutlinedTextField(
                       value = ui.description,
                       onValueChange = vm::onDescription,
-                      label = "Description",
+                      label = stringResource(R.string.description),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.Description,
-                      placeholder = "Description",
+                      placeholder = stringResource(R.string.description),
                       imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.imageId,
                       onValueChange = vm::onImageId,
-                      label = "Image ID",
+                      label = stringResource(R.string.admin_page_image_id),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.Website, // for now
-                      placeholder = "Image ID",
+                      placeholder = stringResource(R.string.admin_page_image_id),
                       imeAction = ImeAction.Next)
                 }
                 // Residency fields
@@ -207,47 +211,50 @@ fun AdminPageScreen(
                   SanitizedOutlinedTextField(
                       value = ui.description,
                       onValueChange = vm::onDescription,
-                      label = "Description",
+                      label = stringResource(R.string.description),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.Description,
-                      placeholder = "Description",
+                      placeholder = stringResource(R.string.description),
                       imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.city,
                       onValueChange = vm::onCity,
-                      label = "City",
+                      label = stringResource(R.string.city),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.City,
-                      placeholder = "City",
+                      placeholder = stringResource(R.string.city),
                       imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.email,
                       onValueChange = vm::onEmail,
-                      label = "Email",
+                      label = stringResource(R.string.email),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.City,
-                      placeholder = "Email (optional)",
+                      placeholder =
+                          "${stringResource(R.string.email)} (${stringResource(R.string.optional)})",
                       imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.phone,
                       onValueChange = vm::onPhone,
-                      label = "Phone",
+                      label = stringResource(R.string.phone),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.Phone,
-                      placeholder = "Phone (optional)",
+                      placeholder =
+                          "${stringResource(R.string.phone)} (${stringResource(R.string.optional)})",
                       imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.website,
                       onValueChange = vm::onWebsite,
-                      label = "Website",
+                      label = stringResource(R.string.website),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.Website,
-                      placeholder = "Website (optional)",
+                      placeholder =
+                          "${stringResource(R.string.website)} (${stringResource(R.string.optional)})",
                       imeAction = ImeAction.Next)
                 }
                 // University fields
@@ -255,38 +262,38 @@ fun AdminPageScreen(
                   SanitizedOutlinedTextField(
                       value = ui.city,
                       onValueChange = vm::onCity,
-                      label = "City",
+                      label = stringResource(R.string.city),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.City,
-                      placeholder = "City",
+                      placeholder = stringResource(R.string.city),
                       imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.email,
                       onValueChange = vm::onEmail,
-                      label = "Email",
+                      label = stringResource(R.string.email),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.Email,
-                      placeholder = "Email",
+                      placeholder = stringResource(R.string.email),
                       imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.phone,
                       onValueChange = vm::onPhone,
-                      label = "Phone",
+                      label = stringResource(R.string.phone),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.Phone,
-                      placeholder = "Phone",
+                      placeholder = stringResource(R.string.phone),
                       imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.website,
                       onValueChange = vm::onWebsite,
-                      label = "Website",
+                      label = stringResource(R.string.website),
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.Website,
-                      placeholder = "Website URL",
+                      placeholder = "${stringResource(R.string.website)} URL",
                       imeAction = ImeAction.Next)
                 }
               }
@@ -302,7 +309,9 @@ fun AdminPageScreen(
                         tint = MainColor)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = ui.location?.name ?: "Select Location",
+                        text =
+                            ui.location?.name
+                                ?: stringResource(R.string.admin_page_select_location),
                         color = if (ui.location != null) TextColor else MainColor)
                   }
 

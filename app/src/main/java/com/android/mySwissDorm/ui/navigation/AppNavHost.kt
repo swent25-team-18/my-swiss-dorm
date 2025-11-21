@@ -27,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
@@ -142,7 +143,9 @@ fun AppNavHost(
                 onRequestedMessagesClick = {
                   // Feature coming soon - show toast for now
                   Toast.makeText(
-                          context, "Requested messages feature coming soon", Toast.LENGTH_SHORT)
+                          context,
+                          context.getString(R.string.app_nav_host_not_implemented_yet),
+                          Toast.LENGTH_SHORT)
                       .show()
                 },
                 requestedMessagesCount = 0, // Hardcoded to 0 until feature is implemented
@@ -220,7 +223,7 @@ fun AppNavHost(
               latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
               longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
               title = backStackEntry.arguments?.getString("title") ?: "Location",
-              name = backStackEntry.arguments?.getString("name") ?: "Location",
+              nameId = backStackEntry.arguments?.getInt("name") ?: R.string.location,
               onGoBack = { navController.popBackStack() })
         }
 
@@ -306,7 +309,11 @@ fun AppNavHost(
       }
           ?: run {
             Log.e("AppNavHost", "residencyName is null")
-            Toast.makeText(context, "residencyName is null", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_residency_name_is_null),
+                    Toast.LENGTH_SHORT)
+                .show()
           }
     }
 
@@ -321,7 +328,10 @@ fun AppNavHost(
             onGoBack = { navActions.goBack() },
             onApply = {
               // Contact message feature coming soon
-              Toast.makeText(context, "Contact message feature coming soon", Toast.LENGTH_SHORT)
+              Toast.makeText(
+                      context,
+                      context.getString(R.string.app_nav_host_not_implemented_yet),
+                      Toast.LENGTH_SHORT)
                   .show()
             },
             onEdit = { navActions.navigateTo(Screen.EditListing(it)) },
@@ -339,7 +349,11 @@ fun AppNavHost(
       }
           ?: run {
             Log.e("AppNavHost", "listingUid is null")
-            Toast.makeText(context, "listingUid is null", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_listing_uid_is_null),
+                    Toast.LENGTH_SHORT)
+                .show()
           }
     }
 
@@ -367,7 +381,11 @@ fun AppNavHost(
       }
           ?: run {
             Log.e("AppNavHost", "reviewUid is null")
-            Toast.makeText(context, "reviewUid is null", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_review_uid_is_null),
+                    Toast.LENGTH_SHORT)
+                .show()
           }
     }
 
@@ -384,7 +402,11 @@ fun AppNavHost(
           onConfirm = {
             navActions.navigateTo(Screen.ReviewOverview(id))
             navController.popBackStack(Screen.EditReview.route, inclusive = true)
-            Toast.makeText(context, "Review saved", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_review_saved),
+                    Toast.LENGTH_SHORT)
+                .show()
           },
           onDelete = { residencyName ->
             // Pop EditReview from backstack
@@ -411,7 +433,11 @@ fun AppNavHost(
                 navActions.navigateTo(Screen.ProfileContributions)
               }
             }
-            Toast.makeText(context, "Review deleted", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_review_deleted),
+                    Toast.LENGTH_SHORT)
+                .show()
           })
     }
 
@@ -424,13 +450,20 @@ fun AppNavHost(
             ownerId = it,
             onBack = { navActions.goBack() },
             onSendMessage = {
-              Toast.makeText(context, "Messaging not implemented yet", Toast.LENGTH_SHORT).show()
+              Toast.makeText(
+                      context,
+                      context.getString(R.string.app_nav_host_not_implemented_yet),
+                      Toast.LENGTH_SHORT)
+                  .show()
             })
       }
           ?: run {
             // Handle error if userId is missing
             Log.e("AppNavHost", "User ID is null for ViewUserProfile route")
-            Toast.makeText(context, "Could not load profile, user ID missing", Toast.LENGTH_SHORT)
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_could_not_load_profile),
+                    Toast.LENGTH_SHORT)
                 .show()
             navActions.goBack()
           }
@@ -445,12 +478,20 @@ fun AppNavHost(
           onConfirm = {
             navActions.navigateTo(Screen.ListingOverview(id))
             navController.popBackStack(Screen.EditListing.route, inclusive = true)
-            Toast.makeText(context, "Listing saved", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_listing_saved),
+                    Toast.LENGTH_SHORT)
+                .show()
           },
           onDelete = {
             navActions.navigateTo(Screen.Homepage)
             navController.popBackStack(Screen.EditListing.route, inclusive = true)
-            Toast.makeText(context, "Listing deleted", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.app_nav_host_listing_deleted),
+                    Toast.LENGTH_SHORT)
+                .show()
           })
     }
 
@@ -473,7 +514,11 @@ fun AppNavHost(
               navigationViewModel.determineInitialDestination()
             },
             onChangeProfilePicture = {
-              Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
+              Toast.makeText(
+                      context,
+                      context.getString(R.string.app_nav_host_not_implemented_yet),
+                      Toast.LENGTH_SHORT)
+                  .show()
             })
       }
     }

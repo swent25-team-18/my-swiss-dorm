@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.currentBackStackEntryAsState
 
 // This code is based on the bootcamp and on AI
@@ -24,10 +25,10 @@ fun BottomNavigationMenu(
     tabs.forEach { screen ->
       val (label, icon) =
           when (screen) {
-            Screen.Homepage -> screen.name to Icons.Filled.Home
-            Screen.Inbox -> screen.name to Icons.Filled.Chat
-            Screen.Settings -> screen.name to Icons.Filled.Settings
-            else -> screen.name to Icons.Filled.Home
+            Screen.Homepage -> stringResource(screen.nameId) to Icons.Filled.Home
+            Screen.Inbox -> stringResource(screen.nameId) to Icons.Filled.Chat
+            Screen.Settings -> stringResource(screen.nameId) to Icons.Filled.Settings
+            else -> stringResource(screen.nameId) to Icons.Filled.Home
           }
       NavigationBarItem(
           selected = selectedScreen.route == screen.route,

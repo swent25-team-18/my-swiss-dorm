@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -269,7 +271,7 @@ fun CustomDatePickerDialog(
               onClick = onDismiss,
               modifier = Modifier.testTag(C.CustomDatePickerDialogTags.CANCEL_BUTTON),
               colors = ButtonDefaults.textButtonColors(contentColor = TextColor)) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
               }
         }) {
           val currentConfig = LocalConfiguration.current

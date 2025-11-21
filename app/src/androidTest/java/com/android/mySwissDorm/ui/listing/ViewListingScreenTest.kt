@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.*
 import com.android.mySwissDorm.model.rental.*
@@ -48,6 +49,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   private lateinit var otherUid: String
   private lateinit var ownerListing: RentalListing
   private lateinit var otherListing: RentalListing
+
+  private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
   override fun createRepositories() {
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
@@ -356,12 +359,12 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       ViewListingScreen(
           viewListingViewModel = vm,
           listingUid = expectedListing.uid,
-          onViewMap = { lat, lon, title, name ->
+          onViewMap = { lat, lon, title, nameId ->
             callbackCalled = true
             capturedLat = lat
             capturedLon = lon
             capturedTitle = title
-            capturedName = name
+            capturedName = context.getString(nameId)
           })
     }
 
@@ -382,7 +385,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
     // And that metadata is correct
     assertEquals(expectedListing.title, capturedTitle)
-    assertEquals("Listing", capturedName)
+    assertEquals("Listing Location", capturedName)
   }
 
   @Test

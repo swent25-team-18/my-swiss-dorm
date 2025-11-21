@@ -24,11 +24,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.resources.C
@@ -145,7 +147,7 @@ fun FirstNameField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "First name",
+    label: String = stringResource(R.string.first_name),
     externalErrorKey: String? = null,
 ) =
     SanitizedOutlinedTextField(
@@ -164,7 +166,7 @@ fun LastNameField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Last name",
+    label: String = stringResource(R.string.last_name),
     externalErrorKey: String? = null,
 ) =
     SanitizedOutlinedTextField(
@@ -183,7 +185,7 @@ fun EmailField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Email",
+    label: String = stringResource(R.string.email_address),
     externalErrorKey: String? = null,
     imeAction: ImeAction = ImeAction.Next,
 ) =
@@ -193,7 +195,7 @@ fun EmailField(
         FieldType.Email,
         modifier,
         label = label,
-        placeholder = "name@domain.com",
+        placeholder = stringResource(R.string.sanitized_text_fields_email_placeholder),
         externalErrorKey = externalErrorKey,
         singleLine = true,
         imeAction = imeAction,
@@ -204,7 +206,7 @@ fun PhoneField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Phone",
+    label: String = stringResource(R.string.phone),
     externalErrorKey: String? = null,
 ) =
     SanitizedOutlinedTextField(
@@ -224,7 +226,7 @@ fun SearchField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Search",
+    label: String = stringResource(R.string.search),
 ) =
     SanitizedOutlinedTextField(
         value,
@@ -232,7 +234,7 @@ fun SearchField(
         FieldType.SearchQuery,
         modifier,
         label = label,
-        placeholder = "City, address, keyword",
+        placeholder = stringResource(R.string.sanitized_text_fields_search_placeholder),
         singleLine = true,
         imeAction = ImeAction.Search,
         leadingIcon = {
@@ -249,7 +251,7 @@ fun TitleField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Title",
+    label: String = stringResource(R.string.title),
     externalErrorKey: String? = null,
 ) =
     SanitizedOutlinedTextField(
@@ -258,7 +260,7 @@ fun TitleField(
         FieldType.Title,
         modifier,
         label = label,
-        placeholder = "Think of a nice title!",
+        placeholder = stringResource(R.string.sanitized_text_fields_title_placeholder),
         externalErrorKey = externalErrorKey,
         singleLine = true,
         imeAction = ImeAction.Next)
@@ -268,7 +270,7 @@ fun RoomSizeField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Room size (m²)",
+    label: String = stringResource(R.string.sanitized_text_fields_room_size_label),
     externalErrorKey: String? = null,
 ) =
     SanitizedOutlinedTextField(
@@ -288,7 +290,7 @@ fun PriceField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Price (CHF / month)",
+    label: String = stringResource(R.string.sanitized_text_fields_price_label),
     externalErrorKey: String? = null,
 ) =
     SanitizedOutlinedTextField(
@@ -308,7 +310,7 @@ fun DescriptionField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Description",
+    label: String = stringResource(R.string.description),
     externalErrorKey: String? = null,
     maxLines: Int = 8,
 ) =
@@ -318,7 +320,7 @@ fun DescriptionField(
         FieldType.Description,
         modifier = modifier.fillMaxWidth().heightIn(min = 140.dp),
         label = label,
-        placeholder = "Add details (neighborhood, rules, etc.)",
+        placeholder = stringResource(R.string.sanitized_text_fields_description_placeholder),
         externalErrorKey = externalErrorKey,
         singleLine = false,
         maxLines = maxLines,
@@ -336,7 +338,7 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
         value = label,
         onValueChange = {},
         readOnly = true,
-        label = { Text("Housing type") },
+        label = { Text(stringResource(R.string.sanitized_text_fields_housing_type_label)) },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
         leadingIcon = { Icon(Icons.Default.Apartment, null, tint = MainColor) },
         colors =
@@ -372,7 +374,8 @@ fun ResidencyDropdownResID(
     modifier: Modifier = Modifier
 ) {
   var expanded by remember { mutableStateOf(false) }
-  val label = selected?.toString() ?: "Select residency"
+  val label =
+      selected?.toString() ?: stringResource(R.string.sanitized_text_fields_select_residency_label)
 
   ExposedDropdownMenuBox(
       expanded = expanded,
@@ -382,7 +385,7 @@ fun ResidencyDropdownResID(
             value = label,
             onValueChange = {},
             readOnly = true,
-            label = { Text("Residency Name") },
+            label = { Text(stringResource(R.string.sanitized_text_fields_residency_name_label)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
             leadingIcon = { Icon(Icons.Default.Home, null, tint = MainColor) },
             colors =
@@ -440,28 +443,28 @@ private fun defaultTestTag(type: FieldType): String =
 private fun mapErrorKeyToText(key: String): String {
   // Example; wire to stringResource(...) if you have i18n.
   return when (key) {
-    "error.firstname.required" -> "First name is required"
-    "error.firstname.length" -> "First name is too long"
-    "error.firstname.format" -> "Invalid first name"
-    "error.lastname.required" -> "Last name is required"
-    "error.lastname.length" -> "Last name is too long"
-    "error.lastname.format" -> "Invalid last name"
-    "error.phone.required" -> "Phone is required"
-    "error.phone.length" -> "Phone must be 9 digits"
-    "error.phone.leadingZero" -> "No leading zero allowed"
-    "error.phone.format" -> "Invalid phone format"
-    "error.email.required" -> "Email is required"
-    "error.email.length" -> "Email is too long"
-    "error.email.format" -> "Invalid email"
-    "error.search.required" -> "Enter a search term"
-    "error.title.required" -> "Title is required"
-    "error.title.length" -> "Title is too long"
-    "error.roomsize.format" -> "Use one decimal (e.g., 18.5)"
-    "error.roomsize.range" -> "Room size must be 1.0–1000.0 m²"
-    "error.description.length" -> "Description is too long"
-    "error.price.required" -> "Price is required"
-    "error.price.leadingZero" -> "No leading zero"
-    "error.price.range" -> "Price must be 1–10000 CHF"
+    "error.firstname.required" -> stringResource(R.string.sanitized_text_fields_first_name_required)
+    "error.firstname.length" -> stringResource(R.string.sanitized_text_fields_first_name_length)
+    "error.firstname.format" -> stringResource(R.string.sanitized_text_fields_first_name_format)
+    "error.lastname.required" -> stringResource(R.string.sanitized_text_fields_last_name_required)
+    "error.lastname.length" -> stringResource(R.string.sanitized_text_fields_last_name_length)
+    "error.lastname.format" -> stringResource(R.string.sanitized_text_fields_last_name_format)
+    "error.phone.required" -> stringResource(R.string.sanitized_text_fields_phone_required)
+    "error.phone.length" -> stringResource(R.string.sanitized_text_fields_phone_length)
+    "error.phone.leadingZero" -> stringResource(R.string.sanitized_text_fields_phone_leading_zero)
+    "error.phone.format" -> stringResource(R.string.sanitized_text_fields_phone_format)
+    "error.email.required" -> stringResource(R.string.sanitized_text_fields_email_required)
+    "error.email.length" -> stringResource(R.string.sanitized_text_fields_email_length)
+    "error.email.format" -> stringResource(R.string.sanitized_text_fields_email_format)
+    "error.search.required" -> stringResource(R.string.sanitized_text_fields_search_required)
+    "error.title.required" -> stringResource(R.string.sanitized_text_fields_title_required)
+    "error.title.length" -> stringResource(R.string.sanitized_text_fields_title_length)
+    "error.roomsize.format" -> stringResource(R.string.sanitized_text_fields_room_size_format)
+    "error.roomsize.range" -> stringResource(R.string.sanitized_text_fields_room_size_range)
+    "error.description.length" -> stringResource(R.string.sanitized_text_fields_description_length)
+    "error.price.required" -> stringResource(R.string.sanitized_text_fields_price_required)
+    "error.price.leadingZero" -> stringResource(R.string.sanitized_text_fields_price_leading_zero)
+    "error.price.range" -> stringResource(R.string.sanitized_text_fields_price_range)
     else -> key // fallback
   }
 }

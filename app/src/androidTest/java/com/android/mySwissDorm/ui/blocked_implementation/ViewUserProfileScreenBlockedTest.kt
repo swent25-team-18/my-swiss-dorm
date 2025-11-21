@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.blocked_implementation
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -7,6 +8,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.*
 import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
@@ -39,6 +41,8 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
   private lateinit var profileRepo: ProfileRepository
   private lateinit var currentUserUid: String
   private lateinit var targetUserUid: String
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
@@ -108,7 +112,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     assertFalse(vm.uiState.value.isBlocked)
 
     // Block the user via ViewModel (no onSuccess, just onError)
-    vm.blockUser(targetUserUid, onError = {})
+    vm.blockUser(targetUserUid, onError = {}, context)
 
     // Wait for the blocked status to update in the ViewModel
     waitUntil { vm.uiState.value.isBlocked }
@@ -195,7 +199,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     assertFalse(vm.uiState.value.isBlocked)
 
     // Block the user (no onSuccess parameter)
-    vm.blockUser(targetUserUid, onError = {})
+    vm.blockUser(targetUserUid, onError = {}, context)
 
     // Wait for the blocked status to update in the ViewModel
     waitUntil { vm.uiState.value.isBlocked }
@@ -230,7 +234,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     waitUntil { vm.uiState.value.isBlocked }
     assertTrue(vm.uiState.value.isBlocked)
 
-    vm.unblockUser(targetUserUid, onError = {})
+    vm.unblockUser(targetUserUid, onError = {}, context)
     waitUntil { !vm.uiState.value.isBlocked }
 
     val doc =
@@ -306,7 +310,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     val vm = ViewProfileScreenViewModel(profileRepo)
 
     var errorMessage: String? = null
-    vm.unblockUser("anyTarget") { errorMessage = it }
+    vm.unblockUser("anyTarget", { errorMessage = it }, context)
 
     // Error callback should be invoked immediately
     waitUntil { errorMessage != null }

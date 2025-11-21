@@ -10,6 +10,7 @@ import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers.*
 import androidx.test.espresso.intent.rule.IntentsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import org.hamcrest.Matchers.allOf
 import org.junit.Rule
@@ -45,7 +46,11 @@ class MapTest {
   fun mapScreen_displaysCorrectDynamicTitle() {
     composeTestRule.setContent {
       MapScreen(
-          latitude = 47.3769, longitude = 8.5417, title = "Zurich", onGoBack = {}, name = "Listing")
+          latitude = 47.3769,
+          longitude = 8.5417,
+          title = "Zurich",
+          onGoBack = {},
+          nameId = R.string.view_listing_listing_location)
     }
     composeTestRule.onNodeWithText("Listing Location").assertIsDisplayed()
   }
@@ -59,7 +64,7 @@ class MapTest {
           longitude = 8.5417,
           title = "Zurich",
           onGoBack = { isBackPressed = true },
-          name = "Test")
+          nameId = R.string.view_listing_listing_location)
     }
     composeTestRule.onNodeWithContentDescription("Back").performClick()
     assert(isBackPressed) { "onGoBack callback was not triggered." }
@@ -71,7 +76,11 @@ class MapTest {
     val testLon = 8.5417
     composeTestRule.setContent {
       MapScreen(
-          latitude = testLat, longitude = testLon, title = "Zurich", onGoBack = {}, name = "Test")
+          latitude = testLat,
+          longitude = testLon,
+          title = "Zurich",
+          onGoBack = {},
+          nameId = R.string.view_listing_listing_location)
     }
     composeTestRule.onNodeWithContentDescription("Start navigation").performClick()
     Intents.intended(

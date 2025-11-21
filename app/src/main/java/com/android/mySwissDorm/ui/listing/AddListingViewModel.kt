@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
@@ -23,7 +24,7 @@ class AddListingViewModel(
     residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
     locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
-    photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
 ) :
     BaseListingFormViewModel(
         rentalListingRepository = rentalListingRepository,

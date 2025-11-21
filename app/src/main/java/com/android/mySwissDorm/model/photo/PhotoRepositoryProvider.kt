@@ -12,7 +12,7 @@ import android.content.Context
  */
 object PhotoRepositoryProvider {
   private lateinit var _local_repository: PhotoRepository
-  private lateinit var _cloud_repository: PhotoRepository
+  private lateinit var _cloud_repository: PhotoRepositoryCloud
   private var initialized = false
 
   /**
@@ -31,6 +31,6 @@ object PhotoRepositoryProvider {
   val local_repository: PhotoRepository
     get() = _local_repository
 
-  val cloud_repository: PhotoRepository
+  val cloud_repository: PhotoRepositoryCloud
     get() = _cloud_repository
 }

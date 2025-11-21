@@ -8,6 +8,7 @@ import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -28,7 +29,8 @@ abstract class BaseListingFormViewModel(
     protected val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
     protected val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
-    protected val photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository,
+    protected val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryProvider.cloud_repository,
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository
 ) : BaseLocationSearchViewModel() {
 
@@ -119,7 +121,12 @@ abstract class BaseListingFormViewModel(
 
   open fun addPhoto(photo: Photo) {
     viewModelScope.launch {
-      photoRepositoryLocal.uploadPhoto(photo)
+      // Only upload if the image is not already on disk
+      try {
+        photoRepositoryLocal.retrievePhoto(photo.fileName)
+      } catch (_: NoSuchElementException) {
+        photoRepositoryLocal.uploadPhoto(photo)
+      }
       val images = _uiState.value.pickedImages.toMutableList()
       images.add(photo)
       _uiState.value = _uiState.value.copy(pickedImages = images.toList())

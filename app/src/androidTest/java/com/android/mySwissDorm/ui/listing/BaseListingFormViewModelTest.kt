@@ -7,6 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.utils.FakePhotoRepository
 import com.android.mySwissDorm.utils.FirestoreTest
 import java.io.File
 import kotlinx.coroutines.test.runTest
@@ -32,31 +33,6 @@ class BaseListingFormViewModelTest : FirestoreTest() {
   private inner class FakeBaseListingFormViewModel(photoRepositoryLocal: PhotoRepository) :
       BaseListingFormViewModel(photoRepositoryLocal = photoRepositoryLocal)
 
-  private inner class FakePhotoRepositoryLocal(
-      private val onRetrieve: () -> Photo,
-      private val onUpload: () -> Unit,
-      private val onDelete: Boolean
-  ) : PhotoRepository {
-    var retrieveCount = 0
-    var uploadCount = 0
-    var deleteCount = 0
-
-    override suspend fun retrievePhoto(uid: String): Photo {
-      ++retrieveCount
-      return onRetrieve()
-    }
-
-    override suspend fun uploadPhoto(photo: Photo) {
-      ++uploadCount
-      onUpload()
-    }
-
-    override suspend fun deletePhoto(uid: String): Boolean {
-      ++deleteCount
-      return onDelete
-    }
-  }
-
   @Before
   override fun setUp() {
     super.setUp()
@@ -65,7 +41,7 @@ class BaseListingFormViewModelTest : FirestoreTest() {
 
   @Test
   fun addPhotoWorksUsually() {
-    val fakeLocalRepo = FakePhotoRepositoryLocal({ fakePhoto }, {}, true)
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
     val vm = FakeBaseListingFormViewModel(photoRepositoryLocal = fakeLocalRepo)
     runTest {
       assertTrue(vm.uiState.value.pickedImages.isEmpty())
@@ -77,14 +53,14 @@ class BaseListingFormViewModelTest : FirestoreTest() {
             vm.uiState.value.pickedImages.size == 1
           }
       assertEquals(1, fakeLocalRepo.uploadCount)
-      assertEquals(0, fakeLocalRepo.retrieveCount)
+      assertEquals(1, fakeLocalRepo.retrieveCount)
       assertEquals(0, fakeLocalRepo.deleteCount)
     }
   }
 
   @Test
   fun removePhotoWorksRemFromLocal() {
-    val fakeLocalRepo = FakePhotoRepositoryLocal({ fakePhoto }, {}, true)
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
     val vm = FakeBaseListingFormViewModel(photoRepositoryLocal = fakeLocalRepo)
     runTest {
       vm.addPhoto(photo = fakePhoto)
@@ -100,14 +76,14 @@ class BaseListingFormViewModelTest : FirestoreTest() {
             vm.uiState.value.pickedImages.isEmpty()
           }
       assertEquals(1, fakeLocalRepo.uploadCount)
-      assertEquals(0, fakeLocalRepo.retrieveCount)
+      assertEquals(1, fakeLocalRepo.retrieveCount)
       assertEquals(1, fakeLocalRepo.deleteCount)
     }
   }
 
   @Test
   fun removePhotoWorksNotRemFromLocal() {
-    val fakeLocalRepo = FakePhotoRepositoryLocal({ fakePhoto }, {}, true)
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
     val vm = FakeBaseListingFormViewModel(photoRepositoryLocal = fakeLocalRepo)
     runTest {
       vm.addPhoto(photo = fakePhoto)
@@ -123,23 +99,35 @@ class BaseListingFormViewModelTest : FirestoreTest() {
             vm.uiState.value.pickedImages.isEmpty()
           }
       assertEquals(1, fakeLocalRepo.uploadCount)
-      assertEquals(0, fakeLocalRepo.retrieveCount)
+      assertEquals(1, fakeLocalRepo.retrieveCount)
       assertEquals(0, fakeLocalRepo.deleteCount)
     }
   }
 
   @Test
   fun removePhotoWhenNonExistingDoesNothing() {
-    val fakeLocalRepo = FakePhotoRepositoryLocal({ fakePhoto }, {}, true)
+    val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
     val vm = FakeBaseListingFormViewModel(photoRepositoryLocal = fakeLocalRepo)
     runTest {
       vm.removePhoto(uri = fakePhoto.image, removeFromLocal = false)
-      composeTestRule.waitUntil(
-          "The delete action should do nothing if the photo is not picked", 5000) {
-            0 == fakeLocalRepo.uploadCount &&
-                0 == fakeLocalRepo.retrieveCount &&
-                0 == fakeLocalRepo.deleteCount
-          }
+      composeTestRule.waitForIdle()
+      assertEquals(0, fakeLocalRepo.uploadCount)
+      assertEquals(0, fakeLocalRepo.deleteCount)
+      assertEquals(0, fakeLocalRepo.retrieveCount)
+    }
+  }
+
+  @Test
+  fun doubleAddPhotoDoesNothing() {
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val vm = FakeBaseListingFormViewModel(photoRepositoryLocal = fakeLocalRepo)
+    runTest {
+      vm.addPhoto(photo = fakePhoto)
+      composeTestRule.waitForIdle()
+      vm.addPhoto(photo = fakePhoto)
+      composeTestRule.waitForIdle()
+      assertEquals(1, fakeLocalRepo.uploadCount)
+      assertEquals(0, fakeLocalRepo.deleteCount)
     }
   }
 }

@@ -1,10 +1,12 @@
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
@@ -24,7 +26,7 @@ class EditListingViewModel(
     residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
     locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
-    photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
 ) :
     BaseListingFormViewModel(
         rentalListingRepository = rentalListingRepository,
@@ -34,25 +36,28 @@ class EditListingViewModel(
         photoRepositoryCloud = photoRepositoryCloud) {
 
   override val logTag = "EditListingViewModel"
-  val deletedPhotos = mutableListOf<String>()
-  val newPhotos = mutableListOf<Photo>()
+  private val _deletedPhotos = mutableStateListOf<String>()
+  val deletedPhotos: List<String>
+    get() = _deletedPhotos
+
+  private val _newPhotos = mutableStateListOf<Photo>()
+  val newPhotos: List<Photo>
+    get() = _newPhotos
 
   override fun addPhoto(photo: Photo) {
-    if (deletedPhotos.contains(photo.fileName)) {
-      deletedPhotos.remove(photo.fileName)
+    if (_deletedPhotos.contains(photo.fileName)) {
+      _deletedPhotos.remove(photo.fileName)
     } else {
-      newPhotos.add(photo)
+      _newPhotos.add(photo)
     }
     super.addPhoto(photo)
   }
 
   override fun removePhoto(uri: Uri, removeFromLocal: Boolean) {
-    if (newPhotos.map { it.image }.contains(uri)) {
-      newPhotos.remove(newPhotos.find { it.image == uri })
+    if (_newPhotos.map { it.image }.contains(uri)) {
+      _newPhotos.remove(_newPhotos.find { it.image == uri })
     } else {
-      deletedPhotos.add(
-          _uiState.value.pickedImages.find { it.image == uri }?.fileName
-              ?: throw NoSuchElementException())
+      _uiState.value.pickedImages.find { it.image == uri }?.fileName?.let { _deletedPhotos.add(it) }
     }
     super.removePhoto(uri, removeFromLocal)
   }
@@ -133,9 +138,9 @@ class EditListingViewModel(
       }
     }
     viewModelScope.launch {
-      newPhotos.forEach { photoRepositoryCloud.uploadPhoto(it) }
-      deletedPhotos.forEach { photoRepositoryCloud.deletePhoto(it) }
-      Log.d(logTag, "Removed : ${deletedPhotos.size}, Added : ${newPhotos.size}")
+      _newPhotos.forEach { photoRepositoryCloud.uploadPhoto(it) }
+      _deletedPhotos.forEach { photoRepositoryCloud.deletePhoto(it) }
+      Log.d(logTag, "Removed : ${_deletedPhotos.size}, Added : ${_newPhotos.size}")
     }
     clearErrorMsg()
     return true
@@ -144,6 +149,8 @@ class EditListingViewModel(
   fun deleteRentalListing(rentalPostID: String) {
     viewModelScope.launch {
       _uiState.value.pickedImages.forEach { photoRepositoryCloud.deletePhoto(it.fileName) }
+      _deletedPhotos.forEach { photoRepositoryCloud.deletePhoto(it) }
+      _newPhotos.forEach { photoRepositoryLocal.deletePhoto(it.fileName) }
       try {
         rentalListingRepository.deleteRentalListing(rentalPostId = rentalPostID)
       } catch (e: Exception) {

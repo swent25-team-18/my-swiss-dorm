@@ -16,8 +16,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -26,11 +28,15 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import java.io.File
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -56,6 +62,12 @@ class EditListingScreenTest : FirestoreTest() {
 
     ResidenciesRepositoryProvider.repository =
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
+    runBlocking {
+      switchToUser(FakeUser.FakeUser1)
+      RentalListingRepositoryProvider.repository.addRentalListing(
+          rentalListing3.copy(
+              ownerId = Firebase.auth.currentUser!!.uid, imageUrls = listOf(fakePhoto.fileName)))
+    }
   }
 
   // ---------- Helpers ----------
@@ -262,7 +274,7 @@ class EditListingScreenTest : FirestoreTest() {
     val vm = EditListingViewModel()
     vm.getRentalListing(rentalListing1.uid)
 
-    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    composeRule.waitForIdle()
     setContentFor(vm, rentalListing1.uid)
 
     composeRule.waitUntil(5_000) {
@@ -365,7 +377,7 @@ class EditListingScreenTest : FirestoreTest() {
     val vm = EditListingViewModel()
     vm.getRentalListing(rentalListing1.uid)
 
-    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+    composeRule.waitForIdle()
     val originalDate = vm.uiState.value.startDate
     setContentFor(vm, rentalListing1.uid)
 
@@ -581,5 +593,121 @@ class EditListingScreenTest : FirestoreTest() {
     composeRule.waitUntil(5_000) { vm.uiState.value.showCustomLocationDialog }
 
     assertTrue(vm.uiState.value.showCustomLocationDialog)
+  }
+
+  val fakeName = "fakeFile"
+  val fakeSuffix = ".png"
+  val fakeFileName = fakeName + fakeSuffix
+  val fakePhoto = Photo(File.createTempFile(fakeName, fakeSuffix).toUri(), fakeFileName)
+
+  @Test
+  fun vm_add_photo_works() = runTest {
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val vm = EditListingViewModel(photoRepositoryLocal = fakeLocalRepo)
+    vm.addPhoto(fakePhoto)
+    composeRule.waitForIdle()
+    assertEquals("The added photo should be considered as a photo", 1, vm.newPhotos.size)
+    assertEquals(fakePhoto.fileName, vm.newPhotos.first().fileName)
+  }
+
+  @Test
+  fun vm_remove_photo_works_and_retrieve_image() = runTest {
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val fakeCloudRepo =
+        FakePhotoRepositoryCloud(onRetrieve = { fakePhoto }, onUpload = {}, onDelete = true)
+    val vm =
+        EditListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+    // Assuming this call will work
+    vm.getRentalListing(rentalListing3.uid)
+    composeRule.waitForIdle()
+    vm.removePhoto(fakePhoto.image, false)
+    assertEquals(1, fakeCloudRepo.retrieveCount)
+    assertEquals(fakePhoto.fileName, vm.deletedPhotos.first())
+  }
+
+  @Test
+  fun vm_add_and_remove_cancels_out_photo() = runTest {
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val vm = EditListingViewModel(photoRepositoryLocal = fakeLocalRepo)
+    vm.addPhoto(fakePhoto)
+    vm.removePhoto(fakePhoto.image, false)
+    assertEquals(0, vm.newPhotos.size)
+    assertEquals(0, vm.deletedPhotos.size)
+  }
+
+  @Test
+  fun vm_remove_and_add_cancels_out_photo() = runTest {
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val fakeCloudRepo =
+        FakePhotoRepositoryCloud(onRetrieve = { fakePhoto }, onUpload = {}, onDelete = true)
+    val vm =
+        EditListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+    // Assuming this call will work
+    vm.getRentalListing(rentalListing3.uid)
+    composeRule.waitForIdle()
+    vm.removePhoto(fakePhoto.image, false)
+    vm.addPhoto(fakePhoto)
+    assertEquals(0, vm.newPhotos.size)
+    assertEquals(0, vm.deletedPhotos.size)
+  }
+
+  val fakePhoto2 =
+      Photo(File.createTempFile(fakeName + "2", fakeSuffix).toUri(), fakeName + "2" + fakeSuffix)
+
+  @Test
+  fun vm_check_edit_sends_every_new_images_and_delete_olds() = runTest {
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val fakeCloudRepo =
+        FakePhotoRepositoryCloud(onRetrieve = { fakePhoto }, onUpload = {}, onDelete = true)
+    val vm =
+        EditListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+    // Assuming this call will work
+    vm.getRentalListing(rentalListing3.uid)
+    composeRule.waitForIdle()
+    vm.addPhoto(fakePhoto2)
+    composeRule.waitForIdle()
+    vm.removePhoto(fakePhoto.image, true)
+    composeRule.waitForIdle()
+    vm.editRentalListing(rentalListing3.uid)
+    composeRule.waitForIdle()
+    assertEquals(1, fakeCloudRepo.uploadCount)
+    assertEquals(1, fakeCloudRepo.deleteCount)
+  }
+
+  @Test
+  fun vm_delete_listing_delete_image() = runTest {
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val fakeCloudRepo =
+        FakePhotoRepositoryCloud(onRetrieve = { fakePhoto }, onUpload = {}, onDelete = true)
+    val vm =
+        EditListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+    // Assuming this call will work
+    vm.getRentalListing(rentalListing3.uid)
+    composeRule.waitForIdle()
+    vm.deleteRentalListing(rentalPostID = rentalListing3.uid)
+    composeRule.waitForIdle()
+    assertEquals(1, fakeCloudRepo.deleteCount)
+  }
+
+  @Test
+  fun vm_delete_listing_delete_image_deleted_preview() = runTest {
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val fakeCloudRepo =
+        FakePhotoRepositoryCloud(onRetrieve = { fakePhoto }, onUpload = {}, onDelete = true)
+    val vm =
+        EditListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+    // Assuming this call will work
+    vm.getRentalListing(rentalListing3.uid)
+    composeRule.waitForIdle()
+    vm.removePhoto(fakePhoto.image, true)
+    composeRule.waitForIdle()
+    vm.deleteRentalListing(rentalPostID = rentalListing3.uid)
+    composeRule.waitForIdle()
+    assertEquals(1, fakeCloudRepo.deleteCount)
   }
 }

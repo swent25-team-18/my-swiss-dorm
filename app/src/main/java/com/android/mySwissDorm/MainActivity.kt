@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.credentials.CredentialManager
 import com.android.mySwissDorm.model.authentification.AuthRepository
+import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.AppNavHost
@@ -39,6 +40,8 @@ class MainActivity : ComponentActivity() {
     // Set the preference in global state - this will be used by the theme composable
     // If savedPreference is null, we leave it null to follow system theme
     ThemePreferenceState.updatePreference(savedPreference)
+
+    StreamChatProvider.initialize(this)
 
     Log.d("", Screen.topLevel.joinToString { it.name })
     setContent {

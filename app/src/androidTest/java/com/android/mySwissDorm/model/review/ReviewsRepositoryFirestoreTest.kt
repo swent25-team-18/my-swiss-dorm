@@ -199,7 +199,8 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
             "pricePerMonth" to 1000.0,
             "areaInM2" to 20.0,
             "imageUrls" to emptyList<String>(),
-            "downvotedBy" to emptyList<String>())
+            "downvotedBy" to emptyList<String>(),
+            "isAnonymous" to false)
     // Note: upvotedBy is intentionally missing
 
     FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
@@ -228,13 +229,94 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
             "pricePerMonth" to 1000.0,
             "areaInM2" to 20.0,
             "imageUrls" to emptyList<String>(),
-            "upvotedBy" to emptyList<String>())
+            "upvotedBy" to emptyList<String>(),
+            "isAnonymous" to false)
     // Note: downvotedBy is intentionally missing
 
     FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
 
     // Should return null (and getReview throws when null)
     assertEquals(true, runCatching { repo.getReview(id) }.isFailure)
+  }
+
+  @Test
+  fun reviewWithIsAnonymousTrue_isSavedAndLoaded() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    val anonymousReview = reviewVortex1.copy(ownerId = ownerId, isAnonymous = true)
+
+    repo.addReview(anonymousReview)
+    val loaded = repo.getReview(anonymousReview.uid)
+
+    assertEquals(true, loaded.isAnonymous)
+    assertEquals(anonymousReview, loaded)
+  }
+
+  @Test
+  fun reviewWithIsAnonymousFalse_isSavedAndLoaded() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    val nonAnonymousReview = reviewVortex1.copy(ownerId = ownerId, isAnonymous = false)
+
+    repo.addReview(nonAnonymousReview)
+    val loaded = repo.getReview(nonAnonymousReview.uid)
+
+    assertEquals(false, loaded.isAnonymous)
+    assertEquals(nonAnonymousReview, loaded)
+  }
+
+  @Test
+  fun reviewWithoutIsAnonymousField_throwsException() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    // Write a document without isAnonymous field (old schema simulation)
+    val id = repo.getNewUid()
+    val data =
+        mapOf(
+            "ownerId" to ownerId,
+            "postedAt" to Timestamp.now(),
+            "title" to "Title",
+            "reviewText" to "Text",
+            "grade" to 4.0,
+            "residencyName" to "Vortex",
+            "roomType" to RoomType.STUDIO.name,
+            "pricePerMonth" to 1000.0,
+            "areaInM2" to 20.0,
+            "imageUrls" to emptyList<String>(),
+            "upvotedBy" to emptyList<String>(),
+            "downvotedBy" to emptyList<String>())
+    // Note: isAnonymous is intentionally missing
+
+    FirebaseEmulator.firestore.collection(REVIEWS_COLLECTION_PATH).document(id).set(data).await()
+
+    // Should throw an exception when isAnonymous field is missing to preserve privacy
+    assertEquals(true, runCatching { repo.getReview(id) }.isFailure)
+  }
+
+  @Test
+  fun editReview_preservesIsAnonymousField() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val ownerId =
+        FirebaseEmulator.auth.currentUser?.uid ?: throw NullPointerException("No user logged in")
+
+    val originalReview = reviewVortex1.copy(ownerId = ownerId, isAnonymous = true)
+    repo.addReview(originalReview)
+
+    val editedReview =
+        originalReview.copy(
+            title = "Modified Title", isAnonymous = false) // Change anonymous status
+
+    repo.editReview(originalReview.uid, editedReview)
+    val loaded = repo.getReview(originalReview.uid)
+
+    assertEquals(false, loaded.isAnonymous)
+    assertEquals("Modified Title", loaded.title)
   }
 
   @Test

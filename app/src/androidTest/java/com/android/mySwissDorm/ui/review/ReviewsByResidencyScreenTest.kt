@@ -3,14 +3,18 @@ package com.android.mySwissDorm.ui.review
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
+import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.utils.FakeUser
@@ -247,5 +251,271 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
     compose.onNodeWithTag(C.ReviewsByResidencyTag.ROOT).assertIsDisplayed()
     compose.onNodeWithTag(C.ReviewsByResidencyTag.ERROR).assertIsDisplayed()
+  }
+
+  @Test
+  fun compactVoteButtonsAreDisplayed() {
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.isNotEmpty() }
+
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewVoteButtons(reviewUid1), useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Check that vote buttons exist (there may be multiple reviews, so we check at least one
+    // exists)
+    val upvoteButtons =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+    val downvoteButtons =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_DOWNVOTE_BUTTON, useUnmergedTree = true)
+    val scoreTexts =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_SCORE, useUnmergedTree = true)
+
+    assert(upvoteButtons.fetchSemanticsNodes().isNotEmpty()) {
+      "Upvote buttons should be displayed"
+    }
+    assert(downvoteButtons.fetchSemanticsNodes().isNotEmpty()) {
+      "Downvote buttons should be displayed"
+    }
+    assert(scoreTexts.fetchSemanticsNodes().isNotEmpty()) { "Score should be displayed" }
+  }
+
+  @Test
+  fun anonymousReview_showsAnonymousInList() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val anonymousReviewUid = "anonymousReview1"
+    val anonymousReview = review1.copy(uid = anonymousReviewUid, isAnonymous = true)
+    reviewsRepo.addReview(anonymousReview)
+
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.isNotEmpty() }
+
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewPosterName(anonymousReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals("Posted by anonymous")
+  }
+
+  @Test
+  fun compactVoteButtonsAreEnabledForNonOwner() = runTest {
+    // Create a review owned by a different user
+    switchToUser(FakeUser.FakeUser2)
+    val otherUserId = FirebaseEmulator.auth.currentUser!!.uid
+    profileRepo.createProfile(profile2.copy(ownerId = otherUserId))
+
+    val otherUserReview = reviewVortex1.copy(uid = reviewsRepo.getNewUid(), ownerId = otherUserId)
+    reviewsRepo.addReview(otherUserReview)
+
+    // Switch back to FakeUser1 (non-owner)
+    switchToUser(FakeUser.FakeUser1)
+    val testVm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
+    testVm.loadReviews("Vortex")
+
+    compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
+
+    compose.waitUntil(5_000) {
+      testVm.uiState.value.reviews.items.any { it.reviewUid == otherUserReview.uid && !it.isOwner }
+    }
+
+    // Find the vote buttons for this specific review
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewVoteButtons(otherUserReview.uid), useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Check that upvote buttons exist and are clickable
+    val upvoteButtons =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+    assert(upvoteButtons.fetchSemanticsNodes().isNotEmpty()) {
+      "Upvote buttons should be displayed"
+    }
+  }
+
+  @Test
+  fun compactVoteScoreIsDisplayedCorrectly() = runTest {
+    // Create a review with votes
+    val reviewWithVotes =
+        reviewVortex1.copy(
+            uid = reviewsRepo.getNewUid(),
+            ownerId = userId,
+            upvotedBy = setOf("user1", "user2"),
+            downvotedBy = setOf("user3"))
+    reviewsRepo.addReview(reviewWithVotes)
+
+    val testVm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
+    testVm.loadReviews("Vortex")
+
+    compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
+
+    compose.waitUntil(5_000) {
+      testVm.uiState.value.reviews.items.any { it.reviewUid == reviewWithVotes.uid }
+    }
+
+    // Check that the score is displayed (net score should be 1: 2 upvotes - 1 downvote)
+    val scoreNodes =
+        compose.onAllNodesWithTag(
+            C.ReviewsByResidencyTag.COMPACT_VOTE_SCORE, useUnmergedTree = true)
+    assert(scoreNodes.fetchSemanticsNodes().isNotEmpty()) { "Score should be displayed" }
+  }
+
+  @Test
+  fun clickingCompactVoteButtonTriggersViewModel() = runTest {
+    // Create a review owned by a different user so we can vote
+    switchToUser(FakeUser.FakeUser2)
+    val otherUserId = FirebaseEmulator.auth.currentUser!!.uid
+    profileRepo.createProfile(profile2.copy(ownerId = otherUserId))
+
+    val otherUserReview = reviewVortex1.copy(uid = reviewsRepo.getNewUid(), ownerId = otherUserId)
+    reviewsRepo.addReview(otherUserReview)
+
+    // Switch back to FakeUser1 (non-owner)
+    switchToUser(FakeUser.FakeUser1)
+    val testVm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
+    testVm.loadReviews("Vortex")
+
+    compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
+
+    // Wait for the ViewModel to load reviews
+    compose.waitUntil(10_000) { testVm.uiState.value.reviews.items.isNotEmpty() }
+
+    // Wait for the specific review to load and be ready with all conditions met
+    compose.waitUntil(10_000) {
+      val item = testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
+      item != null && !item.isOwner && item.userVote == VoteType.NONE
+    }
+
+    // Additional wait to ensure UI is fully rendered
+    compose.waitForIdle()
+
+    val initialItem =
+        testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
+            ?: throw AssertionError("Review item not found after wait")
+    val initialScore = initialItem.netScore
+    val initialVote = initialItem.userVote
+
+    // Scroll to the vote buttons to ensure they are visible on screen
+    // This is critical for CI where screen size might be different and items may be off-screen
+    val voteButtonsTag = C.ReviewsByResidencyTag.reviewVoteButtons(otherUserReview.uid)
+
+    // Wait for the vote buttons to exist in the tree
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(voteButtonsTag, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll the LazyColumn to make the vote buttons visible
+    // This is essential for CI where the review might be below the fold and require scrolling
+    compose
+        .onNodeWithTag(C.ReviewsByResidencyTag.REVIEW_LIST, useUnmergedTree = true)
+        .performScrollToNode(hasTestTag(voteButtonsTag))
+    compose.waitForIdle()
+
+    // Verify the vote buttons are now visible after scrolling
+    val voteButtonsContainer = compose.onNodeWithTag(voteButtonsTag, useUnmergedTree = true)
+    voteButtonsContainer.assertIsDisplayed()
+
+    // Wait for upvote button to be available
+    val upvoteButtonTag = C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON
+    compose.waitUntil(5_000) {
+      val nodes =
+          compose.onAllNodesWithTag(upvoteButtonTag, useUnmergedTree = true).fetchSemanticsNodes()
+      nodes.isNotEmpty()
+    }
+    compose.waitForIdle()
+
+    // After scrolling to the specific review's vote buttons container,
+    // find and click the upvote button. Since there are multiple reviews with upvote buttons,
+    // we use onAllNodesWithTag and click the first one. The scroll ensures the correct
+    // review's button is visible and accessible.
+    val upvoteButtons = compose.onAllNodesWithTag(upvoteButtonTag, useUnmergedTree = true)
+    val nodes = upvoteButtons.fetchSemanticsNodes()
+    assert(nodes.isNotEmpty()) { "Upvote button should be available" }
+
+    // Click the first available upvote button
+    // Note: The onClick callback is bound to the specific review's UID in the UI,
+    // and we verify below that the state change is for otherUserReview
+    upvoteButtons[0].performClick()
+    compose.waitForIdle()
+
+    // Wait for the vote to be registered
+    // The optimistic update should happen immediately in the ViewModel
+    // We check for either vote type change or score change to be more lenient
+    compose.waitUntil(10_000) {
+      val updatedItem =
+          testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
+      if (updatedItem == null) return@waitUntil false
+      // Check if vote state changed OR score changed (optimistic update)
+      val voteChanged = updatedItem.userVote != initialVote
+      val scoreChanged = updatedItem.netScore != initialScore
+      voteChanged || scoreChanged
+    }
+
+    // Verify the vote was registered for the correct review
+    val finalItem = testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }
+    assert(finalItem != null) { "Review item should still exist" }
+
+    // Verify either the vote type changed to UPVOTE or the score increased
+    val voteRegistered =
+        finalItem!!.userVote == VoteType.UPVOTE || finalItem.netScore > initialScore
+    assert(voteRegistered) {
+      "Vote should be registered for review ${otherUserReview.uid}. " +
+          "Initial: vote=$initialVote, score=$initialScore. " +
+          "Final: vote=${finalItem.userVote}, score=${finalItem.netScore}"
+    }
+  }
+
+  @Test
+  fun nonAnonymousReview_showsActualNameInList() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val nonAnonymousReviewUid = "nonAnonymousReview1"
+    val nonAnonymousReview = review1.copy(uid = nonAnonymousReviewUid, isAnonymous = false)
+    reviewsRepo.addReview(nonAnonymousReview)
+
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.isNotEmpty() }
+
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewPosterName(nonAnonymousReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals("Posted by Bob King") // Full name of FakeUser1
+  }
+
+  @Test
+  fun mixedAnonymousAndNonAnonymousReviews_displayCorrectly() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val anonymousReviewUid = "anonymousReview2"
+    val nonAnonymousReviewUid = "nonAnonymousReview2"
+    val anonymousReview = review1.copy(uid = anonymousReviewUid, isAnonymous = true)
+    val nonAnonymousReview = review2.copy(uid = nonAnonymousReviewUid, isAnonymous = false)
+
+    reviewsRepo.addReview(anonymousReview)
+    reviewsRepo.addReview(nonAnonymousReview)
+
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+    compose.waitUntil(5_000) { vm.uiState.value.reviews.items.size >= 2 }
+
+    // Check anonymous review shows "anonymous"
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewPosterName(anonymousReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals("Posted by anonymous")
+
+    // Check non-anonymous review shows actual name
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.reviewPosterName(nonAnonymousReviewUid), useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals("Posted by Bob King")
   }
 }

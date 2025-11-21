@@ -27,6 +27,7 @@ import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
 
 /**
@@ -125,7 +126,7 @@ fun EditReviewScreen(
                       modifier =
                           Modifier.weight(1f).height(52.dp).testTag("saveButton"), // ← add this
                       shape = RoundedCornerShape(16.dp)) {
-                        Text("Save", color = Color.White)
+                        Text("Save", color = White)
                       }
                 }
             Spacer(Modifier.height(8.dp))
@@ -228,6 +229,25 @@ fun EditReviewScreen(
                         activeColor = MainColor,
                         inactiveColor = TextBoxColor,
                         modifier = Modifier.testTag("gradeField"))
+                  }
+
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        text = "Post anonymously",
+                        color = TextColor,
+                        style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = ui.isAnonymous,
+                        onCheckedChange = { editReviewViewModel.setIsAnonymous(it) },
+                        colors =
+                            SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = MainColor,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
                   }
 
               Text("Photos", style = MaterialTheme.typography.titleMedium)

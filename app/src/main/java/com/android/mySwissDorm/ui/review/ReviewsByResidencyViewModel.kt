@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
  * @property reviewUid The unique identifier of the review
  * @property netScore The net vote score (upvotes - downvotes)
  * @property userVote The type of vote the current user has cast, or NONE if no vote
+ * @property isOwner Whether the current user is the owner of this review
  */
 data class ReviewCardUI(
     val title: String,
@@ -39,6 +40,7 @@ data class ReviewCardUI(
     val reviewUid: String,
     val netScore: Int = 0,
     val userVote: VoteType = VoteType.NONE,
+    val isOwner: Boolean = false,
 )
 
 /**
@@ -81,18 +83,22 @@ class ReviewsByResidencyViewModel(
         val currentUserId = auth.currentUser?.uid
         val mapped =
             all.map {
-              val userInfo =
-                  try {
-                    profilesRepository.getProfile(it.ownerId).userInfo
-                  } catch (e: Exception) {
-                    Log.w(
-                        "ReviewsByResidencyViewModel",
-                        "Could not fetch profile with userId ${it.ownerId}",
-                        e)
-                    null
+              val fullName =
+                  if (it.isAnonymous) {
+                    "anonymous"
+                  } else {
+                    val userInfo =
+                        try {
+                          profilesRepository.getProfile(it.ownerId).userInfo
+                        } catch (e: Exception) {
+                          Log.w(
+                              "ReviewsByResidencyViewModel",
+                              "Could not fetch profile with userId ${it.ownerId}",
+                              e)
+                          null
+                        }
+                    userInfo?.let { "${userInfo.name} ${userInfo.lastName}" } ?: "Unknown"
                   }
-              val fullName = userInfo?.let { "${userInfo.name} ${userInfo.lastName}" } ?: "Unknown"
-
               ReviewCardUI(
                   title = it.title,
                   grade = it.grade,
@@ -101,7 +107,8 @@ class ReviewsByResidencyViewModel(
                   reviewText = it.reviewText,
                   reviewUid = it.uid,
                   netScore = it.getNetScore(),
-                  userVote = it.getUserVote(currentUserId))
+                  userVote = it.getUserVote(currentUserId),
+                  isOwner = currentUserId == it.ownerId)
             }
 
         _uiState.update {

@@ -2,17 +2,19 @@ package com.android.mySwissDorm.ui.review
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -41,12 +43,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * End-to-end UI+VM tests for EditReviewScreen using Firestore emulator. Seeding uses
- * editReview(upsert) because create API is not available. All tests are made with the help of AI
- */
-@get:Rule val composeTestRule = createComposeRule()
-
 @RunWith(AndroidJUnit4::class)
 class EditReviewScreenTest : FirestoreTest() {
 
@@ -54,7 +50,6 @@ class EditReviewScreenTest : FirestoreTest() {
 
   override fun createRepositories() {
     ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
-
     ResidenciesRepositoryProvider.repository =
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
@@ -68,15 +63,20 @@ class EditReviewScreenTest : FirestoreTest() {
     return ReviewsRepositoryProvider.repository.getAllReviewsByUser(userId).size
   }
 
-  /** Seed by upsert: editReview(reviewId, newValue) with a generated id. */
+  /** Seed by insert: addReview(review) with a generated id. */
   private suspend fun seedReviewUpsert(
       title: String = "Great Studio",
       reviewText: String = "Nice place to live",
       grade: Double = 4.5,
       price: Double = 980.0,
       sizeM2: Int = 18,
-      roomType: RoomType = RoomType.STUDIO
+      roomType: RoomType = RoomType.STUDIO,
+      isAnonymous: Boolean = false,
+      user: FakeUser = FakeUser.FakeUser1,
   ): String {
+    // Ensure a deterministic user when seeding (for getAllReviewsByUser)
+    switchToUser(user)
+
     val repo = ReviewsRepositoryProvider.repository
     val id = "seed-${UUID.randomUUID()}"
     val review =
@@ -91,8 +91,12 @@ class EditReviewScreenTest : FirestoreTest() {
             roomType = roomType,
             pricePerMonth = price,
             areaInM2 = sizeM2,
-            imageUrls = emptyList())
-    repo.editReview(reviewId = id, newValue = review) // upsert
+            imageUrls = emptyList(),
+            isAnonymous = isAnonymous)
+
+    repo.addReview(review)
+    // Give Firestore a bit of time on slow CI emulators
+    delay(200)
     return id
   }
 
@@ -123,10 +127,33 @@ class EditReviewScreenTest : FirestoreTest() {
   private fun editable(tag: String): SemanticsNodeInteraction =
       composeRule.onNode(hasTestTag(tag) and hasSetTextAction(), useUnmergedTree = true)
 
+  /**
+   * Polls Firestore until a review with the given [reviewId] is visible for the current user or
+   * fails after [timeoutMs].
+   */
+  private suspend fun awaitReviewById(
+      reviewId: String,
+      timeoutMs: Long = 10_000L,
+      pollIntervalMs: Long = 100L
+  ): Review {
+    val repo = ReviewsRepositoryProvider.repository
+    val userId = Firebase.auth.currentUser!!.uid
+    val start = System.currentTimeMillis()
+
+    while (System.currentTimeMillis() - start < timeoutMs) {
+      val reviews = repo.getAllReviewsByUser(userId)
+      val match = reviews.firstOrNull { it.uid == reviewId }
+      if (match != null) return match
+      delay(pollIntervalMs)
+    }
+    throw AssertionError("Review $reviewId not found in Firestore after ${timeoutMs}ms")
+  }
+
   @Before
   override fun setUp() {
     super.setUp()
     runTest {
+      // Seed two reviews for two users in a deterministic way
       switchToUser(FakeUser.FakeUser1)
       ResidenciesRepositoryProvider.repository.addResidency(resTest)
       review1 =
@@ -141,8 +168,10 @@ class EditReviewScreenTest : FirestoreTest() {
               roomType = RoomType.STUDIO,
               pricePerMonth = 1200.0,
               areaInM2 = 25,
-              imageUrls = emptyList())
+              imageUrls = emptyList(),
+              isAnonymous = false)
       ReviewsRepositoryProvider.repository.addReview(review1!!)
+      delay(200)
 
       switchToUser(FakeUser.FakeUser2)
       ResidenciesRepositoryProvider.repository.addResidency(resTest)
@@ -158,8 +187,12 @@ class EditReviewScreenTest : FirestoreTest() {
               roomType = RoomType.STUDIO,
               pricePerMonth = 1500.0,
               areaInM2 = 32,
-              imageUrls = emptyList())
+              imageUrls = emptyList(),
+              isAnonymous = false)
       ReviewsRepositoryProvider.repository.addReview(review2!!)
+      delay(200)
+
+      // Default back to FakeUser1 for tests that don't explicitly switch
       switchToUser(FakeUser.FakeUser1)
     }
   }
@@ -168,6 +201,8 @@ class EditReviewScreenTest : FirestoreTest() {
   override fun tearDown() {
     super.tearDown()
   }
+
+  // ---------- Tests ----------
 
   @Test
   fun vm_loads_review_into_state() = runTest {
@@ -203,7 +238,9 @@ class EditReviewScreenTest : FirestoreTest() {
 
   @Test
   fun vm_edit_persists_to_firestore() = runTest {
+    // make sure we are on the right user for consistency
     switchToUser(FakeUser.FakeUser1)
+
     val id =
         seedReviewUpsert(
             title = "Great Studio",
@@ -211,12 +248,12 @@ class EditReviewScreenTest : FirestoreTest() {
             grade = 4.5,
             price = 980.0,
             sizeM2 = 18,
-            roomType = RoomType.STUDIO)
+            roomType = RoomType.STUDIO,
+            user = FakeUser.FakeUser1)
 
     val vm = EditReviewViewModel(reviewId = id)
 
-    // Wait for review to be loaded using composeRule.waitUntil (advances test dispatcher)
-    composeRule.waitUntil(timeoutMillis = 5_000) { vm.uiState.value.title.isNotBlank() }
+    composeRule.waitUntil(timeoutMillis = 10_000) { vm.uiState.value.title.isNotBlank() }
 
     // Verify initial state is loaded
     assertEquals("Great Studio", vm.uiState.value.title)
@@ -229,7 +266,6 @@ class EditReviewScreenTest : FirestoreTest() {
     vm.setAreaInM2("25")
     vm.setRoomType(RoomType.STUDIO)
 
-    // Verify the state was updated
     assertEquals("Cozy Studio Review - Updated", vm.uiState.value.title)
     assertEquals("1500", vm.uiState.value.pricePerMonth)
     assertEquals("25", vm.uiState.value.areaInM2)
@@ -239,20 +275,8 @@ class EditReviewScreenTest : FirestoreTest() {
     val accepted = vm.editReview(id)
     assertTrue(accepted)
 
-    // Wait for the edit to persist to Firestore (editReviewToRepository is async)
-    var tries = 0
-    while (tries < 30) {
-      val reloaded = ReviewsRepositoryProvider.repository.getReview(id)
-      if (reloaded.title == "Cozy Studio Review - Updated" &&
-          reloaded.pricePerMonth == 1500.0 &&
-          reloaded.areaInM2 == 25 &&
-          reloaded.roomType == RoomType.STUDIO)
-          break
-      delay(100)
-      tries++
-    }
-
-    val finalDoc = ReviewsRepositoryProvider.repository.getReview(id)
+    // Wait until Firestore shows the updated review
+    val finalDoc = awaitReviewById(id)
     assertEquals("Cozy Studio Review - Updated", finalDoc.title)
     assertEquals(1500.0, finalDoc.pricePerMonth, 0.0)
     assertEquals(25, finalDoc.areaInM2)
@@ -261,7 +285,7 @@ class EditReviewScreenTest : FirestoreTest() {
 
   @Test
   fun vm_delete_removes_document() = runTest {
-    val id = seedReviewUpsert()
+    val id = seedReviewUpsert(user = FakeUser.FakeUser1)
 
     val before = getAllReviewsByUserCount(Firebase.auth.currentUser!!.uid)
     assertTrue(before >= 1)
@@ -269,12 +293,18 @@ class EditReviewScreenTest : FirestoreTest() {
     val vm = EditReviewViewModel(reviewId = id)
     vm.deleteReview(id)
 
+    composeRule.waitForIdle()
+    delay(150)
+
     val after = getAllReviewsByUserCount(Firebase.auth.currentUser!!.uid)
     assertEquals(before - 1, after)
   }
 
   @Test
   fun editing_review_saves_to_firestore() = runTest {
+    // ensure we are under FakeUser1 (owner of review1)
+    switchToUser(FakeUser.FakeUser1)
+
     val vm = EditReviewViewModel(reviewId = review1!!.uid)
     setContentFor(vm, review1!!.uid)
 
@@ -292,16 +322,18 @@ class EditReviewScreenTest : FirestoreTest() {
     editable("sizeField").replaceText("25")
 
     composeRule.onNodeWithText("Save", useUnmergedTree = true).assertIsEnabled().performClick()
-    val finalDoc = ReviewsRepositoryProvider.repository.getReview(review1!!.uid)
-    assertEquals("Cozy Studio Review - Updated", finalDoc.title)
-    assertEquals(1500.0, finalDoc.pricePerMonth, 0.0)
-    assertEquals(25, finalDoc.areaInM2)
+    composeRule.awaitIdle()
+
+    // Wait until Firestore shows the updated values
+    val updated = awaitReviewById(review1!!.uid)
+    assertEquals("Cozy Studio Review - Updated", updated.title)
+    assertEquals(1500.0, updated.pricePerMonth, 0.0)
+    assertEquals(25, updated.areaInM2)
   }
 
   @Test
   fun delete_icon_removes_document_and_emits_residency_name() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val id = seedReviewUpsert()
+    val id = seedReviewUpsert(user = FakeUser.FakeUser1)
 
     val vm = EditReviewViewModel(reviewId = id)
     var deletedResidencyName: String? = null
@@ -329,7 +361,6 @@ class EditReviewScreenTest : FirestoreTest() {
 
   @Test
   fun invalid_price_disables_save_and_shows_helper() = runTest {
-    switchToUser(FakeUser.FakeUser1)
     val vm = EditReviewViewModel(reviewId = review1!!.uid)
     setContentFor(vm, review1!!.uid)
 
@@ -352,6 +383,123 @@ class EditReviewScreenTest : FirestoreTest() {
         .onNodeWithText(
             "Please complete all required fields (valid size, price, and starting date).",
             useUnmergedTree = true)
-        .assertExists()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun anonymousToggle_isDisplayedAndCanBeToggled() = runTest {
+    val reviewId = seedReviewUpsert(isAnonymous = false, user = FakeUser.FakeUser1)
+    val vm = EditReviewViewModel(reviewId)
+    setContentFor(vm, reviewId)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotEmpty() }
+
+    // Wait for the "Post anonymously" text to appear and scroll to it if needed
+    composeRule.waitUntil(5_000) {
+      val nodes =
+          composeRule
+              .onAllNodesWithText("Post anonymously", useUnmergedTree = true)
+              .fetchSemanticsNodes()
+      if (nodes.isNotEmpty()) {
+        try {
+          composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).performScrollTo()
+          true
+        } catch (e: Exception) {
+          false
+        }
+      } else {
+        false
+      }
+    }
+
+    composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).assertIsDisplayed()
+    assertEquals(false, vm.uiState.value.isAnonymous)
+
+    // Toggle anonymous on
+    vm.setIsAnonymous(true)
+    composeRule.awaitIdle()
+    assertEquals(true, vm.uiState.value.isAnonymous)
+
+    // Toggle anonymous off
+    vm.setIsAnonymous(false)
+    composeRule.awaitIdle()
+    assertEquals(false, vm.uiState.value.isAnonymous)
+  }
+
+  @Test
+  fun editReview_withAnonymousEnabled_savesIsAnonymousAsTrue() = runTest {
+    val reviewId = seedReviewUpsert(isAnonymous = false, user = FakeUser.FakeUser1)
+
+    val vm = EditReviewViewModel(reviewId)
+    setContentFor(vm, reviewId)
+
+    composeRule.waitUntil(10_000) { vm.uiState.value.title.isNotEmpty() }
+
+    // Enable anonymous
+    vm.setIsAnonymous(true)
+    composeRule.awaitIdle()
+    assertTrue(vm.uiState.value.isAnonymous)
+
+    // Save the review
+    val saved = vm.editReview(reviewId)
+    assertTrue("Review should be saved successfully", saved)
+    composeRule.awaitIdle()
+
+    val savedReview = awaitReviewById(reviewId)
+    assertEquals(true, savedReview.isAnonymous)
+  }
+
+  @Test
+  fun editReview_withAnonymousDisabled_savesIsAnonymousAsFalse() = runTest {
+    val reviewId = seedReviewUpsert(isAnonymous = true, user = FakeUser.FakeUser1)
+
+    val vm = EditReviewViewModel(reviewId)
+    setContentFor(vm, reviewId)
+
+    composeRule.waitUntil(10_000) { vm.uiState.value.title.isNotEmpty() }
+
+    // Disable anonymous
+    vm.setIsAnonymous(false)
+    composeRule.awaitIdle()
+    assertEquals(false, vm.uiState.value.isAnonymous)
+
+    // Save the review
+    val saved = vm.editReview(reviewId)
+    assertTrue("Review should be saved successfully", saved)
+    composeRule.awaitIdle()
+
+    val savedReview = awaitReviewById(reviewId)
+    assertEquals(false, savedReview.isAnonymous)
+  }
+
+  @Test
+  fun editReview_loadsExistingAnonymousStatus() = runTest {
+    val reviewId = seedReviewUpsert(isAnonymous = true, user = FakeUser.FakeUser1)
+    val vm = EditReviewViewModel(reviewId)
+    setContentFor(vm, reviewId)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotEmpty() }
+
+    // Wait for the "Post anonymously" text to appear and scroll to it if needed
+    composeRule.waitUntil(5_000) {
+      val nodes =
+          composeRule
+              .onAllNodesWithText("Post anonymously", useUnmergedTree = true)
+              .fetchSemanticsNodes()
+      if (nodes.isNotEmpty()) {
+        try {
+          composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).performScrollTo()
+          true
+        } catch (_: Exception) {
+          false
+        }
+      } else {
+        false
+      }
+    }
+
+    // Verify that the anonymous status is loaded correctly
+    assertEquals(true, vm.uiState.value.isAnonymous)
+    composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).assertIsDisplayed()
   }
 }

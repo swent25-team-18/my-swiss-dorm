@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.StarHalf
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Button
@@ -53,8 +56,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -83,7 +86,7 @@ fun ViewReviewScreen(
   val uiState by viewReviewViewModel.uiState.collectAsState()
   val review = uiState.review
   val fullNameOfPoster = uiState.fullNameOfPoster
-  val errorMsg = uiState.errorMsg
+  val errorMsg = uiState.errorMsg //
   val isOwner = uiState.isOwner
 
   val context = LocalContext.current
@@ -118,9 +121,8 @@ fun ViewReviewScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
                   text = review.title,
-                  fontSize = 28.sp,
-                  fontWeight = FontWeight.SemiBold,
-                  lineHeight = 32.sp,
+                  style =
+                      MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                   modifier = Modifier.testTag(C.ViewReviewTags.TITLE),
                   color = TextColor)
 
@@ -130,8 +132,6 @@ fun ViewReviewScreen(
               // build the AnnotatedString tagging the name
               val annotatedPostedByString = buildAnnotatedString {
                 append("Posted by ")
-
-                // pushStringAnnotation to "tag" this part of the string
                 pushStringAnnotation(tag = tagProfile, annotation = review.ownerId)
                 // apply the style to the name
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
@@ -140,7 +140,6 @@ fun ViewReviewScreen(
                 }
                 // stop tagging
                 pop()
-
                 append(" ${formatRelative(review.postedAt)}")
               }
 
@@ -154,21 +153,30 @@ fun ViewReviewScreen(
                           color = MaterialTheme.colorScheme.onSurfaceVariant),
                   onTextLayout = { textLayoutResult = it },
                   modifier =
-                      Modifier.testTag(C.ViewReviewTags.POSTED_BY).pointerInput(Unit) {
-                        detectTapGestures { pos ->
-                          val l = textLayoutResult ?: return@detectTapGestures
-                          val offset = l.getOffsetForPosition(pos)
+                      Modifier.testTag(C.ViewReviewTags.POSTED_BY)
+                          .then(
+                              // Only make clickable if review is not anonymous (privacy)
+                              if (!review.isAnonymous) {
+                                Modifier.pointerInput(Unit) {
+                                  detectTapGestures { pos ->
+                                    val l = textLayoutResult ?: return@detectTapGestures
+                                    val offset = l.getOffsetForPosition(pos)
 
-                          // find any annotations at that exact offset
-                          annotatedPostedByString
-                              .getStringAnnotations(start = offset, end = offset)
-                              .firstOrNull { it.tag == tagProfile } // Check if it's our tag
-                              ?.let { annotation ->
-                                // trigger the callback with the stored ownerId
-                                onViewProfile(annotation.item)
-                              }
-                        }
-                      })
+                                    // find any annotations at that exact offset
+                                    annotatedPostedByString
+                                        .getStringAnnotations(start = offset, end = offset)
+                                        .firstOrNull {
+                                          it.tag == tagProfile
+                                        } // Check if it's our tag
+                                        ?.let { annotation ->
+                                          // trigger the callback with the stored ownerId
+                                          onViewProfile(annotation.item)
+                                        }
+                                  }
+                                }
+                              } else {
+                                Modifier
+                              }))
 
               // Bullet section
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.BULLETS)) {
@@ -208,6 +216,23 @@ fun ViewReviewScreen(
                     height = 180.dp,
                     modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
               }
+
+              // Vote section (always shown, but disabled for owner) - at the bottom of the review
+              Column(
+                  modifier = Modifier.fillMaxWidth().testTag(C.ViewReviewTags.VOTE_BUTTONS),
+                  horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Was this review helpful?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextColor,
+                        modifier = Modifier.padding(bottom = 8.dp))
+                    VoteButtons(
+                        netScore = uiState.netScore,
+                        userVote = uiState.userVote,
+                        isOwner = isOwner,
+                        onUpvote = { viewReviewViewModel.upvoteReview() },
+                        onDownvote = { viewReviewViewModel.downvoteReview() })
+                  }
 
               if (isOwner) {
                 // Owner sees an Edit button centered
@@ -254,7 +279,7 @@ private fun SectionCard(
 @Composable
 private fun BulletRow(text: String) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-    Text("•", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+    Text("•", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(end = 8.dp))
     Text(text, style = MaterialTheme.typography.bodyLarge, color = TextColor)
   }
 }
@@ -308,6 +333,69 @@ private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
               .background(TextBoxColor),
       contentAlignment = Alignment.Center) {
         Text(text, style = MaterialTheme.typography.titleMedium, color = TextColor)
+      }
+}
+
+// Composable to display upvote and downvote buttons with the net score.
+@Composable
+private fun VoteButtons(
+    netScore: Int,
+    userVote: VoteType,
+    isOwner: Boolean,
+    onUpvote: () -> Unit,
+    onDownvote: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+  Row(
+      modifier = modifier,
+      horizontalArrangement = Arrangement.Center,
+      verticalAlignment = Alignment.CenterVertically) {
+        // Upvote button
+        IconButton(
+            onClick = onUpvote,
+            enabled = !isOwner,
+            modifier = Modifier.testTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON)) {
+              Icon(
+                  imageVector = Icons.Filled.ArrowUpward,
+                  contentDescription = "Helpful",
+                  tint =
+                      if (userVote == VoteType.UPVOTE) {
+                        MainColor
+                      } else {
+                        TextColor.copy(alpha = 0.6f)
+                      },
+                  modifier = Modifier.size(32.dp))
+            }
+
+        Spacer(Modifier.width(16.dp))
+
+        // Net score display
+        Text(
+            text = netScore.toString(),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = TextColor,
+            modifier = Modifier.testTag(C.ViewReviewTags.VOTE_SCORE),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+
+        Spacer(Modifier.width(16.dp))
+
+        // Downvote button
+        IconButton(
+            onClick = onDownvote,
+            enabled = !isOwner,
+            modifier = Modifier.testTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON)) {
+              Icon(
+                  imageVector = Icons.Filled.ArrowDownward,
+                  contentDescription = "Not helpful",
+                  tint =
+                      if (userVote == VoteType.DOWNVOTE) {
+                        MainColor
+                      } else {
+                        TextColor.copy(alpha = 0.6f)
+                      },
+                  modifier = Modifier.size(32.dp))
+            }
       }
 }
 

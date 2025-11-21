@@ -28,13 +28,16 @@ android {
     compileSdk = 34
     // Load the API key from local.properties (took it from bootcamp)
     val mapsApiKeyFromCi = project.findProperty("MAPS_API_KEY") as? String
+    val streamApiKeyFromCi = project.findProperty("STREAM_API_KEY") as? String
     val localProperties = Properties()
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
         localProperties.load(FileInputStream(localPropertiesFile))
     }
     val mapsApiKeyFromLocal = localProperties.getProperty("MAPS_API_KEY")
+    val streamApiKeyFromLocal = localProperties.getProperty("STREAM_API_KEY")
     val mapsApiKey: String = mapsApiKeyFromCi ?: mapsApiKeyFromLocal ?: ""
+    val streamApiKey: String = streamApiKeyFromCi ?: streamApiKeyFromLocal ?: ""
 
     signingConfigs {
         create("release") {
@@ -56,6 +59,7 @@ android {
             useSupportLibrary = true
         }
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        manifestPlaceholders["STREAM_API_KEY"] = streamApiKey
         val numShards = providers.gradleProperty("android.testInstrumentationRunnerArguments.numShards")
         if (numShards.isPresent) {
             testInstrumentationRunnerArguments["numShards"] = numShards.get()
@@ -227,6 +231,10 @@ dependencies {
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation(kotlin("test"))
     implementation("com.google.maps.android:maps-compose:4.3.3")
+
+    // Stream Chat SDK
+    implementation(libs.stream.chat.android.compose)
+    implementation(libs.stream.chat.android.client)
 }
 
 tasks.withType<Test> {

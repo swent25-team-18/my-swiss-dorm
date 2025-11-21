@@ -7,6 +7,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.chat.StreamChatProvider
@@ -82,7 +83,7 @@ class SignInViewModel(
               it.copy(
                   isLoading = false,
                   user = null,
-                  errMsg = "This account is not registered",
+                  errMsg = context.getString(R.string.sign_in_not_registered),
                   signedOut = true)
             }
           }
@@ -97,7 +98,7 @@ class SignInViewModel(
           it.copy(
               isLoading = false,
               user = null,
-              errMsg = "Authentification cancelled",
+              errMsg = context.getString(R.string.sign_in_auth_cancelled),
               signedOut = true)
         }
       } catch (e: GetCredentialException) {
@@ -105,7 +106,8 @@ class SignInViewModel(
           it.copy(
               isLoading = false,
               user = null,
-              errMsg = "Failed to get credentials: ${e.localizedMessage}",
+              errMsg =
+                  "${context.getString(R.string.sign_in_failed_to_get_credentials)}: ${e.localizedMessage}",
               signedOut = true)
         }
       } catch (e: Exception) {
@@ -113,10 +115,36 @@ class SignInViewModel(
           it.copy(
               isLoading = false,
               user = null,
-              errMsg = "Unexpected error: ${e.localizedMessage}",
+              errMsg = "${context.getString(R.string.unexpected_error)}: ${e.localizedMessage}",
               signedOut = true)
         }
       }
+    }
+  }
+  /** Handle the sign in event by trying to log in without a Google account so as a guest. */
+  fun signInAnonymously() {
+    if (_uiState.value.isLoading) return
+
+    viewModelScope.launch {
+      _uiState.update { it.copy(isLoading = true, errMsg = null) }
+
+      authRepository
+          .signInAnonymously()
+          .fold(
+              onSuccess = { user ->
+                _uiState.update {
+                  it.copy(isLoading = false, user = user, errMsg = null, signedOut = false)
+                }
+              },
+              onFailure = { failure ->
+                _uiState.update {
+                  it.copy(
+                      isLoading = false,
+                      user = null,
+                      errMsg = failure.localizedMessage ?: "Guest login failed",
+                      signedOut = true)
+                }
+              })
     }
   }
 }

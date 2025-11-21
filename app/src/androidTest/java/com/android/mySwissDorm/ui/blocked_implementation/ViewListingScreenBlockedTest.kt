@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.blocked_implementation
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -8,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
@@ -45,6 +47,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
   private lateinit var ownerUid: String
   private lateinit var blockedUserUid: String
   private lateinit var ownerListing: RentalListing
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
     PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
@@ -172,8 +175,8 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    // Wait for profile to load and verify not blocked
-    waitUntil {
+    // Wait for profile to load and verify not blocked using compose.waitUntil
+    compose.waitUntil(10_000) {
       vm.uiState.value.fullNameOfPoster.isNotEmpty() && !vm.uiState.value.isBlockedByOwner
     }
 
@@ -192,6 +195,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
 
     // Button should be enabled (not blocked + has message)
     scrollListTo(C.ViewListingTags.APPLY_BTN)
+    compose.waitForIdle()
     // The button should exist and be enabled (we can't easily assert enabled without custom
     // matcher,
     // but the ViewModel state confirms it should be enabled)
@@ -202,7 +206,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
 
     // Load listing
-    vm.loadListing(ownerListing.uid)
+    vm.loadListing(ownerListing.uid, context)
 
     // Wait for blocked status to be determined
     waitUntil {
@@ -226,7 +230,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
 
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    vm.loadListing(ownerListing.uid)
+    vm.loadListing(ownerListing.uid, context)
 
     waitUntil { vm.uiState.value.isOwner }
 

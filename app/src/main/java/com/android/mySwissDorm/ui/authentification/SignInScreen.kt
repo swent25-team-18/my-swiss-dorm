@@ -30,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.Typography
 
@@ -88,7 +89,18 @@ fun SignInScreen(
               modifier = Modifier.testTag(C.Tag.SIGN_IN_LOG_IN_BUTTON)) {
                 Text(text = stringResource(R.string.login_in_text))
               }
-          Spacer(modifier = Modifier.height(256.dp))
+          Spacer(modifier = Modifier.height(5.dp))
+          TextButton(
+              onClick = {
+                if (!uiState.isLoading) {
+                  authViewModel.signInAnonymously()
+                }
+              },
+              modifier = Modifier.testTag(C.Tag.SIGN_IN_GUEST_BUTTON)) {
+                Text(text = ("Continue as guest"), color = Gray)
+              }
+
+          Spacer(modifier = Modifier.height(225.dp))
           TextButton(
               onClick = onSignUp, modifier = Modifier.testTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON)) {
                 Text(text = stringResource(R.string.create_account_text), color = Color.Gray)

@@ -12,4 +12,5 @@ class SignInScreen(semanticsProvider: SemanticsNodeInteractionsProvider) :
   val appLogo: KNode = child { hasTestTag(C.Tag.SIGN_IN_APP_LOGO) }
   val logInButton: KNode = child { hasTestTag(C.Tag.SIGN_IN_LOG_IN_BUTTON) }
   val signUpButton: KNode = child { hasTestTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON) }
+  val guestButton = onNode { hasTestTag(C.Tag.SIGN_IN_GUEST_BUTTON) }
 }

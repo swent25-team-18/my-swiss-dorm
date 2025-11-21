@@ -123,6 +123,10 @@ class SignInScreenTest : FirestoreTest() {
             throw GetCredentialCancellationException()
           }
 
+          override suspend fun signInAnonymously(): Result<FirebaseUser> {
+            throw GetCredentialInterruptedException()
+          }
+
           override fun signOut(): Result<Unit> {
             return Result.success(Unit)
           }
@@ -150,6 +154,10 @@ class SignInScreenTest : FirestoreTest() {
     val fakeAuthRepository: AuthRepository =
         object : AuthRepository {
           override suspend fun signInWithGoogle(credential: Credential): Result<FirebaseUser> {
+            throw GetCredentialInterruptedException()
+          }
+
+          override suspend fun signInAnonymously(): Result<FirebaseUser> {
             throw GetCredentialInterruptedException()
           }
 
@@ -183,6 +191,10 @@ class SignInScreenTest : FirestoreTest() {
             throw Exception()
           }
 
+          override suspend fun signInAnonymously(): Result<FirebaseUser> {
+            throw GetCredentialInterruptedException()
+          }
+
           override fun signOut(): Result<Unit> {
             return Result.success(Unit)
           }
@@ -203,6 +215,25 @@ class SignInScreenTest : FirestoreTest() {
         assertTrue(runCatching { performClick() }.isSuccess)
       }
     }
+  }
+
+  @Test
+  fun canSignInAnonymously() = runTest {
+    val connected = mutableStateOf(false)
+    AuthRepositoryProvider.repository = AuthRepositoryFirebase(FirebaseEmulator.auth)
+    composeTestRule.setContent { SignInScreen(onSignedIn = { connected.value = true }) }
+
+    ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
+      assertIsDisplayed()
+      guestButton {
+        assertIsDisplayed()
+        performClick()
+      }
+    }
+    composeTestRule.waitUntil(5000L) { connected.value }
+    val currentUser = FirebaseEmulator.auth.currentUser
+    assertTrue("User should be signed in", currentUser != null)
+    assertTrue("User should be anonymous", currentUser!!.isAnonymous)
   }
 
   @After

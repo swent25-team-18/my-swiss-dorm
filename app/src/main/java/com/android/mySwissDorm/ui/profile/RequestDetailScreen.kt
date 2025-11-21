@@ -10,11 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,7 +34,7 @@ fun RequestDetailScreen(
       containerColor = BackGroundColor,
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Received request") },
+            title = { Text(stringResource(R.string.request_detail_title)) },
             navigationIcon = {
               IconButton(onClick = onBack, modifier = Modifier.testTag("nav_back")) {
                 Icon(
@@ -52,9 +54,12 @@ fun RequestDetailScreen(
                     .background(BackGroundColor)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-              FieldBlock("Identifier", "Request #${ui.id}", "req_field_identifiant")
-              FieldBlock("Requester", ui.requester, "req_field_requester")
-              FieldBlock("Message", ui.message, "req_field_message")
+              FieldBlock(
+                  stringResource(R.string.identifier),
+                  "${stringResource(R.string.request)} #${ui.id}",
+                  "req_field_identifiant")
+              FieldBlock(stringResource(R.string.requester), ui.requester, "req_field_requester")
+              FieldBlock(stringResource(R.string.message), ui.message, "req_field_message")
 
               ui.error?.let { errorText ->
                 Text(
@@ -74,7 +79,7 @@ fun RequestDetailScreen(
                         ButtonDefaults.outlinedButtonColors(
                             containerColor = BackGroundColor, contentColor = MainColor),
                     shape = MaterialTheme.shapes.medium) {
-                      Text("Reject")
+                      Text(stringResource(R.string.reject))
                     }
 
                 Button(
@@ -84,7 +89,7 @@ fun RequestDetailScreen(
                         ButtonDefaults.buttonColors(
                             containerColor = MainColor, contentColor = BackGroundColor),
                     shape = MaterialTheme.shapes.medium) {
-                      Text("Accept")
+                      Text(stringResource(R.string.accept))
                     }
               }
             }

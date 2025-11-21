@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.settings
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
@@ -22,6 +24,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SettingsViewModelTest : FirestoreTest() {
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
     /* none */
@@ -142,7 +145,7 @@ class SettingsViewModelTest : FirestoreTest() {
     FirebaseEmulator.auth.signOut()
     val vm = vm()
 
-    vm.deleteAccount { _, _ -> }
+    vm.deleteAccount({ _, _ -> }, context)
     awaitUntil { vm.uiState.value.errorMsg != null }
     assertNotNull(vm.uiState.value.errorMsg)
 
@@ -155,7 +158,7 @@ class SettingsViewModelTest : FirestoreTest() {
     FirebaseEmulator.auth.signOut()
     val vm = vm()
 
-    vm.deleteAccount { _, _ -> }
+    vm.deleteAccount({ _, _ -> }, context)
     awaitUntil { vm.uiState.value.errorMsg != null }
 
     assertNotNull(vm.uiState.value.errorMsg)
@@ -190,10 +193,12 @@ class SettingsViewModelTest : FirestoreTest() {
         var cbOk: Boolean? = null
         var cbMsg: String? = null
 
-        vm.deleteAccount { ok, msg ->
-          cbOk = ok
-          cbMsg = msg
-        }
+        vm.deleteAccount(
+            { ok, msg ->
+              cbOk = ok
+              cbMsg = msg
+            },
+            context)
         awaitUntil { !vm.uiState.value.isDeleting && cbOk != null }
 
         val snap = db.collection(PROFILE_COLLECTION_PATH).document(uid).get().await()
@@ -202,4 +207,20 @@ class SettingsViewModelTest : FirestoreTest() {
         assertNotNull(cbOk)
         // Intentionally not asserting auth outcome (delete vs recent-login) for CI stability
       }
+
+  @Test
+  fun setIsGuest_correctlyIdentifiesAnonymousUser() = runTest {
+    signInAnonymous()
+    val vm = vm()
+    vm.setIsGuest()
+    assertTrue("VM should identify anonymous user as guest", vm.uiState.value.isGuest)
+  }
+
+  @Test
+  fun setIsGuest_correctlyIdentifiesRegisteredUser() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val vm = vm()
+    vm.setIsGuest()
+    assertFalse("VM should not identify registered user as guest", vm.uiState.value.isGuest)
+  }
 }

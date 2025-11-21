@@ -13,8 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
@@ -74,11 +76,12 @@ fun EditReviewScreen(
 ) {
   val editReviewUIState by editReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  var showDeleteConfirm by remember { mutableStateOf(false) }
 
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Edit Review") },
+            title = { Text(stringResource(R.string.edit_review_title)) },
             navigationIcon = {
               IconButton(onClick = onBack) {
                 Icon(
@@ -89,10 +92,7 @@ fun EditReviewScreen(
             },
             actions = {
               IconButton(
-                  onClick = {
-                    editReviewViewModel.deleteReview(reviewID)
-                    onDelete(editReviewUIState.residencyName)
-                  },
+                  onClick = { showDeleteConfirm = true },
                   modifier = Modifier.testTag("deleteButton") // ← add this
                   ) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MainColor)
@@ -113,7 +113,7 @@ fun EditReviewScreen(
                               containerColor = TextBoxColor, contentColor = MainColor),
                       modifier = Modifier.weight(1f).height(52.dp),
                       shape = RoundedCornerShape(16.dp)) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                       }
 
                   Button(
@@ -126,13 +126,15 @@ fun EditReviewScreen(
                       modifier =
                           Modifier.weight(1f).height(52.dp).testTag("saveButton"), // ← add this
                       shape = RoundedCornerShape(16.dp)) {
-                        Text("Save", color = White)
+                        Text(
+                            stringResource(R.string.save),
+                            color = MaterialTheme.colorScheme.onPrimary)
                       }
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid) {
               Text(
-                  "Please complete all required fields (valid size, price, and starting date).",
+                  stringResource(R.string.edit_review_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,
                   color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -186,7 +188,7 @@ fun EditReviewScreen(
                   modifier = Modifier.testTag("sizeField").fillMaxWidth())
               if (sizeInvalid) {
                 Text(
-                    text = "Enter 1.0–1000.0 with one decimal (e.g., 18.5).",
+                    text = stringResource(R.string.edit_review_invalid_size_text),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
               }
@@ -205,7 +207,7 @@ fun EditReviewScreen(
                   modifier = Modifier.testTag("priceField").fillMaxWidth())
               if (priceInvalid) {
                 Text(
-                    text = "Enter an integer between 1 and 10000.",
+                    text = stringResource(R.string.edit_review_invalid_price_text),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
               }
@@ -213,14 +215,14 @@ fun EditReviewScreen(
               DescriptionField(
                   value = ui.reviewText,
                   onValueChange = { editReviewViewModel.setReviewText(it) },
-                  label = "Review",
+                  label = stringResource(R.string.review),
                   modifier = Modifier.testTag("descField").fillMaxWidth())
               Row(
                   modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Rating: ",
+                        text = stringResource(R.string.edit_review_rating),
                         color = TextColor,
                         style = MaterialTheme.typography.titleMedium)
                     StarRatingBar(
@@ -230,13 +232,12 @@ fun EditReviewScreen(
                         inactiveColor = TextBoxColor,
                         modifier = Modifier.testTag("gradeField"))
                   }
-
               Row(
                   modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        text = "Post anonymously",
+                        text = stringResource(R.string.add_review_post_anonymously),
                         color = TextColor,
                         style = MaterialTheme.typography.bodyLarge)
                     Switch(
@@ -250,7 +251,7 @@ fun EditReviewScreen(
                                 uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
                   }
 
-              Text("Photos", style = MaterialTheme.typography.titleMedium)
+              Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -258,4 +259,28 @@ fun EditReviewScreen(
               }
             }
       }
+
+  if (showDeleteConfirm) {
+    AlertDialog(
+        onDismissRequest = { showDeleteConfirm = false },
+        title = { Text("Delete review?", color = TextColor) },
+        text = {
+          Text(
+              "This will permanently delete your review. This action cannot be undone.",
+              color = TextColor)
+        },
+        confirmButton = {
+          TextButton(
+              onClick = {
+                showDeleteConfirm = false
+                editReviewViewModel.deleteReview(reviewID)
+                onDelete(editReviewUIState.residencyName)
+              }) {
+                Text("Delete", color = MainColor)
+              }
+        },
+        dismissButton = {
+          TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel", color = TextColor) }
+        })
+  }
 }

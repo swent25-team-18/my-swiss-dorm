@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.model.authentification
 
+import android.util.Log
 import androidx.credentials.Credential
 import androidx.credentials.CustomCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -36,6 +37,33 @@ class AuthRepositoryFirebase(private val auth: FirebaseAuth = Firebase.auth) : A
     } catch (e: Exception) {
       Result.failure(
           IllegalStateException("Login failed ${e.localizedMessage ?: "Unexpected error."}"))
+    }
+  }
+
+  override suspend fun signInAnonymously(): Result<FirebaseUser> {
+    val currentUser = auth.currentUser
+    if (currentUser != null && currentUser.isAnonymous) {
+      return Result.success(currentUser)
+    }
+    // will probably never need this  (just here for extra security)
+    if (currentUser != null) {
+      try {
+        auth.signOut()
+      } catch (e: Exception) {
+        Log.e("AuthRepository", "Error signing out pre-existing user", e)
+      }
+    }
+
+    return try {
+      val authResult = auth.signInAnonymously().await()
+      val user =
+          authResult.user
+              ?: return Result.failure(
+                  IllegalStateException("Guest login failed: Could not sign-in anonymously"))
+      Result.success(user)
+    } catch (e: Exception) {
+      Result.failure(
+          IllegalStateException("Guest login failed: ${e.localizedMessage ?: "Unknown error"}"))
     }
   }
 

@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.core.net.toUri
@@ -57,6 +58,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   private lateinit var otherUid: String
   private lateinit var ownerListing: RentalListing
   private lateinit var otherListing: RentalListing
+
+  private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
   override fun createRepositories() {
     PhotoRepositoryProvider.initialize(
@@ -367,12 +370,12 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       ViewListingScreen(
           viewListingViewModel = vm,
           listingUid = expectedListing.uid,
-          onViewMap = { lat, lon, title, name ->
+          onViewMap = { lat, lon, title, nameId ->
             callbackCalled = true
             capturedLat = lat
             capturedLon = lon
             capturedTitle = title
-            capturedName = name
+            capturedName = context.getString(nameId)
           })
     }
 
@@ -393,7 +396,26 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
     // And that metadata is correct
     assertEquals(expectedListing.title, capturedTitle)
-    assertEquals("Listing", capturedName)
+    assertEquals("Listing Location", capturedName)
+  }
+
+  @Test
+  fun guestMode_showsSignInMessage_andHidesInteractiveElements() = runTest {
+    signInAnonymous()
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.isGuest }
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION).performScrollTo().assertIsDisplayed()
+    compose
+        .onNodeWithText("Sign in to contact the owner and apply.")
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).assertDoesNotExist()
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
+    compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN).assertDoesNotExist()
   }
 
   @Test

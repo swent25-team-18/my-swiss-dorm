@@ -1,8 +1,10 @@
 package com.android.mySwissDorm.ui.listing
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
@@ -50,6 +52,7 @@ data class ViewListingUIState(
     val isBlockedByOwner: Boolean = false,
     val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
     val images: List<Photo> = emptyList()
+    val isGuest: Boolean = false
 )
 
 class ViewListingViewModel(
@@ -93,14 +96,16 @@ class ViewListingViewModel(
    *
    * @param listingId The ID of the RentalListing to be loaded.
    */
-  fun loadListing(listingId: String) {
+  fun loadListing(listingId: String, context: Context) {
     viewModelScope.launch {
       try {
         val listing = rentalListingRepository.getRentalListing(listingId)
         val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
         val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
-        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val currentUserId = currentUser?.uid
         val isOwner = currentUserId == listing.ownerId
+        val isGuest = currentUser?.isAnonymous ?: false
 
         // Check if the current user is blocked by the listing owner
         val isBlockedByOwner =
@@ -131,10 +136,12 @@ class ViewListingViewModel(
               isBlockedByOwner = isBlockedByOwner,
               locationOfListing = listing.location,
               images = photos)
+              isGuest = isGuest)
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
-        setErrorMsg("Failed to load Listing: ${e.message}")
+        setErrorMsg(
+            "${context.getString(R.string.view_listing_failed_to_load_listings)}: ${e.message}")
       }
     }
   }

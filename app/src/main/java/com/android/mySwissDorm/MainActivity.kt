@@ -43,9 +43,10 @@ class MainActivity : ComponentActivity() {
 
     StreamChatProvider.initialize(this)
 
-    Log.d("", Screen.topLevel.joinToString { it.name })
     setContent {
-      PhotoRepositoryProvider.initialize(LocalContext.current)
+      val context = LocalContext.current
+      PhotoRepositoryProvider.initialize(context)
+      Log.d("", Screen.topLevel.joinToString { context.getString(it.nameId) })
 
       MySwissDormAppTheme {
         Surface(

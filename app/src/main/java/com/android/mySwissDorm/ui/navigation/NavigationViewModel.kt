@@ -62,6 +62,12 @@ class NavigationViewModel(
                   isLoading = false,
                   initialDestination = Screen.SignIn.route,
                   initialLocation = null)
+        } else if (currentUser.isAnonymous) {
+          _navigationState.value =
+              NavigationState(
+                  isLoading = false,
+                  initialDestination = Screen.Homepage.route,
+                  initialLocation = null)
         } else {
           // Logged in → Check profile for location
           try {

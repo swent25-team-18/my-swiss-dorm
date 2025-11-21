@@ -429,4 +429,23 @@ class AddListingScreenTest : FirestoreTest() {
         .onNodeWithTag(C.CustomLocationDialogTags.CONFIRM_BUTTON, useUnmergedTree = true)
         .assertIsDisplayed()
   }
+
+  @Test
+  fun ui_guest_user_sees_disabled_button_and_warning() = run {
+    runTest { signInAnonymous() }
+    setContentWith {}
+    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("Guest Attempt")
+    selectResidency("Vortex")
+    composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("20.0")
+    composeRule
+        .onNode(hasText("Price (CHF / month)") and hasSetTextAction())
+        .performTextInput("1000")
+    composeRule.onNode(hasText("Description") and hasSetTextAction()).performTextInput("Guest Desc")
+    val confirmBtn = composeRule.onNodeWithText("Confirm listing").assertExists()
+    confirmBtn.assertIsNotEnabled()
+    composeRule
+        .onNodeWithText(
+            "Please complete all required fields (valid size, price, and starting date) or Sign-in if you're a guest.")
+        .assertIsDisplayed()
+  }
 }

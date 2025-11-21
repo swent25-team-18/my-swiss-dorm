@@ -13,6 +13,7 @@ import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -128,7 +129,10 @@ class AddReviewViewModel(
     if (!state.isFormValid) {
       return
     }
-
+    // will probably never reach this if but it's just here for security just like in AddListing
+    if ((FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true)) {
+      return
+    }
     val reviewToAdd =
         Review(
             uid = reviewRepository.getNewUid(),

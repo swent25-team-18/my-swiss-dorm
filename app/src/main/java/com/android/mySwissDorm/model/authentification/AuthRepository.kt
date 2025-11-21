@@ -11,6 +11,12 @@ interface AuthRepository {
    * @return A [Result] containing a [FirebaseUser] on success, or an exception on failure.
    */
   suspend fun signInWithGoogle(credential: Credential): Result<FirebaseUser>
+  /**
+   * Signs in the user anonymously (Guest Mode).
+   *
+   * @return A [Result] containing a [FirebaseUser] on success, or an exception on failure.
+   */
+  suspend fun signInAnonymously(): Result<FirebaseUser>
 
   /**
    * Signs out the currently authenticated user and clears the credential state.

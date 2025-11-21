@@ -12,8 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
@@ -30,6 +32,7 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,14 +41,14 @@ fun AddReviewScreen(
     addReviewViewModel: AddReviewViewModel = viewModel(),
     onConfirm: (Review) -> Unit,
     onBack: () -> Unit
-) {
+) { //
   val reviewUIState by addReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
 
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Add Review") },
+            title = { Text(stringResource(R.string.add_review_title)) },
             navigationIcon = {
               IconButton(onClick = onBack) {
                 Icon(
@@ -61,17 +64,19 @@ fun AddReviewScreen(
             val ui = reviewUIState
             Button(
                 onClick = { addReviewViewModel.submitReviewForm(onConfirm) },
-                enabled = ui.isFormValid,
+                enabled =
+                    ui.isFormValid &&
+                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true),
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
-                  Text("Submit Review", color = White)
+                  Text(stringResource(R.string.add_review_submit), color = White)
                 }
             Spacer(Modifier.height(8.dp))
-            if (!ui.isFormValid) {
+            if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
-                  "Please complete all required fields (valid grade, size, price, etc.).",
+                  stringResource(R.string.add_review_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,
                   color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -125,7 +130,7 @@ fun AddReviewScreen(
                   modifier = Modifier.testTag(C.AddReviewTags.SIZE_FIELD).fillMaxWidth())
               if (sizeInvalid) {
                 Text(
-                    text = "Enter 1.0–1000.0 with one decimal (e.g., 18.5).",
+                    text = stringResource(R.string.add_review_invalid_size_text),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
               }
@@ -144,7 +149,7 @@ fun AddReviewScreen(
                   modifier = Modifier.testTag(C.AddReviewTags.PRICE_FIELD).fillMaxWidth())
               if (priceInvalid) {
                 Text(
-                    text = "Enter an integer between 1 and 10000.",
+                    text = stringResource(R.string.add_review_invalid_price_text),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
               }
@@ -152,14 +157,14 @@ fun AddReviewScreen(
               DescriptionField(
                   value = ui.reviewText,
                   onValueChange = { addReviewViewModel.setReviewText(it) },
-                  label = "Review",
+                  label = stringResource(R.string.review),
                   modifier = Modifier.testTag(C.AddReviewTags.DESC_FIELD).fillMaxWidth())
               Row(
                   modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Rating: ",
+                        text = stringResource(R.string.add_review_rating),
                         color = TextColor,
                         style = MaterialTheme.typography.titleMedium)
                     StarRatingBar(
@@ -175,7 +180,7 @@ fun AddReviewScreen(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        text = "Post anonymously",
+                        text = stringResource(R.string.add_review_post_anonymously),
                         color = TextColor,
                         style = MaterialTheme.typography.bodyLarge)
                     Switch(
@@ -188,8 +193,7 @@ fun AddReviewScreen(
                                 uncheckedThumbColor = Color.White,
                                 uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
                   }
-
-              Text("Photos", style = MaterialTheme.typography.titleMedium)
+              Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {

@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.map
 
 import android.content.Intent
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -14,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -43,7 +45,7 @@ fun MapScreen(
     longitude: Double,
     title: String,
     onGoBack: () -> Unit,
-    name: String
+    @StringRes nameId: Int
 ) {
   val context = LocalContext.current
   val location = remember { LatLng(latitude, longitude) }
@@ -54,7 +56,7 @@ fun MapScreen(
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("$name Location") },
+            title = { Text(stringResource(nameId)) },
             navigationIcon = {
               IconButton(onClick = onGoBack) {
                 Icon(
@@ -64,6 +66,7 @@ fun MapScreen(
               }
             })
       },
+      floatingActionButtonPosition = FabPosition.Start,
       floatingActionButton = {
         FloatingActionButton(
             onClick = {

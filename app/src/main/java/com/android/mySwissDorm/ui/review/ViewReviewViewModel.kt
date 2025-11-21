@@ -1,8 +1,10 @@
 package com.android.mySwissDorm.ui.review
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -68,23 +70,32 @@ class ViewReviewViewModel(
     _uiState.update { it.copy(errorMsg = errorMsg) }
   }
 
+  /**
+   * Loads the location of the review's residency and updates the UI state.
+   *
+   * This function must never crash the process; if anything fails we just log and keep the default
+   * location.
+   */
   fun setLocationOfReview(reviewUid: String) {
-    try {
-      viewModelScope.launch {
+    viewModelScope.launch {
+      try {
         val review = reviewsRepository.getReview(reviewUid)
         val residency = residencyRepository.getResidency(review.residencyName)
-        _uiState.value = _uiState.value.copy(locationOfReview = residency.location)
+        _uiState.update { it.copy(locationOfReview = residency.location) }
+      } catch (e: Exception) {
+        Log.e("ViewReviewViewModel", "Failed to load location for review $reviewUid", e)
+        // Optionally surface as errorMsg if you want:
+        // setErrorMsg("Failed to load location")
       }
-    } catch (e: Exception) {
-      Log.e("MyViewModel", "Failed to load location", e)
     }
   }
+
   /**
    * Loads a Review by its ID and updates the UI state.
    *
    * @param reviewId The ID of the Review to be loaded.
    */
-  fun loadReview(reviewId: String) {
+  fun loadReview(reviewId: String, context: Context) {
     viewModelScope.launch {
       try {
         val review = reviewsRepository.getReview(reviewId)
@@ -98,6 +109,7 @@ class ViewReviewViewModel(
                 ownerUserInfo.name + " " + ownerUserInfo.lastName
               } catch (e: Exception) {
                 Log.w("ViewReviewViewModel", "Could not fetch profile for review owner", e)
+                setErrorMsg("Failed to load Review: Profile not found")
                 "Unknown"
               }
             }
@@ -109,11 +121,13 @@ class ViewReviewViewModel(
               fullNameOfPoster = fullNameOfPoster,
               isOwner = isOwner,
               netScore = review.getNetScore(),
-              userVote = review.getUserVote(currentUserId))
+              userVote = review.getUserVote(currentUserId),
+              errorMsg = it.errorMsg) // Preserve error message if it was set
         }
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)
-        setErrorMsg("Failed to load Review: ${e.message}")
+        setErrorMsg(
+            "${context.getString(R.string.view_review_failed_to_load_review)}: ${e.message}")
       }
     }
   }
@@ -124,7 +138,7 @@ class ViewReviewViewModel(
    * Performs optimistic UI update, then calls the repository. On failure, reverts the optimistic
    * update.
    */
-  fun upvoteReview() {
+  fun upvoteReview(context: Context) {
     val currentUserId = auth.currentUser?.uid ?: return
     val reviewId = _uiState.value.review.uid
 
@@ -137,11 +151,11 @@ class ViewReviewViewModel(
     viewModelScope.launch {
       try {
         reviewsRepository.upvoteReview(reviewId, currentUserId)
-        updateVoteState(reviewId, currentUserId)
+        updateVoteState(reviewId, currentUserId, context)
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Failed to upvote review", e)
         // Revert optimistic update by reloading
-        loadReview(reviewId)
+        loadReview(reviewId, context)
       }
     }
   }
@@ -152,7 +166,7 @@ class ViewReviewViewModel(
    * Performs optimistic UI update, then calls the repository. On failure, reverts the optimistic
    * update.
    */
-  fun downvoteReview() {
+  fun downvoteReview(context: Context) {
     val currentUserId = auth.currentUser?.uid ?: return
     val reviewId = _uiState.value.review.uid
 
@@ -165,11 +179,11 @@ class ViewReviewViewModel(
     viewModelScope.launch {
       try {
         reviewsRepository.downvoteReview(reviewId, currentUserId)
-        updateVoteState(reviewId, currentUserId)
+        updateVoteState(reviewId, currentUserId, context)
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Failed to downvote review", e)
         // Revert optimistic update by reloading
-        loadReview(reviewId)
+        loadReview(reviewId, context)
       }
     }
   }
@@ -180,7 +194,7 @@ class ViewReviewViewModel(
    * @param reviewId The unique identifier of the review to update.
    * @param currentUserId The unique identifier of the current user.
    */
-  private suspend fun updateVoteState(reviewId: String, currentUserId: String) {
+  private suspend fun updateVoteState(reviewId: String, currentUserId: String, context: Context) {
     try {
       val updatedReview = reviewsRepository.getReview(reviewId)
       _uiState.update {
@@ -191,7 +205,7 @@ class ViewReviewViewModel(
     } catch (e: Exception) {
       Log.e("ViewReviewViewModel", "Failed to update vote state for review $reviewId", e)
       // If we can't get the updated review, reload it
-      loadReview(reviewId)
+      loadReview(reviewId, context)
     }
   }
 }

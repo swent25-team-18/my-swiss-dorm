@@ -10,9 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,7 +27,7 @@ fun ProfileContributionsScreen(
       containerColor = BackGroundColor,
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("My contributions") },
+            title = { Text(stringResource(R.string.profile_contributions_title)) },
             navigationIcon = {
               IconButton(onClick = onBackClick) {
                 Icon(
@@ -60,7 +61,7 @@ fun ProfileContributionsList(
         if (contributions.isEmpty()) {
           item {
             Text(
-                text = "No contributions yet",
+                text = stringResource(R.string.profile_contributions_no_contributions_yet),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextColor.copy(alpha = 0.6f))
           }
@@ -82,14 +83,14 @@ private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, in
       shape = MaterialTheme.shapes.large,
       colors = CardDefaults.cardColors(containerColor = BackGroundColor),
       elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-      border = BorderStroke(1.dp, LightGray)) {
+      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))) {
         Column(Modifier.padding(16.dp)) {
           Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     text = contribution.title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                    style = MaterialTheme.typography.titleMedium,
                     color = TextColor,
                     modifier = Modifier.weight(1f, fill = true))
                 Spacer(Modifier.width(12.dp))
@@ -112,7 +113,7 @@ private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, in
                   ButtonDefaults.outlinedButtonColors(
                       containerColor = BackGroundColor, contentColor = MainColor),
               shape = MaterialTheme.shapes.medium) {
-                Text("View details")
+                Text(stringResource(R.string.profile_contributions_view_details))
               }
         }
       }

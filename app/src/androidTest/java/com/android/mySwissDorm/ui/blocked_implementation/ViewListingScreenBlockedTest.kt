@@ -11,6 +11,8 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.*
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.resources.C
@@ -48,6 +50,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
   private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     listingsRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
   }

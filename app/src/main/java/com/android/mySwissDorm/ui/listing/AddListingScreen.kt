@@ -26,6 +26,8 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
+import com.android.mySwissDorm.ui.listing.AddListingViewModel
+import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
@@ -220,8 +222,12 @@ fun AddListingScreen(
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DefaultAddPhotoButton(onSelectPhoto = {}) // TODO display photo
-              }
+                    DefaultAddPhotoButton(onSelectPhoto = { addListingViewModel.addPhoto(it) })
+                    ImageGrid(
+                        imageUris = ui.pickedImages.map { it.image }.toSet(),
+                        isEditingMode = true,
+                        onRemove = { addListingViewModel.removePhoto(it, true) })
+                  }
             }
 
         // Date Picker Dialog

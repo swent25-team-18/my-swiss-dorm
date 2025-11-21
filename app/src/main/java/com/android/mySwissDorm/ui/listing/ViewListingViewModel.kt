@@ -6,6 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
@@ -48,6 +51,7 @@ data class ViewListingUIState(
     val isOwner: Boolean = false,
     val isBlockedByOwner: Boolean = false,
     val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
+    val images: List<Photo> = emptyList(),
     val isGuest: Boolean = false
 )
 
@@ -56,7 +60,9 @@ class ViewListingViewModel(
         RentalListingRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository
+        ResidenciesRepositoryProvider.repository,
+    private val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
@@ -113,7 +119,15 @@ class ViewListingViewModel(
             } else {
               false
             }
-
+        val photos =
+            listing.imageUrls.mapNotNull { fileName ->
+              try {
+                photoRepositoryCloud.retrievePhoto(fileName)
+              } catch (_: NoSuchElementException) {
+                Log.d("ViewListingViewModel", "Failed to retrieve the photo : $fileName")
+                null
+              }
+            }
         _uiState.update {
           it.copy(
               listing = listing,
@@ -121,6 +135,7 @@ class ViewListingViewModel(
               isOwner = isOwner,
               isBlockedByOwner = isBlockedByOwner,
               locationOfListing = listing.location,
+              images = photos,
               isGuest = isGuest)
         }
       } catch (e: Exception) {

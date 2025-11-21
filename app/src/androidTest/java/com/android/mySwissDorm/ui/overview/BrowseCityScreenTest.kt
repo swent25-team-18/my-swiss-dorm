@@ -5,19 +5,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_SUFFIX
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
+import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -35,6 +45,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private val listingsRepo = RentalListingRepositoryProvider.repository
   private val reviewsRepo = ReviewsRepositoryProvider.repository
   private val residenciesRepo = ResidenciesRepositoryProvider.repository
+  val fakePhoto = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
   private lateinit var vm: BrowseCityViewModel
 
   private lateinit var ownerUid: String
@@ -43,8 +54,10 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private lateinit var listingLaus1: RentalListing
   private lateinit var listingLaus2: RentalListing
   private lateinit var listingZurich: RentalListing
+  private lateinit var listingFrib1: RentalListing
 
   override fun createRepositories() {
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
     runBlocking {
       residenciesRepo.addResidency(vortex)
       residenciesRepo.addResidency(woko)
@@ -109,6 +122,21 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             title = "Zurich Room",
             residencyName = resZurich.name,
             location = resZurich.location)
+    listingFrib1 =
+        RentalListing(
+            uid = "frib1",
+            ownerId = ownerUid,
+            postedAt = Timestamp.now(),
+            residencyName = resLaus.name,
+            title = "Lausanne Studio 1",
+            roomType = RoomType.STUDIO,
+            pricePerMonth = 1200.0,
+            areaInM2 = 20,
+            startDate = Timestamp.now(),
+            description = "",
+            imageUrls = listOf(fakePhoto.fileName),
+            status = RentalStatus.POSTED,
+            location = fribourgLocation)
 
     runTest {
       switchToUser(FakeUser.FakeUser1)
@@ -136,6 +164,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   // ——————————————— Helper Functions ———————————————
 
   private val lausanneLocation = Location("Lausanne", 46.5197, 6.6323)
+  private val fribourgLocation = Location("Fribourg", 46.4822, 7.0946)
 
   /** Sets up the screen with Lausanne location and waits for listings to load. */
   private suspend fun setupScreenWithListings() {
@@ -829,6 +858,17 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun test_image_is_display_and_all_stuff() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    listingsRepo.addRentalListing(listingFrib1)
+    val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
+    val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
+    val vm = BrowseCityViewModel(photoRepositoryCloud = fakeCloudRepo)
+    vm.loadListings(fribourgLocation)
+    compose.waitForIdle()
+    assertEquals(1, fakeCloudRepo.retrieveCount)
+  }
+
   fun anonymousReview_showsAnonymousInResidencyCard() = runTest {
     switchToUser(FakeUser.FakeUser1)
     // Create a review with a timestamp that's definitely later than reviewVortex2

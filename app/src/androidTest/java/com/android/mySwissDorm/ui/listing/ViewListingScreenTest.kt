@@ -13,17 +13,26 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.*
 import com.android.mySwissDorm.model.rental.*
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_SUFFIX
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -53,6 +62,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
   override fun createRepositories() {
+    PhotoRepositoryProvider.initialize(
+        context = InstrumentationRegistry.getInstrumentation().context)
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     listingsRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
     residenciesRepo = ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
@@ -405,5 +416,25 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).assertDoesNotExist()
     compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
     compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN).assertDoesNotExist()
+  }
+
+  @Test
+  fun check_image_correctly_retrieved() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val fakePhoto = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
+    val listing =
+        rentalListing3.copy(
+            ownerId = FirebaseEmulator.auth.currentUser!!.uid,
+            imageUrls = listOf(fakePhoto.fileName))
+    RentalListingRepositoryProvider.repository.addRentalListing(listing)
+
+    val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
+    val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
+
+    val vm = ViewListingViewModel(photoRepositoryCloud = fakeCloudRepo)
+
+    vm.loadListing(listing.uid, context)
+    compose.waitForIdle()
+    assertEquals(1, fakeCloudRepo.retrieveCount)
   }
 }

@@ -1,14 +1,23 @@
 package com.android.mySwissDorm.ui.listing
 
-import AddListingViewModel
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_SUFFIX
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
+import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -32,6 +41,7 @@ import org.junit.runner.RunWith
 class AddListingViewModelTest : FirestoreTest() {
 
   override fun createRepositories() {
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
     RentalListingRepositoryProvider.repository =
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
   }
@@ -191,6 +201,20 @@ class AddListingViewModelTest : FirestoreTest() {
         assertNotEquals(
             "Please select a location for Private Accommodation", vm.uiState.value.errorMsg)
       }
+
+  @Test
+  fun submitForm_uploads_photo() = runTest {
+    val fakePhoto = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
+    val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
+    val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
+    val vm =
+        AddListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+    vm.submitForm {
+      assertEquals(1, fakeLocalRepo.uploadCount)
+      assertEquals(1, fakeCloudRepo.uploadCount)
+    }
+  }
   // test for guest mode in add listing
   @Test
   fun submitForm_guest_user_cannot_submit_and_sets_error() = runTest {

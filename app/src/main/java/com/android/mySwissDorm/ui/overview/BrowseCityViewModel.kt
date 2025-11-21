@@ -1,11 +1,14 @@
 package com.android.mySwissDorm.ui.overview
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.map.distanceTo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
@@ -42,6 +45,7 @@ data class ListingCardUI(
     val leftBullets: List<String>,
     val rightBullets: List<String>,
     val listingUid: String,
+    val image: Uri? = null
 )
 
 /**
@@ -153,6 +157,7 @@ data class BrowseCityUiState(
  * @property locationRepository The repository for searching locations.
  * @property profileRepository The repository for managing user profile data.
  * @property auth The Firebase Auth instance for getting the current user.
+ * @property photoRepositoryCloud The cloud abstraction of a photo repository
  */
 class BrowseCityViewModel(
     private val listingsRepository: RentalListingRepository =
@@ -162,7 +167,8 @@ class BrowseCityViewModel(
         ResidenciesRepositoryProvider.repository,
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository
 ) : BaseLocationSearchViewModel() {
   override val logTag = "BrowseCityViewModel"
   private val _uiState = MutableStateFlow(BrowseCityUiState())
@@ -267,7 +273,23 @@ class BrowseCityViewModel(
               filtered
             }
 
-        val mapped = sorted.map { it.toCardUI() }
+        val mapped =
+            sorted.map { listing ->
+              var listingCardUI = listing.toCardUI()
+              if (listing.imageUrls.isNotEmpty()) {
+                val fileName = listing.imageUrls.first()
+                try {
+                  val photo = photoRepositoryCloud.retrievePhoto(fileName)
+                  listingCardUI = listingCardUI.copy(image = photo.image)
+                  Log.d(
+                      "BrowseCityViewModel",
+                      "Photo $fileName retrieved successfully with uri : ${photo.image}")
+                } catch (_: NoSuchElementException) {
+                  Log.e("BrowseCityViewModel", "Failed to retrieve the photo $fileName")
+                }
+              }
+              listingCardUI
+            }
 
         _uiState.update {
           it.copy(listings = it.listings.copy(loading = false, items = mapped, error = null))

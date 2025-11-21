@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
+import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -209,11 +210,10 @@ fun ViewListingScreen(
                   Text(listing.description, style = MaterialTheme.typography.bodyLarge)
                 }
 
-                // Photos placeholder
-                PlaceholderBlock(
-                    text = "${stringResource(R.string.photos)} (Not implemented yet)",
-                    height = 220.dp,
-                    modifier = Modifier.testTag(C.ViewListingTags.PHOTOS))
+                ImageGrid(
+                    imageUris = listingUIState.images.map { it.image }.toSet(),
+                    isEditingMode = false,
+                    onRemove = {})
 
                 // Location placeholder
                 viewListingViewModel.setLocationOfListing(listingUid)

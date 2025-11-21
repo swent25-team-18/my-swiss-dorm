@@ -1,7 +1,13 @@
+import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -13,18 +19,48 @@ import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
+import okio.FileNotFoundException
 
 class EditListingViewModel(
     rentalListingRepository: RentalListingRepository = RentalListingRepositoryProvider.repository,
     residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
-    locationRepository: LocationRepository = LocationRepositoryProvider.repository
+    locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
 ) :
     BaseListingFormViewModel(
         rentalListingRepository = rentalListingRepository,
         residenciesRepository = residenciesRepository,
-        locationRepository = locationRepository) {
+        locationRepository = locationRepository,
+        photoRepositoryLocal = photoRepositoryLocal,
+        photoRepositoryCloud = photoRepositoryCloud) {
 
   override val logTag = "EditListingViewModel"
+  private val _deletedPhotos = mutableStateListOf<String>()
+  val deletedPhotos: List<String>
+    get() = _deletedPhotos
+
+  private val _newPhotos = mutableStateListOf<Photo>()
+  val newPhotos: List<Photo>
+    get() = _newPhotos
+
+  override fun addPhoto(photo: Photo) {
+    if (_deletedPhotos.contains(photo.fileName)) {
+      _deletedPhotos.remove(photo.fileName)
+    } else {
+      _newPhotos.add(photo)
+    }
+    super.addPhoto(photo)
+  }
+
+  override fun removePhoto(uri: Uri, removeFromLocal: Boolean) {
+    if (_newPhotos.map { it.image }.contains(uri)) {
+      _newPhotos.remove(_newPhotos.find { it.image == uri })
+    } else {
+      _uiState.value.pickedImages.find { it.image == uri }?.fileName?.let { _deletedPhotos.add(it) }
+    }
+    super.removePhoto(uri, removeFromLocal)
+  }
 
   fun getRentalListing(rentalPostID: String) {
     viewModelScope.launch {
@@ -32,6 +68,15 @@ class EditListingViewModel(
         val listing = rentalListingRepository.getRentalListing(rentalPostID)
         val isPrivateAccommodation = listing.residencyName == "Private Accommodation"
         val listingLocation = listing.location
+        val photos =
+            listing.imageUrls.mapNotNull { fileName ->
+              try {
+                photoRepositoryCloud.retrievePhoto(fileName)
+              } catch (_: FileNotFoundException) {
+                Log.d(logTag, "Failed to retrieve the photo : $fileName")
+                null
+              }
+            }
 
         _uiState.value =
             uiState.value.copy(
@@ -42,7 +87,7 @@ class EditListingViewModel(
                 sizeSqm = listing.areaInM2.toString(),
                 startDate = listing.startDate,
                 description = listing.description,
-                pickedImages = listing.imageUrls,
+                pickedImages = photos,
                 mapLat = listingLocation.latitude,
                 mapLng = listingLocation.longitude,
                 customLocation = if (isPrivateAccommodation) listingLocation else null,
@@ -80,7 +125,7 @@ class EditListingViewModel(
             areaInM2 = state.sizeSqm.toDouble().toInt(),
             startDate = state.startDate,
             description = state.description,
-            imageUrls = state.pickedImages,
+            imageUrls = state.pickedImages.map { it.fileName },
             status = RentalStatus.POSTED,
             location = location)
 
@@ -92,12 +137,21 @@ class EditListingViewModel(
         setErrorMsg("Failed to edit rental listing: ${e.message}")
       }
     }
+    viewModelScope.launch {
+      // TODO changes when implementing sync
+      _newPhotos.forEach { photoRepositoryCloud.uploadPhoto(it) }
+      _deletedPhotos.forEach { photoRepositoryCloud.deletePhoto(it) }
+      Log.d(logTag, "Removed : ${_deletedPhotos.size}, Added : ${_newPhotos.size}")
+    }
     clearErrorMsg()
     return true
   }
 
   fun deleteRentalListing(rentalPostID: String) {
     viewModelScope.launch {
+      _uiState.value.pickedImages.forEach { photoRepositoryCloud.deletePhoto(it.fileName) }
+      _deletedPhotos.forEach { photoRepositoryCloud.deletePhoto(it) }
+      _newPhotos.forEach { photoRepositoryLocal.deletePhoto(it.fileName) }
       try {
         rentalListingRepository.deleteRentalListing(rentalPostId = rentalPostID)
       } catch (e: Exception) {

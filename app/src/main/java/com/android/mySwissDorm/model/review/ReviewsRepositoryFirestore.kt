@@ -271,22 +271,13 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
       val imageUrls =
           (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: return null
 
-      // Read from Firestore as List, then convert to Set to deduplicate and match domain model
-      // Return null if these fields are missing (required for backward compatibility checks)
-      // Check if fields exist in the document data - if they don't exist, return null
-      val data = document.data ?: return null
-      if (!data.containsKey("upvotedBy")) return null
-      if (!data.containsKey("downvotedBy")) return null
       @Suppress("UNCHECKED_CAST")
       val upvotedByList =
-          (document.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+          (document.get("upvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
       @Suppress("UNCHECKED_CAST")
       val downvotedByList =
-          (document.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
-      val isAnonymous =
-          document.getBoolean("isAnonymous")
-              ?: throw Exception(
-                  "ReviewsRepositoryFirestore: isAnonymous field not found in document. This field is required to preserve privacy.")
+          (document.get("downvotedBy") as? List<*>)?.mapNotNull { it as? String } ?: return null
+      val isAnonymous = document.getBoolean("isAnonymous") ?: return null
 
       val upvotedBy = upvotedByList.toSet()
       val downvotedBy = downvotedByList.toSet()

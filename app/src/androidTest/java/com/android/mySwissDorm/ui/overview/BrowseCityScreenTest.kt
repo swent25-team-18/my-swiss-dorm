@@ -867,6 +867,8 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     vm.loadListings(fribourgLocation)
     compose.waitForIdle()
     assertEquals(1, fakeCloudRepo.retrieveCount)
+  }
+
   fun anonymousReview_showsAnonymousInResidencyCard() = runTest {
     switchToUser(FakeUser.FakeUser1)
     // Create a review with a timestamp that's definitely later than reviewVortex2

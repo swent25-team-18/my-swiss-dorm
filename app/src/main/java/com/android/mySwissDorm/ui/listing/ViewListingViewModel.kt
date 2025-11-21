@@ -51,7 +51,7 @@ data class ViewListingUIState(
     val isOwner: Boolean = false,
     val isBlockedByOwner: Boolean = false,
     val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
-    val images: List<Photo> = emptyList()
+    val images: List<Photo> = emptyList(),
     val isGuest: Boolean = false
 )
 
@@ -135,7 +135,7 @@ class ViewListingViewModel(
               isOwner = isOwner,
               isBlockedByOwner = isBlockedByOwner,
               locationOfListing = listing.location,
-              images = photos)
+              images = photos,
               isGuest = isGuest)
         }
       } catch (e: Exception) {

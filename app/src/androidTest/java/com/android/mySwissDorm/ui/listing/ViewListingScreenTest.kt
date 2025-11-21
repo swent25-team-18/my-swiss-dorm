@@ -433,7 +433,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
     val vm = ViewListingViewModel(photoRepositoryCloud = fakeCloudRepo)
 
-    vm.loadListing(listing.uid)
+    vm.loadListing(listing.uid, context)
     compose.waitForIdle()
     assertEquals(1, fakeCloudRepo.retrieveCount)
   }

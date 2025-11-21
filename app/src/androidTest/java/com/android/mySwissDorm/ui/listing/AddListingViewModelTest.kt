@@ -214,6 +214,7 @@ class AddListingViewModelTest : FirestoreTest() {
       assertEquals(1, fakeLocalRepo.uploadCount)
       assertEquals(1, fakeCloudRepo.uploadCount)
     }
+  }
   // test for guest mode in add listing
   @Test
   fun submitForm_guest_user_cannot_submit_and_sets_error() = runTest {

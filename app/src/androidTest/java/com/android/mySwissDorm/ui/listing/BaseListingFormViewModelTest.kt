@@ -8,6 +8,9 @@ import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_SUFFIX
 import com.android.mySwissDorm.utils.FirestoreTest
 import java.io.File
 import kotlinx.coroutines.test.runTest
@@ -24,11 +27,7 @@ class BaseListingFormViewModelTest : FirestoreTest() {
   override fun createRepositories() {}
 
   @get:Rule val composeTestRule = createComposeRule()
-
-  val fakeName = "fakeFile"
-  val fakeSuffix = ".png"
-  val fakeFileName = fakeName + fakeSuffix
-  val fakePhoto = Photo(File.createTempFile(fakeName, fakeSuffix).toUri(), fakeFileName)
+  val fakePhoto = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
 
   private inner class FakeBaseListingFormViewModel(photoRepositoryLocal: PhotoRepository) :
       BaseListingFormViewModel(photoRepositoryLocal = photoRepositoryLocal)

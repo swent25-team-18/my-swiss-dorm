@@ -138,6 +138,7 @@ class EditListingViewModel(
       }
     }
     viewModelScope.launch {
+      // TODO changes when implementing sync
       _newPhotos.forEach { photoRepositoryCloud.uploadPhoto(it) }
       _deletedPhotos.forEach { photoRepositoryCloud.deletePhoto(it) }
       Log.d(logTag, "Removed : ${_deletedPhotos.size}, Added : ${_newPhotos.size}")

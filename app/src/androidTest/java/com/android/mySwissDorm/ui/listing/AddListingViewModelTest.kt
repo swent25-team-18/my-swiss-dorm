@@ -9,6 +9,9 @@ import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_SUFFIX
 import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -201,10 +204,7 @@ class AddListingViewModelTest : FirestoreTest() {
 
   @Test
   fun submitForm_uploads_photo() = runTest {
-    val fakeName = "fakeFile"
-    val fakeSuffix = ".png"
-    val fakeFileName = fakeName + fakeSuffix
-    val fakePhoto = Photo(File.createTempFile(fakeName, fakeSuffix).toUri(), fakeFileName)
+    val fakePhoto = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
     val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
     val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
     val vm =

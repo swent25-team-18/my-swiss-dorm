@@ -29,6 +29,9 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_SUFFIX
 import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -595,10 +598,7 @@ class EditListingScreenTest : FirestoreTest() {
     assertTrue(vm.uiState.value.showCustomLocationDialog)
   }
 
-  val fakeName = "fakeFile"
-  val fakeSuffix = ".png"
-  val fakeFileName = fakeName + fakeSuffix
-  val fakePhoto = Photo(File.createTempFile(fakeName, fakeSuffix).toUri(), fakeFileName)
+  val fakePhoto = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
 
   @Test
   fun vm_add_photo_works() = runTest {
@@ -654,7 +654,8 @@ class EditListingScreenTest : FirestoreTest() {
   }
 
   val fakePhoto2 =
-      Photo(File.createTempFile(fakeName + "2", fakeSuffix).toUri(), fakeName + "2" + fakeSuffix)
+      Photo(
+          File.createTempFile(FAKE_NAME + "2", FAKE_SUFFIX).toUri(), FAKE_NAME + "2" + FAKE_SUFFIX)
 
   @Test
   fun vm_check_edit_sends_every_new_images_and_delete_olds() = runTest {

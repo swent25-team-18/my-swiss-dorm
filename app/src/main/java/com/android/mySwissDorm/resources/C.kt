@@ -74,6 +74,10 @@ object C {
     const val PHOTOS = "viewReviewPhotos"
     const val LOCATION = "viewReviewLocation"
     const val EDIT_BTN = "viewReviewEditBtn"
+    const val VOTE_BUTTONS = "viewReviewVoteButtons"
+    const val VOTE_UPVOTE_BUTTON = "viewReviewVoteUpvoteButton"
+    const val VOTE_DOWNVOTE_BUTTON = "viewReviewVoteDownvoteButton"
+    const val VOTE_SCORE = "viewReviewVoteScore"
   }
 
   object ViewUserProfileTags {
@@ -120,6 +124,8 @@ object C {
 
     fun reviewText(reviewUid: String) = "browseCityReviewText_$reviewUid"
 
+    fun reviewPosterName(residencyName: String) = "browseCityReviewPosterName_$residencyName"
+
     // Filter tags
     const val FILTER_CHIP_ROW = "browseCityFilterChipRow"
     const val FILTER_CHIP_ROOM_TYPE = "browseCityFilterChipRoomType"
@@ -158,6 +164,12 @@ object C {
     fun reviewPostDate(reviewUid: String) = "reviewsByResidencyReviewPostDate_$reviewUid"
 
     fun reviewGrade(reviewUid: String) = "reviewsByResidencyGrade_$reviewUid"
+
+    fun reviewVoteButtons(reviewUid: String) = "reviewsByResidencyReviewVoteButtons_$reviewUid"
+
+    const val COMPACT_VOTE_UPVOTE_BUTTON = "reviewsByResidencyCompactVoteUpvoteButton"
+    const val COMPACT_VOTE_DOWNVOTE_BUTTON = "reviewsByResidencyCompactVoteDownvoteButton"
+    const val COMPACT_VOTE_SCORE = "reviewsByResidencyCompactVoteScore"
   }
 
   object CameraButtonTag {
@@ -165,7 +177,8 @@ object C {
   }
 
   object GalleryButtonTag {
-    const val TAG = "galleryButtonTag"
+    const val SINGLE_TAG = "singleGalleryButtonTag"
+    const val MULTIPLE_TAG = "multipleGalleryButtonTag"
   }
 
   object CustomLocationDialogTags {
@@ -275,6 +288,15 @@ object C {
     fun deleteButtonTag(uri: Uri): String = "ImageGridDeleteButton$uri"
 
     const val ICON_DELETE_CONTENT_DESC: String = "Remove image"
+  }
+
+  object ChannelsScreenTestTags {
+    const val ROOT = "channelsScreenRoot"
+    const val SEARCH_BAR = "channelsSearchBar"
+    const val REQUESTED_MESSAGES_BUTTON = "requestedMessagesButton"
+    const val CHANNELS_LIST = "channelsList"
+    const val EMPTY_STATE = "channelsEmptyState"
+    const val LOADING_INDICATOR = "channelsLoadingIndicator"
   }
 
   object SanitizedResidencyDropdownTags {

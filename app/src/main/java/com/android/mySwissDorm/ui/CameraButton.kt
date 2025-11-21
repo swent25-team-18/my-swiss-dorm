@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -64,6 +65,7 @@ fun CameraButton(
         ActivityResultContracts.TakePicture(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
+  val context = LocalContext.current
   var uriCaptured by remember { mutableStateOf<Uri>(Uri.EMPTY) }
   var photoCaptured by remember { mutableStateOf<Photo?>(null) }
 
@@ -75,7 +77,7 @@ fun CameraButton(
       }
   Button(
       onClick = {
-        val photo = Photo.createNewTempPhoto(UUID.randomUUID().toString() + ".jpg")
+        val photo = Photo.createCapturablePhoto(context, UUID.randomUUID().toString() + ".jpg")
         uriCaptured = photo.image
         photoCaptured = photo
         cameraLauncher.launch(input = photo.image)

@@ -129,7 +129,6 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
           UserSettings(
               language = Language.valueOf(map["language"] as? String ?: return null),
               isPublic = map["public"] as? Boolean ?: return null,
-              isAnonymous = map["anonymous"] as? Boolean ?: return null,
               isPushNotified = map["pushNotified"] as? Boolean ?: return null,
               darkMode = map["darkMode"] as? Boolean) // null means follow system
         }

@@ -414,12 +414,7 @@ fun SettingsScreenContent(
                               label = "Dark mode",
                               checked = nightShift,
                               onCheckedChange = { enabled -> setDarkModePreference(enabled) })
-                          SoftDivider()
-                          SettingSwitchRow(
-                              label = "Anonymous",
-                              checked = if (ui.isGuest) false else anonymous,
-                              onCheckedChange = { anonymous = it })
-                        }
+                            }
 
                         // ---- Admin ------------------------------------------------------------
                         if (isAdmin) {

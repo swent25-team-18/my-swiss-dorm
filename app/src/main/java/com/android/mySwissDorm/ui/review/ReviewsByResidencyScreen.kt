@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.review
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,8 +40,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.LightGray
@@ -112,7 +117,17 @@ fun ReviewsByResidencyScreen(
                               .testTag(C.ReviewsByResidencyTag.REVIEW_LIST),
                       contentPadding = PaddingValues(vertical = 12.dp),
                       verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        items(reviewsState.items) { item -> ReviewCard(item, onSelectReview) }
+                        items(reviewsState.items) { item ->
+                          ReviewCard(
+                              item,
+                              onSelectReview,
+                              onUpvote = {
+                                reviewsByResidencyViewModel.upvoteReview(item.reviewUid)
+                              },
+                              onDownvote = {
+                                reviewsByResidencyViewModel.downvoteReview(item.reviewUid)
+                              })
+                        }
                       }
                 }
               }
@@ -121,99 +136,186 @@ fun ReviewsByResidencyScreen(
 }
 
 @Composable
-private fun ReviewCard(data: ReviewCardUI, onClick: (ReviewCardUI) -> Unit) {
+private fun ReviewCard(
+    data: ReviewCardUI,
+    onClick: (ReviewCardUI) -> Unit,
+    onUpvote: () -> Unit,
+    onDownvote: () -> Unit
+) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
       modifier =
-          Modifier.fillMaxWidth().testTag(C.ReviewsByResidencyTag.reviewCard(data.reviewUid)),
-      onClick = { onClick(data) }) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-          // Image placeholder (left)
-          Box(
-              modifier =
-                  Modifier.height(140.dp)
-                      .fillMaxWidth(0.35F)
-                      .clip(RoundedCornerShape(12.dp))
-                      .background(LightGray)
-                      .testTag(C.ReviewsByResidencyTag.reviewImagePlaceholder(data.reviewUid))) {
-                Text(
-                    "IMAGE",
-                    modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Gray)
-              }
-
-          Spacer(Modifier.width(4.dp))
-
-          Column(modifier = Modifier.weight(1f).height(140.dp).padding(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically) {
-                  val truncatedTitle = truncateText(data.title, 20)
-                  Text(
-                      text = truncatedTitle,
-                      style = MaterialTheme.typography.titleMedium,
-                      fontWeight = FontWeight.SemiBold,
-                      textAlign = TextAlign.Start,
-                      color = TextColor,
-                      maxLines = 1,
-                      modifier =
-                          Modifier.fillMaxWidth(0.6f)
-                              .testTag(C.ReviewsByResidencyTag.reviewTitle(data.reviewUid)))
-                  DisplayGrade(
-                      data.grade, 16.dp, C.ReviewsByResidencyTag.reviewGrade(data.reviewUid))
-                }
-
-            Spacer(Modifier.height(8.dp))
-
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement =
-                    Arrangement.SpaceBetween) { // Review: posted at, review text, posted by
-                  Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically) {
-                          Text(
-                              text = "Review :",
-                              color = TextColor,
-                          )
-                          Text(
-                              text = data.postDate,
-                              style = MaterialTheme.typography.bodySmall,
-                              fontWeight = FontWeight.Light,
-                              color = TextColor,
-                              modifier =
-                                  Modifier.testTag(
-                                      C.ReviewsByResidencyTag.reviewPostDate(data.reviewUid)))
-                        }
-                    val truncatedReview = truncateText(data.reviewText, 60)
-                    Text( // Review Text
-                        text = truncatedReview,
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Start,
-                        color = TextColor,
-                        maxLines = 2,
-                        modifier =
-                            Modifier.testTag(
-                                C.ReviewsByResidencyTag.reviewDescription(data.reviewUid)))
-                  }
-                  Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+          Modifier.fillMaxWidth().testTag(C.ReviewsByResidencyTag.reviewCard(data.reviewUid))) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { onClick(data) },
+            verticalAlignment = Alignment.CenterVertically) {
+              // Image placeholder (left)
+              Box(
+                  modifier =
+                      Modifier.height(140.dp)
+                          .fillMaxWidth(0.35F)
+                          .clip(RoundedCornerShape(12.dp))
+                          .background(LightGray)
+                          .testTag(
+                              C.ReviewsByResidencyTag.reviewImagePlaceholder(data.reviewUid))) {
                     Text(
-                        text = "Posted by ${data.fullNameOfPoster}",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Light,
-                        color = TextColor,
-                        maxLines = 1,
-                        modifier =
-                            Modifier.testTag(
-                                C.ReviewsByResidencyTag.reviewPosterName(data.reviewUid)))
+                        "IMAGE",
+                        modifier = Modifier.align(Alignment.Center),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Gray)
                   }
-                }
-          }
-        }
+
+              Spacer(Modifier.width(4.dp))
+
+              Column(modifier = Modifier.weight(1f).height(140.dp).padding(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                      val truncatedTitle = truncateText(data.title, 20)
+                      Text(
+                          text = truncatedTitle,
+                          style = MaterialTheme.typography.titleMedium,
+                          fontWeight = FontWeight.SemiBold,
+                          textAlign = TextAlign.Start,
+                          color = TextColor,
+                          maxLines = 1,
+                          overflow = TextOverflow.Ellipsis,
+                          modifier =
+                              Modifier.fillMaxWidth(0.6f)
+                                  .testTag(C.ReviewsByResidencyTag.reviewTitle(data.reviewUid)))
+                      DisplayGrade(
+                          data.grade, 16.dp, C.ReviewsByResidencyTag.reviewGrade(data.reviewUid))
+                    }
+
+                Spacer(Modifier.height(8.dp))
+
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement =
+                        Arrangement.SpaceBetween) { // Review: posted at, review text, posted by
+                      Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically) {
+                              Text(
+                                  text = "Review :",
+                                  color = TextColor,
+                              )
+                              Text(
+                                  text = data.postDate,
+                                  style = MaterialTheme.typography.bodySmall,
+                                  fontWeight = FontWeight.Light,
+                                  color = TextColor,
+                                  modifier =
+                                      Modifier.testTag(
+                                          C.ReviewsByResidencyTag.reviewPostDate(data.reviewUid)))
+                            }
+                        val truncatedReview = truncateText(data.reviewText, 60)
+                        Text( // Review Text
+                            text = truncatedReview,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Start,
+                            color = TextColor,
+                            maxLines = 2,
+                            modifier =
+                                Modifier.testTag(
+                                    C.ReviewsByResidencyTag.reviewDescription(data.reviewUid)))
+                      }
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Posted by ${data.fullNameOfPoster}",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Light,
+                                color = TextColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier =
+                                    Modifier.weight(1f, fill = false)
+                                        .testTag(
+                                            C.ReviewsByResidencyTag.reviewPosterName(
+                                                data.reviewUid)))
+
+                            // Vote buttons (always shown, but disabled for owner)
+                            CompactVoteButtons(
+                                netScore = data.netScore,
+                                userVote = data.userVote,
+                                isOwner = data.isOwner,
+                                onUpvote = onUpvote,
+                                onDownvote = onDownvote,
+                                modifier =
+                                    Modifier.testTag(
+                                        C.ReviewsByResidencyTag.reviewVoteButtons(data.reviewUid)))
+                          }
+                    }
+              }
+            }
+      }
+}
+
+// Compact version of vote buttons for use in review cards.
+@Composable
+private fun CompactVoteButtons(
+    netScore: Int,
+    userVote: VoteType,
+    isOwner: Boolean,
+    onUpvote: () -> Unit,
+    onDownvote: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+  Row(
+      modifier = modifier,
+      horizontalArrangement = Arrangement.spacedBy(2.dp),
+      verticalAlignment = Alignment.CenterVertically) {
+        // Upvote button
+        IconButton(
+            onClick = onUpvote,
+            enabled = !isOwner,
+            modifier =
+                Modifier.size(28.dp).testTag(C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON)) {
+              Icon(
+                  imageVector = Icons.Filled.ArrowUpward,
+                  contentDescription = "Helpful",
+                  tint =
+                      if (userVote == VoteType.UPVOTE) {
+                        MainColor
+                      } else {
+                        TextColor.copy(alpha = 0.6f)
+                      },
+                  modifier = Modifier.size(18.dp))
+            }
+
+        // Net score display
+        Text(
+            text = netScore.toString(),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = TextColor,
+            modifier = Modifier.testTag(C.ReviewsByResidencyTag.COMPACT_VOTE_SCORE),
+            textAlign = TextAlign.Center)
+
+        // Downvote button
+        IconButton(
+            onClick = onDownvote,
+            enabled = !isOwner,
+            modifier =
+                Modifier.size(28.dp)
+                    .testTag(C.ReviewsByResidencyTag.COMPACT_VOTE_DOWNVOTE_BUTTON)) {
+              Icon(
+                  imageVector = Icons.Filled.ArrowDownward,
+                  contentDescription = "Not helpful",
+                  tint =
+                      if (userVote == VoteType.DOWNVOTE) {
+                        MainColor
+                      } else {
+                        TextColor.copy(alpha = 0.6f)
+                      },
+                  modifier = Modifier.size(18.dp))
+            }
       }
 }
 

@@ -85,6 +85,17 @@ sealed class Screen(
 
   data object Profile : Screen(route = "profile", name = "Profile")
 
+  data class ChatChannel(val channelId: String) :
+      Screen(route = "chatChannel/${channelId}", name = "Chat") {
+    companion object {
+      const val route = "chatChannel/{channelId}"
+    }
+  }
+
+  data object SelectUserToChat : Screen(route = "selectUserToChat", name = "Select User")
+
+  data object RequestedMessages : Screen(route = "requestedMessages", name = "Requested Messages")
+
   companion object {
     // Compute on access so objects are definitely initialized
     val topLevel: List<Screen>

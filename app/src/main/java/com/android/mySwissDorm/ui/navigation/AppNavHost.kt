@@ -6,7 +6,9 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,9 +33,12 @@ import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
+import com.android.mySwissDorm.ui.chat.ChannelsScreen
+import com.android.mySwissDorm.ui.chat.MyChatScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
 import com.android.mySwissDorm.ui.listing.EditListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingScreen
+import com.android.mySwissDorm.ui.listing.ViewListingViewModel
 import com.android.mySwissDorm.ui.map.MapScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.profile.ContributionType
@@ -125,8 +130,24 @@ fun AppNavHost(
     }
 
     composable(Screen.Inbox.route) {
-      Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
-      navActions.navigateTo(Screen.Homepage)
+      Scaffold(
+          bottomBar = {
+            BottomNavigationMenu(
+                selectedScreen = Screen.Inbox, onTabSelected = { navActions.navigateTo(it) })
+          }) { paddingValues ->
+            ChannelsScreen(
+                onChannelClick = { channelId ->
+                  navActions.navigateTo(Screen.ChatChannel(channelId))
+                },
+                onRequestedMessagesClick = {
+                  // Feature coming soon - show toast for now
+                  Toast.makeText(
+                          context, "Requested messages feature coming soon", Toast.LENGTH_SHORT)
+                      .show()
+                },
+                requestedMessagesCount = 0, // Hardcoded to 0 until feature is implemented
+                modifier = Modifier.padding(paddingValues))
+          }
     }
 
     composable(Screen.Settings.route) {
@@ -296,10 +317,16 @@ fun AppNavHost(
       val listingUid = navBackStackEntry.arguments?.getString("listingUid")
 
       listingUid?.let {
+        val viewListingViewModel: ViewListingViewModel = viewModel()
         ViewListingScreen(
+            viewListingViewModel = viewListingViewModel,
             listingUid = it,
             onGoBack = { navActions.goBack() },
-            onApply = { Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show() },
+            onApply = {
+              // Contact message feature coming soon
+              Toast.makeText(context, "Contact message feature coming soon", Toast.LENGTH_SHORT)
+                  .show()
+            },
             onEdit = { navActions.navigateTo(Screen.EditListing(it)) },
             onViewProfile = { ownerId ->
               val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -431,5 +458,14 @@ fun AppNavHost(
             })
       }
     }
+
+    composable(Screen.ChatChannel.route) { entry ->
+      val channelId = requireNotNull(entry.arguments?.getString("channelId"))
+      // URL decode the channelId in case it contains special characters
+      val decodedChannelId = java.net.URLDecoder.decode(channelId, "UTF-8")
+      MyChatScreen(channelId = decodedChannelId, onBackClick = navActions::goBack)
+    }
+
+    // RequestedMessages and SelectUserToChat routes will be added in a future PR
   }
 }

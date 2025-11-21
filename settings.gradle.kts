@@ -14,8 +14,9 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        google()
+        // Maven Central first for third-party libraries like Stream Chat
         mavenCentral()
+        google()
     }
 }
 

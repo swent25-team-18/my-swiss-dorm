@@ -4,6 +4,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.city.CITIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.UserInfo
@@ -156,7 +157,12 @@ abstract class FirestoreTest : TestCase() {
                   universityName = "EPFL",
                   location = Location("Somewhere", 0.0, 0.0),
                   residencyName = "Vortex"),
-          userSettings = UserSettings(),
+          userSettings =
+              UserSettings(
+                  language = Language.ENGLISH,
+                  isPublic = false,
+                  isPushNotified = true,
+                  darkMode = null),
           ownerId = "",
       )
 
@@ -173,7 +179,12 @@ abstract class FirestoreTest : TestCase() {
                   location = null,
                   residencyName = null,
               ),
-          userSettings = UserSettings(),
+          userSettings =
+              UserSettings(
+                  language = Language.ENGLISH,
+                  isPublic = false,
+                  isPushNotified = true,
+                  darkMode = null),
           ownerId = "",
       )
 
@@ -286,7 +297,8 @@ abstract class FirestoreTest : TestCase() {
           roomType = RoomType.STUDIO,
           pricePerMonth = 1200.0,
           areaInM2 = 60,
-          imageUrls = emptyList())
+          imageUrls = emptyList(),
+          isAnonymous = false)
 
   var reviewVortex2 =
       reviewVortex1.copy(

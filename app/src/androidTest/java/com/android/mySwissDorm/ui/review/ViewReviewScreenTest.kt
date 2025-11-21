@@ -1,8 +1,12 @@
 package com.android.mySwissDorm.ui.review
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
@@ -21,6 +25,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
+import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
 import com.android.mySwissDorm.utils.FakeUser
@@ -29,6 +34,7 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
 import java.util.Date
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -47,6 +53,10 @@ class ViewReviewScreenTest : FirestoreTest() {
   private lateinit var review1: Review
   private lateinit var review2: Review
 
+  // Pre-seeded variants so tests don’t need runTest
+  private lateinit var anonymousReviewOwned: Review
+  private lateinit var nonAnonymousReviewOwned: Review
+
   private lateinit var vm: ViewReviewViewModel
 
   override fun createRepositories() {
@@ -60,7 +70,9 @@ class ViewReviewScreenTest : FirestoreTest() {
     super.setUp()
     createRepositories()
     vm = ViewReviewViewModel(reviewsRepo, profilesRepo)
+
     runTest {
+      // Owner
       switchToUser(FakeUser.FakeUser1)
       residenciesRepo.addResidency(resTest)
       residenciesRepo.addResidency(resTest2)
@@ -68,12 +80,14 @@ class ViewReviewScreenTest : FirestoreTest() {
       ownerId = FirebaseEmulator.auth.currentUser!!.uid
       profilesRepo.createProfile(profile1.copy(ownerId = ownerId))
 
+      // Other user
       switchToUser(FakeUser.FakeUser2)
       residenciesRepo.addResidency(resTest)
       residenciesRepo.addResidency(resTest2)
       otherId = FirebaseEmulator.auth.currentUser!!.uid
       profilesRepo.createProfile(profile2.copy(ownerId = otherId))
 
+      // Base reviews
       review1 =
           Review(
               uid = reviewsRepo.getNewUid(),
@@ -86,12 +100,14 @@ class ViewReviewScreenTest : FirestoreTest() {
               roomType = RoomType.STUDIO,
               pricePerMonth = 300.0,
               areaInM2 = 64,
-              imageUrls = emptyList())
+              imageUrls = emptyList(),
+              upvotedBy = emptySet(),
+              downvotedBy = emptySet())
       review2 =
           Review(
               uid = reviewsRepo.getNewUid(),
               ownerId = otherId,
-              postedAt = Timestamp(Date(1678886400000L)), // AI gave me this date
+              postedAt = Timestamp(Date(1678886400000L)),
               title = "Second Title",
               reviewText = "My second review",
               grade = 4.5,
@@ -99,11 +115,22 @@ class ViewReviewScreenTest : FirestoreTest() {
               roomType = RoomType.APARTMENT,
               pricePerMonth = 500.0,
               areaInM2 = 32,
-              imageUrls = emptyList())
+              imageUrls = emptyList(),
+              upvotedBy = emptySet(),
+              downvotedBy = emptySet())
 
       reviewsRepo.addReview(review2)
+
+      // Switch back to owner and add his reviews
       switchToUser(FakeUser.FakeUser1)
       reviewsRepo.addReview(review1)
+
+      // Pre-seed an anonymous and a non-anonymous copy owned by the same user
+      anonymousReviewOwned = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = true)
+      nonAnonymousReviewOwned = review1.copy(uid = reviewsRepo.getNewUid(), isAnonymous = false)
+
+      reviewsRepo.addReview(anonymousReviewOwned)
+      reviewsRepo.addReview(nonAnonymousReviewOwned)
     }
   }
 
@@ -113,6 +140,18 @@ class ViewReviewScreenTest : FirestoreTest() {
 
   private fun setOtherReview() {
     compose.setContent { ViewReviewScreen(viewReviewViewModel = vm, reviewUid = review2.uid) }
+  }
+
+  private fun setAnonymousOwnerReview() {
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = anonymousReviewOwned.uid)
+    }
+  }
+
+  private fun setNonAnonymousOwnerReview() {
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = nonAnonymousReviewOwned.uid)
+    }
   }
 
   /** Wait until the screen root exists (first composition done). */
@@ -213,10 +252,14 @@ class ViewReviewScreenTest : FirestoreTest() {
           })
     }
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.locationOfReview.latitude != 0.0 }
+    compose.waitUntil(10_000) {
+      vm.uiState.value.review.uid == review1.uid &&
+          vm.uiState.value.locationOfReview.latitude != 0.0
+    }
     val expectedLocation = vm.uiState.value.locationOfReview
     scrollListTo(C.ViewReviewTags.LOCATION)
     compose.onNodeWithTag(C.ViewReviewTags.LOCATION).performClick()
+    compose.waitForIdle()
     assert(callbackCalled) { "onViewMap callback was not triggered." }
     assertEquals(expectedLocation.latitude, capturedLat)
     assertEquals(expectedLocation.longitude, capturedLon)
@@ -245,7 +288,10 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun showsPostedByYouWhenOwner() {
     setOwnerReview()
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    compose.waitUntil(5_000) {
+      vm.uiState.value.review.uid == review1.uid && vm.uiState.value.fullNameOfPoster.isNotBlank()
+    }
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
     compose
         .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
         .assertIsDisplayed()
@@ -272,5 +318,206 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.onAllNodesWithTag(C.ViewReviewTags.FILLED_STAR).assertCountEquals(3)
     compose.onAllNodesWithTag(C.ViewReviewTags.HALF_STAR).assertCountEquals(1)
     compose.onAllNodesWithTag(C.ViewReviewTags.EMPTY_STAR).assertCountEquals(1)
+  }
+
+  @Test
+  fun voteButtonsAreDisplayed() {
+    setOtherReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review2.uid }
+    scrollListTo(C.ViewReviewTags.VOTE_BUTTONS)
+    compose.onNodeWithTag(C.ViewReviewTags.VOTE_BUTTONS, useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("Was this review helpful?").assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewReviewTags.VOTE_SCORE, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun voteButtonsAreEnabledForNonOwner() {
+    setOtherReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) {
+      vm.uiState.value.review.uid == review2.uid && !vm.uiState.value.isOwner
+    }
+    scrollListTo(C.ViewReviewTags.VOTE_BUTTONS)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+    compose
+        .onNodeWithTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun voteButtonsAreDisabledForOwner() {
+    setOwnerReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) {
+      vm.uiState.value.review.uid == review1.uid && vm.uiState.value.isOwner
+    }
+    scrollListTo(C.ViewReviewTags.VOTE_BUTTONS)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertIsNotEnabled()
+    compose
+        .onNodeWithTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertIsNotEnabled()
+  }
+
+  @Test
+  fun voteScoreIsDisplayedCorrectly() = runTest {
+    // Create a review with votes
+    // review2 is owned by otherId (FakeUser2), so we need to switch to that user to add it
+    switchToUser(FakeUser.FakeUser2)
+    val reviewWithVotes =
+        review2.copy(
+            uid = reviewsRepo.getNewUid(),
+            upvotedBy = setOf("user1", "user2"),
+            downvotedBy = setOf("user3"))
+    reviewsRepo.addReview(reviewWithVotes)
+
+    // Switch back to FakeUser1 to view the review
+    switchToUser(FakeUser.FakeUser1)
+
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = vm, reviewUid = reviewWithVotes.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == reviewWithVotes.uid }
+    scrollListTo(C.ViewReviewTags.VOTE_SCORE)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.VOTE_SCORE, useUnmergedTree = true)
+        .assertTextEquals("1") // 2 upvotes - 1 downvote = 1
+  }
+
+  @Test
+  fun clickingUpvoteButtonTriggersViewModel() = runTest {
+    setOtherReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) {
+      vm.uiState.value.review.uid == review2.uid && vm.uiState.value.userVote == VoteType.NONE
+    }
+
+    val initialScore = vm.uiState.value.netScore
+    scrollListTo(C.ViewReviewTags.VOTE_UPVOTE_BUTTON)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+        .performClick()
+
+    // Wait for optimistic update
+    compose.waitUntil(5_000) {
+      vm.uiState.value.userVote == VoteType.UPVOTE || vm.uiState.value.netScore != initialScore
+    }
+
+    // Verify the vote was registered
+    assert(vm.uiState.value.userVote == VoteType.UPVOTE || vm.uiState.value.netScore > initialScore)
+  }
+
+  @Test
+  fun clickingDownvoteButtonTriggersViewModel() = runTest {
+    setOtherReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) {
+      vm.uiState.value.review.uid == review2.uid && vm.uiState.value.userVote == VoteType.NONE
+    }
+
+    val initialScore = vm.uiState.value.netScore
+    scrollListTo(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON, useUnmergedTree = true)
+        .performClick()
+
+    // Wait for optimistic update
+    compose.waitUntil(5_000) {
+      vm.uiState.value.userVote == VoteType.DOWNVOTE || vm.uiState.value.netScore != initialScore
+    }
+
+    // Verify the vote was registered
+    assert(
+        vm.uiState.value.userVote == VoteType.DOWNVOTE || vm.uiState.value.netScore < initialScore)
+  }
+
+  @Test
+  fun anonymousReview_showsAnonymousInsteadOfName() {
+    setAnonymousOwnerReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReviewOwned.uid }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
+
+    val postedByText =
+        compose
+            .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+            .assertIsDisplayed()
+            .fetchSemanticsNode()
+            .config
+            .getOrNull(SemanticsProperties.Text)
+            ?.firstOrNull()
+            ?.text ?: ""
+
+    assertTrue(
+        "Should contain 'Posted by anonymous'",
+        postedByText.contains("Posted by anonymous", ignoreCase = true))
+    // After the fix, "(You)" should always show for the owner, even if anonymous
+    assertTrue(
+        "Should contain '(You)' for owner's anonymous review",
+        postedByText.contains("(You)", ignoreCase = true))
+  }
+
+  @Test
+  fun anonymousReview_showsYouTagWhenOwner() {
+    setAnonymousOwnerReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReviewOwned.uid }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
+    val postedByText =
+        compose
+            .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+            .assertIsDisplayed()
+            .fetchSemanticsNode()
+            .config
+            .getOrNull(SemanticsProperties.Text)
+            ?.firstOrNull()
+            ?.text ?: ""
+
+    assertTrue("Should contain 'anonymous'", postedByText.contains("anonymous", ignoreCase = true))
+    // After the fix, "(You)" should always show for the owner, even if anonymous
+    assertTrue(
+        "Should contain '(You)' when owner views their anonymous review",
+        postedByText.contains("(You)", ignoreCase = true))
+  }
+
+  @Test
+  fun nonAnonymousReview_showsActualName() {
+    setNonAnonymousOwnerReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == nonAnonymousReviewOwned.uid }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
+    val postedByText =
+        compose
+            .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+            .assertIsDisplayed()
+            .fetchSemanticsNode()
+            .config
+            .getOrNull(SemanticsProperties.Text)
+            ?.firstOrNull()
+            ?.text ?: ""
+
+    assertTrue(
+        "Should contain actual name, not 'anonymous'",
+        !postedByText.contains("anonymous", ignoreCase = true))
+    assertTrue(
+        "Should contain user name",
+        postedByText.contains("Bob", ignoreCase = true) ||
+            postedByText.contains("King", ignoreCase = true))
   }
 }

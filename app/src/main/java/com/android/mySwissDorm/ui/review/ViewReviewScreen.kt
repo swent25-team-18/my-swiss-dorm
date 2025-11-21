@@ -142,7 +142,7 @@ fun ViewReviewScreen(
                 pop()
                 append(" ${formatRelative(review.postedAt)}")
               }
-
+              //
               // Make the whole line clickable and trigger onViewProfile when the name is tapped
               var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
               Text(

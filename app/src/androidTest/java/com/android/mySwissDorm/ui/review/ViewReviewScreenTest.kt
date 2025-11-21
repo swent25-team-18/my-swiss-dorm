@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -484,8 +485,9 @@ class ViewReviewScreenTest : FirestoreTest() {
     scrollListTo(C.ViewReviewTags.LOCATION)
     compose.onNodeWithTag(C.ViewReviewTags.LOCATION).assertIsDisplayed()
     compose.onNodeWithText("LOCATION (Not available)").assertIsDisplayed()
-    
-  @Test  
+  }
+
+  @Test
   fun voteButtonsAreDisplayed() {
     setOtherReview()
     waitForScreenRoot()

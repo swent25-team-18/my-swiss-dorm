@@ -1,17 +1,28 @@
 package com.android.mySwissDorm.ui.review
 
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
+import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -22,6 +33,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
 /**
  * UI tests for AddReviewScreen. We assert ViewModel wiring + callbacks here (no direct Firestore
@@ -87,7 +99,7 @@ class AddReviewScreenTest : FirestoreTest() {
     val vm = AddReviewViewModel()
     setContent(vm)
 
-    composeTestRule
+    composeRule
         .onNodeWithText(
             "Please complete all required fields (valid grade, size, price, etc.) or sign in.")
         .assertIsDisplayed()

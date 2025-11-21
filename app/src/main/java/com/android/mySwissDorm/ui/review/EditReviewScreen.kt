@@ -76,6 +76,7 @@ fun EditReviewScreen(
 ) {
   val editReviewUIState by editReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  var showDeleteConfirm by remember { mutableStateOf(false) }
 
   Scaffold(
       topBar = {
@@ -91,10 +92,7 @@ fun EditReviewScreen(
             },
             actions = {
               IconButton(
-                  onClick = {
-                    editReviewViewModel.deleteReview(reviewID)
-                    onDelete(editReviewUIState.residencyName)
-                  },
+                  onClick = { showDeleteConfirm = true },
                   modifier = Modifier.testTag("deleteButton") // ← add this
                   ) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MainColor)
@@ -128,7 +126,9 @@ fun EditReviewScreen(
                       modifier =
                           Modifier.weight(1f).height(52.dp).testTag("saveButton"), // ← add this
                       shape = RoundedCornerShape(16.dp)) {
-                        Text(stringResource(R.string.save), color = White)
+                        Text(
+                            stringResource(R.string.save),
+                            color = MaterialTheme.colorScheme.onPrimary)
                       }
                 }
             Spacer(Modifier.height(8.dp))
@@ -259,4 +259,28 @@ fun EditReviewScreen(
               }
             }
       }
+
+  if (showDeleteConfirm) {
+    AlertDialog(
+        onDismissRequest = { showDeleteConfirm = false },
+        title = { Text("Delete review?", color = TextColor) },
+        text = {
+          Text(
+              "This will permanently delete your review. This action cannot be undone.",
+              color = TextColor)
+        },
+        confirmButton = {
+          TextButton(
+              onClick = {
+                showDeleteConfirm = false
+                editReviewViewModel.deleteReview(reviewID)
+                onDelete(editReviewUIState.residencyName)
+              }) {
+                Text("Delete", color = MainColor)
+              }
+        },
+        dismissButton = {
+          TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel", color = TextColor) }
+        })
+  }
 }

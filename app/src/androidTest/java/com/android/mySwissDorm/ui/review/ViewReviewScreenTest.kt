@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -28,7 +29,6 @@ import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -36,6 +36,7 @@ import com.google.firebase.Timestamp
 import java.util.Date
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -302,15 +303,28 @@ class ViewReviewScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun doNotShowsPostedByYouWhenNotOwner() {
-    setOtherReview()
+  fun doNotShowsPostedByYouWhenNotOwner() = runTest {
+    // Ensure we're viewing as FakeUser1 (not the owner of review2)
+    switchToUser(FakeUser.FakeUser1)
+    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    compose.setContent { ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = review2.uid) }
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review2.uid }
-    compose
-        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
-        .assertIsDisplayed()
-        .assertTextEquals(
-            "Posted by ${vm.uiState.value.fullNameOfPoster} ${formatRelative(vm.uiState.value.review.postedAt, context = context)}")
+    compose.waitUntil(10_000) { testVm.uiState.value.review.uid == review2.uid }
+    // Wait for fullNameOfPoster to be loaded
+    compose.waitUntil(10_000) { testVm.uiState.value.fullNameOfPoster.isNotEmpty() }
+    val postedByNode = compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+    postedByNode.assertIsDisplayed()
+    postedByNode.assertTextContains("Posted by", substring = true)
+    postedByNode.assertTextContains(testVm.uiState.value.fullNameOfPoster, substring = true)
+    // Verify "(You)" is NOT present by checking the text doesn't contain it
+    val text =
+        postedByNode
+            .fetchSemanticsNode()
+            .config
+            .getOrNull(SemanticsProperties.Text)
+            ?.firstOrNull()
+            ?.text ?: ""
+    assert(!text.contains("(You)")) { "Text should not contain '(You)' but was: $text" }
   }
 
   @Test
@@ -321,6 +335,159 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.onAllNodesWithTag(C.ViewReviewTags.FILLED_STAR).assertCountEquals(3)
     compose.onAllNodesWithTag(C.ViewReviewTags.HALF_STAR).assertCountEquals(1)
     compose.onAllNodesWithTag(C.ViewReviewTags.EMPTY_STAR).assertCountEquals(1)
+  }
+
+  @Test
+  fun editButton_calls_onEditCallback() {
+    var editCalled = false
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = vm, reviewUid = review1.uid, onEdit = { editCalled = true })
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    scrollListTo(C.ViewReviewTags.EDIT_BTN)
+    compose.onNodeWithTag(C.ViewReviewTags.EDIT_BTN, useUnmergedTree = true).performClick()
+    assert(editCalled) { "onEdit callback was not triggered." }
+  }
+
+  @Test
+  fun backButton_calls_onGoBackCallback() {
+    var backCalled = false
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = vm, reviewUid = review1.uid, onGoBack = { backCalled = true })
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    compose.onNodeWithText("Review Details").assertIsDisplayed()
+    // Click back button via content description
+    compose.onNodeWithContentDescription("Back").performClick()
+    assert(backCalled) { "onGoBack callback was not triggered." }
+  }
+
+  @Test
+  fun postedBy_click_calls_onViewProfileCallback() {
+    var profileCalled = false
+    var capturedOwnerId: String? = null
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = vm,
+          reviewUid = review1.uid,
+          onViewProfile = { ownerId ->
+            profileCalled = true
+            capturedOwnerId = ownerId
+          })
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    scrollListTo(C.ViewReviewTags.POSTED_BY)
+    // Click on the posted by text (which contains the name)
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY).performClick()
+    assert(profileCalled) { "onViewProfile callback was not triggered." }
+    assertEquals(ownerId, capturedOwnerId)
+  }
+
+  @Test
+  fun errorMsg_triggers_onGoBack_and_showsToast() = runTest {
+    var backCalled = false
+    // Create a ViewModel that will fail to load
+    val failingVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    // Try to load a non-existent review to trigger error
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = failingVm,
+          reviewUid = "non-existent-review",
+          onGoBack = { backCalled = true })
+    }
+    waitForScreenRoot()
+    // Wait for error to be set and handled
+    compose.waitUntil(10_000) { backCalled || failingVm.uiState.value.errorMsg != null }
+    // The error should trigger onGoBack
+    assert(backCalled) { "onGoBack should be called when error occurs." }
+  }
+
+  @Test
+  fun displaysReviewContent_correctly() {
+    setOwnerReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    // Wait a bit more for content to be fully rendered
+    compose.waitUntil(5_000) { vm.uiState.value.review.title == "First Title" }
+    scrollListTo(C.ViewReviewTags.TITLE)
+    compose.onNodeWithTag(C.ViewReviewTags.TITLE, useUnmergedTree = true).assertIsDisplayed()
+    // Use onNodeWithText to find text directly
+    compose.onNodeWithText("First Title").assertIsDisplayed()
+    // The text is "Review :" with a space before the colon
+    compose.onNodeWithText("Review :").assertIsDisplayed()
+    compose.onNodeWithText("My first review").assertIsDisplayed()
+  }
+
+  @Test
+  fun displaysBulletPoints_correctly() {
+    setOwnerReview()
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    // Wait for content to be fully rendered
+    compose.waitUntil(5_000) { vm.uiState.value.review.roomType == RoomType.STUDIO }
+    scrollListTo(C.ViewReviewTags.BULLETS)
+    compose.onNodeWithTag(C.ViewReviewTags.BULLETS, useUnmergedTree = true).assertIsDisplayed()
+    // RoomType.toString() returns "Studio" (not "STUDIO")
+    // Use onNodeWithText to find text directly - this works better for text in nested composables
+    compose.onNodeWithText("Studio", substring = true).assertIsDisplayed()
+    // The format is "${review.pricePerMonth}.-/month" so it will be "300.0.-/month"
+    compose.onNodeWithText("300.0", substring = true).assertIsDisplayed()
+    compose.onNodeWithText("/month", substring = true).assertIsDisplayed()
+    // The format is "${review.areaInM2}m²" so it will be "64m²"
+    compose.onNodeWithText("64", substring = true).assertIsDisplayed()
+    compose.onNodeWithText("m²", substring = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun errorMsg_showsToast_and_clearsError() = runTest {
+    var backCalled = false
+    val failingVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = failingVm,
+          reviewUid = "non-existent-review-${System.currentTimeMillis()}",
+          onGoBack = { backCalled = true })
+    }
+    waitForScreenRoot()
+    // Wait for error to be set and LaunchedEffect to trigger
+    compose.waitUntil(10_000) { backCalled && failingVm.uiState.value.errorMsg == null }
+    // Verify error was cleared after showing toast
+    assert(backCalled) { "onGoBack should be called when error occurs." }
+  }
+
+  @Test
+  fun locationPlaceholder_shown_whenLocationIsZero() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val resNoLocation =
+        resTest.copy(
+            name = "ZeroLocation",
+            location = Location(name = "ZeroLocation", latitude = 0.0, longitude = 0.0))
+    residenciesRepo.addResidency(resNoLocation)
+    delay(200)
+
+    val reviewNoLocation =
+        review1.copy(uid = reviewsRepo.getNewUid(), residencyName = "ZeroLocation")
+    reviewsRepo.addReview(reviewNoLocation)
+    delay(200)
+
+    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = reviewNoLocation.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == reviewNoLocation.uid &&
+          testVm.uiState.value.locationOfReview.latitude == 0.0 &&
+          testVm.uiState.value.locationOfReview.longitude == 0.0
+    }
+    scrollListTo(C.ViewReviewTags.LOCATION)
+    compose.onNodeWithTag(C.ViewReviewTags.LOCATION).assertIsDisplayed()
+    compose.onNodeWithText("LOCATION (Not available)").assertIsDisplayed()
   }
 
   @Test

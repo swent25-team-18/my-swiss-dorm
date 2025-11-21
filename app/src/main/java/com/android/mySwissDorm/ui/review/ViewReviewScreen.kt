@@ -147,10 +147,9 @@ fun ViewReviewScreen(
                 val context = LocalContext.current
                 append(" ${formatRelative(review.postedAt, context = context)}")
               }
-
-              // remember the TextLayoutResult
+              //
+              // Make the whole line clickable and trigger onViewProfile when the name is tapped
               var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-
               Text(
                   text = annotatedPostedByString,
                   style =
@@ -204,6 +203,7 @@ fun ViewReviewScreen(
                   text = "${stringResource(R.string.photos)} (Not implemented yet)",
                   height = 220.dp,
                   modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
+
               // Location placeholder
               viewReviewViewModel.setLocationOfReview(reviewUid)
               val location = uiState.locationOfReview

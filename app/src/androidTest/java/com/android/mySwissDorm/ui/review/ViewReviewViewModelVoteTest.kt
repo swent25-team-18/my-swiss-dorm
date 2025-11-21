@@ -101,7 +101,7 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
     assertEquals(0, initialState.netScore)
     assertEquals(VoteType.NONE, initialState.userVote)
 
-    vm.upvoteReview()
+    vm.upvoteReview(context)
 
     delay(100)
     val optimisticState = vm.uiState.value
@@ -126,7 +126,7 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
     vm.loadReview(review.uid, context)
 
     waitForReviewToLoad(vm, review.uid)
-    vm.downvoteReview()
+    vm.downvoteReview(context)
 
     delay(100)
     val optimisticState = vm.uiState.value
@@ -153,7 +153,7 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
     waitForReviewToLoad(vm, review.uid)
     assertEquals(VoteType.UPVOTE, vm.uiState.value.userVote)
 
-    vm.upvoteReview()
+    vm.upvoteReview(context)
 
     // Wait for updateVoteState to complete (server synchronization)
     waitForVoteStateUpdate(vm, 0, VoteType.NONE)
@@ -175,7 +175,7 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
     assertEquals(VoteType.DOWNVOTE, vm.uiState.value.userVote)
     assertEquals(-1, vm.uiState.value.netScore)
 
-    vm.upvoteReview()
+    vm.upvoteReview(context)
 
     // Wait for updateVoteState to complete (server synchronization)
     waitForVoteStateUpdate(vm, 1, VoteType.UPVOTE)

@@ -169,8 +169,8 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    // Wait for profile to load and verify not blocked
-    waitUntil {
+    // Wait for profile to load and verify not blocked using compose.waitUntil
+    compose.waitUntil(10_000) {
       vm.uiState.value.fullNameOfPoster.isNotEmpty() && !vm.uiState.value.isBlockedByOwner
     }
 
@@ -189,6 +189,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
 
     // Button should be enabled (not blocked + has message)
     scrollListTo(C.ViewListingTags.APPLY_BTN)
+    compose.waitForIdle()
     // The button should exist and be enabled (we can't easily assert enabled without custom
     // matcher,
     // but the ViewModel state confirms it should be enabled)

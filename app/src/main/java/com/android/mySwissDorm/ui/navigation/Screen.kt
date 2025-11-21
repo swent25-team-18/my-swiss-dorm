@@ -91,15 +91,17 @@ sealed class Screen(
   data object Profile : Screen(route = "profile", nameId = R.string.screen_profile)
 
   data class ChatChannel(val channelId: String) :
-      Screen(route = "chatChannel/${channelId}", name = "Chat") {
+      Screen(route = "chatChannel/${channelId}", nameId = R.string.screen_chat) {
     companion object {
       const val route = "chatChannel/{channelId}"
     }
   }
 
-  data object SelectUserToChat : Screen(route = "selectUserToChat", name = "Select User")
+  data object SelectUserToChat :
+      Screen(route = "selectUserToChat", nameId = R.string.screen_select_user_to_chat)
 
-  data object RequestedMessages : Screen(route = "requestedMessages", name = "Requested Messages")
+  data object RequestedMessages :
+      Screen(route = "requestedMessages", nameId = R.string.screen_requested_messages)
 
   companion object {
     // Compute on access so objects are definitely initialized

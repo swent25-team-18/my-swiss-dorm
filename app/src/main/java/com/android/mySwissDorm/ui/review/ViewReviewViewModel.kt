@@ -127,7 +127,7 @@ class ViewReviewViewModel(
    * Performs optimistic UI update, then calls the repository. On failure, reverts the optimistic
    * update.
    */
-  fun upvoteReview() {
+  fun upvoteReview(context: Context) {
     val currentUserId = auth.currentUser?.uid ?: return
     val reviewId = _uiState.value.review.uid
 
@@ -140,11 +140,11 @@ class ViewReviewViewModel(
     viewModelScope.launch {
       try {
         reviewsRepository.upvoteReview(reviewId, currentUserId)
-        updateVoteState(reviewId, currentUserId)
+        updateVoteState(reviewId, currentUserId, context)
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Failed to upvote review", e)
         // Revert optimistic update by reloading
-        loadReview(reviewId)
+        loadReview(reviewId, context)
       }
     }
   }
@@ -155,7 +155,7 @@ class ViewReviewViewModel(
    * Performs optimistic UI update, then calls the repository. On failure, reverts the optimistic
    * update.
    */
-  fun downvoteReview() {
+  fun downvoteReview(context: Context) {
     val currentUserId = auth.currentUser?.uid ?: return
     val reviewId = _uiState.value.review.uid
 
@@ -168,11 +168,11 @@ class ViewReviewViewModel(
     viewModelScope.launch {
       try {
         reviewsRepository.downvoteReview(reviewId, currentUserId)
-        updateVoteState(reviewId, currentUserId)
+        updateVoteState(reviewId, currentUserId, context)
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Failed to downvote review", e)
         // Revert optimistic update by reloading
-        loadReview(reviewId)
+        loadReview(reviewId, context)
       }
     }
   }
@@ -183,7 +183,7 @@ class ViewReviewViewModel(
    * @param reviewId The unique identifier of the review to update.
    * @param currentUserId The unique identifier of the current user.
    */
-  private suspend fun updateVoteState(reviewId: String, currentUserId: String) {
+  private suspend fun updateVoteState(reviewId: String, currentUserId: String, context: Context) {
     try {
       val updatedReview = reviewsRepository.getReview(reviewId)
       _uiState.update {
@@ -194,7 +194,7 @@ class ViewReviewViewModel(
     } catch (e: Exception) {
       Log.e("ViewReviewViewModel", "Failed to update vote state for review $reviewId", e)
       // If we can't get the updated review, reload it
-      loadReview(reviewId)
+      loadReview(reviewId, context)
     }
   }
 }

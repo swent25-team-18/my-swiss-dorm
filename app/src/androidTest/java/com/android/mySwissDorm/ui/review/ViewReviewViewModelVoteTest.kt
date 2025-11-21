@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.review
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -30,6 +32,8 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
 
   private lateinit var ownerId: String
   private lateinit var voterId: String
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   @Before
   override fun setUp() = runTest {
@@ -90,7 +94,7 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ViewReviewViewModel()
-    vm.loadReview(review.uid)
+    vm.loadReview(review.uid, context)
 
     waitForReviewToLoad(vm, review.uid)
     val initialState = vm.uiState.value
@@ -119,7 +123,7 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ViewReviewViewModel()
-    vm.loadReview(review.uid)
+    vm.loadReview(review.uid, context)
 
     waitForReviewToLoad(vm, review.uid)
     vm.downvoteReview()
@@ -144,7 +148,7 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ViewReviewViewModel()
-    vm.loadReview(review.uid)
+    vm.loadReview(review.uid, context)
 
     waitForReviewToLoad(vm, review.uid)
     assertEquals(VoteType.UPVOTE, vm.uiState.value.userVote)
@@ -165,7 +169,7 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ViewReviewViewModel()
-    vm.loadReview(review.uid)
+    vm.loadReview(review.uid, context)
 
     waitForReviewToLoad(vm, review.uid)
     assertEquals(VoteType.DOWNVOTE, vm.uiState.value.userVote)
@@ -189,7 +193,7 @@ class ViewReviewViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ViewReviewViewModel()
-    vm.loadReview(review.uid)
+    vm.loadReview(review.uid, context)
 
     waitForReviewToLoad(vm, review.uid)
     val state = vm.uiState.value

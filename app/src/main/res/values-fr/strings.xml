@@ -153,6 +153,9 @@
     <string name="screen_review_overview">Avis</string>
     <string name="screen_view_user_profile">Voir le profil</string>
     <string name="screen_profile">Profil</string>
+    <string name="screen_chat">Chat</string>
+    <string name="screen_select_user_to_chat">Sélectionner un utilisateur</string>
+    <string name="screen_requested_messages">Messages demandés</string>
 
     <!-- AddButton -->
     <string name="add_button_add_listing">Ajouter une annonce</string>

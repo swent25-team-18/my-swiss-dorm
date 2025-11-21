@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.StarHalf
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Button
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -221,6 +225,23 @@ fun ViewReviewScreen(
                     modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
               }
 
+              // Vote section (always shown, but disabled for owner) - at the bottom of the review
+              Column(
+                  modifier = Modifier.fillMaxWidth().testTag(C.ViewReviewTags.VOTE_BUTTONS),
+                  horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Was this review helpful?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextColor,
+                        modifier = Modifier.padding(bottom = 8.dp))
+                    VoteButtons(
+                        netScore = uiState.netScore,
+                        userVote = uiState.userVote,
+                        isOwner = isOwner,
+                        onUpvote = { viewReviewViewModel.upvoteReview(context) },
+                        onDownvote = { viewReviewViewModel.downvoteReview(context) })
+                  }
+
               if (isOwner) {
                 // Owner sees an Edit button centered
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -323,6 +344,69 @@ private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
               .background(TextBoxColor),
       contentAlignment = Alignment.Center) {
         Text(text, style = MaterialTheme.typography.titleMedium, color = TextColor)
+      }
+}
+
+// Composable to display upvote and downvote buttons with the net score.
+@Composable
+private fun VoteButtons(
+    netScore: Int,
+    userVote: VoteType,
+    isOwner: Boolean,
+    onUpvote: () -> Unit,
+    onDownvote: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+  Row(
+      modifier = modifier,
+      horizontalArrangement = Arrangement.Center,
+      verticalAlignment = Alignment.CenterVertically) {
+        // Upvote button
+        IconButton(
+            onClick = onUpvote,
+            enabled = !isOwner,
+            modifier = Modifier.testTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON)) {
+              Icon(
+                  imageVector = Icons.Filled.ArrowUpward,
+                  contentDescription = "Helpful",
+                  tint =
+                      if (userVote == VoteType.UPVOTE) {
+                        MainColor
+                      } else {
+                        TextColor.copy(alpha = 0.6f)
+                      },
+                  modifier = Modifier.size(32.dp))
+            }
+
+        Spacer(Modifier.width(16.dp))
+
+        // Net score display
+        Text(
+            text = netScore.toString(),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = TextColor,
+            modifier = Modifier.testTag(C.ViewReviewTags.VOTE_SCORE),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+
+        Spacer(Modifier.width(16.dp))
+
+        // Downvote button
+        IconButton(
+            onClick = onDownvote,
+            enabled = !isOwner,
+            modifier = Modifier.testTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON)) {
+              Icon(
+                  imageVector = Icons.Filled.ArrowDownward,
+                  contentDescription = "Not helpful",
+                  tint =
+                      if (userVote == VoteType.DOWNVOTE) {
+                        MainColor
+                      } else {
+                        TextColor.copy(alpha = 0.6f)
+                      },
+                  modifier = Modifier.size(32.dp))
+            }
       }
 }
 

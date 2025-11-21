@@ -64,6 +64,7 @@ fun MapScreen(
               }
             })
       },
+      floatingActionButtonPosition = FabPosition.Start,
       floatingActionButton = {
         FloatingActionButton(
             onClick = {

@@ -48,7 +48,6 @@ import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import com.android.mySwissDorm.ui.theme.PalePink
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
@@ -75,7 +74,6 @@ import com.android.mySwissDorm.ui.theme.rememberDarkModePreference
  * - Input sanitization and validation
  * - Loading states and error handling
  *
- * @param onItemClick Callback invoked when a settings item is clicked (currently not implemented).
  * @param onProfileClick Callback invoked when the profile button is clicked to navigate to profile
  *   screen.
  * @param navigationActions Optional [NavigationActions] for bottom bar navigation. If null, bottom
@@ -91,7 +89,6 @@ import com.android.mySwissDorm.ui.theme.rememberDarkModePreference
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
     vm: SettingsViewModel = viewModel(),
@@ -113,10 +110,6 @@ fun SettingsScreen(
 
   SettingsScreenContent(
       ui = ui,
-      onItemClick = {
-        vm.onItemClick(it)
-        onItemClick(it)
-      },
       onProfileClick = onProfileClick,
       onDeleteAccount = { vm.deleteAccount { _, _ -> } },
       onContributionClick = onContributionClick,
@@ -142,7 +135,6 @@ private val previewUiState =
  * manages local UI state (toggles, expanded states).
  *
  * @param ui The [SettingsUiState] containing user data and blocked contacts.
- * @param onItemClick Callback invoked when a settings item is clicked.
  * @param onProfileClick Callback invoked when the profile button is clicked.
  * @param onDeleteAccount Callback invoked when the delete account button is confirmed.
  * @param onContributionClick Callback invoked when the contributions button is clicked.
@@ -155,7 +147,6 @@ private val previewUiState =
 @Composable
 fun SettingsScreenContent(
     ui: SettingsUiState,
-    onItemClick: (String) -> Unit = {},
     onProfileClick: () -> Unit = {},
     onDeleteAccount: () -> Unit = {},
     onContributionClick: () -> Unit = {},
@@ -230,12 +221,12 @@ fun SettingsScreenContent(
                                 val initial =
                                     (ui.userName.firstOrNull()?.uppercaseChar() ?: 'A').toString()
 
-                                // Avatar background = PalePink, hardcoded as requested
+                                // Avatar background uses theme-aware color
                                 Box(
                                     modifier =
                                         Modifier.size(avatarSize)
                                             .clip(CircleShape)
-                                            .background(PalePink.copy(alpha = 0.16f)),
+                                            .background(MainColor.copy(alpha = 0.16f)),
                                     contentAlignment = Alignment.Center) {
                                       Text(initial, fontWeight = FontWeight.Bold, color = MainColor)
                                     }

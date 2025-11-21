@@ -170,9 +170,6 @@ fun AppNavHost(
             }
       }
       SettingsScreen(
-          onItemClick = {
-            Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show()
-          },
           onProfileClick = {
             if (userAnonymous) {
               Toast.makeText(context, "Sign in to create profile", Toast.LENGTH_SHORT).show()
@@ -390,8 +387,30 @@ fun AppNavHost(
             Toast.makeText(context, "Review saved", Toast.LENGTH_SHORT).show()
           },
           onDelete = { residencyName ->
-            navActions.navigateTo(Screen.ReviewsByResidencyOverview(residencyName))
+            // Pop EditReview from backstack
             navController.popBackStack(Screen.EditReview.route, inclusive = true)
+
+            // Check if we're now on ReviewOverview and pop it too (since the review is deleted)
+            var currentRoute = navController.currentDestination?.route
+            if (currentRoute?.startsWith("reviewOverview/") == true) {
+              navController.popBackStack()
+              // Update currentRoute after popping ReviewOverview
+              currentRoute = navController.currentDestination?.route
+            }
+
+            // Navigate back based on where we are now
+            // If we're already at ReviewsByResidencyOverview or ProfileContributions, stay there
+            // Otherwise, navigate to ReviewsByResidencyOverview (using residencyName) or fallback
+            // to ProfileContributions
+            if (currentRoute?.startsWith("reviewsByResidencyOverview/") != true &&
+                currentRoute != Screen.ProfileContributions.route) {
+              try {
+                navActions.navigateTo(Screen.ReviewsByResidencyOverview(residencyName))
+              } catch (e: Exception) {
+                // If navigation fails, try ProfileContributions as fallback
+                navActions.navigateTo(Screen.ProfileContributions)
+              }
+            }
             Toast.makeText(context, "Review deleted", Toast.LENGTH_SHORT).show()
           })
     }

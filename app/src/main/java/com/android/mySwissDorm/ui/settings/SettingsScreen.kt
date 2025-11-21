@@ -414,7 +414,7 @@ fun SettingsScreenContent(
                               label = "Dark mode",
                               checked = nightShift,
                               onCheckedChange = { enabled -> setDarkModePreference(enabled) })
-                            }
+                        }
 
                         // ---- Admin ------------------------------------------------------------
                         if (isAdmin) {

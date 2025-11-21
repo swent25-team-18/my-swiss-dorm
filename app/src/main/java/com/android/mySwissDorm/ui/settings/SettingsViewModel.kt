@@ -28,6 +28,7 @@ data class SettingsUiState(
     val isDeleting: Boolean = false,
     val errorMsg: String? = null,
     val blockedContacts: List<BlockedContact> = emptyList(),
+    val isGuest: Boolean = false
 )
 
 /**
@@ -41,6 +42,11 @@ class SettingsViewModel(
 
   private val _ui = MutableStateFlow(SettingsUiState())
   val uiState: StateFlow<SettingsUiState> = _ui.asStateFlow()
+
+  fun setIsGuest() {
+    val user = auth.currentUser
+    _ui.value = _ui.value.copy(isGuest = user != null && user.isAnonymous)
+  }
 
   fun refresh() {
     viewModelScope.launch {

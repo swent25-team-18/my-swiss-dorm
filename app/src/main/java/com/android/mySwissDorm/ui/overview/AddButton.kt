@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.White
 
@@ -50,8 +51,16 @@ import com.android.mySwissDorm.ui.theme.White
  * Implemented with the help of AI
  */
 @Composable
-fun AddFabMenu(modifier: Modifier = Modifier, onAddListing: () -> Unit, onAddReview: () -> Unit) {
+fun AddFabMenu(
+    modifier: Modifier = Modifier,
+    onAddListing: () -> Unit,
+    onAddReview: () -> Unit,
+    isGuest: Boolean = false
+) {
   var expanded by remember { mutableStateOf(false) }
+  if (isGuest && expanded) {
+    expanded = false
+  }
 
   Box(modifier = modifier.testTag(C.BrowseCityTags.FABSCRIM)) {
     AnimatedVisibility(visible = expanded, enter = fadeIn(), exit = fadeOut()) {
@@ -93,10 +102,10 @@ fun AddFabMenu(modifier: Modifier = Modifier, onAddListing: () -> Unit, onAddRev
               }
 
           FloatingActionButton(
-              onClick = { expanded = !expanded },
+              onClick = { if (!isGuest) expanded = !expanded },
               elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
               shape = CircleShape,
-              containerColor = MainColor,
+              containerColor = if (isGuest) Gray else MainColor,
               modifier = Modifier.size(64.dp).testTag(C.BrowseCityTags.FABMENU)) {
                 Icon(
                     imageVector = Icons.Filled.Add,

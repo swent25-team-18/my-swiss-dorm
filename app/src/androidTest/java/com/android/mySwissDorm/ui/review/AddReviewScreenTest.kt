@@ -10,6 +10,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -99,7 +100,8 @@ class AddReviewScreenTest : FirestoreTest() {
     setContent(vm)
 
     composeRule
-        .onNodeWithTag(C.AddReviewTags.TITLE_FIELD, useUnmergedTree = true)
+        .onNodeWithText(
+            "Please complete all required fields (valid grade, size, price, etc.) or sign in.")
         .assertIsDisplayed()
 
     composeRule

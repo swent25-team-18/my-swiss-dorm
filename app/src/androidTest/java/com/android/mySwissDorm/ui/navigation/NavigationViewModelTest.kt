@@ -354,4 +354,26 @@ class NavigationViewModelTest : FirestoreTest() {
         destination.route)
     assertEquals("Destination should be Homepage", Screen.Homepage, destination)
   }
+
+  @Test
+  fun determineInitialDestination_guestUser_navigatesToHomepage() = runTest {
+    signInAnonymous()
+    val viewModel = createViewModel()
+    val state = waitForNavigationState(viewModel)
+
+    assertFalse("Should not be loading", state.isLoading)
+    assertEquals(
+        "Guest user should navigate to Homepage", Screen.Homepage.route, state.initialDestination)
+    assertNull("Guest user should not have initial location", state.initialLocation)
+  }
+
+  @Test
+  fun getHomepageDestination_guestUser_returnsHomepage() = runTest {
+    signInAnonymous()
+    val viewModel = createViewModel()
+    val destination = viewModel.getHomepageDestination()
+    assertEquals(
+        "Guest user should be directed to Homepage", Screen.Homepage.route, destination.route)
+    assertEquals("Destination should be Homepage", Screen.Homepage, destination)
+  }
 }

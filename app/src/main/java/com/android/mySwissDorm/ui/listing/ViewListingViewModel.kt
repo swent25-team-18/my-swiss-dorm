@@ -47,7 +47,8 @@ data class ViewListingUIState(
     val contactMessage: String = "",
     val isOwner: Boolean = false,
     val isBlockedByOwner: Boolean = false,
-    val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0)
+    val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
+    val isGuest: Boolean = false
 )
 
 class ViewListingViewModel(
@@ -95,8 +96,10 @@ class ViewListingViewModel(
         val listing = rentalListingRepository.getRentalListing(listingId)
         val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
         val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
-        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val currentUserId = currentUser?.uid
         val isOwner = currentUserId == listing.ownerId
+        val isGuest = currentUser?.isAnonymous ?: false
 
         // Check if the current user is blocked by the listing owner
         val isBlockedByOwner =
@@ -117,7 +120,8 @@ class ViewListingViewModel(
               fullNameOfPoster = fullNameOfPoster,
               isOwner = isOwner,
               isBlockedByOwner = isBlockedByOwner,
-              locationOfListing = listing.location)
+              locationOfListing = listing.location,
+              isGuest = isGuest)
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)

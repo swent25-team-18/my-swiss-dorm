@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -385,5 +386,24 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     // And that metadata is correct
     assertEquals(expectedListing.title, capturedTitle)
     assertEquals("Listing Location", capturedName)
+  }
+
+  @Test
+  fun guestMode_showsSignInMessage_andHidesInteractiveElements() = runTest {
+    signInAnonymous()
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+    compose.waitUntil(5_000) { vm.uiState.value.isGuest }
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION).performScrollTo().assertIsDisplayed()
+    compose
+        .onNodeWithText("Sign in to contact the owner and apply.")
+        .performScrollTo()
+        .assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).assertDoesNotExist()
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
+    compose.onNodeWithTag(C.ViewListingTags.EDIT_BTN).assertDoesNotExist()
   }
 }

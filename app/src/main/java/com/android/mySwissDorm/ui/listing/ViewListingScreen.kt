@@ -240,8 +240,18 @@ fun ViewListingScreen(
                       height = 180.dp,
                       modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
                 }
-
-                if (isOwner) {
+                if (listingUIState.isGuest) {
+                  // The guest user has to sign in to apply to a listing when they view it
+                  Box(
+                      modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                      contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "Sign in to contact the owner and apply.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MainColor,
+                            fontWeight = FontWeight.Bold)
+                      }
+                } else if (isOwner) {
                   // Owner sees an Edit button centered, same size as Apply
                   Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Button(

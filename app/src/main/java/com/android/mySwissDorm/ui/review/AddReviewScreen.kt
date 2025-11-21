@@ -32,6 +32,7 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +64,9 @@ fun AddReviewScreen(
             val ui = reviewUIState
             Button(
                 onClick = { addReviewViewModel.submitReviewForm(onConfirm) },
-                enabled = ui.isFormValid,
+                enabled =
+                    ui.isFormValid &&
+                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true),
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
@@ -71,7 +74,7 @@ fun AddReviewScreen(
                   Text(stringResource(R.string.add_review_submit), color = White)
                 }
             Spacer(Modifier.height(8.dp))
-            if (!ui.isFormValid) {
+            if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
                   stringResource(R.string.add_review_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,

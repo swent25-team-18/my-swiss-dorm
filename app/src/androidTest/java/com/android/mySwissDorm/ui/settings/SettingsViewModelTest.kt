@@ -207,4 +207,20 @@ class SettingsViewModelTest : FirestoreTest() {
         assertNotNull(cbOk)
         // Intentionally not asserting auth outcome (delete vs recent-login) for CI stability
       }
+
+  @Test
+  fun setIsGuest_correctlyIdentifiesAnonymousUser() = runTest {
+    signInAnonymous()
+    val vm = vm()
+    vm.setIsGuest()
+    assertTrue("VM should identify anonymous user as guest", vm.uiState.value.isGuest)
+  }
+
+  @Test
+  fun setIsGuest_correctlyIdentifiesRegisteredUser() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val vm = vm()
+    vm.setIsGuest()
+    assertFalse("VM should not identify registered user as guest", vm.uiState.value.isGuest)
+  }
 }

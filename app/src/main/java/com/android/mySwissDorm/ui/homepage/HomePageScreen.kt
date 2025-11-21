@@ -41,11 +41,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
@@ -117,7 +119,9 @@ fun HomePageScreen(
                             .border(2.dp, TextColor, RoundedCornerShape(20.dp)),
                     value = inputText,
                     onValueChange = { inputText = it },
-                    placeholder = { Text("Browse", fontSize = 18.sp) },
+                    placeholder = {
+                      Text(stringResource(R.string.browse_cities), fontSize = 18.sp)
+                    },
                     leadingIcon = {
                       Icon(
                           Icons.Default.Search,
@@ -144,7 +148,7 @@ fun HomePageScreen(
                     contentDescription = "Custom Location",
                     tint = MainColor)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(text = "Custom location", color = MainColor)
+                Text(text = stringResource(R.string.custom_location), color = MainColor)
               }
 
           LazyColumn(

@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.utils
 
+import android.content.Context
+import com.android.mySwissDorm.R
 import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -25,7 +27,11 @@ object DateTimeUi {
    *
    * @param nowMillis allows deterministic tests.
    */
-  fun formatRelative(ts: Timestamp?, nowMillis: Long = System.currentTimeMillis()): String {
+  fun formatRelative(
+      ts: Timestamp?,
+      nowMillis: Long = System.currentTimeMillis(),
+      context: Context
+  ): String {
     if (ts == null) return "—"
 
     val then = ts.toDate().time
@@ -34,11 +40,14 @@ object DateTimeUi {
 
     val seconds = diff / 1000
     return when {
-      seconds < 60 -> "${seconds}s ago"
-      seconds < 60 * 60 -> "${seconds / 60} min ago" // < 1 hour → minutes
-      seconds < 24 * 60 * 60 -> "${seconds / 3600}h ago" // < 24h → hours
-      seconds < 7 * 24 * 60 * 60 -> "${seconds / 86400}d ago" // < 7d → days
-      else -> "on ${formatDate(ts)}" // ≥ 7d → date
+      seconds < 60 -> context.getString(R.string.date_time_ui_x_seconds_ago, seconds)
+      seconds < 60 * 60 ->
+          context.getString(R.string.date_time_ui_x_minutes_ago, seconds / 60) // < 1 hour → minutes
+      seconds < 24 * 60 * 60 ->
+          context.getString(R.string.date_time_ui_x_hours_ago, seconds / 3600) // < 24h → hours
+      seconds < 7 * 24 * 60 * 60 ->
+          context.getString(R.string.date_time_ui_x_days_ago, seconds / 86400) // < 7d → days
+      else -> context.getString(R.string.date_time_ui_on_date, formatDate(ts)) // ≥ 7d → date
     }
   }
 }

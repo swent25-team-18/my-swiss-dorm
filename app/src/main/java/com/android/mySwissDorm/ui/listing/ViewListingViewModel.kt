@@ -1,8 +1,10 @@
 package com.android.mySwissDorm.ui.listing
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -87,7 +89,7 @@ class ViewListingViewModel(
    *
    * @param listingId The ID of the RentalListing to be loaded.
    */
-  fun loadListing(listingId: String) {
+  fun loadListing(listingId: String, context: Context) {
     viewModelScope.launch {
       try {
         val listing = rentalListingRepository.getRentalListing(listingId)
@@ -119,7 +121,8 @@ class ViewListingViewModel(
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
-        setErrorMsg("Failed to load Listing: ${e.message}")
+        setErrorMsg(
+            "${context.getString(R.string.view_listing_failed_to_load_listings)}: ${e.message}")
       }
     }
   }

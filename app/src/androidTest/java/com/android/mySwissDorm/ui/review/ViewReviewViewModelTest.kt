@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.review
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
@@ -34,6 +36,8 @@ class ViewReviewViewModelTest : FirestoreTest() {
   private lateinit var residenciesRepo: ResidenciesRepository
   private lateinit var ownerId: String
   private lateinit var review1: Review
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
     profilesRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
@@ -85,7 +89,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
   fun loadReview_loadsReviewAndSetsState() = runBlocking {
     switchToUser(FakeUser.FakeUser1)
     val vm = freshVM()
-    vm.loadReview(review1.uid)
+    vm.loadReview(review1.uid, context)
 
     // Wait for the review to be loaded (viewModelScope uses Main dispatcher in instrumented tests)
     var tries = 0
@@ -108,7 +112,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
     val vm = freshVM()
     // Use a truly unique ID that definitely doesn't exist
     val nonExistentId = "non-existent-review-${System.currentTimeMillis()}"
-    vm.loadReview(nonExistentId)
+    vm.loadReview(nonExistentId, context)
 
     // Wait for error to be set (viewModelScope uses Main dispatcher in instrumented tests)
     var tries = 0
@@ -130,7 +134,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val vm = freshVM()
     val nonExistentId = "non-existent-review-${System.currentTimeMillis()}"
-    vm.loadReview(nonExistentId)
+    vm.loadReview(nonExistentId, context)
 
     // Wait for error to be set
     var tries = 0
@@ -148,7 +152,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
   fun setLocationOfReview_loadsLocationFromResidency() = runBlocking {
     switchToUser(FakeUser.FakeUser1)
     val vm = freshVM()
-    vm.loadReview(review1.uid)
+    vm.loadReview(review1.uid, context)
 
     // Wait for review to load
     var tries = 0
@@ -193,7 +197,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
     delay(200) // Wait for review to be persisted
 
     val vm = freshVM()
-    vm.loadReview(reviewWithBadResidency.uid)
+    vm.loadReview(reviewWithBadResidency.uid, context)
 
     // Wait for review to load
     var tries = 0
@@ -222,7 +226,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
   fun isOwner_isTrue_whenCurrentUserIsOwner() = runBlocking {
     switchToUser(FakeUser.FakeUser1)
     val vm = freshVM()
-    vm.loadReview(review1.uid)
+    vm.loadReview(review1.uid, context)
 
     // Wait for review to load
     var tries = 0
@@ -238,7 +242,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
   fun isOwner_isFalse_whenCurrentUserIsNotOwner() = runBlocking {
     switchToUser(FakeUser.FakeUser2)
     val vm = freshVM()
-    vm.loadReview(review1.uid)
+    vm.loadReview(review1.uid, context)
 
     // Wait for review to load
     var tries = 0
@@ -254,7 +258,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
   fun fullNameOfPoster_isSetCorrectly() = runBlocking {
     switchToUser(FakeUser.FakeUser1)
     val vm = freshVM()
-    vm.loadReview(review1.uid)
+    vm.loadReview(review1.uid, context)
 
     // Wait for review to load and fullNameOfPoster to be set
     var tries = 0
@@ -286,7 +290,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
     delay(200)
 
     val vm = freshVM()
-    vm.loadReview(reviewWithValidUser.uid)
+    vm.loadReview(reviewWithValidUser.uid, context)
 
     // Wait for error to be set
     var tries = 0

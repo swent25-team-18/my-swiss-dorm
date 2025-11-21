@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
+import com.android.mySwissDorm.R
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -99,11 +100,17 @@ fun onUserLocationClickFunc(context: Context, vm: BaseLocationSearchViewModel): 
                   onLocationFetched = onFetchLocationName,
                   onPermissionDenied = {
                     Toast.makeText(
-                            context, "Could not get location. Is GPS on?", Toast.LENGTH_SHORT)
+                            context,
+                            context.getString(R.string.device_location_could_not_get_location),
+                            Toast.LENGTH_SHORT)
                         .show()
                   })
             } else {
-              Toast.makeText(context, "Permission denied. Cannot get location.", Toast.LENGTH_SHORT)
+              Toast.makeText(
+                      context,
+                      context.getString(
+                          R.string.device_location_permission_denied_cannot_get_location),
+                      Toast.LENGTH_SHORT)
                   .show()
             }
           })
@@ -117,7 +124,10 @@ fun onUserLocationClickFunc(context: Context, vm: BaseLocationSearchViewModel): 
                 fusedLocationClient = fusedLocationClient,
                 onLocationFetched = onFetchLocationName,
                 onPermissionDenied = {
-                  Toast.makeText(context, "Could not get location. Is GPS on?", Toast.LENGTH_SHORT)
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.device_location_could_not_get_location),
+                          Toast.LENGTH_SHORT)
                       .show()
                 })
           } else {

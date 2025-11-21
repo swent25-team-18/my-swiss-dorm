@@ -24,12 +24,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.review.Review
@@ -255,14 +257,14 @@ private fun BrowseCityScreenUI(
                     onClick = { selectedTab = 0 },
                     selectedContentColor = TextColor,
                     unselectedContentColor = TextColor,
-                    text = { Text("Reviews") },
+                    text = { Text(stringResource(R.string.reviews)) },
                     modifier = Modifier.testTag(C.BrowseCityTags.TAB_REVIEWS))
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
                     selectedContentColor = TextColor,
                     unselectedContentColor = TextColor,
-                    text = { Text("Listings") },
+                    text = { Text(stringResource(R.string.listings)) },
                     modifier = Modifier.testTag(C.BrowseCityTags.TAB_LISTINGS))
               }
 
@@ -285,7 +287,7 @@ private fun BrowseCityScreenUI(
                 residenciesState.items.isEmpty() -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        "No residencies yet.",
+                        stringResource(R.string.browse_city_no_residencies_yet),
                         color = TextColor,
                         modifier = Modifier.testTag(C.BrowseCityTags.EMPTY))
                   }
@@ -338,9 +340,9 @@ private fun BrowseCityScreenUI(
                           verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             val message =
                                 if (hasAnyFilterActive(filterState)) {
-                                  "No listings match your filters."
+                                  stringResource(R.string.browse_city_no_listings_match_filter)
                                 } else {
-                                  "No listings yet."
+                                  stringResource(R.string.browse_city_no_listings_yet)
                                 }
                             Text(
                                 message,
@@ -357,7 +359,8 @@ private fun BrowseCityScreenUI(
                                   colors =
                                       ButtonDefaults.textButtonColors(contentColor = MainColor)) {
                                     Text(
-                                        "Clear filters", style = MaterialTheme.typography.bodySmall)
+                                        stringResource(R.string.browse_city_clear_filters),
+                                        style = MaterialTheme.typography.bodySmall)
                                   }
                             }
                           }
@@ -433,14 +436,14 @@ private fun FilterChipBar(
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
               item {
                 FilterChip(
-                    label = "Room Type",
+                    label = stringResource(R.string.room_type),
                     isActive = filterState.selectedRoomTypes.isNotEmpty(),
                     onClick = { onFilterClick(FilterType.ROOM_TYPE) },
                     modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_ROOM_TYPE))
               }
               item {
                 FilterChip(
-                    label = "Price",
+                    label = stringResource(R.string.price),
                     isActive =
                         filterState.priceRange.first != null ||
                             filterState.priceRange.second != null,
@@ -449,7 +452,7 @@ private fun FilterChipBar(
               }
               item {
                 FilterChip(
-                    label = "Size",
+                    label = stringResource(R.string.size),
                     isActive =
                         filterState.sizeRange.first != null || filterState.sizeRange.second != null,
                     onClick = { onFilterClick(FilterType.SIZE) },
@@ -457,7 +460,7 @@ private fun FilterChipBar(
               }
               item {
                 FilterChip(
-                    label = "Start Date",
+                    label = stringResource(R.string.start_date),
                     isActive =
                         filterState.startDateRange.first != null ||
                             filterState.startDateRange.second != null,
@@ -466,7 +469,7 @@ private fun FilterChipBar(
               }
               item {
                 FilterChip(
-                    label = "Most Recent",
+                    label = stringResource(R.string.most_recent),
                     isActive = filterState.sortByMostRecent,
                     onClick = onToggleMostRecent,
                     modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CHIP_MOST_RECENT))
@@ -478,7 +481,9 @@ private fun FilterChipBar(
               onClick = onClearAll,
               modifier = Modifier.testTag(C.BrowseCityTags.FILTER_CLEAR_ALL_BUTTON),
               colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
-                Text("Clear All", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    stringResource(R.string.browse_city_clear_all),
+                    style = MaterialTheme.typography.bodySmall)
               }
         }
       }
@@ -537,11 +542,15 @@ private fun FilterBottomSheet(
               Text(
                   text =
                       when (filterType) {
-                        FilterType.ROOM_TYPE -> "Filter by Room Type"
-                        FilterType.PRICE -> "Filter by Price"
-                        FilterType.SIZE -> "Filter by Size"
-                        FilterType.START_DATE -> "Filter by Start Date"
-                        FilterType.MOST_RECENT -> "Sort by Most Recent" // Should never happen
+                        FilterType.ROOM_TYPE ->
+                            stringResource(R.string.browse_city_filter_by_room_type)
+                        FilterType.PRICE -> stringResource(R.string.browse_city_filter_by_price)
+                        FilterType.SIZE -> stringResource(R.string.browse_city_filter_by_size)
+                        FilterType.START_DATE ->
+                            stringResource(R.string.browse_city_filter_by_start_date)
+                        FilterType.MOST_RECENT ->
+                            stringResource(
+                                R.string.browse_city_sort_by_most_recent) // Should never happen
                       },
                   style = MaterialTheme.typography.titleLarge,
                   color = TextColor,
@@ -571,7 +580,9 @@ private fun FilterBottomSheet(
                 }
                 FilterType.MOST_RECENT -> {
                   // Should never happen - Most Recent is toggled directly, not via bottom sheet
-                  Text("This filter is toggled directly from the filter bar.", color = TextColor)
+                  Text(
+                      stringResource(R.string.browse_city_sort_by_most_recent_text),
+                      color = TextColor)
                 }
               }
 
@@ -598,7 +609,7 @@ private fun FilterBottomSheet(
                             Modifier.weight(1f)
                                 .testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_CLEAR_BUTTON),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
-                          Text("Clear")
+                          Text(stringResource(R.string.clear))
                         }
                     Button(
                         onClick = {
@@ -623,7 +634,7 @@ private fun FilterBottomSheet(
                             Modifier.weight(1f)
                                 .testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON),
                         colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
-                          Text("Apply", color = Color.White)
+                          Text(stringResource(R.string.apply), color = Color.White)
                         }
                   }
             }
@@ -673,8 +684,8 @@ private fun PriceFilterContent(
 
   Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-      Text("Min: ${minPrice.toInt()} CHF", color = TextColor)
-      Text("Max: ${maxPrice.toInt()} CHF", color = TextColor)
+      Text("${stringResource(R.string.min)}: ${minPrice.toInt()} CHF", color = TextColor)
+      Text("${stringResource(R.string.max)}: ${maxPrice.toInt()} CHF", color = TextColor)
     }
     RangeSlider(
         value = minPrice..maxPrice,
@@ -701,8 +712,8 @@ private fun SizeFilterContent(sizeRange: Pair<Int?, Int?>, onRangeChange: (Int?,
 
   Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-      Text("Min: ${minSize.toInt()} m²", color = TextColor)
-      Text("Max: ${maxSize.toInt()} m²", color = TextColor)
+      Text("${stringResource(R.string.min)}: ${minSize.toInt()} m²", color = TextColor)
+      Text("${stringResource(R.string.max)}: ${maxSize.toInt()} m²", color = TextColor)
     }
     RangeSlider(
         value = minSize..maxSize,
@@ -743,9 +754,9 @@ private fun StartDateFilterContent(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically) {
-                Text("Min Start Date", color = TextColor)
+                Text(stringResource(R.string.browse_city_min_start_date), color = TextColor)
                 Text(
-                    if (minDate != null) formatDate(minDate) else "Not set",
+                    if (minDate != null) formatDate(minDate) else stringResource(R.string.not_set),
                     color = TextColor,
                     style = MaterialTheme.typography.bodyMedium)
               }
@@ -761,9 +772,9 @@ private fun StartDateFilterContent(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically) {
-                Text("Max Start Date", color = TextColor)
+                Text(stringResource(R.string.browse_city_max_start_date), color = TextColor)
                 Text(
-                    if (maxDate != null) formatDate(maxDate) else "Not set",
+                    if (maxDate != null) formatDate(maxDate) else stringResource(R.string.not_set),
                     color = TextColor,
                     style = MaterialTheme.typography.bodyMedium)
               }
@@ -821,7 +832,7 @@ private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
                       .clip(RoundedCornerShape(12.dp))
                       .background(Color(0xFFEAEAEA))) {
                 Text(
-                    "IMAGE",
+                    stringResource(R.string.image),
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray)
@@ -868,7 +879,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                           .clip(RoundedCornerShape(12.dp))
                           .background(Color(0xFFEAEAEA))) {
                     Text(
-                        "IMAGE",
+                        stringResource(R.string.image),
                         modifier = Modifier.align(Alignment.Center),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray)
@@ -918,7 +929,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                     if (data.latestReview == null) { // No latest review => No reviews yet
                       Box(modifier = Modifier.fillMaxSize()) {
                         Text(
-                            text = "No reviews yet.",
+                            text = stringResource(R.string.browse_city_no_reviews_yet),
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             color = TextColor,
@@ -937,7 +948,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                                   verticalAlignment =
                                       Alignment.CenterVertically) { // Latest review + post date
                                     Text(
-                                        text = "Latest review :",
+                                        text = stringResource(R.string.browse_city_latest_review),
                                         style = MaterialTheme.typography.bodyMedium,
                                         textAlign = TextAlign.Start,
                                         color = TextColor,
@@ -968,7 +979,8 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End) { // posted by
                                   Text(
-                                      text = "posted by ${data.fullNameOfPoster}",
+                                      text =
+                                          "${stringResource(R.string.browse_city_review_posted_by)} ${data.fullNameOfPoster}",
                                       style = MaterialTheme.typography.bodySmall,
                                       fontWeight = FontWeight.Light,
                                       color = TextColor,

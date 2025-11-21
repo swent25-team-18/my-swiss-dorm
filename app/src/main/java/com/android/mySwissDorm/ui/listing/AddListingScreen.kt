@@ -11,8 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
@@ -48,7 +50,7 @@ fun AddListingScreen(
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Add Listing") },
+            title = { Text(stringResource(R.string.add_listing_text)) },
             navigationIcon = {
               IconButton(onClick = onBack) {
                 Icon(
@@ -71,12 +73,12 @@ fun AddListingScreen(
                         .height(52.dp)
                         .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
-                  Text("Confirm listing", color = Color.White)
+                  Text(stringResource(R.string.confirm_listing), color = Color.White)
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid) {
               Text(
-                  "Please complete all required fields (valid size, price, and starting date).",
+                  stringResource(R.string.add_listing_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,
                   color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -131,9 +133,10 @@ fun AddListingScreen(
                           modifier = Modifier.fillMaxWidth(),
                           horizontalArrangement = Arrangement.SpaceBetween,
                           verticalAlignment = Alignment.CenterVertically) {
-                            Text("Location", color = TextColor)
+                            Text(stringResource(R.string.location), color = TextColor)
                             Text(
-                                ui.customLocation?.name ?: "Select location",
+                                ui.customLocation?.name
+                                    ?: stringResource(R.string.add_listing_select_location),
                                 color = TextColor,
                                 style = MaterialTheme.typography.bodyMedium)
                           }
@@ -165,7 +168,7 @@ fun AddListingScreen(
 
               if (sizeInvalid) {
                 Text(
-                    text = "Enter 1.0–1000.0 with one decimal (e.g., 18.5).",
+                    text = stringResource(R.string.add_listing_invalid_size_text),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
               }
@@ -178,7 +181,7 @@ fun AddListingScreen(
 
               if (priceInvalid) {
                 Text(
-                    text = "Enter an integer between 1 and 10000.",
+                    text = stringResource(R.string.add_listing_invalid_price_text),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall)
               }
@@ -196,7 +199,7 @@ fun AddListingScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically) {
-                          Text("Start Date", color = TextColor)
+                          Text(stringResource(R.string.start_date), color = TextColor)
                           Text(
                               formatDate(ui.startDate),
                               color = TextColor,
@@ -210,7 +213,7 @@ fun AddListingScreen(
                   maxLines = 6,
                   modifier = Modifier.testTag(C.AddListingScreenTags.DESC_FIELD).fillMaxWidth())
 
-              Text("Photos", style = MaterialTheme.typography.titleMedium)
+              Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {

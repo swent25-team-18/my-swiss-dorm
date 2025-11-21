@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -41,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
@@ -110,9 +112,9 @@ fun SettingsScreen(
   SettingsScreenContent(
       ui = ui,
       onProfileClick = onProfileClick,
-      onDeleteAccount = { vm.deleteAccount { _, _ -> } },
+      onDeleteAccount = { vm.deleteAccount({ _, _ -> }, context) },
       onContributionClick = onContributionClick,
-      onUnblockUser = { uid -> vm.unblockUser(uid) },
+      onUnblockUser = { uid -> vm.unblockUser(uid, context) },
       navigationActions = navigationActions,
       isAdmin = isAdmin,
       onAdminClick = onAdminClick)
@@ -173,7 +175,7 @@ fun SettingsScreenContent(
       contentWindowInsets = WindowInsets.safeDrawing,
       topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Settings") },
+            title = { Text(stringResource(R.string.settings_title)) },
             colors =
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = BackGroundColor, titleContentColor = TextColor))
@@ -231,13 +233,13 @@ fun SettingsScreenContent(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                   Text(
-                                      ui.userName.ifBlank { "User" },
+                                      ui.userName.ifBlank { stringResource(R.string.user) },
                                       style = MaterialTheme.typography.titleMedium,
                                       color = TextColor,
                                       maxLines = 1,
                                       overflow = TextOverflow.Ellipsis)
                                   Text(
-                                      "View profile",
+                                      stringResource(R.string.settings_view_profile),
                                       style = MaterialTheme.typography.bodySmall,
                                       color = MaterialTheme.colorScheme.onSurfaceVariant,
                                       maxLines = 1,
@@ -256,26 +258,26 @@ fun SettingsScreenContent(
                         }
 
                         // ---- Notifications ---------------------------------------------------
-                        SectionLabel("Notifications")
+                        SectionLabel(stringResource(R.string.notifications))
                         CardBlock {
                           SettingSwitchRow(
-                              label = "Show notifications for messages",
+                              label = stringResource(R.string.settings_notifications_messages),
                               checked = notificationsMessages,
                               onCheckedChange = { notificationsMessages = it })
                           SoftDivider()
                           SettingSwitchRow(
-                              label = "Show notifications for new listings",
+                              label = stringResource(R.string.settings_notifications_listings),
                               checked = notificationsListings,
                               onCheckedChange = { notificationsListings = it })
                         }
 
                         // ---- Account ---------------------------------------------------------
-                        SectionLabel("Account")
+                        SectionLabel(stringResource(R.string.account))
                         CardBlock {
                           OutlinedTextField(
                               value = ui.email,
                               onValueChange = {},
-                              label = { Text("Email address") },
+                              label = { Text(stringResource(R.string.email_address)) },
                               singleLine = true,
                               readOnly = true,
                               enabled = false,
@@ -301,15 +303,15 @@ fun SettingsScreenContent(
                               colors =
                                   ButtonDefaults.buttonColors(
                                       containerColor = MainColor, contentColor = White)) {
-                                Text("View my contributions")
+                                Text(stringResource(R.string.settings_view_contributions))
                               }
                         }
 
                         // ---- Privacy ---------------------------------------------------------
-                        SectionLabel("Privacy")
+                        SectionLabel(stringResource(R.string.privacy))
                         CardBlock {
                           SettingSwitchRow(
-                              label = "Read receipts",
+                              label = stringResource(R.string.settings_read_receipts),
                               checked = readReceipts,
                               onCheckedChange = { readReceipts = it })
                           SoftDivider()
@@ -320,7 +322,7 @@ fun SettingsScreenContent(
                                       .padding(horizontal = 4.dp, vertical = 10.dp),
                               verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    "Blocked contacts (${blockedContacts.size})",
+                                    "${stringResource(R.string.settings_blocked_contacts)} (${blockedContacts.size})",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = TextColor,
                                     maxLines = 1,
@@ -338,8 +340,9 @@ fun SettingsScreenContent(
                                           imageVector =
                                               Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                           contentDescription =
-                                              if (blockedExpanded) "Hide blocked"
-                                              else "Show blocked",
+                                              if (blockedExpanded)
+                                                  stringResource(R.string.settings_hide_blocked)
+                                              else stringResource(R.string.settings_show_blocked),
                                           modifier = Modifier.rotate(rotation),
                                           tint = TextColor)
                                     }
@@ -362,7 +365,8 @@ fun SettingsScreenContent(
                                   Column(Modifier.padding(12.dp)) {
                                     if (blockedContacts.isEmpty()) {
                                       Text(
-                                          text = "No blocked contacts",
+                                          text =
+                                              stringResource(R.string.settings_no_blocked_contacts),
                                           style = MaterialTheme.typography.bodyMedium,
                                           color = TextColor.copy(alpha = 0.6f),
                                           modifier = Modifier.padding(vertical = 4.dp))
@@ -386,7 +390,7 @@ fun SettingsScreenContent(
                                                   colors =
                                                       ButtonDefaults.textButtonColors(
                                                           contentColor = MainColor)) {
-                                                    Text("Unblock")
+                                                    Text(stringResource(R.string.unblock))
                                                   }
                                             }
                                       }
@@ -397,17 +401,17 @@ fun SettingsScreenContent(
                         }
 
                         // ---- Accessibility ---------------------------------------------------
-                        SectionLabel("Accessibility")
+                        SectionLabel(stringResource(R.string.accessibility))
                         CardBlock {
                           SettingSwitchRow(
-                              label = "Dark mode",
+                              label = stringResource(R.string.settings_dark_mode),
                               checked = nightShift,
                               onCheckedChange = { enabled -> setDarkModePreference(enabled) })
                         }
 
                         // ---- Admin ------------------------------------------------------------
                         if (isAdmin) {
-                          SectionLabel("Admin")
+                          SectionLabel(stringResource(R.string.admin))
                           CardBlock {
                             Row(
                                 modifier =
@@ -417,7 +421,7 @@ fun SettingsScreenContent(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween) {
                                   Text(
-                                      "Admin page",
+                                      stringResource(R.string.settings_admin_page),
                                       style = MaterialTheme.typography.bodyLarge,
                                       color = TextColor,
                                       maxLines = 2,
@@ -455,7 +459,9 @@ fun SettingsScreenContent(
                                         .padding(top = 8.dp)
                                         .testTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
                                         .navigationBarsPadding()) {
-                                  Text(if (ui.isDeleting) "DELETING…" else "DELETE MY ACCOUNT")
+                                  Text(
+                                      if (ui.isDeleting) stringResource(R.string.settings_deleting)
+                                      else stringResource(R.string.settings_delete))
                                 }
                           }
                     }
@@ -466,20 +472,22 @@ fun SettingsScreenContent(
   if (showDeleteConfirm) {
     AlertDialog(
         onDismissRequest = { showDeleteConfirm = false },
-        title = { Text("Delete account?") },
-        text = {
-          Text("This will permanently remove your account. You may need to re-authenticate.")
-        },
+        title = { Text(stringResource(R.string.settings_delete_dialog_title)) },
+        text = { Text(stringResource(R.string.settings_delete_dialog_text)) },
         confirmButton = {
           TextButton(
               onClick = {
                 showDeleteConfirm = false
                 onDeleteAccount()
               }) {
-                Text("Delete")
+                Text(stringResource(R.string.delete))
               }
         },
-        dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } })
+        dismissButton = {
+          TextButton(onClick = { showDeleteConfirm = false }) {
+            Text(stringResource(R.string.cancel))
+          }
+        })
   }
 }
 

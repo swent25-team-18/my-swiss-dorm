@@ -419,7 +419,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     // Use onNodeWithText to find text directly
     compose.onNodeWithText("First Title").assertIsDisplayed()
     // The text is "Review :" with a space before the colon
-    compose.onNodeWithText("Review :").assertIsDisplayed()
+    compose.onNodeWithText("Review:").assertIsDisplayed()
     compose.onNodeWithText("My first review").assertIsDisplayed()
   }
 
@@ -487,7 +487,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     }
     scrollListTo(C.ViewReviewTags.LOCATION)
     compose.onNodeWithTag(C.ViewReviewTags.LOCATION).assertIsDisplayed()
-    compose.onNodeWithText("LOCATION (Not available)").assertIsDisplayed()
+    compose.onNodeWithText("Location (Not available)").assertIsDisplayed()
   }
 
   @Test

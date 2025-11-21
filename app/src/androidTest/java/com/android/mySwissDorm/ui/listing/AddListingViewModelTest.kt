@@ -1,15 +1,20 @@
 package com.android.mySwissDorm.ui.listing
 
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
+import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -193,4 +198,21 @@ class AddListingViewModelTest : FirestoreTest() {
         assertNotEquals(
             "Please select a location for Private Accommodation", vm.uiState.value.errorMsg)
       }
+
+  @Test
+  fun submitForm_uploads_photo() = runTest {
+    val fakeName = "fakeFile"
+    val fakeSuffix = ".png"
+    val fakeFileName = fakeName + fakeSuffix
+    val fakePhoto = Photo(File.createTempFile(fakeName, fakeSuffix).toUri(), fakeFileName)
+    val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
+    val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
+    val vm =
+        AddListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+    vm.submitForm {
+      assertEquals(1, fakeLocalRepo.uploadCount)
+      assertEquals(1, fakeCloudRepo.uploadCount)
+    }
+  }
 }

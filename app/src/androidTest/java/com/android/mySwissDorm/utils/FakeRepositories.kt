@@ -37,7 +37,7 @@ class FakePhotoRepository(
       var i = 0
       return FakePhotoRepository(
           onRetrieve = {
-            if (i > 0) {
+            if (i == 0) {
               i++
               throw NoSuchElementException()
             } else {
@@ -56,7 +56,7 @@ class FakePhotoRepositoryCloud(
     private val onDelete: Boolean,
     photoRepositoryLocal: PhotoRepository =
         FakePhotoRepository({ throw NoSuchElementException() }, {}, false)
-) : PhotoRepositoryCloud() {
+) : PhotoRepositoryCloud(photoRepositoryLocal) {
   var retrieveCount = 0
   var uploadCount = 0
   var deleteCount = 0

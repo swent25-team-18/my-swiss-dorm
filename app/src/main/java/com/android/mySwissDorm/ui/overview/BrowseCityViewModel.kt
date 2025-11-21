@@ -171,7 +171,7 @@ class BrowseCityViewModel(
   private val maxDistanceToDisplay = 15.0
 
   init {
-    _uiState.update { it.copy(isGuest = auth.currentUser?.isAnonymous ?: false) }
+    _uiState.update { it.copy(isGuest = auth.currentUser?.isAnonymous ?: true) }
   }
 
   fun loadListings(location: Location) {

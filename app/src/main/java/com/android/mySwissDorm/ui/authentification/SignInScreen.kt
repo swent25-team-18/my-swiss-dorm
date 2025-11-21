@@ -30,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.Typography
 
@@ -96,7 +97,7 @@ fun SignInScreen(
                 }
               },
               modifier = Modifier.testTag(C.Tag.SIGN_IN_GUEST_BUTTON)) {
-                Text(text = ("Continue as guest"), color = Color.Gray)
+                Text(text = ("Continue as guest"), color = Gray)
               }
 
           Spacer(modifier = Modifier.height(225.dp))

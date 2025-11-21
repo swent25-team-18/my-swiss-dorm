@@ -34,11 +34,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.White
 
@@ -102,7 +102,7 @@ fun AddFabMenu(
               onClick = { if (!isGuest) expanded = !expanded },
               elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
               shape = CircleShape,
-              containerColor = if (isGuest) Color.Gray else MainColor,
+              containerColor = if (isGuest) Gray else MainColor,
               modifier = Modifier.size(64.dp).testTag(C.BrowseCityTags.FABMENU)) {
                 Icon(
                     imageVector = Icons.Filled.Add,

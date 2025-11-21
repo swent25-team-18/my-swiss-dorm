@@ -67,7 +67,7 @@ fun AddListingScreen(
                 onClick = { addListingViewModel.submitForm(onConfirm) },
                 enabled =
                     ui.isFormValid &&
-                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: false),
+                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true),
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth()

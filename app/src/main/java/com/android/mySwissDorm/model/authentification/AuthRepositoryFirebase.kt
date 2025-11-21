@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.model.authentification
 
+import android.util.Log
 import androidx.credentials.Credential
 import androidx.credentials.CustomCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -48,7 +49,9 @@ class AuthRepositoryFirebase(private val auth: FirebaseAuth = Firebase.auth) : A
     if (currentUser != null) {
       try {
         auth.signOut()
-      } catch (e: Exception) {}
+      } catch (e: Exception) {
+        Log.e("AuthRepository", "Error signing out pre-existing user", e)
+      }
     }
 
     return try {

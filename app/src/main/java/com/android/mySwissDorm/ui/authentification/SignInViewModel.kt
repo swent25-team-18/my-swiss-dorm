@@ -103,7 +103,7 @@ class SignInViewModel(
       }
     }
   }
-
+  /** Handle the sign in event by trying to log in without a Google account so as a guest. */
   fun signInAnonymously() {
     if (_uiState.value.isLoading) return
 

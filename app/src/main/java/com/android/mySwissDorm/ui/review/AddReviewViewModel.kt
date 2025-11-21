@@ -125,7 +125,7 @@ class AddReviewViewModel(
       return
     }
     // will probably never reach this if but it's just here for security just like in AddListing
-    if ((FirebaseAuth.getInstance().currentUser?.isAnonymous ?: false)) {
+    if ((FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true)) {
       return
     }
     val reviewToAdd =

@@ -63,7 +63,7 @@ fun AddReviewScreen(
                 onClick = { addReviewViewModel.submitReviewForm(onConfirm) },
                 enabled =
                     ui.isFormValid &&
-                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: false),
+                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true),
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),

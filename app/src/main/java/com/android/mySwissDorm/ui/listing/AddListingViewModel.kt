@@ -34,7 +34,7 @@ class AddListingViewModel(
   fun submitForm(onConfirm: (RentalListing) -> Unit) {
     val state = uiState.value
     // will probably never reach this if but it's just here for security
-    if ((FirebaseAuth.getInstance().currentUser?.isAnonymous ?: false)) {
+    if ((FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true)) {
       setErrorMsg("Guest users cannot create listings")
       return
     }

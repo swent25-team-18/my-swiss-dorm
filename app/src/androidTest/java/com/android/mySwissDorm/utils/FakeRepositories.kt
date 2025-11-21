@@ -47,6 +47,10 @@ class FakePhotoRepository(
           onUpload,
           onDelete)
     }
+
+    const val FAKE_NAME = "fakeFile"
+    const val FAKE_SUFFIX = ".png"
+    const val FAKE_FILE_NAME = FAKE_NAME + FAKE_SUFFIX
   }
 }
 

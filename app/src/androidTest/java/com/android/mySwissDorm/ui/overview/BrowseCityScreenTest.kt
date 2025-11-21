@@ -19,6 +19,9 @@ import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
+import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_SUFFIX
 import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
@@ -42,10 +45,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private val listingsRepo = RentalListingRepositoryProvider.repository
   private val reviewsRepo = ReviewsRepositoryProvider.repository
   private val residenciesRepo = ResidenciesRepositoryProvider.repository
-  val fakeName = "fakeFile"
-  val fakeSuffix = ".png"
-  val fakeFileName = fakeName + fakeSuffix
-  val fakePhoto = Photo(File.createTempFile(fakeName, fakeSuffix).toUri(), fakeFileName)
+  val fakePhoto = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
   private lateinit var vm: BrowseCityViewModel
 
   private lateinit var ownerUid: String

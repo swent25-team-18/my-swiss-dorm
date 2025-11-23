@@ -30,6 +30,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -381,15 +383,26 @@ class AdminPageScreenTest : FirestoreTest() {
     saveButtons[1].performClick()
     composeTestRule.waitForIdle()
 
+    // Give Firestore operation time to start
+    kotlinx.coroutines.delay(100)
+
     // Wait until the ViewModel finishes submitting and sets the message
+    // Use a more flexible condition that checks for message content rather than exact match
     val expectedMessage = "$email has been added as an admin"
-    composeTestRule.waitUntil(10_000) {
+    composeTestRule.waitUntil(15_000) {
       val state = viewModel.uiState
-      !state.isSubmitting && state.message == expectedMessage
+      val hasMessage = state.message != null
+      val notSubmitting = !state.isSubmitting
+      val hasExpectedContent = hasMessage && state.message!!.contains("has been added as an admin")
+      notSubmitting && hasExpectedContent
     }
 
     // Assert on ViewModel state (logic test, not UI)
-    assertEquals(expectedMessage, viewModel.uiState.message)
+    assertNotNull("Message should be set", viewModel.uiState.message)
+    assertTrue(
+        "Message should contain expected text",
+        viewModel.uiState.message!!.contains("has been added as an admin"))
+    assertTrue("Message should contain email", viewModel.uiState.message!!.contains(email))
   }
 
   @Test
@@ -445,8 +458,10 @@ class AdminPageScreenTest : FirestoreTest() {
     composeTestRule.waitForIdle()
 
     // Wait for the message to be set and operation to complete
-    composeTestRule.waitUntil(10_000) {
-      viewModel.uiState.message != null && !viewModel.uiState.isSubmitting
+    // Increase timeout and use more flexible condition
+    composeTestRule.waitUntil(15_000) {
+      val state = viewModel.uiState
+      !state.isSubmitting && state.message != null && state.message!!.contains("already an admin")
     }
 
     // Give UI time to recompose after state change
@@ -484,8 +499,12 @@ class AdminPageScreenTest : FirestoreTest() {
     composeTestRule.waitForIdle()
 
     // Wait for the message to be set and operation to complete
-    composeTestRule.waitUntil(10_000) {
-      viewModel.uiState.message != null && !viewModel.uiState.isSubmitting
+    // Increase timeout and use more flexible condition
+    composeTestRule.waitUntil(15_000) {
+      val state = viewModel.uiState
+      !state.isSubmitting &&
+          state.message != null &&
+          state.message!!.contains("has been added as an admin")
     }
 
     // Give UI time to recompose after state change

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -132,18 +133,6 @@ fun AdminPageScreen(
                     Text(stringResource(R.string.save), color = Color.White)
                   }
                 }
-            Spacer(Modifier.height(8.dp))
-
-            // Show success or error message from the ViewModel
-            if (ui.message != null) {
-              val isError = ui.message.startsWith("Error:")
-              Text(
-                  text = ui.message,
-                  style = MaterialTheme.typography.bodySmall,
-                  color =
-                      if (isError) MaterialTheme.colorScheme.error
-                      else MaterialTheme.colorScheme.primary)
-            }
           }
         }
       }) { pad ->
@@ -152,41 +141,68 @@ fun AdminPageScreen(
                 .padding(horizontal = 16.dp, vertical = 10.dp)
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-              Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                EntityChip(
-                    text = stringResource(R.string.city),
-                    selected = ui.selected == AdminPageViewModel.EntityType.CITY,
-                    testTag = C.AdminPageTags.CHIP_CITY) {
-                      vm.onTypeChange(AdminPageViewModel.EntityType.CITY)
-                    }
-                EntityChip(
-                    text = stringResource(R.string.residency),
-                    selected = ui.selected == AdminPageViewModel.EntityType.RESIDENCY,
-                    testTag = C.AdminPageTags.CHIP_RESIDENCY) {
-                      vm.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
-                    }
-                EntityChip(
-                    text = stringResource(R.string.university),
-                    selected = ui.selected == AdminPageViewModel.EntityType.UNIVERSITY,
-                    testTag = C.AdminPageTags.CHIP_UNIVERSITY) {
-                      vm.onTypeChange(AdminPageViewModel.EntityType.UNIVERSITY)
-                    }
-              }
-
-              SanitizedOutlinedTextField(
-                  value = ui.name,
-                  onValueChange = vm::onName,
-                  label = stringResource(R.string.name),
-                  singleLine = true,
+              // First row: City, Residency, University
+              Row(
                   modifier = Modifier.fillMaxWidth(),
-                  fieldType = InputSanitizers.FieldType.FirstName,
-                  placeholder = stringResource(R.string.name),
-                  imeAction = ImeAction.Next)
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  verticalAlignment = Alignment.CenterVertically) {
+                    EntityChip(
+                        text = stringResource(R.string.city),
+                        selected = ui.selected == AdminPageViewModel.EntityType.CITY,
+                        testTag = C.AdminPageTags.CHIP_CITY) {
+                          vm.onTypeChange(AdminPageViewModel.EntityType.CITY)
+                        }
+                    EntityChip(
+                        text = stringResource(R.string.residency),
+                        selected = ui.selected == AdminPageViewModel.EntityType.RESIDENCY,
+                        testTag = C.AdminPageTags.CHIP_RESIDENCY) {
+                          vm.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
+                        }
+                    EntityChip(
+                        text = stringResource(R.string.university),
+                        selected = ui.selected == AdminPageViewModel.EntityType.UNIVERSITY,
+                        testTag = C.AdminPageTags.CHIP_UNIVERSITY) {
+                          vm.onTypeChange(AdminPageViewModel.EntityType.UNIVERSITY)
+                        }
+                  }
+              // Second row: Admin
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  verticalAlignment = Alignment.CenterVertically) {
+                    EntityChip(
+                        text = stringResource(R.string.admin),
+                        selected = ui.selected == AdminPageViewModel.EntityType.ADMIN,
+                        testTag = C.AdminPageTags.CHIP_ADMIN) {
+                          vm.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
+                        }
+                  }
 
               // Entity-specific fields
               when (ui.selected) {
+                // Admin fields
+                AdminPageViewModel.EntityType.ADMIN -> {
+                  SanitizedOutlinedTextField(
+                      value = ui.email,
+                      onValueChange = vm::onEmail,
+                      label = stringResource(R.string.email),
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.Email,
+                      placeholder = stringResource(R.string.email),
+                      imeAction = ImeAction.Done)
+                }
                 // City fields
                 AdminPageViewModel.EntityType.CITY -> {
+                  SanitizedOutlinedTextField(
+                      value = ui.name,
+                      onValueChange = vm::onName,
+                      label = stringResource(R.string.name),
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.FirstName,
+                      placeholder = stringResource(R.string.name),
+                      imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.description,
                       onValueChange = vm::onDescription,
@@ -208,6 +224,15 @@ fun AdminPageScreen(
                 }
                 // Residency fields
                 AdminPageViewModel.EntityType.RESIDENCY -> {
+                  SanitizedOutlinedTextField(
+                      value = ui.name,
+                      onValueChange = vm::onName,
+                      label = stringResource(R.string.name),
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.FirstName,
+                      placeholder = stringResource(R.string.name),
+                      imeAction = ImeAction.Next)
                   SanitizedOutlinedTextField(
                       value = ui.description,
                       onValueChange = vm::onDescription,
@@ -260,6 +285,15 @@ fun AdminPageScreen(
                 // University fields
                 AdminPageViewModel.EntityType.UNIVERSITY -> {
                   SanitizedOutlinedTextField(
+                      value = ui.name,
+                      onValueChange = vm::onName,
+                      label = stringResource(R.string.name),
+                      singleLine = true,
+                      modifier = Modifier.fillMaxWidth(),
+                      fieldType = InputSanitizers.FieldType.FirstName,
+                      placeholder = stringResource(R.string.name),
+                      imeAction = ImeAction.Next)
+                  SanitizedOutlinedTextField(
                       value = ui.city,
                       onValueChange = vm::onCity,
                       label = stringResource(R.string.city),
@@ -298,22 +332,24 @@ fun AdminPageScreen(
                 }
               }
 
-              // Location picker button
-              TextButton(
-                  onClick = { vm.onCustomLocationClick() },
-                  modifier = Modifier.fillMaxWidth().testTag(C.AdminPageTags.LOCATION_BUTTON),
-                  shape = RoundedCornerShape(16.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.Place,
-                        contentDescription = "Location",
-                        tint = MainColor)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text =
-                            ui.location?.name
-                                ?: stringResource(R.string.admin_page_select_location),
-                        color = if (ui.location != null) TextColor else MainColor)
-                  }
+              // Location picker button (not needed for Admin)
+              if (ui.selected != AdminPageViewModel.EntityType.ADMIN) {
+                TextButton(
+                    onClick = { vm.onCustomLocationClick() },
+                    modifier = Modifier.fillMaxWidth().testTag(C.AdminPageTags.LOCATION_BUTTON),
+                    shape = RoundedCornerShape(16.dp)) {
+                      Icon(
+                          imageVector = Icons.Default.Place,
+                          contentDescription = "Location",
+                          tint = MainColor)
+                      Spacer(Modifier.width(8.dp))
+                      Text(
+                          text =
+                              ui.location?.name
+                                  ?: stringResource(R.string.admin_page_select_location),
+                          color = if (ui.location != null) TextColor else MainColor)
+                    }
+              }
 
               Spacer(Modifier.height(16.dp))
             }
@@ -341,6 +377,53 @@ fun AdminPageScreen(
               onDismiss = onDismiss,
               onConfirm = onConfirm,
               onUseCurrentLocationClick = onUseCurrentLocationClick)
+        }
+
+        // Admin confirmation dialog
+        if (ui.showAdminConfirmDialog) {
+          AlertDialog(
+              onDismissRequest = { vm.cancelAdminAdd() },
+              title = { Text(stringResource(R.string.admin)) },
+              text = {
+                Text(
+                    text = "Confirm you want to add ${ui.email.trim()} as an admin",
+                    style = MaterialTheme.typography.bodyMedium)
+              },
+              confirmButton = {
+                TextButton(
+                    onClick = { vm.confirmAdminAdd() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
+                      Text(stringResource(R.string.save))
+                    }
+              },
+              dismissButton = {
+                TextButton(
+                    onClick = { vm.cancelAdminAdd() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = TextColor)) {
+                      Text(stringResource(R.string.cancel))
+                    }
+              })
+        }
+
+        // Success/Error message dialog
+        if (ui.message != null) {
+          val isError = ui.message.startsWith("Error:")
+          val messageText = if (isError) ui.message.removePrefix("Error: ") else ui.message
+          AlertDialog(
+              onDismissRequest = { vm.clearMessage() },
+              title = {
+                Text(
+                    text = if (isError) "Error" else stringResource(R.string.admin),
+                    color = if (isError) MaterialTheme.colorScheme.error else MainColor)
+              },
+              text = { Text(text = messageText, style = MaterialTheme.typography.bodyMedium) },
+              confirmButton = {
+                TextButton(
+                    onClick = { vm.clearMessage() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
+                      Text("OK")
+                    }
+              })
         }
       }
 }

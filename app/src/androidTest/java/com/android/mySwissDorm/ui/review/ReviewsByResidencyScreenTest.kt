@@ -303,7 +303,7 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
         .onNodeWithTag(
             C.ReviewsByResidencyTag.reviewPosterName(anonymousReviewUid), useUnmergedTree = true)
         .assertIsDisplayed()
-        .assertTextEquals("Posted by anonymous")
+        .assertTextEquals("Posted by Anonymous")
   }
 
   @Test
@@ -513,7 +513,7 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
         .onNodeWithTag(
             C.ReviewsByResidencyTag.reviewPosterName(anonymousReviewUid), useUnmergedTree = true)
         .assertIsDisplayed()
-        .assertTextEquals("Posted by anonymous")
+        .assertTextEquals("Posted by Anonymous")
 
     // Check non-anonymous review shows actual name
     compose

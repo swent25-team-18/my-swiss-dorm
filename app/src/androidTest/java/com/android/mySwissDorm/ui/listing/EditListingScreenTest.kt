@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.listing
 
-import EditListingViewModel
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -606,8 +605,9 @@ class EditListingScreenTest : FirestoreTest() {
     val vm = EditListingViewModel(photoRepositoryLocal = fakeLocalRepo)
     vm.addPhoto(fakePhoto)
     composeRule.waitForIdle()
-    assertEquals("The added photo should be considered as a photo", 1, vm.newPhotos.size)
-    assertEquals(fakePhoto.fileName, vm.newPhotos.first().fileName)
+    assertEquals(
+        "The added photo should be considered as a photo", 1, vm.photoManager.newPhotos.size)
+    assertEquals(fakePhoto.fileName, vm.photoManager.newPhotos.first().fileName)
   }
 
   @Test
@@ -622,8 +622,9 @@ class EditListingScreenTest : FirestoreTest() {
     vm.getRentalListing(rentalListing3.uid)
     composeRule.waitForIdle()
     vm.removePhoto(fakePhoto.image, false)
+    composeRule.waitForIdle()
     assertEquals(1, fakeCloudRepo.retrieveCount)
-    assertEquals(fakePhoto.fileName, vm.deletedPhotos.first())
+    assertEquals(fakePhoto.fileName, vm.photoManager.deletedPhotos.first())
   }
 
   @Test
@@ -632,8 +633,8 @@ class EditListingScreenTest : FirestoreTest() {
     val vm = EditListingViewModel(photoRepositoryLocal = fakeLocalRepo)
     vm.addPhoto(fakePhoto)
     vm.removePhoto(fakePhoto.image, false)
-    assertEquals(0, vm.newPhotos.size)
-    assertEquals(0, vm.deletedPhotos.size)
+    assertEquals(0, vm.photoManager.newPhotos.size)
+    assertEquals(0, vm.photoManager.deletedPhotos.size)
   }
 
   @Test
@@ -649,8 +650,8 @@ class EditListingScreenTest : FirestoreTest() {
     composeRule.waitForIdle()
     vm.removePhoto(fakePhoto.image, false)
     vm.addPhoto(fakePhoto)
-    assertEquals(0, vm.newPhotos.size)
-    assertEquals(0, vm.deletedPhotos.size)
+    assertEquals(0, vm.photoManager.newPhotos.size)
+    assertEquals(0, vm.photoManager.deletedPhotos.size)
   }
 
   val fakePhoto2 =

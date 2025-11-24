@@ -81,7 +81,7 @@ class AddListingViewModel(
     viewModelScope.launch {
       try {
         rentalListingRepository.addRentalListing(listingToAdd)
-        state.pickedImages.forEach { photoRepositoryCloud.uploadPhoto(it) }
+        photoManager.commitChanges()
         clearErrorMsg()
         onConfirm(listingToAdd)
       } catch (e: Exception) {

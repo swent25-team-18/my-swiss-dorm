@@ -68,7 +68,7 @@ fun AddListingScreen(
           Column(Modifier.padding(16.dp)) {
             val ui = listingUIState
             Button(
-                onClick = { addListingViewModel.submitForm(onConfirm) },
+                onClick = { addListingViewModel.submitForm(onConfirm, context) },
                 enabled =
                     ui.isFormValid &&
                         !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true),

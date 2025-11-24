@@ -1,7 +1,9 @@
 package com.android.mySwissDorm.ui.profile
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,7 +31,7 @@ class RequestDetailViewModel(private val repo: FakeRequestRepository = FakeReque
   private val _ui = MutableStateFlow(RequestDetailUiState(isLoading = true))
   val ui: StateFlow<RequestDetailUiState> = _ui
 
-  fun load(id: String) {
+  fun load(id: String, context: Context) {
     // Make id visible immediately for tests/UX
     _ui.value = _ui.value.copy(id = id, isLoading = true, error = null)
 
@@ -38,7 +40,10 @@ class RequestDetailViewModel(private val repo: FakeRequestRepository = FakeReque
         val data = repo.fetchRequest(id)
         _ui.value = data.copy(isLoading = false)
       } catch (t: Throwable) {
-        _ui.value = _ui.value.copy(isLoading = false, error = t.message ?: "Unknown error")
+        _ui.value =
+            _ui.value.copy(
+                isLoading = false,
+                error = t.message ?: context.getString(R.string.unexpected_error))
       }
     }
   }

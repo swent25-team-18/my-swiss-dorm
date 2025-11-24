@@ -122,7 +122,7 @@ class SignInViewModel(
     }
   }
   /** Handle the sign in event by trying to log in without a Google account so as a guest. */
-  fun signInAnonymously() {
+  fun signInAnonymously(context: Context) {
     if (_uiState.value.isLoading) return
 
     viewModelScope.launch {
@@ -141,7 +141,9 @@ class SignInViewModel(
                   it.copy(
                       isLoading = false,
                       user = null,
-                      errMsg = failure.localizedMessage ?: "Guest login failed",
+                      errMsg =
+                          failure.localizedMessage
+                              ?: context.getString(R.string.sign_in_guest_login_failed),
                       signedOut = true)
                 }
               })

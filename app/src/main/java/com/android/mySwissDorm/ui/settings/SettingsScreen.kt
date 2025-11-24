@@ -462,7 +462,8 @@ fun SettingsScreenContent(
                                           .padding(top = 8.dp)
                                           .testTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
                                           .navigationBarsPadding()) {
-                                    Text("SIGN UP TO CREATE ACCOUNT")
+                                    Text(
+                                        stringResource(R.string.settings_sign_up_to_create_account))
                                   }
                             } else {
                               Button(

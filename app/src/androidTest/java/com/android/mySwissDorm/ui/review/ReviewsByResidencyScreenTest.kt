@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.review
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.test.core.app.ApplicationProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
@@ -44,6 +46,8 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
   private val reviewUid2 = "vortexReview2"
   private lateinit var review1: Review
   private lateinit var review2: Review
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
     runBlocking {
@@ -315,7 +319,7 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
     // Switch back to FakeUser1 (non-owner)
     switchToUser(FakeUser.FakeUser1)
     val testVm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
-    testVm.loadReviews("Vortex")
+    testVm.loadReviews("Vortex", context)
 
     compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
 
@@ -350,7 +354,7 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
     reviewsRepo.addReview(reviewWithVotes)
 
     val testVm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
-    testVm.loadReviews("Vortex")
+    testVm.loadReviews("Vortex", context)
 
     compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
 
@@ -378,7 +382,7 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
     // Switch back to FakeUser1 (non-owner)
     switchToUser(FakeUser.FakeUser1)
     val testVm = ReviewsByResidencyViewModel(reviewsRepo, profileRepo)
-    testVm.loadReviews("Vortex")
+    testVm.loadReviews("Vortex", context)
 
     compose.setContent { ReviewsByResidencyScreen(testVm, "Vortex") }
 

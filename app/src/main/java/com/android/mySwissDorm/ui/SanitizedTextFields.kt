@@ -411,7 +411,7 @@ fun ResidencyDropdownResID(
           if (isListing) {
             DropdownMenuItem(
                 modifier = Modifier.testTag(C.SanitizedResidencyDropdownTags.PRIVATE_ACCOMMODATION),
-                text = { Text("Private Accommodation") },
+                text = { Text(stringResource(R.string.private_accommodation)) },
                 onClick = {
                   onSelected("Private Accommodation")
                   expanded = false

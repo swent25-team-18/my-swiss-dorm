@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -61,6 +62,9 @@ fun ProfileScreen(
 ) {
   // Collect VM state (initial ensures preview/first composition has data)
   val state by viewModel.uiState.collectAsState(initial = ProfileUiState())
+  val context = LocalContext.current
+
+  LaunchedEffect(Unit) { viewModel.loadProfile(context) }
 
   ProfileScreenContent(
       state = state,
@@ -72,7 +76,7 @@ fun ProfileScreen(
       onChangeProfilePicture = onChangeProfilePicture,
       onBack = onBack,
       onToggleEditing = viewModel::toggleEditing,
-      onSave = viewModel::saveProfile)
+      onSave = { viewModel.saveProfile(context) })
 }
 
 /**
@@ -119,6 +123,8 @@ private fun ProfileScreenContent(
   var languageLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.language) }
   var residenceLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.residence) }
   var displayPhotoDialog by rememberSaveable(state.isEditing) { mutableStateOf(false) }
+
+  LaunchedEffect(Unit) {}
 
   // When entering edit mode, snapshot current VM values into locals to start from latest persisted
   // values

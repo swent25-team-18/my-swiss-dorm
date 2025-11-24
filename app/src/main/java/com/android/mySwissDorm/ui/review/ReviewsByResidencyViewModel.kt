@@ -1,8 +1,10 @@
 package com.android.mySwissDorm.ui.review
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.review.ReviewsRepository
@@ -70,7 +72,7 @@ class ReviewsByResidencyViewModel(
   private val _uiState = MutableStateFlow(ReviewsByResidencyUiState())
   val uiState: StateFlow<ReviewsByResidencyUiState> = _uiState.asStateFlow()
 
-  fun loadReviews(residencyName: String) {
+  fun loadReviews(residencyName: String, context: Context) {
     _uiState.update {
       it.copy(
           reviews = it.reviews.copy(loading = true, error = null), residencyName = residencyName)
@@ -85,7 +87,7 @@ class ReviewsByResidencyViewModel(
             all.map {
               val fullName =
                   if (it.isAnonymous) {
-                    "anonymous"
+                    context.getString(R.string.anonymous)
                   } else {
                     val userInfo =
                         try {
@@ -97,7 +99,8 @@ class ReviewsByResidencyViewModel(
                               e)
                           null
                         }
-                    userInfo?.let { "${userInfo.name} ${userInfo.lastName}" } ?: "Unknown"
+                    userInfo?.let { "${userInfo.name} ${userInfo.lastName}" }
+                        ?: context.getString(R.string.unknown)
                   }
               ReviewCardUI(
                   title = it.title,
@@ -118,7 +121,12 @@ class ReviewsByResidencyViewModel(
         _uiState.update {
           it.copy(
               reviews =
-                  it.reviews.copy(loading = false, error = e.message ?: "Failed to load reviews"))
+                  it.reviews.copy(
+                      loading = false,
+                      error =
+                          e.message
+                              ?: context.getString(
+                                  R.string.reviews_by_residency_vm_failed_to_load_reviews)))
         }
       }
     }
@@ -130,7 +138,7 @@ class ReviewsByResidencyViewModel(
    * Performs optimistic UI update, then calls the repository. On failure, reverts the optimistic
    * update.
    */
-  fun upvoteReview(reviewUid: String) {
+  fun upvoteReview(reviewUid: String, context: Context) {
     val currentUserId = auth.currentUser?.uid ?: return
 
     // Optimistic update
@@ -150,11 +158,11 @@ class ReviewsByResidencyViewModel(
     viewModelScope.launch {
       try {
         reviewsRepository.upvoteReview(reviewUid, currentUserId)
-        updateReviewVoteState(reviewUid, currentUserId)
+        updateReviewVoteState(reviewUid, currentUserId, context)
       } catch (e: Exception) {
         Log.e("ReviewsByResidencyViewModel", "Failed to upvote review", e)
         // Revert optimistic update by reloading
-        loadReviews(_uiState.value.residencyName)
+        loadReviews(_uiState.value.residencyName, context)
       }
     }
   }
@@ -165,7 +173,7 @@ class ReviewsByResidencyViewModel(
    * Performs optimistic UI update, then calls the repository. On failure, reverts the optimistic
    * update.
    */
-  fun downvoteReview(reviewUid: String) {
+  fun downvoteReview(reviewUid: String, context: Context) {
     val currentUserId = auth.currentUser?.uid ?: return
 
     // Optimistic update
@@ -185,11 +193,11 @@ class ReviewsByResidencyViewModel(
     viewModelScope.launch {
       try {
         reviewsRepository.downvoteReview(reviewUid, currentUserId)
-        updateReviewVoteState(reviewUid, currentUserId)
+        updateReviewVoteState(reviewUid, currentUserId, context)
       } catch (e: Exception) {
         Log.e("ReviewsByResidencyViewModel", "Failed to downvote review", e)
         // Revert optimistic update by reloading
-        loadReviews(_uiState.value.residencyName)
+        loadReviews(_uiState.value.residencyName, context)
       }
     }
   }
@@ -201,7 +209,11 @@ class ReviewsByResidencyViewModel(
    * @param reviewUid The unique identifier of the review to update.
    * @param currentUserId The unique identifier of the current user.
    */
-  private suspend fun updateReviewVoteState(reviewUid: String, currentUserId: String) {
+  private suspend fun updateReviewVoteState(
+      reviewUid: String,
+      currentUserId: String,
+      context: Context
+  ) {
     try {
       val updatedReview = reviewsRepository.getReview(reviewUid)
       _uiState.update { state ->
@@ -220,7 +232,7 @@ class ReviewsByResidencyViewModel(
     } catch (e: Exception) {
       Log.e("ReviewsByResidencyViewModel", "Failed to update vote state for review $reviewUid", e)
       // If we can't get the updated review, reload the entire list
-      loadReviews(_uiState.value.residencyName)
+      loadReviews(_uiState.value.residencyName, context)
     }
   }
 }

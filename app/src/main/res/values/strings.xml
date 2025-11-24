@@ -200,6 +200,8 @@
     <string name="view_user_profile_not_signed_in">Not signed in</string>
     <string name="view_user_profile_failed_to_block_user">Failed to block user</string>
     <string name="view_user_profile_failed_to_unblock_user">Failed to unblock user</string>
+    <string name="failed_to_load_user">Failed to load user</string>
+
 
     <!-- AddReviewScreen -->
     <string name="add_review_title">Add Review</string>
@@ -315,6 +317,17 @@
     <string name="sanitized_text_fields_price_required">Price is required</string>
     <string name="sanitized_text_fields_price_leading_zero">No leading zero</string>
     <string name="sanitized_text_fields_price_range">Price must be 1–10000 CHF</string>
+
+    <!-- Chat -->
+    <string name="new_chat">New Chat</string>
+    <string name="search_users">Search users...</string>
+    <string name="no_users_found">No users found</string>
+    <string name="no_users_match_your_search">No users match your search</string>
+    <string name="chat_created">Chat created!</string>
+    <string name="requested_messages">Requested Messages</string>
+    <string name="no_requested_messages">No requested messages</string>
+    <string name="no_message_provided">No message provided</string>
+    <string name="failed_to_create_chat">Failed to create chat</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

@@ -5,6 +5,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
@@ -62,7 +66,9 @@ class ViewListingViewModel(
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository
+        PhotoRepositoryProvider.cloud_repository,
+    private val requestedMessageRepository: RequestedMessageRepository =
+        RequestedMessageRepositoryProvider.repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
@@ -148,5 +154,61 @@ class ViewListingViewModel(
 
   fun setContactMessage(contactMessage: String) {
     _uiState.value = _uiState.value.copy(contactMessage = contactMessage)
+  }
+
+  /**
+   * Submits a contact message for the current listing. Creates a RequestedMessage that requires
+   * approval from the listing owner.
+   *
+   * @return true if the message was successfully submitted, false otherwise
+   */
+  fun submitContactMessage(): Boolean {
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val listing = _uiState.value.listing
+    val contactMessage = _uiState.value.contactMessage.trim()
+
+    if (currentUser == null || currentUser.isAnonymous) {
+      Log.e("ViewListingViewModel", "User not authenticated or is anonymous")
+      return false
+    }
+
+    if (contactMessage.isBlank()) {
+      Log.e("ViewListingViewModel", "Contact message is blank")
+      return false
+    }
+
+    if (listing.uid.isBlank() || listing.ownerId.isBlank()) {
+      Log.e("ViewListingViewModel", "Listing ID or owner ID is blank")
+      return false
+    }
+
+    if (currentUser.uid == listing.ownerId) {
+      Log.e("ViewListingViewModel", "User cannot send message to themselves")
+      return false
+    }
+
+    viewModelScope.launch {
+      try {
+        // Generate a unique ID for the message
+        val messageId = requestedMessageRepository.getNewUid()
+        val requestedMessage =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = currentUser.uid,
+                toUserId = listing.ownerId,
+                listingId = listing.uid,
+                listingTitle = listing.title,
+                message = contactMessage,
+                timestamp = System.currentTimeMillis(),
+                status = MessageStatus.PENDING)
+
+        requestedMessageRepository.createRequestedMessage(requestedMessage)
+        Log.d("ViewListingViewModel", "Contact message submitted successfully with ID: $messageId")
+      } catch (e: Exception) {
+        Log.e("ViewListingViewModel", "Error submitting contact message", e)
+      }
+    }
+
+    return true
   }
 }

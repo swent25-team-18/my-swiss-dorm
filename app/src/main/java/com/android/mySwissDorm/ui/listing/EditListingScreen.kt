@@ -280,7 +280,8 @@ fun EditListingScreen(
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DefaultAddPhotoButton(onSelectPhoto = { editListingViewModel.addPhoto(it) })
+                    DefaultAddPhotoButton(
+                        onSelectPhoto = { editListingViewModel.addPhoto(it) }, multiplePick = true)
                     ImageGrid(
                         imageUris = ui.pickedImages.map { it.image }.toSet(),
                         isEditingMode = true,

@@ -222,7 +222,8 @@ fun AddListingScreen(
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DefaultAddPhotoButton(onSelectPhoto = { addListingViewModel.addPhoto(it) })
+                    DefaultAddPhotoButton(
+                        onSelectPhoto = { addListingViewModel.addPhoto(it) }, multiplePick = true)
                     ImageGrid(
                         imageUris = ui.pickedImages.map { it.image }.toSet(),
                         isEditingMode = true,

@@ -2,7 +2,6 @@ package com.android.mySwissDorm.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +50,7 @@ import com.android.mySwissDorm.ui.theme.White
  * photo from his gallery.
  *
  * @param onSelectPhoto Function called when a Photo is selected.
+ * @param multiplePick Allows multiple photos to be picked from the gallery.
  */
 @Composable
 fun AddPhotoButton(
@@ -63,6 +63,7 @@ fun AddPhotoButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
+    multiplePick: Boolean = false,
     content: @Composable (RowScope.() -> Unit)
 ) {
 
@@ -86,7 +87,8 @@ fun AddPhotoButton(
           displayDialog = false
           onSelectPhoto(it)
         },
-        onDismissRequest = { displayDialog = false })
+        onDismissRequest = { displayDialog = false },
+        multiplePick = multiplePick)
   }
 }
 
@@ -97,9 +99,14 @@ fun AddPhotoButton(
  * @param onSelectPhoto Function called when a Photo is selected.
  * @param onDismissRequest Function called when the dialog is dismissed (e.g. tapping outside or
  *   pressing back). This should be considered a cancel action, make sure to handle cleanup.
+ * @param multiplePick whether the user can pick one or multiple images from gallery.
  */
 @Composable
-fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit) {
+fun AddPhotoDialog(
+    onSelectPhoto: (Photo) -> Unit,
+    onDismissRequest: () -> Unit,
+    multiplePick: Boolean = false
+) {
   Dialog(onDismissRequest = onDismissRequest) {
     Card(
         modifier =
@@ -127,23 +134,41 @@ fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit)
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.testTag(C.AddPhotoButtonTags.CAMERA_BUTTON_TEXT))
               }
-              GalleryButton(
-                  onSelect = { onSelectPhoto(it) },
-                  modifier = Modifier.fillMaxWidth(0.9f),
-                  colors =
-                      ButtonDefaults.filledTonalButtonColors(
-                          containerColor = MainColor, contentColor = White),
-                  shape = RoundedCornerShape(14.dp),
-              ) {
-                Text(
-                    text = stringResource(R.string.add_photo_button_from_gallery),
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.testTag(C.AddPhotoButtonTags.GALLERY_BUTTON_TEXT))
+              if (multiplePick) {
+                GalleryButtonMultiplePick(
+                    onSelect = { it.forEach { photo -> onSelectPhoto(photo) } },
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    colors =
+                        ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MainColor, contentColor = White),
+                    shape = RoundedCornerShape(14.dp),
+                ) {
+                  GalleryText()
+                }
+              } else {
+                GalleryButton(
+                    onSelect = { onSelectPhoto(it) },
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    colors =
+                        ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MainColor, contentColor = White),
+                    shape = RoundedCornerShape(14.dp),
+                ) {
+                  GalleryText()
+                }
               }
             }
       }
     }
   }
+}
+
+@Composable
+private fun GalleryText() {
+  Text(
+      text = stringResource(R.string.add_photo_button_from_gallery),
+      fontWeight = FontWeight.SemiBold,
+      modifier = Modifier.testTag(C.AddPhotoButtonTags.GALLERY_BUTTON_TEXT))
 }
 
 /**
@@ -152,7 +177,7 @@ fun AddPhotoDialog(onSelectPhoto: (Photo) -> Unit, onDismissRequest: () -> Unit)
  * @param onSelectPhoto Function called when a Photo is selected.
  */
 @Composable
-fun DefaultAddPhotoButton(onSelectPhoto: (Photo) -> Unit) {
+fun DefaultAddPhotoButton(onSelectPhoto: (Photo) -> Unit, multiplePick: Boolean = false) {
   AddPhotoButton(
       onSelectPhoto = onSelectPhoto,
       shape = RoundedCornerShape(14.dp),
@@ -162,9 +187,9 @@ fun DefaultAddPhotoButton(onSelectPhoto: (Photo) -> Unit) {
               contentColor = MainColor,
               disabledContentColor = TextBoxColor,
               disabledContainerColor = TextBoxColor),
-  ) {
-    Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
-    Spacer(Modifier.width(8.dp))
-    Text(stringResource(R.string.add_photo_button_default_text))
-  }
+      multiplePick = multiplePick) {
+        Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(R.string.add_photo_button_default_text))
+      }
 }

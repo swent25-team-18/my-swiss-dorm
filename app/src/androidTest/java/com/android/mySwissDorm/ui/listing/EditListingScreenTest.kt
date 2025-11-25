@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.listing
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -16,6 +17,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.core.net.toUri
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.photo.Photo
@@ -56,6 +58,8 @@ import org.junit.runner.RunWith
 class EditListingScreenTest : FirestoreTest() {
 
   @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
     PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
@@ -125,7 +129,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun vm_loads_listing_into_state() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(timeoutMillis = 5_000) { vm.uiState.value.title.isNotBlank() }
     assertEquals("title1", vm.uiState.value.title)
@@ -139,7 +143,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun vm_rejects_invalid_and_does_not_write() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
 
@@ -152,14 +156,14 @@ class EditListingScreenTest : FirestoreTest() {
     assertTrue(vm.uiState.value.price.isBlank())
     assertTrue(!vm.uiState.value.isFormValid)
 
-    val ok = vm.editRentalListing(rentalListing1.uid)
+    val ok = vm.editRentalListing(rentalListing1.uid, context)
     assertTrue(!ok)
   }
 
   @Test
   fun vm_edit_persists_to_firestore() = runTest {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
 
@@ -168,7 +172,7 @@ class EditListingScreenTest : FirestoreTest() {
     vm.setSizeSqm("25.0")
     vm.setHousingType(RoomType.STUDIO)
     assertTrue(vm.uiState.value.isFormValid)
-    val accepted = vm.editRentalListing(rentalListing1.uid)
+    val accepted = vm.editRentalListing(rentalListing1.uid, context)
     assertTrue(accepted)
     val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing1.uid)
     assertEquals("Cozy Studio - Updated", finalDoc.title)
@@ -183,7 +187,7 @@ class EditListingScreenTest : FirestoreTest() {
     val before = getAllRentalListingsByUserCount(Firebase.auth.currentUser!!.uid)
     assertTrue(before >= 1)
 
-    vm.deleteRentalListing(rentalListing1.uid)
+    vm.deleteRentalListing(rentalListing1.uid, context)
 
     val after = getAllRentalListingsByUserCount(Firebase.auth.currentUser!!.uid)
     assertEquals(before - 1, after)
@@ -274,7 +278,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun start_date_field_is_displayed() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitForIdle()
     setContentFor(vm, rentalListing1.uid)
@@ -295,7 +299,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun clicking_start_date_opens_date_picker() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
     setContentFor(vm, rentalListing1.uid)
@@ -329,7 +333,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun date_picker_can_be_dismissed() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
     setContentFor(vm, rentalListing1.uid)
@@ -377,7 +381,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun selecting_date_updates_viewmodel_state() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitForIdle()
     val originalDate = vm.uiState.value.startDate
@@ -409,7 +413,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun editing_start_date_persists_to_firestore() = runTest {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
     setContentFor(vm, rentalListing1.uid)
@@ -453,7 +457,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun clearErrorMsg_clears_error_from_state() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
 
@@ -468,7 +472,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun setResidency_privateAccommodation_sets_customLocation_mode() = run {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
 
@@ -483,7 +487,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun setResidency_valid_residency_clears_customLocation_and_sets_mapLatLng() = runTest {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
 
@@ -500,7 +504,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun getCityName_returns_correct_city() = runTest {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
     composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
 
     vm.setResidency("Vortex")
@@ -518,7 +522,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun editRentalListing_fails_if_residency_unknown() = runTest {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
 
@@ -526,14 +530,14 @@ class EditListingScreenTest : FirestoreTest() {
     vm.setPrice("1200")
     vm.setSizeSqm("25")
 
-    val ok = vm.editRentalListing(rentalListing1.uid)
+    val ok = vm.editRentalListing(rentalListing1.uid, context)
     assertTrue(!ok)
   }
 
   @Test
   fun editRentalListing_privateAccommodation_without_location_fails() = runTest {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
     composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
 
     vm.setResidency("Private Accommodation")
@@ -541,14 +545,14 @@ class EditListingScreenTest : FirestoreTest() {
     vm.setPrice("1000")
     vm.setSizeSqm("20")
 
-    val ok = vm.editRentalListing(rentalListing1.uid)
+    val ok = vm.editRentalListing(rentalListing1.uid, context)
     assertTrue(!ok)
   }
 
   @Test
   fun getRentalListing_with_invalid_id_sets_errorMsg() = runTest {
     val vm = EditListingViewModel()
-    vm.getRentalListing("id_that_does_not_exist")
+    vm.getRentalListing("id_that_does_not_exist", context)
 
     composeRule.waitUntil(3_000) { vm.uiState.value.errorMsg != null }
 
@@ -577,7 +581,7 @@ class EditListingScreenTest : FirestoreTest() {
   @Test
   fun clicking_custom_location_button_opens_dialog() = runTest {
     val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid)
+    vm.getRentalListing(rentalListing1.uid, context)
     composeRule.waitUntil(5_000) { vm.uiState.value.residencies.isNotEmpty() }
     setContentFor(vm, rentalListing1.uid)
     vm.setResidency("Private Accommodation")
@@ -619,7 +623,7 @@ class EditListingScreenTest : FirestoreTest() {
         EditListingViewModel(
             photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
     // Assuming this call will work
-    vm.getRentalListing(rentalListing3.uid)
+    vm.getRentalListing(rentalListing3.uid, context)
     composeRule.waitForIdle()
     vm.removePhoto(fakePhoto.image, false)
     composeRule.waitForIdle()
@@ -646,7 +650,7 @@ class EditListingScreenTest : FirestoreTest() {
         EditListingViewModel(
             photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
     // Assuming this call will work
-    vm.getRentalListing(rentalListing3.uid)
+    vm.getRentalListing(rentalListing3.uid, context)
     composeRule.waitForIdle()
     vm.removePhoto(fakePhoto.image, false)
     vm.addPhoto(fakePhoto)
@@ -667,13 +671,13 @@ class EditListingScreenTest : FirestoreTest() {
         EditListingViewModel(
             photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
     // Assuming this call will work
-    vm.getRentalListing(rentalListing3.uid)
+    vm.getRentalListing(rentalListing3.uid, context)
     composeRule.waitForIdle()
     vm.addPhoto(fakePhoto2)
     composeRule.waitForIdle()
     vm.removePhoto(fakePhoto.image, true)
     composeRule.waitForIdle()
-    vm.editRentalListing(rentalListing3.uid)
+    vm.editRentalListing(rentalListing3.uid, context)
     composeRule.waitForIdle()
     assertEquals(1, fakeCloudRepo.uploadCount)
     assertEquals(1, fakeCloudRepo.deleteCount)
@@ -688,9 +692,9 @@ class EditListingScreenTest : FirestoreTest() {
         EditListingViewModel(
             photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
     // Assuming this call will work
-    vm.getRentalListing(rentalListing3.uid)
+    vm.getRentalListing(rentalListing3.uid, context)
     composeRule.waitForIdle()
-    vm.deleteRentalListing(rentalPostID = rentalListing3.uid)
+    vm.deleteRentalListing(rentalPostID = rentalListing3.uid, context)
     composeRule.waitForIdle()
     assertEquals(1, fakeCloudRepo.deleteCount)
   }
@@ -704,11 +708,11 @@ class EditListingScreenTest : FirestoreTest() {
         EditListingViewModel(
             photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
     // Assuming this call will work
-    vm.getRentalListing(rentalListing3.uid)
+    vm.getRentalListing(rentalListing3.uid, context)
     composeRule.waitForIdle()
     vm.removePhoto(fakePhoto.image, true)
     composeRule.waitForIdle()
-    vm.deleteRentalListing(rentalPostID = rentalListing3.uid)
+    vm.deleteRentalListing(rentalPostID = rentalListing3.uid, context)
     composeRule.waitForIdle()
     assertEquals(1, fakeCloudRepo.deleteCount)
   }

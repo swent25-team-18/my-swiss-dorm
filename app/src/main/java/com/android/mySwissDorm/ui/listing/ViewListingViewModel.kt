@@ -137,7 +137,7 @@ class ViewListingViewModel(
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
         setErrorMsg(
-            "${context.getString(R.string.view_listing_failed_to_load_listings)}: ${e.message}")
+            "${context.getString(R.string.view_listing_failed_to_load_listings)} ${e.message}")
       }
     }
   }

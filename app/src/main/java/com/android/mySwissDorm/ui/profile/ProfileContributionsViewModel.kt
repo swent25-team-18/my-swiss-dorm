@@ -1,7 +1,9 @@
 package com.android.mySwissDorm.ui.profile
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -44,7 +46,7 @@ class ProfileContributionsViewModel(
   private val _ui = MutableStateFlow(ContributionsUiState())
   val ui: StateFlow<ContributionsUiState> = _ui
 
-  fun load(force: Boolean = false) {
+  fun load(force: Boolean = false, context: Context) {
     if (!force && _ui.value.items.isNotEmpty()) return
 
     val uid = currentUserId()
@@ -53,7 +55,9 @@ class ProfileContributionsViewModel(
           ContributionsUiState(
               items = emptyList(),
               isLoading = false,
-              error = "You must be signed in to see contributions.")
+              error =
+                  context.getString(
+                      R.string.profile_contributions_vm_must_be_signed_in_to_see_contributions))
       return
     }
 
@@ -68,15 +72,20 @@ class ProfileContributionsViewModel(
 
         val contributions =
             buildList {
-                  listings.forEach { listing -> add(listing.toContribution()) }
-                  reviews.forEach { review -> add(review.toContribution()) }
+                  listings.forEach { listing -> add(listing.toContribution(context)) }
+                  reviews.forEach { review -> add(review.toContribution(context)) }
                 }
                 .sortedByDescending { it.postedAt?.seconds ?: Long.MIN_VALUE }
 
         _ui.value = ContributionsUiState(items = contributions, isLoading = false)
       } catch (t: Throwable) {
         _ui.value =
-            _ui.value.copy(isLoading = false, error = t.message ?: "Failed to load contributions.")
+            _ui.value.copy(
+                isLoading = false,
+                error =
+                    t.message
+                        ?: context.getString(
+                            R.string.profile_contributions_vm_failed_to_load_contributions))
       }
     }
   }
@@ -86,17 +95,17 @@ class ProfileContributionsViewModel(
     _ui.value = ContributionsUiState(items = list, isLoading = false, error = null)
   }
 
-  private fun RentalListing.toContribution(): Contribution =
+  private fun RentalListing.toContribution(context: Context): Contribution =
       Contribution(
-          title = title.ifBlank { "Listing" },
+          title = title.ifBlank { context.getString(R.string.listing) },
           description = description,
           type = ContributionType.LISTING,
           referenceId = uid,
           postedAt = postedAt)
 
-  private fun Review.toContribution(): Contribution =
+  private fun Review.toContribution(context: Context): Contribution =
       Contribution(
-          title = title.ifBlank { "Review" },
+          title = title.ifBlank { context.getString(R.string.review) },
           description = reviewText,
           type = ContributionType.REVIEW,
           referenceId = uid,

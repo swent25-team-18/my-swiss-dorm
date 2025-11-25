@@ -21,7 +21,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -56,13 +58,17 @@ fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)) {
                           Text(
-                              text = "Sign in to create a profile",
+                              text =
+                                  stringResource(
+                                      R.string.guest_sign_in_pop_up_sign_in_to_create_profile),
                               style = MaterialTheme.typography.titleMedium,
                               color = TextColor)
                           Button(
                               onClick = onSignInClick,
                               colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
-                                Text("Sign In", color = BackGroundColor)
+                                Text(
+                                    stringResource(R.string.guest_sign_in_pop_up_sign_in),
+                                    color = BackGroundColor)
                               }
                         }
                   }

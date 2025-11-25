@@ -24,7 +24,6 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -45,13 +44,16 @@ class SelectUserToChatScreenTest : FirestoreTest() {
   @Before
   override fun setUp() = runTest {
     super.setUp()
-    // Initialize Stream Chat with dummy key for tests
+    // Initialize Stream Chat for tests (if API key is available)
+    // If initialization fails, tests will still run but Stream Chat features won't work
     if (!StreamChatProvider.isInitialized()) {
       try {
         StreamChatProvider.initialize(context)
-        assumeTrue("Stream Chat initialized", StreamChatProvider.isInitialized())
       } catch (e: Exception) {
-        assumeTrue("Stream Chat initialization failed: ${e.message}", false)
+        // Log but don't skip tests - Stream Chat is optional for SelectUserToChatScreen tests
+        // The screen should still work even if Stream Chat isn't initialized
+        android.util.Log.w(
+            "SelectUserToChatScreenTest", "Stream Chat initialization failed: ${e.message}")
       }
     }
   }

@@ -119,7 +119,7 @@ fun AdminPageScreen(
         Surface(shadowElevation = 8.dp) {
           Column(Modifier.padding(16.dp)) {
             Button(
-                onClick = vm::submit,
+                onClick = { vm.submit(context) },
                 enabled = !ui.isSubmitting,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =

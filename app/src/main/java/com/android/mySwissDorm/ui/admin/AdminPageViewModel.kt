@@ -1,9 +1,11 @@
 package com.android.mySwissDorm.ui.admin
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.city.CitiesRepository
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.city.City
@@ -124,35 +126,43 @@ class AdminPageViewModel(
     uiState = uiState.copy(website = v)
   }
 
-  private fun validate(): String? {
-    if (uiState.name.isBlank()) return "Name is required."
-    if (uiState.location == null) return "Location is required."
+  private fun validate(context: Context): String? {
+    if (uiState.name.isBlank()) return context.getString(R.string.admin_page_vm_name_required)
+    if (uiState.location == null) return context.getString(R.string.admin_page_vm_location_required)
 
     return when (uiState.selected) {
       EntityType.CITY -> {
         when {
-          uiState.description.isBlank() -> "Description is required for a City."
-          uiState.imageId.isBlank() -> "Image ID is required for a City."
+          uiState.description.isBlank() ->
+              context.getString(R.string.admin_page_vm_description_required_for_city)
+          uiState.imageId.isBlank() ->
+              context.getString(R.string.admin_page_vm_image_id_required_for_city)
           else -> null
         }
       }
       EntityType.RESIDENCY -> {
-        if (uiState.city.isBlank()) "City name is required for a Residency." else null
+        if (uiState.city.isBlank())
+            context.getString(R.string.admin_page_vm_city_name_required_for_residency)
+        else null
       }
       EntityType.UNIVERSITY -> {
         when {
-          uiState.city.isBlank() -> "City name is required for a University."
-          uiState.email.isBlank() -> "Email is required for a University."
-          uiState.phone.isBlank() -> "Phone is required for a University."
-          uiState.website.isBlank() -> "Website URL is required for a University."
+          uiState.city.isBlank() ->
+              context.getString(R.string.admin_page_vm_city_name_required_for_university)
+          uiState.email.isBlank() ->
+              context.getString(R.string.admin_page_vm_email_required_for_university)
+          uiState.phone.isBlank() ->
+              context.getString(R.string.admin_page_vm_phone_required_for_university)
+          uiState.website.isBlank() ->
+              context.getString(R.string.admin_page_vm_website_required_for_university)
           else -> null
         }
       }
     }
   }
 
-  fun submit() {
-    val error = validate()
+  fun submit(context: Context) {
+    val error = validate(context)
     if (error != null) {
       uiState = uiState.copy(message = error)
       return
@@ -198,9 +208,16 @@ class AdminPageViewModel(
             universitiesRepo.addUniversity(university)
           }
         }
-        uiState = UiState(selected = uiState.selected, message = "Saved successfully!")
+        uiState =
+            UiState(
+                selected = uiState.selected,
+                message = context.getString(R.string.admin_page_vm_saved_successfully))
       } catch (e: Exception) {
-        uiState = uiState.copy(isSubmitting = false, message = "Error: ${e.message ?: "unknown"}")
+        uiState =
+            uiState.copy(
+                isSubmitting = false,
+                message =
+                    "${context.getString(R.string.error)}: ${e.message ?: context.getString(R.string.unknown)}")
       }
     }
   }

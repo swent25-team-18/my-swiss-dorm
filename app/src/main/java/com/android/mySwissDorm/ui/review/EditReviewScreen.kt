@@ -263,12 +263,8 @@ fun EditReviewScreen(
   if (showDeleteConfirm) {
     AlertDialog(
         onDismissRequest = { showDeleteConfirm = false },
-        title = { Text("Delete review?", color = TextColor) },
-        text = {
-          Text(
-              "This will permanently delete your review. This action cannot be undone.",
-              color = TextColor)
-        },
+        title = { Text(stringResource(R.string.edit_review_delete_review), color = TextColor) },
+        text = { Text(stringResource(R.string.edit_review_delete_review_text), color = TextColor) },
         confirmButton = {
           TextButton(
               onClick = {
@@ -276,11 +272,13 @@ fun EditReviewScreen(
                 editReviewViewModel.deleteReview(reviewID)
                 onDelete(editReviewUIState.residencyName)
               }) {
-                Text("Delete", color = MainColor)
+                Text(stringResource(R.string.delete), color = MainColor)
               }
         },
         dismissButton = {
-          TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel", color = TextColor) }
+          TextButton(onClick = { showDeleteConfirm = false }) {
+            Text(stringResource(R.string.cancel), color = TextColor)
+          }
         })
   }
 }

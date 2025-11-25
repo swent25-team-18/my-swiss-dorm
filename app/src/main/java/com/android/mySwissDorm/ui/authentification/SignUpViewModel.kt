@@ -7,6 +7,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.profile.Profile
@@ -148,19 +149,25 @@ class SignUpViewModel(
                 })
       } catch (_: GetCredentialCancellationException) {
         _uiState.update {
-          it.copy(isLoading = false, user = null, errMsg = "Authentification cancelled")
+          it.copy(
+              isLoading = false,
+              user = null,
+              errMsg = context.getString(R.string.sign_up_vm_auth_cancelled))
         }
       } catch (e: GetCredentialException) {
         _uiState.update {
           it.copy(
               isLoading = false,
               user = null,
-              errMsg = "Failed to get credentials: ${e.localizedMessage}")
+              errMsg =
+                  "${context.getString(R.string.sign_up_vm_failed_to_get_credentials)} ${e.localizedMessage}")
         }
       } catch (e: Exception) {
         _uiState.update {
           it.copy(
-              isLoading = false, user = null, errMsg = "Unexpected error: ${e.localizedMessage}")
+              isLoading = false,
+              user = null,
+              errMsg = "${context.getString(R.string.unexpected_error)}: ${e.localizedMessage}")
         }
       }
     }

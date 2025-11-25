@@ -1,6 +1,8 @@
 package com.android.mySwissDorm.ui.listing
 
+import android.content.Context
 import androidx.core.net.toUri
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.photo.Photo
@@ -39,6 +41,8 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class AddListingViewModelTest : FirestoreTest() {
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
     PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
@@ -152,7 +156,7 @@ class AddListingViewModelTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val vm = freshVM()
 
-    vm.submitForm { _ -> fail("onConfirm must not be called when the form is invalid") }
+    vm.submitForm({ _ -> fail("onConfirm must not be called when the form is invalid") }, context)
 
     assertEquals("At least one field is not valid", vm.uiState.value.errorMsg)
   }
@@ -170,9 +174,9 @@ class AddListingViewModelTest : FirestoreTest() {
     vm.setPrice("1200.0")
     vm.setStartDate(Timestamp.now())
 
-    vm.submitForm { _ ->
-      fail("onConfirm must not be called when no location is set for Private Accommodation")
-    }
+    vm.submitForm(
+        { fail("onConfirm must not be called when no location is set for Private Accommodation") },
+        context)
 
     assertEquals("At least one field is not valid", vm.uiState.value.errorMsg)
   }
@@ -196,7 +200,7 @@ class AddListingViewModelTest : FirestoreTest() {
                 name = "Custom flat", latitude = 46.52, longitude = 6.63)
         vm.setCustomLocation(customLoc)
         assertTrue(vm.uiState.value.isFormValid)
-        vm.submitForm {}
+        vm.submitForm({}, context)
         assertNotEquals("At least one field is not valid", vm.uiState.value.errorMsg)
         assertNotEquals(
             "Please select a location for Private Accommodation", vm.uiState.value.errorMsg)
@@ -210,10 +214,12 @@ class AddListingViewModelTest : FirestoreTest() {
     val vm =
         AddListingViewModel(
             photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
-    vm.submitForm {
-      assertEquals(1, fakeLocalRepo.uploadCount)
-      assertEquals(1, fakeCloudRepo.uploadCount)
-    }
+    vm.submitForm(
+        {
+          assertEquals(1, fakeLocalRepo.uploadCount)
+          assertEquals(1, fakeCloudRepo.uploadCount)
+        },
+        context)
   }
   // test for guest mode in add listing
   @Test
@@ -228,7 +234,7 @@ class AddListingViewModelTest : FirestoreTest() {
     vm.setPrice("1200.0")
     vm.setStartDate(Timestamp.now())
     assertTrue("Form itself should be valid", vm.uiState.value.isFormValid)
-    vm.submitForm { fail("onConfirm must not be called for guest users") }
+    vm.submitForm({ fail("onConfirm must not be called for guest users") }, context)
     assertEquals("Guest users cannot create listings", vm.uiState.value.errorMsg)
   }
 }

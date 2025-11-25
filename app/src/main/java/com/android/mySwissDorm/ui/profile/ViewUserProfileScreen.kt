@@ -68,6 +68,7 @@ fun ViewUserProfileScreen(
     onSendMessage: () -> Unit,
     previewUi: ViewProfileUiState? = null
 ) {
+  val context = LocalContext.current
   // Obtain a real VM only when NOT in preview
   val realVm: ViewProfileScreenViewModel? =
       if (previewUi == null) (viewModel ?: viewModel()) else null
@@ -76,7 +77,7 @@ fun ViewUserProfileScreen(
   if (realVm != null && ownerId != null) {
     LaunchedEffect(ownerId) {
       // Idempotent load tied to ownerId changes
-      realVm.loadProfile(ownerId)
+      realVm.loadProfile(ownerId, context)
     }
   }
 
@@ -89,7 +90,6 @@ fun ViewUserProfileScreen(
             vmUi
           }
 
-  val context = LocalContext.current
   val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
   val isCurrentUser = ownerId == currentUserId
 
@@ -118,10 +118,12 @@ fun ViewUserProfileScreen(
               modifier = Modifier.fillMaxSize().padding(padding),
               contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                  Text("Error: ${ui.error}", modifier = Modifier.testTag(T.ERROR_TEXT))
+                  Text(
+                      "${stringResource(R.string.error)}: ${ui.error}",
+                      modifier = Modifier.testTag(T.ERROR_TEXT))
                   Spacer(Modifier.height(12.dp))
                   Button(
-                      onClick = { if (ownerId != null) realVm?.loadProfile(ownerId) },
+                      onClick = { if (ownerId != null) realVm?.loadProfile(ownerId, context) },
                       modifier = Modifier.testTag(T.RETRY_BTN)) {
                         Text(stringResource(R.string.retry))
                       }

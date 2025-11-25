@@ -105,7 +105,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     val vm = ViewProfileScreenViewModel(profileRepo)
 
     // Load profile first
-    vm.loadProfile(targetUserUid)
+    vm.loadProfile(targetUserUid, context)
     waitUntil { vm.uiState.value.name.isNotEmpty() }
 
     // Initially not blocked
@@ -153,7 +153,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     // The button should show "Blocked" state (violet background, white text)
     // We verify this by checking the UI state through the ViewModel
     val vm = ViewProfileScreenViewModel(profileRepo)
-    vm.loadProfile(targetUserUid)
+    vm.loadProfile(targetUserUid, context)
     waitUntil { vm.uiState.value.isBlocked }
 
     assertTrue(vm.uiState.value.isBlocked)
@@ -192,7 +192,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     val vm = ViewProfileScreenViewModel(profileRepo)
 
     // Load profile first
-    vm.loadProfile(targetUserUid)
+    vm.loadProfile(targetUserUid, context)
     waitUntil { vm.uiState.value.name.isNotEmpty() }
 
     // Initially not blocked
@@ -215,7 +215,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     assertTrue(vm.uiState.value.isBlocked)
 
     // Reload profile and verify blocked status is detected
-    vm.loadProfile(targetUserUid)
+    vm.loadProfile(targetUserUid, context)
     waitUntil { vm.uiState.value.isBlocked }
     assertTrue(vm.uiState.value.isBlocked)
   }
@@ -230,7 +230,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
         .await()
 
     val vm = ViewProfileScreenViewModel(profileRepo)
-    vm.loadProfile(targetUserUid)
+    vm.loadProfile(targetUserUid, context)
     waitUntil { vm.uiState.value.isBlocked }
     assertTrue(vm.uiState.value.isBlocked)
 

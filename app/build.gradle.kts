@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.ktfmt)
     alias(libs.plugins.sonar)
     alias(libs.plugins.gms)
+    alias(libs.plugins.ksp)
     id("jacoco")
 }
 
@@ -195,7 +196,9 @@ dependencies {
     // Networking
     implementation(libs.okhttp)
 
-    
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     // --- Coroutines ---
     // Runtime on Android (explicit, recommended)

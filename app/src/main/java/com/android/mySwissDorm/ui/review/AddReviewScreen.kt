@@ -27,6 +27,7 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
+import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -197,8 +198,12 @@ fun AddReviewScreen(
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DefaultAddPhotoButton(onSelectPhoto = {}) // TODO display the photo
-              }
+                    DefaultAddPhotoButton(onSelectPhoto = { addReviewViewModel.addPhoto(it) })
+                    ImageGrid(
+                        imageUris = ui.images.map { it.image }.toSet(),
+                        isEditingMode = true,
+                        onRemove = { addReviewViewModel.removePhoto(it) })
+                  }
             }
       }
 }

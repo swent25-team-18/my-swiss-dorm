@@ -1,10 +1,14 @@
 package com.android.mySwissDorm.ui.review
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.review.ReviewsRepository
@@ -12,6 +16,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.model.review.computeDownvoteChange
 import com.android.mySwissDorm.model.review.computeUpvoteChange
+import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +48,7 @@ data class ReviewCardUI(
     val netScore: Int = 0,
     val userVote: VoteType = VoteType.NONE,
     val isOwner: Boolean = false,
+    val image: Uri? = null
 )
 
 /**
@@ -68,9 +74,15 @@ class ReviewsByResidencyViewModel(
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val profilesRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ReviewsByResidencyUiState())
   val uiState: StateFlow<ReviewsByResidencyUiState> = _uiState.asStateFlow()
+
+  private val photoManager =
+      PhotoManager(
+          photoRepositoryLocal = photoRepositoryLocal, photoRepositoryCloud = photoRepositoryCloud)
 
   fun loadReviews(residencyName: String, context: Context) {
     _uiState.update {
@@ -102,6 +114,19 @@ class ReviewsByResidencyViewModel(
                     userInfo?.let { "${userInfo.name} ${userInfo.lastName}" }
                         ?: context.getString(R.string.unknown)
                   }
+              val photoUri: Uri? =
+                  it.imageUrls.let { imagesUrl ->
+                    if (imagesUrl.isNotEmpty()) {
+                      photoManager.initialize(listOf(imagesUrl.first()))
+                      if (photoManager.photoLoaded.isNotEmpty()) {
+                        photoManager.photoLoaded.first().image
+                      } else {
+                        null
+                      }
+                    } else {
+                      null
+                    }
+                  }
               ReviewCardUI(
                   title = it.title,
                   grade = it.grade,
@@ -111,6 +136,7 @@ class ReviewsByResidencyViewModel(
                   reviewUid = it.uid,
                   netScore = it.getNetScore(),
                   userVote = it.getUserVote(currentUserId),
+                  image = photoUri,
                   isOwner = currentUserId == it.ownerId)
             }
 

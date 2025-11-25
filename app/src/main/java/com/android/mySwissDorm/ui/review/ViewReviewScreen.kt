@@ -62,6 +62,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
+import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -198,11 +199,10 @@ fun ViewReviewScreen(
                 Text(review.reviewText, style = MaterialTheme.typography.bodyLarge)
               }
 
-              // Photos placeholder
-              PlaceholderBlock(
-                  text = "${stringResource(R.string.photos)} (Not implemented yet)",
-                  height = 220.dp,
-                  modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
+              ImageGrid(
+                  imageUris = uiState.images.map { it.image }.toSet(),
+                  isEditingMode = false,
+                  onRemove = {})
 
               // Location placeholder
               viewReviewViewModel.setLocationOfReview(reviewUid)

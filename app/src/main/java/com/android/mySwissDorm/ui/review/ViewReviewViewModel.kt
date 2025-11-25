@@ -102,15 +102,16 @@ class ViewReviewViewModel(
         val currentUserId = auth.currentUser?.uid
         val fullNameOfPoster =
             if (review.isAnonymous) {
-              "anonymous"
+              context.getString(R.string.anonymous)
             } else {
               try {
                 val ownerUserInfo = profilesRepository.getProfile(review.ownerId).userInfo
                 ownerUserInfo.name + " " + ownerUserInfo.lastName
               } catch (e: Exception) {
                 Log.w("ViewReviewViewModel", "Could not fetch profile for review owner", e)
-                setErrorMsg("Failed to load Review: Profile not found")
-                "Unknown"
+                setErrorMsg(
+                    "${context.getString(R.string.view_review_failed_to_load_review)}: ${e.message}")
+                context.getString(R.string.unknown)
               }
             }
         val isOwner = currentUserId == review.ownerId

@@ -1,11 +1,13 @@
 package com.android.mySwissDorm.ui.overview
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.core.net.toUri
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
@@ -41,6 +43,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
   @get:Rule val compose = createComposeRule()
 
+  private val context = ApplicationProvider.getApplicationContext<Context>()
   private val profileRepo = ProfileRepositoryProvider.repository
   private val listingsRepo = RentalListingRepositoryProvider.repository
   private val reviewsRepo = ReviewsRepositoryProvider.repository
@@ -783,7 +786,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   fun empty_state_shows_filtered_message_when_filters_active() = runTest {
     setupScreenWithListings()
     vm.setPriceFilter(10000.0, 20000.0) // Very high price range that won't match anything
-    vm.loadListings(lausanneLocation)
+    vm.loadListings(lausanneLocation, context)
     compose.waitUntil(5_000) { !vm.uiState.value.listings.loading }
 
     if (vm.uiState.value.listings.items.isEmpty()) {
@@ -864,7 +867,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
     val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
     val vm = BrowseCityViewModel(photoRepositoryCloud = fakeCloudRepo)
-    vm.loadListings(fribourgLocation)
+    vm.loadListings(fribourgLocation, context)
     compose.waitForIdle()
     assertEquals(1, fakeCloudRepo.retrieveCount)
   }
@@ -883,7 +886,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             isAnonymous = true)
     reviewsRepo.addReview(anonymousReview)
 
-    vm.loadResidencies(lausanneLocation)
+    vm.loadResidencies(lausanneLocation, context)
     compose.setContent { BrowseCityScreen(location = lausanneLocation, browseCityViewModel = vm) }
 
     compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
@@ -924,7 +927,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
             isAnonymous = false)
     reviewsRepo.addReview(nonAnonymousReview)
 
-    vm.loadResidencies(lausanneLocation)
+    vm.loadResidencies(lausanneLocation, context)
     compose.setContent { BrowseCityScreen(location = lausanneLocation, browseCityViewModel = vm) }
 
     compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()

@@ -68,7 +68,7 @@ fun AddListingScreen(
           Column(Modifier.padding(16.dp)) {
             val ui = listingUIState
             Button(
-                onClick = { addListingViewModel.submitForm(onConfirm) },
+                onClick = { addListingViewModel.submitForm(onConfirm, context) },
                 enabled =
                     ui.isFormValid &&
                         !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true),
@@ -222,7 +222,8 @@ fun AddListingScreen(
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DefaultAddPhotoButton(onSelectPhoto = { addListingViewModel.addPhoto(it) })
+                    DefaultAddPhotoButton(
+                        onSelectPhoto = { addListingViewModel.addPhoto(it) }, multiplePick = true)
                     ImageGrid(
                         imageUris = ui.pickedImages.map { it.image }.toSet(),
                         isEditingMode = true,

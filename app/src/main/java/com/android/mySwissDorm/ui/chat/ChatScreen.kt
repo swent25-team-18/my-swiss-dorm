@@ -14,8 +14,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -117,7 +119,7 @@ fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
           CircularProgressIndicator()
           Spacer(modifier = Modifier.height(16.dp))
-          Text("Connecting to chat...")
+          Text(stringResource(R.string.chat_screen_connecting))
         }
       }
     } else {

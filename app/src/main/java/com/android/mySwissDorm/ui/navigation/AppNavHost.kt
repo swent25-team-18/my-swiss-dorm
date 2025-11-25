@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -194,7 +195,11 @@ fun AppNavHost(
       SettingsScreen(
           onProfileClick = {
             if (userAnonymous) {
-              Toast.makeText(context, "Sign in to create profile", Toast.LENGTH_SHORT).show()
+              Toast.makeText(
+                      context,
+                      context.getString(R.string.app_nav_host_sign_in_to_create_profile),
+                      Toast.LENGTH_SHORT)
+                  .show()
               navActions.navigateTo(Screen.Profile)
             } else {
               navActions.navigateTo(Screen.Profile)
@@ -205,7 +210,10 @@ fun AppNavHost(
           isAdmin = isAdmin,
           onContributionClick = {
             if (userAnonymous) {
-              Toast.makeText(context, "Sign in to see your contributions", Toast.LENGTH_SHORT)
+              Toast.makeText(
+                      context,
+                      context.getString(R.string.app_nav_host_sign_in_to_see_contributions),
+                      Toast.LENGTH_SHORT)
                   .show()
               navActions.navigateTo(Screen.ProfileContributions)
             } else {
@@ -241,7 +249,9 @@ fun AppNavHost(
           MapScreen(
               latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
               longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
-              title = backStackEntry.arguments?.getString("title") ?: "Location",
+              title =
+                  backStackEntry.arguments?.getString("title")
+                      ?: context.getString(R.string.location),
               nameId = backStackEntry.arguments?.getInt("name") ?: R.string.location,
               onGoBack = { navController.popBackStack() })
         }
@@ -291,13 +301,13 @@ fun AppNavHost(
     composable(Screen.ProfileContributions.route) {
       val vm: ProfileContributionsViewModel = viewModel()
       val ui by vm.ui.collectAsState()
-      LaunchedEffect(Unit) { vm.load(force = true) }
+      LaunchedEffect(Unit) { vm.load(force = true, context) }
       val currentUser = FirebaseAuth.getInstance().currentUser
       if (currentUser != null && currentUser.isAnonymous) {
         SignInPopUp(
             onSignInClick = { navActions.navigateTo(Screen.SignIn) },
             onBack = { navActions.goBack() },
-            title = "My contributions")
+            title = stringResource(R.string.app_nav_host_my_contributions))
       } else {
         ProfileContributionsScreen(
             contributions = ui.items,
@@ -529,7 +539,7 @@ fun AppNavHost(
         SignInPopUp(
             onSignInClick = { navActions.navigateTo(Screen.SignIn) },
             onBack = { navActions.goBack() },
-            title = "Profile")
+            title = stringResource(R.string.app_nav_host_profile))
       } else {
         ProfileScreen(
             onBack = { navActions.goBack() },

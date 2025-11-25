@@ -74,7 +74,7 @@ class ViewProfileScreenViewModel(
    * - Logs the exception.
    * - Sets a human-readable error message in [ViewProfileUiState.error].
    */
-  fun loadProfile(ownerId: String) {
+  fun loadProfile(ownerId: String, context: Context) {
     viewModelScope.launch {
       try {
         // Repository call; throws on failure.
@@ -97,7 +97,7 @@ class ViewProfileScreenViewModel(
         // Handle null residency name
         var temp = ""
         if (profile.userInfo.residencyName == null) {
-          temp = "No Residency"
+          temp = context.getString(R.string.view_user_profile_no_residency)
         } else {
           temp = profile.userInfo.residencyName
         }
@@ -112,7 +112,8 @@ class ViewProfileScreenViewModel(
                 isBlocked = isBlocked)
       } catch (e: Exception) {
         Log.e("ViewUserProfileViewModel", "Error loading profile", e)
-        setErrorMsg("Failed to load profile: ${e.message}")
+        setErrorMsg(
+            "${context.getString(R.string.view_user_profile_failed_to_load_profile)} ${e.message}")
       }
     }
   }

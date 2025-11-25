@@ -93,11 +93,11 @@ fun SignInScreen(
           TextButton(
               onClick = {
                 if (!uiState.isLoading) {
-                  authViewModel.signInAnonymously()
+                  authViewModel.signInAnonymously(context)
                 }
               },
               modifier = Modifier.testTag(C.Tag.SIGN_IN_GUEST_BUTTON)) {
-                Text(text = ("Continue as guest"), color = Gray)
+                Text(text = stringResource(R.string.continue_as_guest), color = Gray)
               }
 
           Spacer(modifier = Modifier.height(225.dp))

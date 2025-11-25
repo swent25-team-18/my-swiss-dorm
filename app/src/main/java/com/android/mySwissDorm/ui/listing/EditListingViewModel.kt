@@ -1,7 +1,6 @@
 package com.android.mySwissDorm.ui.listing
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R

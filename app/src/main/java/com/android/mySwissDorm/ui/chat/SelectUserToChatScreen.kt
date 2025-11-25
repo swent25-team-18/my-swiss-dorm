@@ -88,7 +88,7 @@ fun SelectUserToChatScreen(
 
   if (currentUser == null) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      stringResource(R.string.view_user_profile_not_signed_in)
+      Text(stringResource(R.string.view_user_profile_not_signed_in))
     }
     return
   }
@@ -144,7 +144,7 @@ fun SelectUserToChatScreen(
   Scaffold(
       topBar = {
         TopAppBar(
-            title = { stringResource(R.string.new_chat) },
+            title = { Text(stringResource(R.string.new_chat)) },
             navigationIcon = {
               IconButton(onClick = onBackClick) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back")

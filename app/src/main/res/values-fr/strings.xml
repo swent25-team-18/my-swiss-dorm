@@ -317,9 +317,13 @@
     <string name="sanitized_text_fields_price_required">Le prix est requis</string>
     <string name="sanitized_text_fields_price_leading_zero">Aucun zéro initial</string>
     <string name="sanitized_text_fields_price_range">Le prix doit être entre 1 et 10’000 CHF</string>
+    <!-- Map -->
+    <string name="No_image">Pas d\'images</string>
+    <string name="map_view">Carte d\'annonces</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_second">SecondActivity</string>
     <string name="default_web_client_id">587708119125-oqlivs13orms6lmp32pujt11ft3fat3h.apps.googleusercontent.com</string>
+    <string name="of">de</string>
 </resources>

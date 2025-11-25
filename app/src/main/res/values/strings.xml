@@ -315,9 +315,13 @@
     <string name="sanitized_text_fields_price_required">Price is required</string>
     <string name="sanitized_text_fields_price_leading_zero">No leading zero</string>
     <string name="sanitized_text_fields_price_range">Price must be 1–10000 CHF</string>
+    <!-- Map-->
+    <string name="No_image">No Images</string>
+    <string name="map_view">Listings map</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_second">SecondActivity</string>
     <string name="default_web_client_id">587708119125-oqlivs13orms6lmp32pujt11ft3fat3h.apps.googleusercontent.com</string>
+    <string name="of">of</string>
 </resources>

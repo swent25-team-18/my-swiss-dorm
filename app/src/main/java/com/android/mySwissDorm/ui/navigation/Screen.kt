@@ -9,6 +9,7 @@ sealed class Screen(
     @StringRes val nameId: Int,
     val isTopLevelDestination: Boolean = false,
 ) {
+  data object CityMapOverview : Screen("cityMapOverview", R.string.location)
   // Auth flow
   data object SignIn : Screen("signIn", R.string.screen_sign_in)
 

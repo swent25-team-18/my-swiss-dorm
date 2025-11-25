@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.chat
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,12 +22,15 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.resources.C
@@ -91,7 +95,7 @@ fun ChannelsScreen(
 
   if (currentUser == null) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      Text("Please sign in to view chats")
+      Text(stringResource(R.string.channels_screen_please_sign_in))
     }
     return
   }
@@ -219,7 +223,7 @@ fun ChannelsScreen(
     TopAppBar(
         title = {
           Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Text("Chats")
+            Text(stringResource(R.string.channels_screen_chats))
           }
         },
         actions = {
@@ -262,7 +266,7 @@ fun ChannelsScreen(
           onValueChange = { searchQuery = it },
           placeholder = {
             Text(
-                "Search chats...",
+                stringResource(R.string.channels_screen_search_chats),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
           },
           leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MainColor) },
@@ -304,7 +308,12 @@ fun ChannelsScreen(
           modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.EMPTY_STATE),
           contentAlignment = Alignment.Center) {
             Text(
-                text = if (searchQuery.isBlank()) "No chats yet" else "No chats found",
+                text =
+                    if (searchQuery.isBlank()) {
+                      stringResource(R.string.channels_screen_no_chats_yet)
+                    } else {
+                      stringResource(R.string.channels_screen_no_chats_found)
+                    },
                 style = MaterialTheme.typography.bodyLarge,
                 color = TextColor.copy(alpha = 0.7f))
           }
@@ -358,13 +367,16 @@ internal fun ChannelItem(
 ) {
   // Get the other user (not current user)
   val otherMember = channel.members.find { it.user.id != currentUserId }
-  val otherUserName = otherMember?.user?.name ?: "Unknown User"
+  val otherUserName =
+      otherMember?.user?.name ?: stringResource(R.string.channels_screen_unknown_user)
   val otherUserImage = otherMember?.user?.image
 
   // Get last message
   val lastMessage = channel.messages.lastOrNull()
-  val lastMessageText = lastMessage?.text ?: "No messages yet"
-  val lastMessageTime = lastMessage?.createdAt?.let { formatMessageTime(it) } ?: ""
+  val lastMessageText =
+      lastMessage?.text ?: stringResource(R.string.channels_screen_no_messages_yet)
+  val lastMessageTime =
+      lastMessage?.createdAt?.let { formatMessageTime(it, LocalContext.current) } ?: ""
 
   // Unread count - calculate manually from last read position
   // Note: Stream Chat SDK doesn't expose unreadCount directly, so we calculate it
@@ -473,7 +485,7 @@ internal fun ChannelItem(
  * @param timestamp The [Date] object to format.
  * @return A human-readable string representing the relative time or formatted date.
  */
-internal fun formatMessageTime(timestamp: Date): String {
+internal fun formatMessageTime(timestamp: Date, context: Context): String {
   val now = Date()
   val diff = now.time - timestamp.time
   val minutes = diff / (1000 * 60)
@@ -481,11 +493,11 @@ internal fun formatMessageTime(timestamp: Date): String {
   val days = diff / (1000 * 60 * 60 * 24)
 
   return when {
-    minutes < 1 -> "Just now"
-    minutes < 60 -> "${minutes}m ago"
-    hours < 24 -> "${hours}h ago"
-    days == 1L -> "Yesterday"
-    days < 7 -> "${days}d ago"
+    minutes < 1 -> context.getString(R.string.channels_screen_just_now)
+    minutes < 60 -> context.getString(R.string.channels_screen_minutes_ago, minutes)
+    hours < 24 -> context.getString(R.string.channels_screen_hours_ago, hours)
+    days == 1L -> context.getString(R.string.channels_screen_yesterday)
+    days < 7 -> context.getString(R.string.channels_screen_days_ago, days)
     else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(timestamp)
   }
 }

@@ -5,7 +5,7 @@
     <string name="accept">Accepter</string>
     <string name="accessibility">Accessibilité</string>
     <string name="account">Compte</string>
-    <string name="admin">Administrateur</string>
+    <string name="admin">Admin</string>
     <string name="anonymous">Anonyme</string>
     <string name="apply">Postuler</string>
     <string name="block">Bloquer</string>
@@ -16,11 +16,12 @@
     <string name="delete">Supprimer</string>
     <string name="description">Description</string>
     <string name="edit">Modifier</string>
-    <string name="email">Email</string>
+    <string name="email">E-mail</string>
     <string name="email_address">Adresse e-mail</string>
+    <string name="error">Erreur</string>
     <string name="first_name">Prénom</string>
     <string name="go_back">Retour</string>
-    <string name="homepage">Page d’accueil</string>
+    <string name="homepage">Accueil</string>
     <string name="identifier">Identifiant</string>
     <string name="image">Image</string>
     <string name="language">Langue</string>
@@ -31,16 +32,18 @@
     <string name="max">Max</string>
     <string name="message">Message</string>
     <string name="min">Min</string>
-    <string name="most_recent">Les plus récents</string>
+    <string name="most_recent">Plus récent</string>
     <string name="name">Nom</string>
     <string name="not_available">Non disponible</string>
     <string name="not_set">Non défini</string>
     <string name="notifications">Notifications</string>
+    <string name="ok">OK</string>
     <string name="optional">optionnel</string>
     <string name="phone">Téléphone</string>
     <string name="photos">Photos</string>
     <string name="price">Prix</string>
     <string name="privacy">Confidentialité</string>
+    <string name="private_accommodation">Logement privé</string>
     <string name="reject">Rejeter</string>
     <string name="request">Demande</string>
     <string name="requester">Demandeur</string>
@@ -53,44 +56,80 @@
     <string name="search">Rechercher</string>
     <string name="size">Taille</string>
     <string name="start_date">Date de début</string>
-    <string name="starting">Commence</string>
+    <string name="starting">Début</string>
     <string name="title">Titre</string>
     <string name="unblock">Débloquer</string>
     <string name="unexpected_error">Erreur inattendue</string>
     <string name="university">Université</string>
+    <string name="unknown">Inconnu</string>
     <string name="user">Utilisateur</string>
     <string name="website">Site web</string>
 
     <!-- AdminPageScreen -->
     <string name="admin_page_admins_only">Réservé aux administrateurs.</string>
-    <string name="admin_page_title">Page Administrateur</string>
+    <string name="admin_page_title">Page Admin</string>
     <string name="admin_page_image_id">ID de l’image</string>
     <string name="admin_page_select_location">Sélectionner une localisation</string>
+
+    <!-- AdminPageViewModel -->
+    <string name="admin_page_vm_name_required">Le nom est requis.</string>
+    <string name="admin_page_vm_location_required">La localisation est requise.</string>
+    <string name="admin_page_vm_description_required_for_city">La description est requise pour une ville.</string>
+    <string name="admin_page_vm_image_id_required_for_city">L’ID de l’image est requis pour une ville.</string>
+    <string name="admin_page_vm_city_name_required_for_residency">Le nom de la ville est requis pour une résidence.</string>
+    <string name="admin_page_vm_city_name_required_for_university">Le nom de la ville est requis pour une université.</string>
+    <string name="admin_page_vm_email_required_for_university">L’e-mail est requis pour une université.</string>
+    <string name="admin_page_vm_phone_required_for_university">Le téléphone est requis pour une université.</string>
+    <string name="admin_page_vm_website_required_for_university">L’URL du site web est requise pour une université.</string>
+    <string name="admin_page_vm_saved_successfully">Enregistré avec succès.</string>
 
     <!-- SignInScreen -->
     <string name="app_name">MySwissDorm</string>
     <string name="login_in_text">Connexion</string>
-    <string name="create_account_text">Pas de compte ? Inscris-toi !</string>
+    <string name="create_account_text">Pas de compte ? Inscrivez-vous !</string>
+    <string name="continue_as_guest">Continuer en invité</string>
 
     <!-- SignInViewModel -->
-    <string name="sign_in_not_registered">Ce compte n\'est pas enregistré</string>
+    <string name="sign_in_not_registered">Ce compte n’est pas enregistré</string>
     <string name="sign_in_auth_cancelled">Authentification annulée</string>
-    <string name="sign_in_failed_to_get_credentials">Échec de l\'obtention des identifiants</string>
+    <string name="sign_in_failed_to_get_credentials">Impossible d’obtenir les identifiants</string>
+    <string name="sign_in_guest_login_failed">Échec de la connexion invité</string>
 
     <!-- SignUpScreen -->
     <string name="sign_up_first_name_placeholder">Prénom</string>
     <string name="sign_up_last_name_placeholder">Nom</string>
-    <string name="sign_up_email_placeholder">Email</string>
+    <string name="sign_up_email_placeholder">E-mail</string>
     <string name="sign_up_phone_number_placeholder">Numéro de téléphone</string>
     <string name="sign_up_residency">Résidence</string>
     <string name="sign_up_university">Université</string>
     <string name="sign_up_button_text">S’inscrire avec Google</string>
-    <string name="sign_up_button_help_text">Veuillez remplir les champs correctement</string>
+    <string name="sign_up_button_help_text">Veuillez remplir correctement les champs</string>
     <string name="sign_up_button_not_specified">Non spécifié</string>
     <string name="sign_up_name_help">Votre prénom doit contenir moins de 20 caractères</string>
     <string name="sign_up_last_name_help">Votre nom doit contenir moins de 20 caractères</string>
     <string name="sign_up_email_help">Vous devez entrer une adresse e-mail valide</string>
     <string name="sign_up_phone_number_help">Vous devez entrer un numéro de téléphone valide</string>
+
+    <!-- SignUpViewModel -->
+    <string name="sign_up_vm_auth_cancelled">Authentification annulée</string>
+    <string name="sign_up_vm_failed_to_get_credentials">Impossible d’obtenir les identifiants :</string>
+
+    <!-- ChannelsScreen -->
+    <string name="channels_screen_please_sign_in">Veuillez vous connecter pour voir les discussions</string>
+    <string name="channels_screen_chats">Discussions</string>
+    <string name="channels_screen_search_chats">Rechercher…</string>
+    <string name="channels_screen_no_chats_yet">Aucune discussion pour le moment</string>
+    <string name="channels_screen_no_chats_found">Aucune discussion trouvée</string>
+    <string name="channels_screen_unknown_user">Utilisateur inconnu</string>
+    <string name="channels_screen_no_messages_yet">Aucun message pour le moment</string>
+    <string name="channels_screen_just_now">À l’instant</string>
+    <string name="channels_screen_minutes_ago">Il y a %1$d min</string>
+    <string name="channels_screen_hours_ago">Il y a %1$dh</string>
+    <string name="channels_screen_yesterday">Hier</string>
+    <string name="channels_screen_days_ago">Il y a %1$dd</string>
+
+    <!-- ChatScreen -->
+    <string name="chat_screen_connecting">Connexion au chat…</string>
 
     <!-- HomePageScreen -->
     <string name="browse_cities">Parcourir</string>
@@ -98,42 +137,58 @@
 
     <!-- AddListingScreen -->
     <string name="add_listing_text">Ajouter une annonce</string>
-    <string name="add_listing_select_location">Sélectionner l’emplacement</string>
+    <string name="add_listing_select_location">Sélectionner une localisation</string>
     <string name="confirm_listing">Confirmer l’annonce</string>
-    <string name="add_listing_invalid_form_text">Veuillez remplir tous les champs requis (taille, prix et date de début valides).</string>
-    <string name="add_listing_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
-    <string name="add_listing_invalid_price_text">Entrez un entier entre 1 et 10\'000.</string>
+    <string name="add_listing_invalid_form_text">Veuillez compléter tous les champs requis (taille, prix et date de début valides) ou connectez-vous si vous êtes invité.</string>
+    <string name="add_listing_invalid_size_text">Entrez 1.0–1000.0 avec un seul décimal (ex : 18.5).</string>
+    <string name="add_listing_invalid_price_text">Entrez un entier entre 1 et 10’000.</string>
+
+    <!-- AddListingViewModel -->
+    <string name="add_listing_vm_guests_cannot_create_listings">Les invités ne peuvent pas créer d’annonces</string>
+    <string name="add_listing_vm_at_least_one_field_not_valid">Au moins un champ n’est pas valide</string>
+    <string name="add_listing_vm_failed_to_add_listing">Échec de l’ajout de l’annonce :</string>
 
     <!-- EditListingScreen -->
     <string name="edit_listing_title">Modifier l’annonce</string>
-    <string name="edit_listing_invalid_form_text">Veuillez remplir tous les champs requis (taille, prix et date de début valides).</string>
-    <string name="edit_listing_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
-    <string name="edit_listing_invalid_price_text">Entrez un entier entre 1 et 10\'000.</string>
+    <string name="edit_listing_invalid_form_text">Veuillez compléter les champs requis (taille, prix, date de début).</string>
+    <string name="edit_listing_invalid_size_text">Entrez 1.0–1000.0 avec un seul décimal (ex : 18.5).</string>
+    <string name="edit_listing_invalid_price_text">Entrez un entier entre 1 et 10’000.</string>
+
+    <!-- EditListingViewModel -->
+    <string name="edit_listing_vm_failed_to_load_listings">Impossible de charger l’annonce :</string>
+    <string name="edit_listing_vm_at_least_one_field_not_valid">Au moins un champ n’est pas valide</string>
+    <string name="edit_listing_vm_failed_to_edit_listings">Échec de la modification :</string>
+    <string name="edit_listing_vm_failed_to_delete_listing">Échec de la suppression :</string>
 
     <!-- ViewListingScreen -->
     <string name="view_listing_title">Détails de l’annonce</string>
     <string name="view_listing_unavailable">Annonce indisponible</string>
-    <string name="view_listing_blocked_text">Vous ne pouvez pas voir cette annonce car le propriétaire vous a bloqué. Si c’est une erreur, gérez vos contacts bloqués dans les Paramètres.</string>
+    <string name="view_listing_blocked_text">Vous ne pouvez pas voir cette annonce car son propriétaire vous a bloqué. Gérez vos personnes bloquées dans les paramètres.</string>
     <string name="view_listing_posted_by">Publié par</string>
     <string name="view_listing_owner_is_you">(Vous)</string>
     <string name="view_listing_price_per_month">.-/mois</string>
     <string name="view_listing_contact_announcer">Contacter l’annonceur</string>
-    <string name="view_listing_apply_now">Postuler maintenant !</string>
+    <string name="view_listing_apply_now">Postuler !</string>
     <string name="view_listing_listing_location">Localisation de l’annonce</string>
+    <string name="view_listing_sign_in_to_apply">Connectez-vous pour contacter le propriétaire et postuler.</string>
 
     <!-- ViewListingViewModel -->
-    <string name="view_listing_failed_to_load_listings">Échec du chargement de l’annonce</string>
+    <string name="view_listing_failed_to_load_listings">Impossible de charger l’annonce :</string>
 
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Pas encore implémenté</string>
-    <string name="app_nav_host_residency_name_is_null">Le nom de la résidence est nul</string>
+    <string name="app_nav_host_residency_name_is_null">Le nom de résidence est nul</string>
     <string name="app_nav_host_listing_uid_is_null">listingUid est nul</string>
     <string name="app_nav_host_review_uid_is_null">reviewUid est nul</string>
     <string name="app_nav_host_review_saved">Avis enregistré</string>
     <string name="app_nav_host_listing_saved">Annonce enregistrée</string>
     <string name="app_nav_host_review_deleted">Avis supprimé</string>
     <string name="app_nav_host_listing_deleted">Annonce supprimée</string>
-    <string name="app_nav_host_could_not_load_profile">Impossible de charger le profil, ID utilisateur manquant</string>
+    <string name="app_nav_host_could_not_load_profile">Impossible de charger le profil, ID manquant</string>
+    <string name="app_nav_host_sign_in_to_create_profile">Connectez-vous pour créer un profil</string>
+    <string name="app_nav_host_sign_in_to_see_contributions">Connectez-vous pour voir vos contributions</string>
+    <string name="app_nav_host_my_contributions">Mes contributions</string>
+    <string name="app_nav_host_profile">Profil</string>
 
     <!-- Screen -->
     <string name="screen_sign_in">Connexion</string>
@@ -162,27 +217,36 @@
     <string name="add_button_add_review">Ajouter un avis</string>
 
     <!-- BrowseCityScreen -->
-    <string name="browse_city_no_residencies_yet">Aucune résidence pour l’instant.</string>
-    <string name="browse_city_no_listings_yet">Aucune annonce pour l’instant.</string>
+    <string name="browse_city_no_residencies_yet">Aucune résidence pour le moment.</string>
+    <string name="browse_city_no_listings_yet">Aucune annonce pour le moment.</string>
     <string name="browse_city_no_listings_match_filter">Aucune annonce ne correspond à vos filtres.</string>
-    <string name="browse_city_clear_filters">Réinitialiser les filtres</string>
+    <string name="browse_city_clear_filters">Effacer les filtres</string>
     <string name="browse_city_clear_all">Tout effacer</string>
     <string name="browse_city_filter_by_room_type">Filtrer par type de chambre</string>
     <string name="browse_city_filter_by_price">Filtrer par prix</string>
     <string name="browse_city_filter_by_size">Filtrer par taille</string>
     <string name="browse_city_filter_by_start_date">Filtrer par date de début</string>
     <string name="browse_city_sort_by_most_recent">Trier par plus récent</string>
-    <string name="browse_city_sort_by_most_recent_text">Ce filtre se règle directement depuis la barre de filtres.</string>
+    <string name="browse_city_sort_by_most_recent_text">Ce filtre est activé depuis la barre des filtres.</string>
     <string name="browse_city_min_start_date">Date de début min</string>
     <string name="browse_city_max_start_date">Date de début max</string>
-    <string name="browse_city_no_reviews_yet">Aucun avis pour l’instant.</string>
+    <string name="browse_city_no_reviews_yet">Aucun avis pour le moment.</string>
     <string name="browse_city_latest_review">Dernier avis :</string>
     <string name="browse_city_review_posted_by">publié par</string>
 
+    <!-- BrowseCityViewModel -->
+    <string name="browse_city_vm_failed_to_load_listings">Impossible de charger les annonces</string>
+    <string name="browse_city_vm_failed_to_load_residencies">Impossible de charger les résidences</string>
+    <string name="browse_city_vm_price_per_month">.-/mois</string>
+
     <!-- ProfileContributionsScreen -->
     <string name="profile_contributions_title">Mes contributions</string>
-    <string name="profile_contributions_no_contributions_yet">Aucune contribution pour l’instant.</string>
-    <string name="profile_contributions_view_details">Voir les détails</string>
+    <string name="profile_contributions_no_contributions_yet">Aucune contribution pour le moment.</string>
+    <string name="profile_contributions_view_details">Voir détails</string>
+
+    <!-- ProfileContributionsViewModel -->
+    <string name="profile_contributions_vm_must_be_signed_in_to_see_contributions">Vous devez être connecté pour voir vos contributions.</string>
+    <string name="profile_contributions_vm_failed_to_load_contributions">Impossible de charger les contributions.</string>
 
     <!-- ProfileScreen -->
     <string name="profile_title">Profil</string>
@@ -190,54 +254,66 @@
     <string name="profile_save">ENREGISTRER</string>
     <string name="profile_logout">DÉCONNEXION</string>
 
+    <!-- ProfileViewModel -->
+    <string name="profile_vm_not_signed_in">Non connecté.</string>
+    <string name="profile_vm_failed_to_save">Échec de l’enregistrement :</string>
+
     <!-- RequestDetailScreen -->
     <string name="request_detail_title">Demande reçue</string>
 
     <!-- ViewUserProfileScreen -->
     <string name="view_user_profile_send_message">Envoyer un message</string>
-    <string name="view_user_profile_block_user">Bloquer l’utilisateur</string>
-    <string name="view_user_profile_unblock_user">Débloquer l’utilisateur</string>
+    <string name="view_user_profile_block_user">Bloquer</string>
+    <string name="view_user_profile_unblock_user">Débloquer</string>
 
     <!-- ViewUserProfileViewModel -->
     <string name="view_user_profile_not_signed_in">Non connecté</string>
-    <string name="view_user_profile_failed_to_block_user">Échec du blocage de l’utilisateur</string>
-    <string name="view_user_profile_failed_to_unblock_user">Échec du déblocage de l’utilisateur</string>
+    <string name="view_user_profile_failed_to_block_user">Échec du blocage</string>
+    <string name="view_user_profile_failed_to_unblock_user">Échec du déblocage</string>
+    <string name="view_user_profile_no_residency">Aucune résidence</string>
+    <string name="view_user_profile_failed_to_load_profile">Impossible de charger le profil :</string>
 
     <!-- AddReviewScreen -->
     <string name="add_review_title">Ajouter un avis</string>
-    <string name="add_review_submit">Publier l’avis</string>
-    <string name="add_review_post_anonymously">Poster anonymement</string>
-    <string name="add_review_invalid_form_text">Veuillez remplir tous les champs requis (note, taille, prix, etc. valides).</string>
-    <string name="add_review_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
-    <string name="add_review_invalid_price_text">Entrez un entier entre 1 et 10\'000.</string>
+    <string name="add_review_submit">Envoyer l’avis</string>
+    <string name="add_review_post_anonymously">Publier anonymement</string>
+    <string name="add_review_invalid_form_text">Veuillez remplir tous les champs requis (note, taille, prix, etc.) ou connectez-vous.</string>
+    <string name="add_review_invalid_size_text">Entrez 1.0–1000.0 avec un seul décimal (ex : 18.5).</string>
+    <string name="add_review_invalid_price_text">Entrez un entier entre 1 et 10’000.</string>
     <string name="add_review_rating">Note : </string>
 
     <!-- EditReviewScreen -->
     <string name="edit_review_title">Modifier l’avis</string>
-    <string name="edit_review_invalid_form_text">Veuillez remplir tous les champs requis (taille, prix et date de début valides).</string>
-    <string name="edit_review_invalid_size_text">Entrez 1.0–1000.0 avec un décimal (ex. : 18.5).</string>
-    <string name="edit_review_invalid_price_text">Entrez un entier entre 1 et 10\'000.</string>
+    <string name="edit_review_invalid_form_text">Veuillez remplir tous les champs requis (taille, prix, date de début).</string>
+    <string name="edit_review_invalid_size_text">Entrez 1.0–1000.0 avec un seul décimal (ex : 18.5).</string>
+    <string name="edit_review_invalid_price_text">Entrez un entier entre 1 et 10’000.</string>
     <string name="edit_review_rating">Note : </string>
+    <string name="edit_review_delete_review">Supprimer l’avis ?</string>
+    <string name="edit_review_delete_review_text">Cette action est irréversible et supprimera l’avis définitivement.</string>
 
     <!-- ReviewsByResidencyScreen -->
-    <string name="reviews_by_residency_no_reviews_yet">Aucun avis pour l’instant.</string>
+    <string name="reviews_by_residency_no_reviews_yet">Aucun avis pour le moment.</string>
     <string name="reviews_by_residency_review">Avis : </string>
     <string name="reviews_by_residency_posted_by">Publié par</string>
+
+    <!-- ReviewsByResidencyViewModel -->
+    <string name="reviews_by_residency_vm_failed_to_load_reviews">Impossible de charger les avis</string>
 
     <!-- ViewReviewScreen -->
     <string name="view_review_title">Détails de l’avis</string>
     <string name="view_review_posted_by">Publié par </string>
-    <string name="view_review_posted_by_you"> (Vous)</string>
+    <string name="view_review_posted_by_you">(Vous)</string>
     <string name="view_review_price_per_month">.-/mois</string>
+    <string name="view_review_was_this_useful">Cet avis vous a-t-il été utile ?</string>
 
     <!-- ViewReviewViewModel -->
-    <string name="view_review_failed_to_load_review">Échec du chargement de l’avis</string>
+    <string name="view_review_failed_to_load_review">Impossible de charger l’avis</string>
 
     <!-- SettingsScreen -->
     <string name="settings_title">Paramètres</string>
     <string name="settings_view_profile">Voir le profil</string>
     <string name="settings_notifications_messages">Afficher les notifications de messages</string>
-    <string name="settings_notifications_listings">Afficher les notifications des nouvelles annonces</string>
+    <string name="settings_notifications_listings">Afficher les notifications pour les nouvelles annonces</string>
     <string name="settings_view_contributions">Voir mes contributions</string>
     <string name="settings_read_receipts">Accusés de lecture</string>
     <string name="settings_blocked_contacts">Contacts bloqués</string>
@@ -249,13 +325,14 @@
     <string name="settings_deleting">SUPPRESSION…</string>
     <string name="settings_delete">SUPPRIMER MON COMPTE</string>
     <string name="settings_delete_dialog_title">Supprimer le compte ?</string>
-    <string name="settings_delete_dialog_text">Cela supprimera définitivement votre compte. Vous devrez peut-être vous réauthentifier.</string>
+    <string name="settings_delete_dialog_text">Cela supprimera votre compte définitivement. Une réauthentification peut être nécessaire.</string>
+    <string name="settings_sign_up_to_create_account">INSCRIVEZ-VOUS POUR CRÉER UN COMPTE</string>
 
     <!-- SettingsViewModel -->
     <string name="settings_not_signed_in">Non connecté</string>
     <string name="settings_re_authenticate_to_delete">Veuillez vous réauthentifier pour supprimer votre compte.</string>
-    <string name="settings_failed_to_block_user">Échec du blocage de l’utilisateur</string>
-    <string name="settings_failed_to_unblock_user">Échec du déblocage de l’utilisateur</string>
+    <string name="settings_failed_to_block_user">Échec du blocage</string>
+    <string name="settings_failed_to_unblock_user">Échec du déblocage</string>
 
     <!-- CustomLocationDialog -->
     <string name="custom_location_dialog_enter_input">Entrer une localisation personnalisée</string>
@@ -263,15 +340,19 @@
     <string name="custom_location_dialog_more">Plus…</string>
 
     <!-- DateTimeUI -->
-    <string name="date_time_ui_x_seconds_ago">il y a %1$ds</string>
-    <string name="date_time_ui_x_minutes_ago">il y a %1$d min</string>
-    <string name="date_time_ui_x_hours_ago">il y a %1$dh</string>
-    <string name="date_time_ui_x_days_ago">il y a %1$dj</string>
+    <string name="date_time_ui_x_seconds_ago">Il y a %1$ds</string>
+    <string name="date_time_ui_x_minutes_ago">Il y a %1$d min</string>
+    <string name="date_time_ui_x_hours_ago">Il y a %1$dh</string>
+    <string name="date_time_ui_x_days_ago">Il y a %1$dd</string>
     <string name="date_time_ui_on_date">le %1$s</string>
 
     <!-- DeviceLocation -->
-    <string name="device_location_could_not_get_location">Impossible d’obtenir la localisation. Le GPS est-il activé ?</string>
-    <string name="device_location_permission_denied_cannot_get_location">Permission refusée. Impossible d’obtenir la localisation.</string>
+    <string name="device_location_could_not_get_location">Impossible d’obtenir la localisation. Le GPS est-il activé ?</string>
+    <string name="device_location_permission_denied_cannot_get_location">Permission refusée. Localisation impossible.</string>
+
+    <!-- GuestSignInPopUp -->
+    <string name="guest_sign_in_pop_up_sign_in_to_create_profile">Connectez-vous pour créer un profil</string>
+    <string name="guest_sign_in_pop_up_sign_in">Connexion</string>
 
     <!-- AddPhotoButton -->
     <string name="add_photo_button_take_photo">Prendre une photo</string>
@@ -282,13 +363,13 @@
     <string name="camera_button_default_text">Prendre une photo</string>
 
     <!-- GalleryButton -->
-    <string name="gallery_button_default_text">Choisir une image</string>
-    <string name="gallery_button_default_multiple_text">Choisir des images</string>
+    <string name="gallery_button_default_text">Choisir une photo</string>
+    <string name="gallery_button_default_multiple_text">Choisir des photos</string>
 
     <!-- SanitizedTextFields -->
     <string name="sanitized_text_fields_email_placeholder">nom@domaine.com</string>
     <string name="sanitized_text_fields_search_placeholder">Ville, adresse, mot-clé</string>
-    <string name="sanitized_text_fields_title_placeholder">Trouvez un joli titre !</string>
+    <string name="sanitized_text_fields_title_placeholder">Ajoutez un titre sympa !</string>
     <string name="sanitized_text_fields_room_size_label">Taille de la chambre (m²)</string>
     <string name="sanitized_text_fields_price_label">Prix (CHF / mois)</string>
     <string name="sanitized_text_fields_description_placeholder">Ajoutez des détails (quartier, règles, etc.)</string>
@@ -296,30 +377,32 @@
     <string name="sanitized_text_fields_select_residency_label">Sélectionner une résidence</string>
     <string name="sanitized_text_fields_residency_name_label">Nom de la résidence</string>
     <string name="sanitized_text_fields_first_name_required">Le prénom est requis</string>
-    <string name="sanitized_text_fields_first_name_length">Le prénom est trop long</string>
+    <string name="sanitized_text_fields_first_name_length">Prénom trop long</string>
     <string name="sanitized_text_fields_first_name_format">Prénom invalide</string>
     <string name="sanitized_text_fields_last_name_required">Le nom est requis</string>
-    <string name="sanitized_text_fields_last_name_length">Le nom est trop long</string>
+    <string name="sanitized_text_fields_last_name_length">Nom trop long</string>
     <string name="sanitized_text_fields_last_name_format">Nom invalide</string>
-    <string name="sanitized_text_fields_phone_required">Le numéro de téléphone est requis</string>
-    <string name="sanitized_text_fields_phone_length">Le numéro doit contenir 9 chiffres</string>
-    <string name="sanitized_text_fields_phone_leading_zero">Aucun zéro initial autorisé</string>
+    <string name="sanitized_text_fields_phone_required">Le téléphone est requis</string>
+    <string name="sanitized_text_fields_phone_length">Le téléphone doit comporter 9 chiffres</string>
+    <string name="sanitized_text_fields_phone_leading_zero">Le zéro initial n’est pas autorisé</string>
     <string name="sanitized_text_fields_phone_format">Format de téléphone invalide</string>
     <string name="sanitized_text_fields_email_required">L’e-mail est requis</string>
-    <string name="sanitized_text_fields_email_length">L’e-mail est trop long</string>
+    <string name="sanitized_text_fields_email_length">E-mail trop long</string>
     <string name="sanitized_text_fields_email_format">E-mail invalide</string>
     <string name="sanitized_text_fields_search_required">Entrez un terme de recherche</string>
     <string name="sanitized_text_fields_title_required">Le titre est requis</string>
-    <string name="sanitized_text_fields_title_length">Le titre est trop long</string>
-    <string name="sanitized_text_fields_room_size_format">Utilisez un décimal (ex. : 18.5)</string>
+    <string name="sanitized_text_fields_title_length">Titre trop long</string>
+    <string name="sanitized_text_fields_room_size_format">Utilisez un seul décimal (ex : 18.5)</string>
     <string name="sanitized_text_fields_room_size_range">La taille doit être entre 1.0 et 1000.0 m²</string>
-    <string name="sanitized_text_fields_description_length">La description est trop longue</string>
+    <string name="sanitized_text_fields_description_length">Description trop longue</string>
     <string name="sanitized_text_fields_price_required">Le prix est requis</string>
     <string name="sanitized_text_fields_price_leading_zero">Aucun zéro initial</string>
     <string name="sanitized_text_fields_price_range">Le prix doit être entre 1 et 10’000 CHF</string>
     <!-- Map -->
     <string name="No_image">Pas d\'images</string>
     <string name="map_view">Carte d\'annonces</string>
+    <string name="sanitized_text_fields_price_leading_zero">Pas de zéro initial</string>
+    <string name="sanitized_text_fields_price_range">Le prix doit être entre 1 et 10000 CHF</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

@@ -64,4 +64,27 @@ class AddPhotoButtonTest {
 
     compose.onNodeWithTag(C.AddPhotoButtonTags.DIALOG).assertIsDisplayed()
   }
+
+  @Test
+  fun pickMultiplePhotoIsAvailableDialog() {
+    compose.setContent {
+      AddPhotoDialog(onSelectPhoto = {}, onDismissRequest = {}, multiplePick = true)
+    }
+
+    compose.onNodeWithTag(C.AddPhotoButtonTags.DIALOG).assertIsDisplayed()
+    compose.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG).assertIsNotDisplayed()
+    compose.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG).assertIsDisplayed()
+  }
+
+  @Test
+  fun pickMultiplePhotoIsAvailableButton() {
+    compose.setContent { DefaultAddPhotoButton(onSelectPhoto = {}, multiplePick = true) }
+
+    compose.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).assertIsDisplayed().performClick()
+
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG).assertIsNotDisplayed()
+    compose.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG).assertIsDisplayed()
+  }
 }

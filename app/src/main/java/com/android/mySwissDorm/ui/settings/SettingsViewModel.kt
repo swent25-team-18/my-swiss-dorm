@@ -106,7 +106,7 @@ class SettingsViewModel(
       _ui.value =
           _ui.value.copy(
               errorMsg = context.getString(R.string.settings_not_signed_in), isDeleting = false)
-      onDone(false, "Not signed in")
+      onDone(false, context.getString(R.string.settings_not_signed_in))
       return
     }
 

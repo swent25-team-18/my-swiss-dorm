@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.profile
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
@@ -19,6 +21,8 @@ import org.junit.Test
 class ProfileContributionsViewModelTest {
 
   @get:Rule val mainDispatcherRule = MainDispatcherRule()
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   @Test
   fun initialState_isEmptyAndNotLoading() {
@@ -47,7 +51,7 @@ class ProfileContributionsViewModelTest {
   @Test
   fun load_setsError_whenUserNull() {
     val vm = ProfileContributionsViewModel(currentUserId = { null })
-    vm.load()
+    vm.load(context = context)
     val ui = vm.ui.value
     assertFalse(ui.isLoading)
     assertTrue(ui.items.isEmpty())
@@ -149,7 +153,7 @@ class ProfileContributionsViewModelTest {
                       throw UnsupportedOperationException()
                 })
 
-    vm.load(force = true)
+    vm.load(force = true, context = context)
     advanceUntilIdle()
 
     assertFalse(vm.ui.value.isLoading)

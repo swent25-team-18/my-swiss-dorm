@@ -1,7 +1,9 @@
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.photo.Photo
@@ -62,7 +64,7 @@ class EditListingViewModel(
     super.removePhoto(uri, removeFromLocal)
   }
 
-  fun getRentalListing(rentalPostID: String) {
+  fun getRentalListing(rentalPostID: String, context: Context) {
     viewModelScope.launch {
       try {
         val listing = rentalListingRepository.getRentalListing(rentalPostID)
@@ -95,15 +97,16 @@ class EditListingViewModel(
                 errorMsg = null)
       } catch (e: Exception) {
         Log.e(logTag, "Error loading listing by ID: $rentalPostID", e)
-        setErrorMsg("Failed to load listing: ${e.message}")
+        setErrorMsg(
+            "${context.getString(R.string.edit_listing_vm_failed_to_load_listings)} ${e.message}")
       }
     }
   }
 
-  fun editRentalListing(id: String): Boolean {
+  fun editRentalListing(id: String, context: Context): Boolean {
     val state = uiState.value
     if (!state.isFormValid) {
-      setErrorMsg("At least one field is not valid")
+      setErrorMsg(context.getString(R.string.edit_listing_vm_at_least_one_field_not_valid))
       return false
     }
 
@@ -134,7 +137,8 @@ class EditListingViewModel(
         rentalListingRepository.editRentalListing(rentalPostId = id, newValue = listing)
       } catch (e: Exception) {
         Log.e(logTag, "Error editing listing", e)
-        setErrorMsg("Failed to edit rental listing: ${e.message}")
+        setErrorMsg(
+            "${context.getString(R.string.edit_listing_vm_failed_to_edit_listings)} ${e.message}")
       }
     }
     viewModelScope.launch {
@@ -147,7 +151,7 @@ class EditListingViewModel(
     return true
   }
 
-  fun deleteRentalListing(rentalPostID: String) {
+  fun deleteRentalListing(rentalPostID: String, context: Context) {
     viewModelScope.launch {
       _uiState.value.pickedImages.forEach { photoRepositoryCloud.deletePhoto(it.fileName) }
       _deletedPhotos.forEach { photoRepositoryCloud.deletePhoto(it) }
@@ -156,7 +160,8 @@ class EditListingViewModel(
         rentalListingRepository.deleteRentalListing(rentalPostId = rentalPostID)
       } catch (e: Exception) {
         Log.e(logTag, "Error deleting listing", e)
-        setErrorMsg("Failed to delete listing: ${e.message}")
+        setErrorMsg(
+            "${context.getString(R.string.edit_listing_vm_failed_to_delete_listing)} ${e.message}")
       }
     }
   }

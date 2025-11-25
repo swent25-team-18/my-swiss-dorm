@@ -1,8 +1,10 @@
 package com.android.mySwissDorm.ui.overview
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
@@ -181,7 +183,7 @@ class BrowseCityViewModel(
     _uiState.update { it.copy(isGuest = auth.currentUser?.isAnonymous ?: true) }
   }
 
-  fun loadListings(location: Location) {
+  fun loadListings(location: Location, context: Context) {
     _uiState.update { it.copy(listings = it.listings.copy(loading = true, error = null)) }
 
     viewModelScope.launch {
@@ -276,7 +278,7 @@ class BrowseCityViewModel(
 
         val mapped =
             sorted.map { listing ->
-              var listingCardUI = listing.toCardUI()
+              var listingCardUI = listing.toCardUI(context)
               if (listing.imageUrls.isNotEmpty()) {
                 val fileName = listing.imageUrls.first()
                 try {
@@ -299,13 +301,18 @@ class BrowseCityViewModel(
         _uiState.update {
           it.copy(
               listings =
-                  it.listings.copy(loading = false, error = e.message ?: "Failed to load listings"))
+                  it.listings.copy(
+                      loading = false,
+                      error =
+                          e.message
+                              ?: context.getString(
+                                  R.string.browse_city_vm_failed_to_load_listings)))
         }
       }
     }
   }
 
-  fun loadResidencies(location: Location) {
+  fun loadResidencies(location: Location, context: Context) {
     _uiState.update { it.copy(residencies = it.residencies.copy(loading = true, error = null)) }
 
     viewModelScope.launch {
@@ -353,7 +360,7 @@ class BrowseCityViewModel(
                   if (latestReview != null) {
                     // Check if the review is anonymous - if so, always show "anonymous"
                     if (latestReview.isAnonymous) {
-                      "anonymous"
+                      context.getString(R.string.anonymous)
                     } else {
                       // Only fetch and show the actual name if the review is NOT anonymous
                       val ownerInfo =
@@ -367,9 +374,9 @@ class BrowseCityViewModel(
                             null
                           }
                       if (ownerInfo != null) "${ownerInfo.name} ${ownerInfo.lastName}"
-                      else "Unknown"
+                      else context.getString(R.string.unknown)
                     }
-                  } else "Unknown"
+                  } else context.getString(R.string.unknown)
               ResidencyCardUI(
                   title = it.name,
                   meanGrade = meanGrade,
@@ -387,7 +394,11 @@ class BrowseCityViewModel(
           it.copy(
               residencies =
                   it.residencies.copy(
-                      loading = false, error = e.message ?: "Failed to load residencies"))
+                      loading = false,
+                      error =
+                          e.message
+                              ?: context.getString(
+                                  R.string.browse_city_vm_failed_to_load_residencies)))
         }
       }
     }
@@ -503,10 +514,14 @@ class BrowseCityViewModel(
 }
 
 // Mapping RentalListing to ListingCardUI
-private fun RentalListing.toCardUI(): ListingCardUI {
-  val price = String.format(Locale.getDefault(), "%.0f.-/month", pricePerMonth)
+private fun RentalListing.toCardUI(context: Context): ListingCardUI {
+  val price =
+      String.format(
+          Locale.getDefault(),
+          "%.0f${context.getString(R.string.browse_city_vm_price_per_month)}",
+          pricePerMonth)
   val area = "${areaInM2}m²"
-  val start = "Starting ${formatDate(startDate)}"
+  val start = "${context.getString(R.string.starting)} ${formatDate(startDate)}"
   val resName = residencyName
 
   return ListingCardUI(

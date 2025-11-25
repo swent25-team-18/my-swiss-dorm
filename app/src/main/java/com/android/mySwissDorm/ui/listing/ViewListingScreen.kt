@@ -246,7 +246,7 @@ fun ViewListingScreen(
                       modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                       contentAlignment = Alignment.Center) {
                         Text(
-                            text = "Sign in to contact the owner and apply.",
+                            text = stringResource(R.string.view_listing_sign_in_to_apply),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MainColor,
                             fontWeight = FontWeight.Bold)

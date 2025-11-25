@@ -401,9 +401,6 @@
     <!-- Map -->
     <string name="No_image">Pas d\'images</string>
     <string name="map_view">Carte d\'annonces</string>
-    <string name="sanitized_text_fields_price_leading_zero">Pas de zéro initial</string>
-    <string name="sanitized_text_fields_price_range">Le prix doit être entre 1 et 10000 CHF</string>
-
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_second">SecondActivity</string>

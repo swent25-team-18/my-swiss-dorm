@@ -99,9 +99,8 @@ class AppNavHostTest : FirestoreTest() {
       var currentException: Throwable? = exception
       var foundToastException = false
       while (currentException != null && !foundToastException) {
-        val ex =
-            currentException!! // Store in immutable variable, we know it's not null from while
-                               // condition
+        val ex = currentException!! // Store in immutable variable, we know it's not null from while
+        // condition
         if (isToastException(ex)) {
           foundToastException = true
           android.util.Log.d(
@@ -125,9 +124,8 @@ class AppNavHostTest : FirestoreTest() {
       var currentException: Throwable? = exception
       var foundToastException = false
       while (currentException != null && !foundToastException) {
-        val ex =
-            currentException!! // Store in immutable variable, we know it's not null from while
-                               // condition
+        val ex = currentException!! // Store in immutable variable, we know it's not null from while
+        // condition
         if (isToastException(ex)) {
           foundToastException = true
           android.util.Log.d(

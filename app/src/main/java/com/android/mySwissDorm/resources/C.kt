@@ -167,6 +167,8 @@ object C {
 
     fun reviewVoteButtons(reviewUid: String) = "reviewsByResidencyReviewVoteButtons_$reviewUid"
 
+    fun reviewPhoto(reviewUid: String) = "reviewByResidencyPhoto$reviewUid"
+
     const val COMPACT_VOTE_UPVOTE_BUTTON = "reviewsByResidencyCompactVoteUpvoteButton"
     const val COMPACT_VOTE_DOWNVOTE_BUTTON = "reviewsByResidencyCompactVoteDownvoteButton"
     const val COMPACT_VOTE_SCORE = "reviewsByResidencyCompactVoteScore"
@@ -201,6 +203,7 @@ object C {
     const val DESC_FIELD = "descField"
     const val GRADE_FIELD = "gradeField"
     const val SUBMIT_BUTTON = "submitButton"
+    const val PHOTOS = "addReviewPhotos"
   }
 
   object StarRatingBarTags {
@@ -225,6 +228,7 @@ object C {
     const val SAVE_BUTTON = "saveButton"
 
     const val REVIEW_TITLE = "reviewTitleField"
+    const val PHOTOS = "editReviewPhotos"
   }
 
   object CustomDatePickerDialogTags {

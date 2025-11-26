@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
@@ -259,7 +260,8 @@ fun EditReviewScreen(
                     ImageGrid(
                         imageUris = ui.images.map { it.image }.toSet(),
                         isEditingMode = true,
-                        onRemove = { editReviewViewModel.removePhoto(it) })
+                        onRemove = { editReviewViewModel.removePhoto(it) },
+                        modifier = Modifier.testTag(C.EditReviewTags.PHOTOS))
                   }
             }
       }

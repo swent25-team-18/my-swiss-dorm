@@ -166,7 +166,9 @@ private fun ReviewCard(
                     AsyncImage(
                         model = data.image,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .testTag(C.ReviewsByResidencyTag.reviewPhoto(data.reviewUid)),
                         contentScale = ContentScale.Crop)
                   }
 

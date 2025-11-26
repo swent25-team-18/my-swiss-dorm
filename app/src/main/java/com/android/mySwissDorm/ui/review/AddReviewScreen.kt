@@ -202,7 +202,8 @@ fun AddReviewScreen(
                     ImageGrid(
                         imageUris = ui.images.map { it.image }.toSet(),
                         isEditingMode = true,
-                        onRemove = { addReviewViewModel.removePhoto(it) })
+                        onRemove = { addReviewViewModel.removePhoto(it) },
+                        modifier = Modifier.testTag(C.AddReviewTags.PHOTOS))
                   }
             }
       }

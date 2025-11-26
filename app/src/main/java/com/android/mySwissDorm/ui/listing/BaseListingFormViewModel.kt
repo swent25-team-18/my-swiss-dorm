@@ -17,6 +17,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
+import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -119,34 +120,21 @@ abstract class BaseListingFormViewModel(
     _uiState.value = _uiState.value.copy(description = norm)
   }
 
+  val photoManager =
+      PhotoManager(
+          photoRepositoryLocal = photoRepositoryLocal, photoRepositoryCloud = photoRepositoryCloud)
+
   open fun addPhoto(photo: Photo) {
     viewModelScope.launch {
-      // Only upload if the image is not already on disk
-      try {
-        photoRepositoryLocal.retrievePhoto(photo.fileName)
-      } catch (_: NoSuchElementException) {
-        photoRepositoryLocal.uploadPhoto(photo)
-      }
-      val images = _uiState.value.pickedImages.toMutableList()
-      images.add(photo)
-      _uiState.value = _uiState.value.copy(pickedImages = images.toList())
+      photoManager.addPhoto(photo)
+      _uiState.value = _uiState.value.copy(pickedImages = photoManager.photoLoaded)
     }
   }
 
   open fun removePhoto(uri: Uri, removeFromLocal: Boolean) {
-    val photo = _uiState.value.pickedImages.find { it.image == uri }
-    val images = _uiState.value.pickedImages.toMutableList()
-    images.remove(photo)
-    if (removeFromLocal) {
-      photo?.let {
-        viewModelScope.launch {
-          if (photoRepositoryLocal.deletePhoto(photo.fileName)) {
-            _uiState.value = _uiState.value.copy(pickedImages = images.toList())
-          }
-        }
-      }
-    } else {
-      _uiState.value = _uiState.value.copy(pickedImages = images.toList())
+    viewModelScope.launch {
+      photoManager.removePhoto(uri, removeFromLocal)
+      _uiState.value = _uiState.value.copy(pickedImages = photoManager.photoLoaded)
     }
   }
 

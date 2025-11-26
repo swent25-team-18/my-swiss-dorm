@@ -1,10 +1,12 @@
 package com.android.mySwissDorm.ui.admin
 
+import android.content.Context
 import android.util.Patterns
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.city.CitiesRepository
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
@@ -133,47 +135,53 @@ class AdminPageViewModel(
     uiState = uiState.copy(message = null)
   }
 
-  private fun validate(): String? {
+  private fun validate(context: Context): String? {
     return when (uiState.selected) {
       EntityType.ADMIN -> {
-        if (uiState.email.isBlank()) "Email is required for an Admin."
+        if (uiState.email.isBlank()) context.getString(R.string.admin_page_email_required)
         else if (!Patterns.EMAIL_ADDRESS.matcher(uiState.email.trim()).matches()) {
-          "Please enter a valid email address."
+          context.getString(R.string.admin_page_email_invalid)
         } else null
       }
       EntityType.CITY -> {
         when {
-          uiState.name.isBlank() -> "Name is required."
-          uiState.location == null -> "Location is required."
-          uiState.description.isBlank() -> "Description is required for a City."
-          uiState.imageId.isBlank() -> "Image ID is required for a City."
+          uiState.name.isBlank() -> context.getString(R.string.admin_page_name_required)
+          uiState.location == null -> context.getString(R.string.admin_page_location_required)
+          uiState.description.isBlank() ->
+              context.getString(R.string.admin_page_description_required_city)
+          uiState.imageId.isBlank() -> context.getString(R.string.admin_page_image_id_required_city)
           else -> null
         }
       }
       EntityType.RESIDENCY -> {
         when {
-          uiState.name.isBlank() -> "Name is required."
-          uiState.location == null -> "Location is required."
-          uiState.city.isBlank() -> "City name is required for a Residency."
+          uiState.name.isBlank() -> context.getString(R.string.admin_page_name_required)
+          uiState.location == null -> context.getString(R.string.admin_page_location_required)
+          uiState.city.isBlank() ->
+              context.getString(R.string.admin_page_city_name_required_residency)
           else -> null
         }
       }
       EntityType.UNIVERSITY -> {
         when {
-          uiState.name.isBlank() -> "Name is required."
-          uiState.location == null -> "Location is required."
-          uiState.city.isBlank() -> "City name is required for a University."
-          uiState.email.isBlank() -> "Email is required for a University."
-          uiState.phone.isBlank() -> "Phone is required for a University."
-          uiState.website.isBlank() -> "Website URL is required for a University."
+          uiState.name.isBlank() -> context.getString(R.string.admin_page_name_required)
+          uiState.location == null -> context.getString(R.string.admin_page_location_required)
+          uiState.city.isBlank() ->
+              context.getString(R.string.admin_page_city_name_required_university)
+          uiState.email.isBlank() ->
+              context.getString(R.string.admin_page_email_required_university)
+          uiState.phone.isBlank() ->
+              context.getString(R.string.admin_page_phone_required_university)
+          uiState.website.isBlank() ->
+              context.getString(R.string.admin_page_website_required_university)
           else -> null
         }
       }
     }
   }
 
-  fun submit() {
-    val error = validate()
+  fun submit(context: Context) {
+    val error = validate(context)
     if (error != null) {
       uiState = uiState.copy(message = error)
       return
@@ -185,19 +193,19 @@ class AdminPageViewModel(
       return
     }
 
-    performSubmit()
+    performSubmit(context)
   }
 
-  fun confirmAdminAdd() {
+  fun confirmAdminAdd(context: Context) {
     uiState = uiState.copy(showAdminConfirmDialog = false)
-    performSubmit()
+    performSubmit(context)
   }
 
   fun cancelAdminAdd() {
     uiState = uiState.copy(showAdminConfirmDialog = false)
   }
 
-  private fun performSubmit() {
+  private fun performSubmit(context: Context) {
     viewModelScope.launch {
       uiState = uiState.copy(isSubmitting = true, message = null)
       try {
@@ -210,14 +218,14 @@ class AdminPageViewModel(
               uiState =
                   uiState.copy(
                       isSubmitting = false,
-                      message = "Error: The user inserted is already an admin!")
+                      message = context.getString(R.string.admin_page_already_admin))
               return@launch
             }
             adminRepo.addAdmin(email)
             uiState =
                 uiState.copy(
                     isSubmitting = false,
-                    message = "$email has been added as an admin",
+                    message = context.getString(R.string.admin_page_added_as_admin, email),
                     email = "") // Clear email field after success
           }
           EntityType.CITY -> {
@@ -260,10 +268,17 @@ class AdminPageViewModel(
           }
         }
         if (uiState.selected != EntityType.ADMIN) {
-          uiState = UiState(selected = uiState.selected, message = "Saved successfully!")
+          uiState =
+              UiState(
+                  selected = uiState.selected,
+                  message = context.getString(R.string.admin_page_saved_successfully))
         }
       } catch (e: Exception) {
-        uiState = uiState.copy(isSubmitting = false, message = "Error: ${e.message ?: "unknown"}")
+        val errorMsg = e.message ?: context.getString(R.string.admin_page_error_unknown)
+        uiState =
+            uiState.copy(
+                isSubmitting = false,
+                message = "${context.getString(R.string.admin_page_error)}: $errorMsg")
       }
     }
   }

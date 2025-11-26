@@ -59,11 +59,32 @@
     <string name="user">User</string>
     <string name="website">Website</string>
 
-    <!-- AdminPageScreen -->$
+    <!-- AdminPageScreen -->
     <string name="admin_page_admins_only">Admins only.</string>
     <string name="admin_page_title">Admin Page</string>
     <string name="admin_page_image_id">Image ID</string>
     <string name="admin_page_select_location">Select Location</string>
+    
+    <!-- AdminPageViewModel -->
+    <string name="admin_page_email_required">Email is required for an Admin.</string>
+    <string name="admin_page_email_invalid">Please enter a valid email address.</string>
+    <string name="admin_page_name_required">Name is required.</string>
+    <string name="admin_page_location_required">Location is required.</string>
+    <string name="admin_page_description_required_city">Description is required for a City.</string>
+    <string name="admin_page_image_id_required_city">Image ID is required for a City.</string>
+    <string name="admin_page_city_name_required_residency">City name is required for a Residency.</string>
+    <string name="admin_page_city_name_required_university">City name is required for a University.</string>
+    <string name="admin_page_email_required_university">Email is required for a University.</string>
+    <string name="admin_page_phone_required_university">Phone is required for a University.</string>
+    <string name="admin_page_website_required_university">Website URL is required for a University.</string>
+    <string name="admin_page_already_admin">Error: The user inserted is already an admin!</string>
+    <string name="admin_page_added_as_admin">%1$s has been added as an admin</string>
+    <string name="admin_page_saved_successfully">Saved successfully!</string>
+    <string name="admin_page_error_unknown">Error: unknown</string>
+    <string name="admin_page_error">Error</string>
+    <string name="admin_page_confirm_add_admin">Confirm you want to add %1$s as an admin</string>
+    <string name="admin_page_ok">OK</string>
+    <string name="admin_page_website_url">%1$s URL</string>
 
     <!-- SignInScreen -->
     <string name="app_name">MySwissDorm</string>

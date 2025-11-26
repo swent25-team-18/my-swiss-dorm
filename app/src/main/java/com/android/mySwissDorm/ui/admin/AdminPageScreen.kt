@@ -111,7 +111,7 @@ fun AdminPageScreen(
               IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.go_back),
                     tint = MainColor)
               }
             })
@@ -120,7 +120,7 @@ fun AdminPageScreen(
         Surface(shadowElevation = 8.dp) {
           Column(Modifier.padding(16.dp)) {
             Button(
-                onClick = vm::submit,
+                onClick = { vm.submit(context) },
                 enabled = !ui.isSubmitting,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
@@ -327,7 +327,9 @@ fun AdminPageScreen(
                       singleLine = true,
                       modifier = Modifier.fillMaxWidth(),
                       fieldType = InputSanitizers.FieldType.Website,
-                      placeholder = "${stringResource(R.string.website)} URL",
+                      placeholder =
+                          stringResource(R.string.admin_page_website_url)
+                              .format(stringResource(R.string.website)),
                       imeAction = ImeAction.Next)
                 }
               }
@@ -340,7 +342,7 @@ fun AdminPageScreen(
                     shape = RoundedCornerShape(16.dp)) {
                       Icon(
                           imageVector = Icons.Default.Place,
-                          contentDescription = "Location",
+                          contentDescription = stringResource(R.string.location),
                           tint = MainColor)
                       Spacer(Modifier.width(8.dp))
                       Text(
@@ -386,12 +388,12 @@ fun AdminPageScreen(
               title = { Text(stringResource(R.string.admin)) },
               text = {
                 Text(
-                    text = "Confirm you want to add ${ui.email.trim()} as an admin",
+                    text = stringResource(R.string.admin_page_confirm_add_admin, ui.email.trim()),
                     style = MaterialTheme.typography.bodyMedium)
               },
               confirmButton = {
                 TextButton(
-                    onClick = { vm.confirmAdminAdd() },
+                    onClick = { vm.confirmAdminAdd(context) },
                     colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
                       Text(stringResource(R.string.save))
                     }
@@ -407,13 +409,27 @@ fun AdminPageScreen(
 
         // Success/Error message dialog
         if (ui.message != null) {
-          val isError = ui.message.startsWith("Error:")
-          val messageText = if (isError) ui.message.removePrefix("Error: ") else ui.message
+          // Check if message is an error by checking if it starts with the error prefix
+          // Error messages in ViewModel are formatted as "Error: message" or contain the error
+          // string
+          val errorText = stringResource(R.string.admin_page_error)
+          val errorPrefixEn = "Error: "
+          val errorPrefixFr = "Erreur : "
+          val isError =
+              ui.message.startsWith(errorPrefixEn) ||
+                  ui.message.startsWith(errorPrefixFr) ||
+                  ui.message.contains(errorText)
+          val messageText =
+              when {
+                ui.message.startsWith(errorPrefixEn) -> ui.message.removePrefix(errorPrefixEn)
+                ui.message.startsWith(errorPrefixFr) -> ui.message.removePrefix(errorPrefixFr)
+                else -> ui.message
+              }
           AlertDialog(
               onDismissRequest = { vm.clearMessage() },
               title = {
                 Text(
-                    text = if (isError) "Error" else stringResource(R.string.admin),
+                    text = if (isError) errorText else stringResource(R.string.admin),
                     color = if (isError) MaterialTheme.colorScheme.error else MainColor)
               },
               text = { Text(text = messageText, style = MaterialTheme.typography.bodyMedium) },
@@ -421,7 +437,7 @@ fun AdminPageScreen(
                 TextButton(
                     onClick = { vm.clearMessage() },
                     colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
-                      Text("OK")
+                      Text(stringResource(R.string.admin_page_ok))
                     }
               })
         }

@@ -290,6 +290,14 @@ object C {
     const val ICON_DELETE_CONTENT_DESC: String = "Remove image"
   }
 
+  object FullScreenImageViewerTags {
+    fun imageTag(uri: Uri): String = "FullScreenImageViewerImage$uri"
+
+    const val DELETE_BUTTON = "FullScreenImageViewerDeleteButton"
+    const val LEFT_ARROW_BUTTON = "FullScreenImageViewerLeftArrowButton"
+    const val RIGHT_ARROW_BUTTON = "FullScreenImageViewerRightArrowButton"
+  }
+
   object ChannelsScreenTestTags {
     const val ROOT = "channelsScreenRoot"
     const val SEARCH_BAR = "channelsSearchBar"

@@ -35,8 +35,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil.compose.AsyncImage
+import com.android.mySwissDorm.R
+import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.Red
 
 @Composable
@@ -45,6 +52,8 @@ fun FullScreenImageViewer(
     onDismiss: () -> Unit,
     initialIndex: Int = 0,
 ) {
+  require(imageUris.isNotEmpty())
+  require(initialIndex >= 0 && initialIndex < imageUris.size)
   var currentIndex by remember { mutableIntStateOf(initialIndex) }
   var scale by remember { mutableFloatStateOf(1f) }
   var offset by remember { mutableStateOf(Offset.Zero) }
@@ -83,7 +92,8 @@ fun FullScreenImageViewer(
                     scaleY = scale,
                     translationX = offset.x,
                     translationY = offset.y)
-                .transformable(state = transformState),
+                .transformable(state = transformState)
+                .testTag(C.FullScreenImageViewerTags.imageTag(imageUris[currentIndex])),
         onLoading = { isLoading = true },
         onSuccess = { isLoading = false },
         onError = { isLoading = false })
@@ -102,7 +112,10 @@ fun FullScreenImageViewer(
         exit = fadeOut(),
         modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)) {
           IconButton(
-              onClick = onDismiss, modifier = Modifier.background(color = buttonBackGroundColor)) {
+              onClick = onDismiss,
+              modifier =
+                  Modifier.background(color = buttonBackGroundColor)
+                      .testTag(C.FullScreenImageViewerTags.DELETE_BUTTON)) {
                 Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = Red)
               }
         }
@@ -121,7 +134,9 @@ fun FullScreenImageViewer(
                         currentIndex = imageUris.size - 1
                       }
                     },
-                    modifier = Modifier.background(color = buttonBackGroundColor)) {
+                    modifier =
+                        Modifier.background(color = buttonBackGroundColor)
+                            .testTag(C.FullScreenImageViewerTags.LEFT_ARROW_BUTTON)) {
                       Icon(
                           imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                           contentDescription = "Previous",
@@ -136,7 +151,9 @@ fun FullScreenImageViewer(
                         currentIndex = 0
                       }
                     },
-                    modifier = Modifier.background(color = buttonBackGroundColor)) {
+                    modifier =
+                        Modifier.background(color = buttonBackGroundColor)
+                            .testTag(C.FullScreenImageViewerTags.RIGHT_ARROW_BUTTON)) {
                       Icon(
                           imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                           contentDescription = "Next",
@@ -147,16 +164,12 @@ fun FullScreenImageViewer(
   }
 }
 
-// @Preview
-// @Composable
-// fun FullScreenImageViewerPreview() {
-//    val context = LocalContext.current
-//    val uri = "android.resource://${context.packageName}/${R.drawable.zurich}".toUri()
-//    MySwissDormAppTheme {
-//        FullScreenImageViewer(
-//            imageUris = listOf(uri,uri),
-//            onDismiss = {},
-//            initialIndex = 0
-//        )
-//    }
-// }
+@Preview
+@Composable
+fun FullScreenImageViewerPreview() {
+  val context = LocalContext.current
+  val uri = "android.resource://${context.packageName}/${R.drawable.zurich}".toUri()
+  MySwissDormAppTheme {
+    FullScreenImageViewer(imageUris = listOf(uri, uri), onDismiss = {}, initialIndex = 0)
+  }
+}

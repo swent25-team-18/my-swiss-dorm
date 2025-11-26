@@ -22,7 +22,6 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepository
@@ -69,8 +68,6 @@ class EditReviewScreenTest : FirestoreTest() {
     ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
     ResidenciesRepositoryProvider.repository =
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
-    PhotoRepositoryProvider.initialize(
-        context = InstrumentationRegistry.getInstrumentation().targetContext)
   }
 
   // ---------- Helpers ----------

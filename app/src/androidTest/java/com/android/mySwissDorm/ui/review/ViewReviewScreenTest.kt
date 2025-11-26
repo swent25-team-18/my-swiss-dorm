@@ -73,10 +73,6 @@ class ViewReviewScreenTest : FirestoreTest() {
 
   private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-  init {
-    PhotoRepositoryProvider.initialize(context)
-  }
-
   override fun createRepositories() {
     profilesRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     reviewsRepo = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)

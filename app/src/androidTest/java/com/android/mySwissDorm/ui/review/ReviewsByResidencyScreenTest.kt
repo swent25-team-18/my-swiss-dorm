@@ -62,7 +62,6 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
   private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
-    PhotoRepositoryProvider.initialize(context)
     runBlocking {
       residenciesRepo.addResidency(vortex)
       residenciesRepo.addResidency(atrium)

@@ -1,9 +1,11 @@
 package com.android.mySwissDorm.utils
 
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.city.CITIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
@@ -50,7 +52,9 @@ abstract class FirestoreTest : TestCase() {
     auth.signInAnonymously().await()
   }
 
+  // Application initialization
   init {
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().targetContext)
     assert(FirebaseEmulator.isRunning) { "FirebaseEmulator must be running for these tests" }
   }
 

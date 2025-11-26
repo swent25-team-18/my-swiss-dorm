@@ -6,3 +6,5 @@ export const firebaseConfig = {
   messagingSenderId: "587708119125",
   appId: "1:587708119125:web:a5079e64efc4f02c8abcdc"
 };
+
+//This is a public config that does not compromise security (which is ensured by the Firebase rules).

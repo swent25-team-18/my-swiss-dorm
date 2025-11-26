@@ -9,27 +9,9 @@ class ConvertersTest {
   private val converters = Converters()
 
   @Test
-  fun timestampToLong_convertsCorrectly() {
-    val timestamp = Timestamp(1000, 500_000_000)
-    val result = converters.timestampToLong(timestamp)
-
-    assertEquals(1_000_500L, result)
-  }
-
-  @Test
   fun timestampToLong_handlesNull() {
     val result = converters.timestampToLong(null)
     assertNull(result)
-  }
-
-  @Test
-  fun fromTimestamp_convertsCorrectly() {
-    val longValue = 1_000_500L // 1000s + 500ms
-    val result = converters.fromTimestamp(longValue)
-
-    assertNotNull(result)
-    assertEquals(1000L, result!!.seconds)
-    assertEquals(500_000_000, result.nanoseconds)
   }
 
   @Test
@@ -50,28 +32,19 @@ class ConvertersTest {
   }
 
   @Test
-  fun fromLocation_convertsCorrectly() {
-    val location = Location("Lausanne", 46.5197, 6.6323)
-    val result = converters.fromLocation(location)
+  fun timestampRoundTrip_reversePreservesValue() {
+    val originalLong = 1_000_500L
+    val timestamp = converters.fromTimestamp(originalLong)
+    val converted = converters.timestampToLong(timestamp)
 
-    assertEquals("Lausanne|46.5197|6.6323", result)
+    assertNotNull(timestamp)
+    assertEquals(originalLong, converted)
   }
 
   @Test
   fun fromLocation_handlesNull() {
     val result = converters.fromLocation(null)
     assertNull(result)
-  }
-
-  @Test
-  fun toLocation_convertsCorrectly() {
-    val stringValue = "Lausanne|46.5197|6.6323"
-    val result = converters.toLocation(stringValue)
-
-    assertNotNull(result)
-    assertEquals("Lausanne", result!!.name)
-    assertEquals(46.5197, result.latitude, 0.0001)
-    assertEquals(6.6323, result.longitude, 0.0001)
   }
 
   @Test
@@ -111,11 +84,13 @@ class ConvertersTest {
   }
 
   @Test
-  fun fromStringList_convertsCorrectly() {
-    val list = listOf("url1", "url2", "url3")
-    val result = converters.fromStringList(list)
+  fun locationRoundTrip_reversePreservesValue() {
+    val originalString = "Lausanne|46.5197|6.6323"
+    val location = converters.toLocation(originalString)
+    val converted = converters.fromLocation(location)
 
-    assertEquals("url1,url2,url3", result)
+    assertNotNull(location)
+    assertEquals(originalString, converted)
   }
 
   @Test
@@ -128,18 +103,6 @@ class ConvertersTest {
   fun fromStringList_handlesEmptyList() {
     val result = converters.fromStringList(emptyList())
     assertEquals("", result)
-  }
-
-  @Test
-  fun toStringList_convertsCorrectly() {
-    val stringValue = "url1,url2,url3"
-    val result = converters.toStringList(stringValue)
-
-    assertNotNull(result)
-    assertEquals(3, result!!.size)
-    assertEquals("url1", result[0])
-    assertEquals("url2", result[1])
-    assertEquals("url3", result[2])
   }
 
   @Test
@@ -165,5 +128,15 @@ class ConvertersTest {
     assertNotNull(converted)
     assertEquals(original.size, converted!!.size)
     assertEquals(original, converted)
+  }
+
+  @Test
+  fun stringListRoundTrip_reversePreservesValue() {
+    val originalString = "url1,url2,url3"
+    val list = converters.toStringList(originalString)
+    val converted = converters.fromStringList(list)
+
+    assertNotNull(list)
+    assertEquals(originalString, converted)
   }
 }

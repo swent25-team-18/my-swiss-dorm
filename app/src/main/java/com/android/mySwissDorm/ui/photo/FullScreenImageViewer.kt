@@ -35,15 +35,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import coil.compose.AsyncImage
-import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.Red
 
 @Composable
@@ -61,6 +56,10 @@ fun FullScreenImageViewer(
   var isLoading by remember { mutableStateOf(false) }
 
   val transformState = rememberTransformableState { zoomChange, panChange, _ ->
+    if (zoomChange != 1f) {
+      showControls = false
+    }
+
     scale = (scale * zoomChange).coerceIn(1f, 5f)
 
     val newOffset = offset + panChange
@@ -86,13 +85,21 @@ fun FullScreenImageViewer(
         contentScale = ContentScale.Fit,
         modifier =
             Modifier.fillMaxSize()
-                .pointerInput(Unit) { detectTapGestures(onTap = { showControls = !showControls }) }
+                .transformable(state = transformState)
                 .graphicsLayer(
                     scaleX = scale,
                     scaleY = scale,
                     translationX = offset.x,
                     translationY = offset.y)
-                .transformable(state = transformState)
+                .pointerInput(Unit) {
+                  detectTapGestures(
+                      onTap = { showControls = !showControls },
+                      onDoubleTap = {
+                        showControls = !showControls
+                        scale = if (scale > 1f) 1f else 2.5f
+                        offset = Offset.Zero
+                      })
+                }
                 .testTag(C.FullScreenImageViewerTags.imageTag(imageUris[currentIndex])),
         onLoading = { isLoading = true },
         onSuccess = { isLoading = false },
@@ -164,12 +171,12 @@ fun FullScreenImageViewer(
   }
 }
 
-@Preview
-@Composable
-fun FullScreenImageViewerPreview() {
-  val context = LocalContext.current
-  val uri = "android.resource://${context.packageName}/${R.drawable.zurich}".toUri()
-  MySwissDormAppTheme {
-    FullScreenImageViewer(imageUris = listOf(uri, uri), onDismiss = {}, initialIndex = 0)
-  }
-}
+// @Preview
+// @Composable
+// fun FullScreenImageViewerPreview() {
+//  val context = LocalContext.current
+//  val uri = "android.resource://${context.packageName}/${R.drawable.zurich}".toUri()
+//  MySwissDormAppTheme {
+//    FullScreenImageViewer(imageUris = listOf(uri, uri), onDismiss = {}, initialIndex = 0)
+//  }
+// }

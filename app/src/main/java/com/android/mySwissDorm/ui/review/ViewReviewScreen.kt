@@ -202,7 +202,8 @@ fun ViewReviewScreen(
               ImageGrid(
                   imageUris = uiState.images.map { it.image }.toSet(),
                   isEditingMode = false,
-                  onRemove = {})
+                  onRemove = {},
+                  modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
 
               // Location placeholder
               viewReviewViewModel.setLocationOfReview(reviewUid)

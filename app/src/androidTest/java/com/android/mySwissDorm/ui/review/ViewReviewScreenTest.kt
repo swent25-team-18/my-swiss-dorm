@@ -17,8 +17,12 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RoomType
@@ -37,7 +41,9 @@ import java.util.Date
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -58,10 +64,18 @@ class ViewReviewScreenTest : FirestoreTest() {
   // Pre-seeded variants so tests don’t need runTest
   private lateinit var anonymousReviewOwned: Review
   private lateinit var nonAnonymousReviewOwned: Review
+  private val photo =
+      Photo(
+          image = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri(),
+          fileName = "zurich.png")
 
   private lateinit var vm: ViewReviewViewModel
 
   private val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+  init {
+    PhotoRepositoryProvider.initialize(context)
+  }
 
   override fun createRepositories() {
     profilesRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
@@ -72,7 +86,6 @@ class ViewReviewScreenTest : FirestoreTest() {
   @Before
   override fun setUp() {
     super.setUp()
-    createRepositories()
     vm = ViewReviewViewModel(reviewsRepo, profilesRepo)
 
     runTest {
@@ -90,6 +103,8 @@ class ViewReviewScreenTest : FirestoreTest() {
       residenciesRepo.addResidency(resTest2)
       otherId = FirebaseEmulator.auth.currentUser!!.uid
       profilesRepo.createProfile(profile2.copy(ownerId = otherId))
+      // Photo upload
+      PhotoRepositoryProvider.cloud_repository.uploadPhoto(photo)
 
       // Base reviews
       review1 =
@@ -104,7 +119,7 @@ class ViewReviewScreenTest : FirestoreTest() {
               roomType = RoomType.STUDIO,
               pricePerMonth = 300.0,
               areaInM2 = 64,
-              imageUrls = emptyList(),
+              imageUrls = listOf("zurich.png"),
               upvotedBy = emptySet(),
               downvotedBy = emptySet())
       review2 =
@@ -136,6 +151,12 @@ class ViewReviewScreenTest : FirestoreTest() {
       reviewsRepo.addReview(anonymousReviewOwned)
       reviewsRepo.addReview(nonAnonymousReviewOwned)
     }
+  }
+
+  @After
+  override fun tearDown() {
+    runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
+    super.tearDown()
   }
 
   private fun setOwnerReview() {

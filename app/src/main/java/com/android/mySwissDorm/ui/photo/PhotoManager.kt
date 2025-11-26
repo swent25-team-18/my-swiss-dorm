@@ -115,7 +115,9 @@ class PhotoManager(
   /** This commit the changes to the cloud repository */
   suspend fun commitChanges() {
     _newPhotos.forEach { photoRepositoryCloud.uploadPhoto(it) }
+    _newPhotos.removeAll { true }
     _deletedPhotos.forEach { photoRepositoryCloud.deletePhoto(it) }
+    _deletedPhotos.removeAll { true }
     Log.d(
         "PhotoManager",
         "Sent to be added: ${_newPhotos.size}. Sent to be deleted: ${_deletedPhotos.size}")

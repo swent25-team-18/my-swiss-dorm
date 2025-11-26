@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.model.review
 
+import androidx.room.withTransaction
+import com.android.mySwissDorm.model.database.AppDatabase
 import com.android.mySwissDorm.model.database.ReviewDao
 import com.android.mySwissDorm.model.database.ReviewEntity
 
@@ -10,7 +12,8 @@ import com.android.mySwissDorm.model.database.ReviewEntity
  * implements the same interface as [ReviewsRepositoryFirestore], allowing seamless switching
  * between local and remote data sources.
  */
-class ReviewsRepositoryLocal(private val reviewDao: ReviewDao) : ReviewsRepository {
+class ReviewsRepositoryLocal(private val reviewDao: ReviewDao, private val database: AppDatabase) :
+    ReviewsRepository {
 
   /**
    * Generates a new unique identifier for a review.
@@ -59,11 +62,11 @@ class ReviewsRepositoryLocal(private val reviewDao: ReviewDao) : ReviewsReposito
    *
    * @param reviewId The unique identifier of the review.
    * @return The review with the specified identifier.
-   * @throws Exception if the review is not found.
+   * @throws NoSuchElementException if the review is not found.
    */
   override suspend fun getReview(reviewId: String): Review {
     return reviewDao.getReview(reviewId)?.toReview()
-        ?: throw Exception("ReviewsRepositoryLocal: Review $reviewId not found")
+        ?: throw NoSuchElementException("ReviewsRepositoryLocal: Review $reviewId not found")
   }
 
   /**
@@ -84,11 +87,17 @@ class ReviewsRepositoryLocal(private val reviewDao: ReviewDao) : ReviewsReposito
    *
    * @param reviewId The unique identifier of the review to edit.
    * @param newValue The new value for the review.
-   * @throws Exception if the review is not found or if the reviewId doesn't match newValue.uid.
+   * @throws IllegalArgumentException if the reviewId doesn't match newValue.uid.
+   * @throws NoSuchElementException if the review is not found.
    */
   override suspend fun editReview(reviewId: String, newValue: Review) {
     if (newValue.uid != reviewId) {
-      throw Exception("ReviewsRepositoryLocal: Provided reviewId does not match newValue.uid")
+      throw IllegalArgumentException(
+          "ReviewsRepositoryLocal: Provided reviewId does not match newValue.uid")
+    }
+    // Verify the review exists before updating
+    if (reviewDao.getReview(reviewId) == null) {
+      throw NoSuchElementException("ReviewsRepositoryLocal: Review $reviewId not found")
     }
     reviewDao.updateReview(ReviewEntity.fromReview(newValue))
   }
@@ -108,42 +117,48 @@ class ReviewsRepositoryLocal(private val reviewDao: ReviewDao) : ReviewsReposito
    * If the user has already upvoted, the upvote is removed. If the user has downvoted, the downvote
    * is removed and replaced with an upvote.
    *
+   * This operation is performed atomically within a transaction to prevent race conditions.
+   *
    * @param reviewId The unique identifier of the review to upvote.
    * @param userId The unique identifier of the user casting the vote.
-   * @throws Exception if the review is not found or if the user is the owner of the review.
+   * @throws NoSuchElementException if the review is not found.
+   * @throws IllegalArgumentException if the user is the owner of the review.
    */
   override suspend fun upvoteReview(reviewId: String, userId: String) {
-    val entity =
-        reviewDao.getReview(reviewId)
-            ?: throw Exception("ReviewsRepositoryLocal: Review $reviewId not found")
+    database.withTransaction {
+      val entity =
+          reviewDao.getReview(reviewId)
+              ?: throw NoSuchElementException("ReviewsRepositoryLocal: Review $reviewId not found")
 
-    val review = entity.toReview()
+      val review = entity.toReview()
 
-    if (review.ownerId == userId) {
-      throw Exception("ReviewsRepositoryLocal: Users cannot vote on their own reviews")
+      if (review.ownerId == userId) {
+        throw IllegalArgumentException(
+            "ReviewsRepositoryLocal: Users cannot vote on their own reviews")
+      }
+
+      val newUpvotedBy = review.upvotedBy.toMutableSet()
+      val newDownvotedBy = review.downvotedBy.toMutableSet()
+
+      when (userId) {
+        in newUpvotedBy -> {
+          // Already upvoted: remove upvote
+          newUpvotedBy.remove(userId)
+        }
+        in newDownvotedBy -> {
+          // Downvoted: remove downvote and add upvote
+          newDownvotedBy.remove(userId)
+          newUpvotedBy.add(userId)
+        }
+        else -> {
+          // No vote: add upvote
+          newUpvotedBy.add(userId)
+        }
+      }
+
+      val updatedReview = review.copy(upvotedBy = newUpvotedBy, downvotedBy = newDownvotedBy)
+      reviewDao.updateReview(ReviewEntity.fromReview(updatedReview))
     }
-
-    val newUpvotedBy = review.upvotedBy.toMutableSet()
-    val newDownvotedBy = review.downvotedBy.toMutableSet()
-
-    when {
-      userId in newUpvotedBy -> {
-        // Already upvoted: remove upvote
-        newUpvotedBy.remove(userId)
-      }
-      userId in newDownvotedBy -> {
-        // Downvoted: remove downvote and add upvote
-        newDownvotedBy.remove(userId)
-        newUpvotedBy.add(userId)
-      }
-      else -> {
-        // No vote: add upvote
-        newUpvotedBy.add(userId)
-      }
-    }
-
-    val updatedReview = review.copy(upvotedBy = newUpvotedBy, downvotedBy = newDownvotedBy)
-    reviewDao.updateReview(ReviewEntity.fromReview(updatedReview))
   }
 
   /**
@@ -152,69 +167,81 @@ class ReviewsRepositoryLocal(private val reviewDao: ReviewDao) : ReviewsReposito
    * If the user has already downvoted, the downvote is removed. If the user has upvoted, the upvote
    * is removed and replaced with a downvote.
    *
+   * This operation is performed atomically within a transaction to prevent race conditions.
+   *
    * @param reviewId The unique identifier of the review to downvote.
    * @param userId The unique identifier of the user casting the vote.
-   * @throws Exception if the review is not found or if the user is the owner of the review.
+   * @throws NoSuchElementException if the review is not found.
+   * @throws IllegalArgumentException if the user is the owner of the review.
    */
   override suspend fun downvoteReview(reviewId: String, userId: String) {
-    val entity =
-        reviewDao.getReview(reviewId)
-            ?: throw Exception("ReviewsRepositoryLocal: Review $reviewId not found")
+    database.withTransaction {
+      val entity =
+          reviewDao.getReview(reviewId)
+              ?: throw NoSuchElementException("ReviewsRepositoryLocal: Review $reviewId not found")
 
-    val review = entity.toReview()
+      val review = entity.toReview()
 
-    if (review.ownerId == userId) {
-      throw Exception("ReviewsRepositoryLocal: Users cannot vote on their own reviews")
+      if (review.ownerId == userId) {
+        throw IllegalArgumentException(
+            "ReviewsRepositoryLocal: Users cannot vote on their own reviews")
+      }
+
+      val newUpvotedBy = review.upvotedBy.toMutableSet()
+      val newDownvotedBy = review.downvotedBy.toMutableSet()
+
+      when (userId) {
+        in newDownvotedBy -> {
+          // Already downvoted: remove downvote
+          newDownvotedBy.remove(userId)
+        }
+        in newUpvotedBy -> {
+          // Upvoted: remove upvote and add downvote
+          newUpvotedBy.remove(userId)
+          newDownvotedBy.add(userId)
+        }
+        else -> {
+          // No vote: add downvote
+          newDownvotedBy.add(userId)
+        }
+      }
+
+      val updatedReview = review.copy(upvotedBy = newUpvotedBy, downvotedBy = newDownvotedBy)
+      reviewDao.updateReview(ReviewEntity.fromReview(updatedReview))
     }
-
-    val newUpvotedBy = review.upvotedBy.toMutableSet()
-    val newDownvotedBy = review.downvotedBy.toMutableSet()
-
-    when {
-      userId in newDownvotedBy -> {
-        // Already downvoted: remove downvote
-        newDownvotedBy.remove(userId)
-      }
-      userId in newUpvotedBy -> {
-        // Upvoted: remove upvote and add downvote
-        newUpvotedBy.remove(userId)
-        newDownvotedBy.add(userId)
-      }
-      else -> {
-        // No vote: add downvote
-        newDownvotedBy.add(userId)
-      }
-    }
-
-    val updatedReview = review.copy(upvotedBy = newUpvotedBy, downvotedBy = newDownvotedBy)
-    reviewDao.updateReview(ReviewEntity.fromReview(updatedReview))
   }
 
   /**
    * Removes any existing vote (upvote or downvote) from the review by the given user.
    *
+   * This operation is performed atomically within a transaction to prevent race conditions.
+   *
    * @param reviewId The unique identifier of the review to remove the vote from.
    * @param userId The unique identifier of the user whose vote should be removed.
-   * @throws Exception if the review is not found or if the user is the owner of the review.
+   * @throws NoSuchElementException if the review is not found.
+   * @throws IllegalArgumentException if the user is the owner of the review.
    */
   override suspend fun removeVote(reviewId: String, userId: String) {
-    val entity =
-        reviewDao.getReview(reviewId)
-            ?: throw Exception("ReviewsRepositoryLocal: Review $reviewId not found")
+    database.withTransaction {
+      val entity =
+          reviewDao.getReview(reviewId)
+              ?: throw NoSuchElementException("ReviewsRepositoryLocal: Review $reviewId not found")
 
-    val review = entity.toReview()
+      val review = entity.toReview()
 
-    if (review.ownerId == userId) {
-      throw Exception("ReviewsRepositoryLocal: Users cannot vote on their own reviews")
+      if (review.ownerId == userId) {
+        throw IllegalArgumentException(
+            "ReviewsRepositoryLocal: Users cannot vote on their own reviews")
+      }
+
+      val newUpvotedBy = review.upvotedBy.toMutableSet()
+      val newDownvotedBy = review.downvotedBy.toMutableSet()
+
+      newUpvotedBy.remove(userId)
+      newDownvotedBy.remove(userId)
+
+      val updatedReview = review.copy(upvotedBy = newUpvotedBy, downvotedBy = newDownvotedBy)
+      reviewDao.updateReview(ReviewEntity.fromReview(updatedReview))
     }
-
-    val newUpvotedBy = review.upvotedBy.toMutableSet()
-    val newDownvotedBy = review.downvotedBy.toMutableSet()
-
-    newUpvotedBy.remove(userId)
-    newDownvotedBy.remove(userId)
-
-    val updatedReview = review.copy(upvotedBy = newUpvotedBy, downvotedBy = newDownvotedBy)
-    reviewDao.updateReview(ReviewEntity.fromReview(updatedReview))
   }
 }

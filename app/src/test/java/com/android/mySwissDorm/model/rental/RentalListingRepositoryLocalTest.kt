@@ -117,6 +117,12 @@ class RentalListingRepositoryLocalTest {
   }
 
   @Test
+  fun editRentalListing_throwsWhenNotFound() = runTest {
+    val listing = createTestListing("listing-1")
+    assertTrue(runCatching { repository.editRentalListing("listing-1", listing) }.isFailure)
+  }
+
+  @Test
   fun getAllRentalListingsByLocation_handlesDistanceCalculationErrors() = runTest {
     val lausanne = Location("Lausanne", 46.5197, 6.6323)
     val listing = createTestListing("listing-1", location = lausanne)
@@ -138,16 +144,17 @@ class RentalListingRepositoryLocalTest {
       title: String = "Test Listing",
       location: Location = Location("Lausanne", 46.5197, 6.6323)
   ): RentalListing {
+    val fixedTimestamp = Timestamp(1000000L, 0) // Fixed timestamp
     return RentalListing(
         uid = uid,
         ownerId = ownerId,
-        postedAt = Timestamp.now(),
+        postedAt = fixedTimestamp,
         residencyName = "Vortex",
         title = title,
         roomType = RoomType.STUDIO,
         pricePerMonth = 1200.0,
         areaInM2 = 20,
-        startDate = Timestamp.now(),
+        startDate = fixedTimestamp,
         description = "Test description",
         imageUrls = emptyList(),
         status = RentalStatus.POSTED,

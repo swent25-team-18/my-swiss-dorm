@@ -81,11 +81,12 @@ class RentalListingRepositoryLocal(private val rentalListingDao: RentalListingDa
    *
    * @param rentalPostId The unique identifier of the rental listing.
    * @return The rental listing with the specified identifier.
-   * @throws Exception if the rental listing is not found.
+   * @throws NoSuchElementException if the rental listing is not found.
    */
   override suspend fun getRentalListing(rentalPostId: String): RentalListing {
     return rentalListingDao.getRentalListing(rentalPostId)?.toRentalListing()
-        ?: throw Exception("RentalListingRepositoryLocal: Rental listing $rentalPostId not found")
+        ?: throw NoSuchElementException(
+            "RentalListingRepositoryLocal: Rental listing $rentalPostId not found")
   }
 
   /**
@@ -106,13 +107,18 @@ class RentalListingRepositoryLocal(private val rentalListingDao: RentalListingDa
    *
    * @param rentalPostId The unique identifier of the rental listing to edit.
    * @param newValue The new value for the rental listing.
-   * @throws Exception if the rental listing is not found or if the rentalPostId doesn't match
-   *   newValue.uid.
+   * @throws IllegalArgumentException if the rentalPostId doesn't match newValue.uid.
+   * @throws NoSuchElementException if the rental listing is not found.
    */
   override suspend fun editRentalListing(rentalPostId: String, newValue: RentalListing) {
     if (newValue.uid != rentalPostId) {
-      throw Exception(
+      throw IllegalArgumentException(
           "RentalListingRepositoryLocal: Provided rentalPostId does not match newValue.uid")
+    }
+    // Verify the listing exists before updating
+    if (rentalListingDao.getRentalListing(rentalPostId) == null) {
+      throw NoSuchElementException(
+          "RentalListingRepositoryLocal: Rental listing $rentalPostId not found")
     }
     rentalListingDao.updateRentalListing(RentalListingEntity.fromRentalListing(newValue))
   }

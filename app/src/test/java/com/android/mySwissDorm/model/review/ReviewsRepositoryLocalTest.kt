@@ -25,7 +25,7 @@ class ReviewsRepositoryLocalTest {
         Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-    repository = ReviewsRepositoryLocal(database.reviewDao())
+    repository = ReviewsRepositoryLocal(database.reviewDao(), database)
   }
 
   @After
@@ -237,6 +237,12 @@ class ReviewsRepositoryLocalTest {
   }
 
   @Test
+  fun editReview_throwsWhenNotFound() = runTest {
+    val review = createTestReview("review-1")
+    assertTrue(runCatching { repository.editReview("review-1", review) }.isFailure)
+  }
+
+  @Test
   fun getReview_throwsWhenNotFound() = runTest {
     assertTrue(runCatching { repository.getReview("non-existent") }.isFailure)
   }
@@ -249,10 +255,11 @@ class ReviewsRepositoryLocalTest {
       upvotedBy: Set<String> = emptySet(),
       downvotedBy: Set<String> = emptySet()
   ): Review {
+    val fixedTimestamp = Timestamp(1000000L, 0) // Fixed timestamp
     return Review(
         uid = uid,
         ownerId = ownerId,
-        postedAt = Timestamp.now(),
+        postedAt = fixedTimestamp,
         title = title,
         reviewText = "Test text",
         grade = 4.0,

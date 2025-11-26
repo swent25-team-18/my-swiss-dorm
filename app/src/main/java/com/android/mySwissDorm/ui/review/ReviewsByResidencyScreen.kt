@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -60,8 +61,9 @@ fun ReviewsByResidencyScreen(
     onSelectReview: (ReviewCardUI) -> Unit = {},
     onGoBack: () -> Unit = {},
 ) {
+  val context = LocalContext.current
 
-  LaunchedEffect(residencyName) { reviewsByResidencyViewModel.loadReviews(residencyName) }
+  LaunchedEffect(residencyName) { reviewsByResidencyViewModel.loadReviews(residencyName, context) }
 
   val uiState by reviewsByResidencyViewModel.uiState.collectAsState()
 
@@ -124,10 +126,10 @@ fun ReviewsByResidencyScreen(
                               item,
                               onSelectReview,
                               onUpvote = {
-                                reviewsByResidencyViewModel.upvoteReview(item.reviewUid)
+                                reviewsByResidencyViewModel.upvoteReview(item.reviewUid, context)
                               },
                               onDownvote = {
-                                reviewsByResidencyViewModel.downvoteReview(item.reviewUid)
+                                reviewsByResidencyViewModel.downvoteReview(item.reviewUid, context)
                               })
                         }
                       }

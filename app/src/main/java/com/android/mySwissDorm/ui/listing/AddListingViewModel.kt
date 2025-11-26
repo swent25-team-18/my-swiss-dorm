@@ -1,6 +1,8 @@
 package com.android.mySwissDorm.ui.listing
 
+import android.content.Context
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.photo.PhotoRepository
@@ -39,15 +41,15 @@ class AddListingViewModel(
     _uiState.value = _uiState.value.copy(requireResidencyName = true)
   }
 
-  fun submitForm(onConfirm: (RentalListing) -> Unit) {
+  fun submitForm(onConfirm: (RentalListing) -> Unit, context: Context) {
     val state = uiState.value
     // will probably never reach this if but it's just here for security
     if ((FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true)) {
-      setErrorMsg("Guest users cannot create listings")
+      setErrorMsg(context.getString(R.string.add_listing_vm_guests_cannot_create_listings))
       return
     }
     if (!state.isFormValid) {
-      setErrorMsg("At least one field is not valid")
+      setErrorMsg(context.getString(R.string.add_listing_vm_at_least_one_field_not_valid))
       return
     }
 
@@ -81,11 +83,12 @@ class AddListingViewModel(
     viewModelScope.launch {
       try {
         rentalListingRepository.addRentalListing(listingToAdd)
-        state.pickedImages.forEach { photoRepositoryCloud.uploadPhoto(it) }
+        photoManager.commitChanges()
         clearErrorMsg()
         onConfirm(listingToAdd)
       } catch (e: Exception) {
-        setErrorMsg("Failed to add rental listing: ${e.message}")
+        setErrorMsg(
+            "${context.getString(R.string.add_listing_vm_failed_to_add_listing)} ${e.message}")
       }
     }
   }

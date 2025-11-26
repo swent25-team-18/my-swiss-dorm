@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.review
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -18,6 +20,8 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
     ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
@@ -81,7 +85,7 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ReviewsByResidencyViewModel()
-    vm.loadReviews("Vortex")
+    vm.loadReviews("Vortex", context)
 
     // Wait for load to complete
     waitForReviewsToLoad(vm)
@@ -89,7 +93,7 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
     val initialCard = initialState.reviews.items.find { it.reviewUid == review.uid }!!
 
     // Perform upvote
-    vm.upvoteReview(review.uid)
+    vm.upvoteReview(review.uid, context)
 
     // Check optimistic update immediately
     delay(100)
@@ -116,13 +120,13 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ReviewsByResidencyViewModel()
-    vm.loadReviews("Vortex")
+    vm.loadReviews("Vortex", context)
 
     waitForReviewsToLoad(vm)
     val initialCard = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!
     assertEquals(VoteType.UPVOTE, initialCard.userVote)
 
-    vm.upvoteReview(review.uid)
+    vm.upvoteReview(review.uid, context)
 
     // Wait for updateReviewVoteState to complete (server synchronization)
     waitForVoteStateUpdate(vm, review.uid, 0, VoteType.NONE)
@@ -139,12 +143,12 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ReviewsByResidencyViewModel()
-    vm.loadReviews("Vortex")
+    vm.loadReviews("Vortex", context)
 
     waitForReviewsToLoad(vm)
     val initialCard = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!
 
-    vm.downvoteReview(review.uid)
+    vm.downvoteReview(review.uid, context)
 
     delay(100)
     val optimisticCard = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!
@@ -166,14 +170,14 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ReviewsByResidencyViewModel()
-    vm.loadReviews("Vortex")
+    vm.loadReviews("Vortex", context)
 
     waitForReviewsToLoad(vm)
     val initialCard = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!
     assertEquals(VoteType.DOWNVOTE, initialCard.userVote)
     assertEquals(-1, initialCard.netScore)
 
-    vm.upvoteReview(review.uid)
+    vm.upvoteReview(review.uid, context)
 
     // Wait for updateReviewVoteState to complete (server synchronization)
     waitForVoteStateUpdate(vm, review.uid, 1, VoteType.UPVOTE)
@@ -192,7 +196,7 @@ class ReviewsByResidencyViewModelVoteTest : FirestoreTest() {
 
     switchToUser(FakeUser.FakeUser2)
     val vm = ReviewsByResidencyViewModel()
-    vm.loadReviews("Vortex")
+    vm.loadReviews("Vortex", context)
 
     waitForReviewsToLoad(vm)
     val card = vm.uiState.value.reviews.items.find { it.reviewUid == review.uid }!!

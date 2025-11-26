@@ -82,14 +82,14 @@ fun BrowseCityScreen(
     onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {
+  val context = LocalContext.current
 
   LaunchedEffect(location) {
-    browseCityViewModel.loadResidencies(location)
-    browseCityViewModel.loadListings(location)
+    browseCityViewModel.loadResidencies(location, context)
+    browseCityViewModel.loadListings(location, context)
   }
 
   val uiState by browseCityViewModel.uiState.collectAsState()
-  val context = LocalContext.current
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, browseCityViewModel)
 
   val onLocationClick = remember { { browseCityViewModel.onCustomLocationClick() } }
@@ -121,12 +121,12 @@ fun BrowseCityScreen(
       onFilterClick = { filterType -> browseCityViewModel.showFilterSheet(filterType) },
       onToggleMostRecent = {
         browseCityViewModel.setSortByMostRecent(!uiState.filterState.sortByMostRecent)
-        browseCityViewModel.loadListings(location)
+        browseCityViewModel.loadListings(location, context)
       },
-      onApplyFilter = { browseCityViewModel.loadListings(location) },
+      onApplyFilter = { browseCityViewModel.loadListings(location, context) },
       onClearFilter = {
         browseCityViewModel.clearFilter()
-        browseCityViewModel.loadListings(location)
+        browseCityViewModel.loadListings(location, context)
       },
       onSetRoomTypeFilter = { roomTypes -> browseCityViewModel.setRoomTypeFilter(roomTypes) },
       onSetPriceFilter = { min, max -> browseCityViewModel.setPriceFilter(min, max) },

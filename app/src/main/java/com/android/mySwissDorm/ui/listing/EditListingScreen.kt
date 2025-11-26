@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.listing
 
-import EditListingViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -73,14 +72,16 @@ fun EditListingScreen(
     onBack: () -> Unit,
     rentalListingID: String
 ) {
+  val context = LocalContext.current
   // Load listing when entering the screen or when the id changes.
-  LaunchedEffect(rentalListingID) { editListingViewModel.getRentalListing(rentalListingID) }
+  LaunchedEffect(rentalListingID) {
+    editListingViewModel.getRentalListing(rentalListingID, context)
+  }
 
   // Reactive UI state for the form.
   val listingUIState by editListingViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
   var showDatePicker by remember { mutableStateOf(false) }
-  val context = LocalContext.current
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, editListingViewModel)
 
   Scaffold(
@@ -99,7 +100,7 @@ fun EditListingScreen(
               IconButton(
                   onClick = {
                     val cityName = editListingViewModel.getCityName(listingUIState.residencyName)
-                    editListingViewModel.deleteRentalListing(rentalListingID)
+                    editListingViewModel.deleteRentalListing(rentalListingID, context)
                     onDelete(cityName)
                   },
                   modifier = Modifier.testTag(C.EditListingScreenTags.DELETE_BUTTON)) {
@@ -126,7 +127,8 @@ fun EditListingScreen(
 
                   Button(
                       onClick = {
-                        if (editListingViewModel.editRentalListing(rentalListingID)) onConfirm()
+                        if (editListingViewModel.editRentalListing(rentalListingID, context))
+                            onConfirm()
                       },
                       enabled = ui.isFormValid,
                       colors =
@@ -280,7 +282,8 @@ fun EditListingScreen(
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DefaultAddPhotoButton(onSelectPhoto = { editListingViewModel.addPhoto(it) })
+                    DefaultAddPhotoButton(
+                        onSelectPhoto = { editListingViewModel.addPhoto(it) }, multiplePick = true)
                     ImageGrid(
                         imageUris = ui.pickedImages.map { it.image }.toSet(),
                         isEditingMode = true,

@@ -18,6 +18,7 @@ import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -66,6 +67,8 @@ class ViewListingViewModel(
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
+
+  val photoManager = PhotoManager(photoRepositoryCloud = photoRepositoryCloud)
 
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {
@@ -119,15 +122,8 @@ class ViewListingViewModel(
             } else {
               false
             }
-        val photos =
-            listing.imageUrls.mapNotNull { fileName ->
-              try {
-                photoRepositoryCloud.retrievePhoto(fileName)
-              } catch (_: NoSuchElementException) {
-                Log.d("ViewListingViewModel", "Failed to retrieve the photo : $fileName")
-                null
-              }
-            }
+        photoManager.initialize(listing.imageUrls)
+        val photos = photoManager.photoLoaded
         _uiState.update {
           it.copy(
               listing = listing,
@@ -141,7 +137,7 @@ class ViewListingViewModel(
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
         setErrorMsg(
-            "${context.getString(R.string.view_listing_failed_to_load_listings)}: ${e.message}")
+            "${context.getString(R.string.view_listing_failed_to_load_listings)} ${e.message}")
       }
     }
   }

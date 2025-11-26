@@ -1,8 +1,10 @@
 package com.android.mySwissDorm.ui.profile
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
@@ -71,14 +73,13 @@ class ProfileScreenViewModel(
       _uiState.update {
         it.copy(allResidencies = ResidenciesRepositoryProvider.repository.getAllResidencies())
       }
-      loadProfile()
     }
   }
 
-  private fun loadProfile() {
+  fun loadProfile(context: Context) {
     val uid = auth.currentUser?.uid
     if (uid == null) {
-      _uiState.update { it.copy(errorMsg = "Not signed in.") }
+      _uiState.update { it.copy(errorMsg = context.getString(R.string.profile_vm_not_signed_in)) }
       return
     }
 
@@ -136,10 +137,10 @@ class ProfileScreenViewModel(
    * Security Rules:
    * - Includes `ownerId = uid` in the payload to satisfy rules that validate the owner on writes.
    */
-  fun saveProfile() {
+  fun saveProfile(context: Context) {
     val uid = auth.currentUser?.uid
     if (uid == null) {
-      _uiState.update { it.copy(errorMsg = "Not signed in.") }
+      _uiState.update { it.copy(errorMsg = context.getString(R.string.profile_vm_not_signed_in)) }
       return
     }
 
@@ -189,7 +190,11 @@ class ProfileScreenViewModel(
         _uiState.update { it.copy(isSaving = false, isEditing = false, errorMsg = null) }
       } catch (e: Exception) {
         Log.e("ProfileViewModel", "Failed to save profile", e)
-        _uiState.update { it.copy(isSaving = false, errorMsg = "Failed to save: ${e.message}") }
+        _uiState.update {
+          it.copy(
+              isSaving = false,
+              errorMsg = "${context.getString(R.string.profile_vm_failed_to_save)} ${e.message}")
+        }
       }
     }
   }

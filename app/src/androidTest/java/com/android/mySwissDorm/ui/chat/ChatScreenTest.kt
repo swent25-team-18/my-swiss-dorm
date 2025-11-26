@@ -80,7 +80,7 @@ class ChatScreenTest {
     // Wait for loading state to appear
     compose.waitUntil(timeoutMillis = 3_000) {
       try {
-        compose.onNodeWithText("Connecting to chat...", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Connecting to chat…", substring = true).assertIsDisplayed()
         true
       } catch (e: Exception) {
         false
@@ -104,7 +104,7 @@ class ChatScreenTest {
     // Wait a bit for the screen to initialize
     compose.waitUntil(timeoutMillis = 2_000) {
       try {
-        compose.onNodeWithText("Connecting to chat...", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Connecting to chat…", substring = true).assertIsDisplayed()
         true
       } catch (e: Exception) {
         false

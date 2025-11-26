@@ -263,7 +263,7 @@ fun CustomDatePickerDialog(
               },
               modifier = Modifier.testTag(C.CustomDatePickerDialogTags.OK_BUTTON),
               colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
-                Text("OK")
+                Text(stringResource(R.string.ok))
               }
         },
         dismissButton = {

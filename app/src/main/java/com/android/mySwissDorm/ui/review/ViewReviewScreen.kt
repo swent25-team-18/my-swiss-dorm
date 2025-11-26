@@ -230,7 +230,7 @@ fun ViewReviewScreen(
                   modifier = Modifier.fillMaxWidth().testTag(C.ViewReviewTags.VOTE_BUTTONS),
                   horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Was this review helpful?",
+                        text = stringResource(R.string.view_review_was_this_useful),
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextColor,
                         modifier = Modifier.padding(bottom = 8.dp))

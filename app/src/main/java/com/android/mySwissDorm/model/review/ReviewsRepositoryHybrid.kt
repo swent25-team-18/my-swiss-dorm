@@ -2,9 +2,7 @@ package com.android.mySwissDorm.model.review
 
 import android.content.Context
 import android.util.Log
-import com.android.mySwissDorm.utils.NetworkUtils
-import kotlin.NoSuchElementException
-import kotlinx.coroutines.TimeoutCancellationException
+import com.android.mySwissDorm.model.HybridRepositoryBase
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -20,114 +18,13 @@ import kotlinx.coroutines.withTimeout
  * @property localRepository The Room-backed repository for offline operations.
  */
 class ReviewsRepositoryHybrid(
-    private val context: Context,
+    context: Context,
     private val remoteRepository: ReviewsRepositoryFirestore,
     private val localRepository: ReviewsRepositoryLocal
-) : ReviewsRepository {
-
-  private val TAG = "ReviewsRepositoryHybrid"
-  private val TIMEOUT_MS = 5000L
-
-  /**
-   * Performs a read operation with fast-fail and fallback logic.
-   *
-   * Strategy:
-   * 1. Fast-fail: If offline, return local data immediately
-   * 2. Timeout safety: Try remote with timeout
-   * 3. Sync: Save successful remote results to local
-   * 4. Fallback: On network error/timeout, return local data
-   */
-  private suspend fun <T> performRead(
-      operationName: String,
-      remoteCall: suspend () -> T,
-      localFallback: suspend () -> T,
-      syncToLocal: suspend (T) -> Unit
-  ): T {
-    // Fast-fail: If offline, go straight to local DB
-    if (!NetworkUtils.isNetworkAvailable(context)) {
-      Log.i(TAG, "Device offline, returning local data immediately for $operationName")
-      return localFallback()
-    }
-
-    return try {
-      // Timeout safety: Try network with time limit
-      val result = withTimeout(TIMEOUT_MS) { remoteCall() }
-      // Sync: Save to local for next time
-      syncToLocal(result)
-      result
-    } catch (e: Throwable) {
-      // Fallback: On network error/timeout/not found, return local data
-      if (isNetworkOrTimeout(e) || e is NoSuchElementException) {
-        Log.w(
-            TAG, "Network error, timeout, or not found during $operationName, using local data", e)
-        localFallback()
-      } else {
-        throw e
-      }
-    }
-  }
-
-  /**
-   * Performs a write operation with fast-fail logic.
-   *
-   * Strategy:
-   * 1. Block offline writes: Throw immediately if offline
-   * 2. Remote first: Attempt remote operation with timeout
-   * 3. Local sync: Sync to local after successful remote operation
-   */
-  private suspend fun performWrite(
-      operationName: String,
-      remoteCall: suspend () -> Unit,
-      localSync: suspend () -> Unit
-  ) {
-    // Block offline writes
-    if (!NetworkUtils.isNetworkAvailable(context)) {
-      throw UnsupportedOperationException(
-          "ReviewsRepositoryHybrid: Cannot $operationName offline. Please connect to the internet.")
-    }
-
-    try {
-      // Remote first
-      withTimeout(TIMEOUT_MS) { remoteCall() }
-      // Local sync (best effort - don't fail if this fails)
-      try {
-        localSync()
-      } catch (e: Exception) {
-        Log.w(TAG, "Error syncing $operationName to local DB", e)
-        // Don't crash if local sync fails, main action succeeded
-      }
-    } catch (e: Throwable) {
-      if (isNetworkOrTimeout(e)) {
-        Log.w(TAG, "Network error or timeout during $operationName", e)
-        throw UnsupportedOperationException(
-            "ReviewsRepositoryHybrid: Cannot $operationName offline. Please connect to the internet.",
-            e)
-      }
-      throw e
-    }
-  }
-
-  /** Checks if the exception is network-related or a timeout. */
-  private fun isNetworkOrTimeout(e: Throwable): Boolean {
-    val exception = e as? Exception ?: Exception(e.message)
-    return NetworkUtils.isNetworkException(exception) || e is TimeoutCancellationException
-  }
+) : HybridRepositoryBase<Review>(context, "ReviewsRepository"), ReviewsRepository {
 
   override fun getNewUid(): String {
-    // getNewUid() in Firestore doesn't make network calls, so it should always work when available
-    // But if somehow it fails, we know local doesn't support it, so throw directly
-    return try {
-      remoteRepository.getNewUid()
-    } catch (e: Exception) {
-      if (NetworkUtils.isNetworkException(e)) {
-        Log.w(TAG, "Network error getting new UID", e)
-        throw UnsupportedOperationException(
-            "ReviewsRepositoryHybrid: Cannot generate new UIDs offline. Please connect to the internet.",
-            e)
-      } else {
-        throw e
-      }
-    }
+    return getNewUidWithNetworkCheck { remoteRepository.getNewUid() }
   }
 
   override suspend fun getAllReviews(): List<Review> =

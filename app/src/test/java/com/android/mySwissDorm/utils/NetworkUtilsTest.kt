@@ -1,15 +1,23 @@
 package com.android.mySwissDorm.utils
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import com.google.firebase.firestore.FirebaseFirestoreException
+import io.mockk.every
+import io.mockk.mockk
 import java.io.IOException
 import java.net.UnknownHostException
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class NetworkUtilsTest {
+  private val context = RuntimeEnvironment.getApplication()
 
   @Test
   fun isNetworkException_returnsTrueForUnknownHostException() {
@@ -74,5 +82,94 @@ class NetworkUtilsTest {
             "Service unavailable", FirebaseFirestoreException.Code.UNAVAILABLE)
     val wrappedException = RuntimeException("Wrapped exception", rootCause)
     assertTrue(NetworkUtils.isNetworkException(wrappedException))
+  }
+
+  @Test
+  fun isNetworkAvailable_returnsTrueWhenWifiAvailable() {
+    val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
+    val network = mockk<Network>(relaxed = true)
+    val networkCapabilities = mockk<NetworkCapabilities>(relaxed = true)
+
+    every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
+    every { connectivityManager.activeNetwork } returns network
+    every { connectivityManager.getNetworkCapabilities(network) } returns networkCapabilities
+    every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns true
+
+    val result = NetworkUtils.isNetworkAvailable(context)
+    assertTrue(result)
+  }
+
+  @Test
+  fun isNetworkAvailable_returnsTrueWhenCellularAvailable() {
+    val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
+    val network = mockk<Network>(relaxed = true)
+    val networkCapabilities = mockk<NetworkCapabilities>(relaxed = true)
+
+    every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
+    every { connectivityManager.activeNetwork } returns network
+    every { connectivityManager.getNetworkCapabilities(network) } returns networkCapabilities
+    every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns false
+    every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) } returns true
+
+    val result = NetworkUtils.isNetworkAvailable(context)
+    assertTrue(result)
+  }
+
+  @Test
+  fun isNetworkAvailable_returnsTrueWhenEthernetAvailable() {
+    val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
+    val network = mockk<Network>(relaxed = true)
+    val networkCapabilities = mockk<NetworkCapabilities>(relaxed = true)
+
+    every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
+    every { connectivityManager.activeNetwork } returns network
+    every { connectivityManager.getNetworkCapabilities(network) } returns networkCapabilities
+    every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns false
+    every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) } returns false
+    every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) } returns true
+
+    val result = NetworkUtils.isNetworkAvailable(context)
+    assertTrue(result)
+  }
+
+  @Test
+  fun isNetworkAvailable_returnsFalseWhenNoActiveNetwork() {
+    val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
+
+    every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
+    every { connectivityManager.activeNetwork } returns null
+
+    val result = NetworkUtils.isNetworkAvailable(context)
+    assertFalse(result)
+  }
+
+  @Test
+  fun isNetworkAvailable_returnsFalseWhenNoNetworkCapabilities() {
+    val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
+    val network = mockk<Network>(relaxed = true)
+
+    every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
+    every { connectivityManager.activeNetwork } returns network
+    every { connectivityManager.getNetworkCapabilities(network) } returns null
+
+    val result = NetworkUtils.isNetworkAvailable(context)
+    assertFalse(result)
+  }
+
+  @Test
+  fun isNetworkAvailable_returnsFalseWhenNoTransportAvailable() {
+    val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
+    val network = mockk<Network>(relaxed = true)
+    val networkCapabilities = mockk<NetworkCapabilities>(relaxed = true)
+
+    every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
+    every { connectivityManager.activeNetwork } returns network
+    every { connectivityManager.getNetworkCapabilities(network) } returns networkCapabilities
+    every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns false
+    every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) } returns false
+    every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) } returns false
+
+    val result = NetworkUtils.isNetworkAvailable(context)
+    assertFalse(result)
   }
 }

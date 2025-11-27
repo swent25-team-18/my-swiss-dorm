@@ -180,7 +180,7 @@ class BrowseCityViewModel(
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()
 
   private val maxDistanceToDisplay = 15.0
-  private val bookmarkHandler = BookmarkHandler(profileRepository, viewModelScope)
+  private val bookmarkHandler = BookmarkHandler(profileRepository)
 
   init {
     _uiState.update { it.copy(isGuest = auth.currentUser?.isAnonymous ?: true) }
@@ -538,24 +538,27 @@ class BrowseCityViewModel(
     }
 
     val isCurrentlyBookmarked = _uiState.value.bookmarkedListingIds.contains(listingId)
-    bookmarkHandler.toggleBookmark(
-        listingId = listingId,
-        currentUserId = currentUserId,
-        isCurrentlyBookmarked = isCurrentlyBookmarked,
-        onSuccess = { newBookmarkStatus ->
-          _uiState.update { state ->
-            val newBookmarkedIds =
-                if (newBookmarkStatus) {
-                  state.bookmarkedListingIds + listingId
-                } else {
-                  state.bookmarkedListingIds - listingId
-                }
-            state.copy(bookmarkedListingIds = newBookmarkedIds)
-          }
-        },
-        onError = { errorMsg ->
-          Log.e("BrowseCityViewModel", "Error toggling bookmark: $errorMsg")
-        })
+    viewModelScope.launch {
+      try {
+        val newBookmarkStatus =
+            bookmarkHandler.toggleBookmark(
+                listingId = listingId,
+                currentUserId = currentUserId,
+                isCurrentlyBookmarked = isCurrentlyBookmarked)
+
+        _uiState.update { state ->
+          val newBookmarkedIds =
+              if (newBookmarkStatus) {
+                state.bookmarkedListingIds + listingId
+              } else {
+                state.bookmarkedListingIds - listingId
+              }
+          state.copy(bookmarkedListingIds = newBookmarkedIds)
+        }
+      } catch (e: Exception) {
+        Log.e("BrowseCityViewModel", "Error toggling bookmark", e)
+      }
+    }
   }
 }
 

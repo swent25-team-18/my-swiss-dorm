@@ -1,10 +1,8 @@
 package com.android.mySwissDorm.ui.utils
 
 import android.util.Log
-import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.launch
 
 /**
  * Handler for bookmark operations to avoid logic duplication across ViewModels.
@@ -13,8 +11,7 @@ import kotlinx.coroutines.launch
  * behavior and easier testing.
  */
 class BookmarkHandler(
-    private val profileRepository: ProfileRepository,
-    private val viewModelScope: kotlinx.coroutines.CoroutineScope
+    private val profileRepository: ProfileRepository
 ) {
   /**
    * Toggles the bookmark status for a listing.
@@ -22,29 +19,24 @@ class BookmarkHandler(
    * @param listingId The ID of the listing to bookmark/unbookmark
    * @param currentUserId The ID of the current user
    * @param isCurrentlyBookmarked Whether the listing is currently bookmarked
-   * @param onSuccess Callback invoked when the bookmark toggle succeeds, with the new bookmark
-   *   status
-   * @param onError Callback invoked when an error occurs, with the error message
+   * @return The new bookmark status (true if bookmarked, false if unbookmarked)
+   * @throws Exception if the bookmark operation fails
    */
-  fun toggleBookmark(
+  suspend fun toggleBookmark(
       listingId: String,
       currentUserId: String,
-      isCurrentlyBookmarked: Boolean,
-      onSuccess: (Boolean) -> Unit,
-      onError: (String) -> Unit
-  ) {
-    viewModelScope.launch {
-      try {
-        if (isCurrentlyBookmarked) {
-          profileRepository.removeBookmark(currentUserId, listingId)
-        } else {
-          profileRepository.addBookmark(currentUserId, listingId)
-        }
-        onSuccess(!isCurrentlyBookmarked)
-      } catch (e: Exception) {
-        Log.e("BookmarkHandler", "Error toggling bookmark", e)
-        onError("${e.message}")
+      isCurrentlyBookmarked: Boolean
+  ): Boolean {
+    try {
+      if (isCurrentlyBookmarked) {
+        profileRepository.removeBookmark(currentUserId, listingId)
+      } else {
+        profileRepository.addBookmark(currentUserId, listingId)
       }
+      return !isCurrentlyBookmarked
+    } catch (e: Exception) {
+      Log.e("BookmarkHandler", "Error toggling bookmark", e)
+      throw e
     }
   }
 

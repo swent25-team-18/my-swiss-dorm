@@ -40,7 +40,7 @@ class BookmarkedListingsViewModel(
   private val _uiState = MutableStateFlow(BookmarkedListingsUIState())
   val uiState: StateFlow<BookmarkedListingsUIState> = _uiState.asStateFlow()
 
-  private val bookmarkHandler = BookmarkHandler(profileRepository, viewModelScope)
+  private val bookmarkHandler = BookmarkHandler(profileRepository)
 
   init {
     // Load bookmarked listings in init block as suggested in PR review
@@ -119,30 +119,33 @@ class BookmarkedListingsViewModel(
     }
 
     val isCurrentlyBookmarked = _uiState.value.bookmarkedListingIds.contains(listingId)
-    bookmarkHandler.toggleBookmark(
-        listingId = listingId,
-        currentUserId = currentUserId,
-        isCurrentlyBookmarked = isCurrentlyBookmarked,
-        onSuccess = { newBookmarkStatus ->
-          _uiState.update { state ->
-            val newBookmarkedIds =
-                if (newBookmarkStatus) {
-                  state.bookmarkedListingIds + listingId
-                } else {
-                  state.bookmarkedListingIds - listingId
-                }
-            // Reload listings to reflect the change
-            loadBookmarkedListings(context)
-            state.copy(bookmarkedListingIds = newBookmarkedIds)
-          }
-        },
-        onError = { errorMsg ->
-          _uiState.update {
-            it.copy(
-                errorMsg =
-                    "${context.getString(R.string.bookmarked_listings_failed_to_load)} $errorMsg")
-          }
-        })
+    viewModelScope.launch {
+      try {
+        val newBookmarkStatus =
+            bookmarkHandler.toggleBookmark(
+                listingId = listingId,
+                currentUserId = currentUserId,
+                isCurrentlyBookmarked = isCurrentlyBookmarked)
+
+        _uiState.update { state ->
+          val newBookmarkedIds =
+              if (newBookmarkStatus) {
+                state.bookmarkedListingIds + listingId
+              } else {
+                state.bookmarkedListingIds - listingId
+              }
+          // Reload listings to reflect the change
+          loadBookmarkedListings(context)
+          state.copy(bookmarkedListingIds = newBookmarkedIds)
+        }
+      } catch (e: Exception) {
+        _uiState.update {
+          it.copy(
+              errorMsg =
+                  "${context.getString(R.string.bookmarked_listings_failed_to_load)} ${e.message}")
+        }
+      }
+    }
   }
 
   fun clearError() {

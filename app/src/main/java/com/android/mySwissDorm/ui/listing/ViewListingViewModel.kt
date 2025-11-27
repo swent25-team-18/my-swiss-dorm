@@ -71,7 +71,7 @@ class ViewListingViewModel(
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
 
   val photoManager = PhotoManager(photoRepositoryCloud = photoRepositoryCloud)
-  private val bookmarkHandler = BookmarkHandler(profileRepository, viewModelScope)
+  private val bookmarkHandler = BookmarkHandler(profileRepository)
 
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {
@@ -171,16 +171,19 @@ class ViewListingViewModel(
     }
 
     val isCurrentlyBookmarked = _uiState.value.isBookmarked
-    bookmarkHandler.toggleBookmark(
-        listingId = listingId,
-        currentUserId = currentUserId,
-        isCurrentlyBookmarked = isCurrentlyBookmarked,
-        onSuccess = { newBookmarkStatus ->
-          _uiState.update { it.copy(isBookmarked = newBookmarkStatus) }
-        },
-        onError = { errorMsg ->
-          setErrorMsg(
-              "${context.getString(R.string.view_listing_failed_to_toggle_bookmark)} $errorMsg")
-        })
+    viewModelScope.launch {
+      try {
+        val newBookmarkStatus =
+            bookmarkHandler.toggleBookmark(
+                listingId = listingId,
+                currentUserId = currentUserId,
+                isCurrentlyBookmarked = isCurrentlyBookmarked)
+
+        _uiState.update { it.copy(isBookmarked = newBookmarkStatus) }
+      } catch (e: Exception) {
+        setErrorMsg(
+            "${context.getString(R.string.view_listing_failed_to_toggle_bookmark)} ${e.message}")
+      }
+    }
   }
 }

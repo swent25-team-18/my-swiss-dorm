@@ -1,10 +1,12 @@
 package com.android.mySwissDorm.utils
 
+import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.city.CITIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
@@ -341,4 +343,9 @@ abstract class FirestoreTest : TestCase() {
           imageId = R.drawable.fribourg)
 
   val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
+
+  protected val photo =
+      Photo(
+          image = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri(),
+          fileName = "zurich.png")
 }

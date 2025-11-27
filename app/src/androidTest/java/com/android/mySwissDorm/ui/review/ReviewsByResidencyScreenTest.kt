@@ -11,10 +11,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
-import com.android.mySwissDorm.R
-import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -53,11 +50,6 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
   private lateinit var review1: Review
   private lateinit var review2: Review
   private lateinit var review3: Review
-
-  private val photo =
-      Photo(
-          image = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri(),
-          fileName = "zurich.png")
 
   private val context = ApplicationProvider.getApplicationContext<Context>()
 

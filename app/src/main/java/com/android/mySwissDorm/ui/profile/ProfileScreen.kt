@@ -58,6 +58,7 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onChangeProfilePicture: (Photo) -> Unit,
     onBack: () -> Unit,
+    onEditPreferencesClick: () -> Unit,
     viewModel: ProfileScreenViewModel = viewModel()
 ) {
   // Collect VM state (initial ensures preview/first composition has data)
@@ -76,7 +77,8 @@ fun ProfileScreen(
       onChangeProfilePicture = onChangeProfilePicture,
       onBack = onBack,
       onToggleEditing = viewModel::toggleEditing,
-      onSave = { viewModel.saveProfile(context) })
+      onSave = { viewModel.saveProfile(context) },
+      onEditPreferencesClick = onEditPreferencesClick)
 }
 
 /**
@@ -115,7 +117,8 @@ private fun ProfileScreenContent(
     onChangeProfilePicture: (Photo) -> Unit,
     onBack: () -> Unit,
     onToggleEditing: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onEditPreferencesClick: () -> Unit
 ) {
   // Local editable buffers used ONLY in edit mode (remembered across recompositions)
   var firstLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.firstName) }
@@ -252,7 +255,12 @@ private fun ProfileScreenContent(
                   modifier = Modifier.fillMaxWidth(),
                   tag = "field_residence",
                   options = state.allResidencies.map { it.name })
-
+              Button(
+                  onClick = onEditPreferencesClick,
+                  modifier = Modifier.fillMaxWidth().height(52.dp),
+                  colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
+                    Text(stringResource(R.string.listing_preferences), color = Color.White)
+                  }
               // Bottom action area: Save (edit mode) or Logout (view mode)
               if (state.isEditing) {
                 Button(
@@ -462,6 +470,7 @@ private fun Preview_Profile_Interactive() {
         onChangeProfilePicture = {},
         onBack = {},
         onToggleEditing = { isEditing = !isEditing },
-        onSave = { isEditing = false })
+        onSave = { isEditing = false },
+        onEditPreferencesClick = {})
   }
 }

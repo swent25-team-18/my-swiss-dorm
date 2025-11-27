@@ -31,7 +31,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,35 +39,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.credentials.CredentialManager
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
-    signUpViewModel: SignUpViewModel = viewModel(),
-    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
+    signUpViewModel: SignUpViewModel,
     onBack: () -> Unit = {},
-    onSignedUp: () -> Unit = {}
+    onContinue: () -> Unit = {}
 ) {
-  val context = LocalContext.current
   val uiState by signUpViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
-
-  LaunchedEffect(uiState.user) { uiState.user?.let { onSignedUp() } }
 
   Scaffold(
       topBar = {
@@ -260,14 +250,14 @@ fun SignUpScreen(
                   }
 
               Button(
-                  onClick = {
-                    signUpViewModel.signUp(context = context, credentialManager = credentialManager)
-                  },
+                  onClick = { onContinue() },
                   enabled = signUpViewModel.isFormValid,
                   colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                   modifier = Modifier.fillMaxWidth().height(52.dp).testTag(C.Tag.SIGN_UP_BUTTON),
                   shape = RoundedCornerShape(16.dp)) {
-                    Text(text = stringResource(R.string.sign_up_button_text), color = Color.White)
+                    Text(
+                        text = stringResource(R.string.continue_with_preferences),
+                        color = Color.White)
                   }
               Spacer(Modifier.height(8.dp))
               if (!signUpViewModel.isFormValid) {
@@ -279,10 +269,4 @@ fun SignUpScreen(
               }
             }
       }
-}
-
-@Preview
-@Composable
-fun SignUpScreenPreview() {
-  MySwissDormAppTheme { SignUpScreen() }
 }

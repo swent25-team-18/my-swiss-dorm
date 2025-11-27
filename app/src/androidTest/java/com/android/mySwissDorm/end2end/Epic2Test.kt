@@ -114,7 +114,9 @@ class Epic2Test : FirestoreTest() {
     }
 
     compose.waitForIdle()
+    compose.waitUntil(5_000) { compose.onNodeWithText("Sign Up with Google").isDisplayed() }
 
+    compose.onNodeWithText("Sign Up with Google").performScrollTo().performClick()
     // 2. Select custom location
     compose.waitUntil(5000) {
       compose.onNodeWithTag(HomePageScreenTestTags.LOCATION_SELECTION).isDisplayed()

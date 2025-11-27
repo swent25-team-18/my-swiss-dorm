@@ -15,6 +15,10 @@ sealed class Screen(
 
   data object SignUp : Screen("signUp", R.string.screen_sign_up)
 
+  data object SignUpPreferences : Screen("signUpPreferences", R.string.screen_sign_up)
+
+  data object EditPreferences : Screen("editPreferences", R.string.screen_profile)
+
   // Bottom bar (top-level) destinations — order matters
   data object Homepage : Screen("homepage", R.string.screen_homepage, isTopLevelDestination = true)
 

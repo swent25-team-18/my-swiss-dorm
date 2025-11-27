@@ -109,6 +109,14 @@
     <string name="sign_up_last_name_help">Votre nom doit contenir moins de 20 caractères</string>
     <string name="sign_up_email_help">Vous devez entrer une adresse e-mail valide</string>
     <string name="sign_up_phone_number_help">Vous devez entrer un numéro de téléphone valide</string>
+    <string name="continue_with_preferences">Poursuivez la configuration de votre compte</string>
+    <!-- SignUpPreferencesScreen -->
+    <string name="edit_preferences">Modifiez vos préférences</string>
+    <string name="budget">Budget</string>
+    <string name="preferred_size">Taille préférée</string>
+    <string name="preferred_room_type">Type de chambre préféré</string>
+
+
 
     <!-- SignUpViewModel -->
     <string name="sign_up_vm_auth_cancelled">Authentification annulée</string>
@@ -238,6 +246,9 @@
     <string name="browse_city_vm_failed_to_load_listings">Impossible de charger les annonces</string>
     <string name="browse_city_vm_failed_to_load_residencies">Impossible de charger les résidences</string>
     <string name="browse_city_vm_price_per_month">.-/mois</string>
+    <!-- EditPreferencesScreen -->
+    <string name="listing_preferences">Préférences d\'affichage</string>
+    <string name="save_preferences">Enregistrer vos préférences</string>
 
     <!-- ProfileContributionsScreen -->
     <string name="profile_contributions_title">Mes contributions</string>

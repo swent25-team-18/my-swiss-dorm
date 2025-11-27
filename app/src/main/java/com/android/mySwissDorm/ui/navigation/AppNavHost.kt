@@ -34,7 +34,9 @@ import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
+import com.android.mySwissDorm.ui.authentification.SignUpPreferencesScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
+import com.android.mySwissDorm.ui.authentification.SignUpViewModel
 import com.android.mySwissDorm.ui.chat.ChannelsScreen
 import com.android.mySwissDorm.ui.chat.MyChatScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
@@ -46,9 +48,11 @@ import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.overview.ListingCardUI
 import com.android.mySwissDorm.ui.overview.MapOverviewScreen
 import com.android.mySwissDorm.ui.profile.ContributionType
+import com.android.mySwissDorm.ui.profile.EditPreferencesScreen
 import com.android.mySwissDorm.ui.profile.ProfileContributionsScreen
 import com.android.mySwissDorm.ui.profile.ProfileContributionsViewModel
 import com.android.mySwissDorm.ui.profile.ProfileScreen
+import com.android.mySwissDorm.ui.profile.ProfileScreenViewModel
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewScreen
@@ -117,11 +121,23 @@ fun AppNavHost(
       )
     }
 
-    composable(Screen.SignUp.route) {
+    composable(Screen.SignUp.route) { backStackEntry ->
+      val viewModel = viewModel<SignUpViewModel>(backStackEntry)
       SignUpScreen(
+          signUpViewModel = viewModel,
+          onBack = { navActions.goBack() },
+          onContinue = { navActions.navigateTo(Screen.SignUpPreferences) })
+    }
+
+    composable(Screen.SignUpPreferences.route) { backStackEntry ->
+      val parentEntry =
+          remember(backStackEntry) { navController.getBackStackEntry(Screen.SignUp.route) }
+      val viewModel = viewModel<SignUpViewModel>(parentEntry)
+      SignUpPreferencesScreen(
+          signUpViewModel = viewModel,
           credentialManager = credentialManager,
-          onSignedUp = { navigationViewModel.determineInitialDestination() },
-          onBack = { navActions.goBack() })
+          onBack = { navActions.goBack() },
+          onSignedUp = { navigationViewModel.determineInitialDestination() })
     }
 
     // --- Bottom bar destinations ---
@@ -545,8 +561,15 @@ fun AppNavHost(
                       context.getString(R.string.app_nav_host_not_implemented_yet),
                       Toast.LENGTH_SHORT)
                   .show()
-            })
+            },
+            onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
       }
+    }
+    composable(Screen.EditPreferences.route) {
+      val viewModel: ProfileScreenViewModel = viewModel()
+      LaunchedEffect(Unit) { viewModel.loadProfile(context) }
+
+      EditPreferencesScreen(viewModel = viewModel, onBack = { navActions.goBack() })
     }
 
     composable(Screen.ChatChannel.route) { entry ->

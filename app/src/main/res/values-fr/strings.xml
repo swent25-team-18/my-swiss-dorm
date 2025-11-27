@@ -399,8 +399,9 @@
     <string name="sanitized_text_fields_price_leading_zero">Aucun zéro initial</string>
     <string name="sanitized_text_fields_price_range">Le prix doit être entre 1 et 10’000 CHF</string>
     <!-- Map -->
-    <string name="No_image">Pas d\'images</string>
     <string name="map_view">Carte d\'annonces</string>
+    <string name="Map_Screen">Écran de carte</string>
+
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_second">SecondActivity</string>

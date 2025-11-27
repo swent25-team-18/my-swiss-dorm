@@ -89,6 +89,14 @@ sealed class Screen(
     }
   }
 
+  data class Map(val lat: Float, val lng: Float, val title: String, val name: Int) :
+      Screen(route = "mapScreen/${lat}/${lng}/${title}/${name}", nameId = R.string.Map_Screen) {
+
+    companion object {
+      const val route = "mapScreen/{lat}/{lng}/{title}/{name}"
+    }
+  }
+
   data object Profile : Screen(route = "profile", nameId = R.string.screen_profile)
 
   data class ChatChannel(val channelId: String) :

@@ -222,7 +222,7 @@ fun AppNavHost(
     }
 
     composable(
-        route = "mapScreen/{lat}/{lng}/{title}/{name}",
+        route = Screen.Map.route,
         arguments =
             listOf(
                 navArgument("lat") { type = NavType.FloatType },
@@ -370,7 +370,7 @@ fun AppNavHost(
               }
             },
             onViewMap = { lat, lng, title, name ->
-              navController.navigate("mapScreen/$lat/$lng/$title/$name")
+              navController.navigate(Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
             })
       }
           ?: run {
@@ -402,7 +402,7 @@ fun AppNavHost(
               }
             },
             onViewMap = { lat, lng, title, name ->
-              navController.navigate("mapScreen/$lat/$lng/$title/$name")
+              navController.navigate(Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
             })
       }
           ?: run {

@@ -165,17 +165,8 @@ fun SmallListingPreviewCard(
               AsyncImage(
                   model = listing.image,
                   contentDescription = null,
-                  modifier = Modifier.fillMaxWidth().height(120.dp),
+                  modifier = Modifier.fillMaxWidth().height(200.dp),
                   contentScale = ContentScale.Crop)
-            } else {
-              Box(
-                  modifier = Modifier.fillMaxWidth().height(120.dp).background(LightGray),
-                  contentAlignment = Alignment.Center) {
-                    Text(
-                        stringResource(R.string.No_image),
-                        color = Gray,
-                        style = MaterialTheme.typography.bodySmall)
-                  }
             }
 
             Column(modifier = Modifier.padding(12.dp)) {
@@ -184,7 +175,8 @@ fun SmallListingPreviewCard(
                   style = MaterialTheme.typography.titleMedium,
                   fontWeight = FontWeight.Bold,
                   maxLines = 1,
-                  overflow = TextOverflow.Ellipsis)
+                  overflow = TextOverflow.Ellipsis,
+                  color = Black)
               Spacer(modifier = Modifier.height(4.dp))
               Text(
                   text = listing.leftBullets.getOrNull(1) ?: "",
@@ -200,15 +192,18 @@ fun SmallListingPreviewCard(
                   overflow = TextOverflow.Ellipsis)
             }
           }
-
-          IconButton(
-              onClick = onClose,
+          Box(
               modifier =
                   Modifier.align(Alignment.TopEnd)
                       .padding(4.dp)
-                      .size(24.dp)
-                      .background(Dark.copy(alpha = 0.5f), RoundedCornerShape(12.dp))) {
-                Icon(Icons.Default.Close, "Close", tint = White, modifier = Modifier.padding(4.dp))
+                      .background(Dark.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                      .clickable(onClick = onClose)
+                      .padding(4.dp)) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = White,
+                    modifier = Modifier.size(16.dp))
               }
         }
       }

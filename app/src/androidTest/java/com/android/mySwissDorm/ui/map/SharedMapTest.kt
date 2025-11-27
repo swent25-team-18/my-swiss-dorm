@@ -25,24 +25,6 @@ class SharedMapTest {
           image = Uri.parse("http://fake.uri/image.jpg"),
           location = location)
 
-  private val listingNoImage =
-      ListingCardUI(
-          title = "Listing No Image",
-          leftBullets = listOf("Apartment", "2000.-"),
-          rightBullets = listOf("Taken"),
-          listingUid = "uid2",
-          image = null,
-          location = location)
-
-  @Test
-  fun smallListingCard_displaysPlaceholder_whenNoImage() {
-    composeTestRule.setContent {
-      SmallListingPreviewCard(listing = listingNoImage, onClick = {}, onClose = {})
-    }
-    composeTestRule.onNodeWithText("No Images", ignoreCase = true).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Listing No Image").assertIsDisplayed()
-  }
-
   @Test
   fun smallListingCard_displaysContent_and_HandlesClicks() {
     var clicked = false

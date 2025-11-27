@@ -262,6 +262,7 @@ object C {
     const val CHIP_CITY = "adminPageChipCity"
     const val CHIP_RESIDENCY = "adminPageChipResidency"
     const val CHIP_UNIVERSITY = "adminPageChipUniversity"
+    const val CHIP_ADMIN = "adminPageChipAdmin"
     const val LOCATION_BUTTON = "adminPageLocationButton"
     const val SAVE_BUTTON = "adminPageSaveButton"
   }

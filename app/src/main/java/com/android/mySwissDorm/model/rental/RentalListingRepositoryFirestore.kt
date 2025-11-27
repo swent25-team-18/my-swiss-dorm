@@ -7,6 +7,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlin.NoSuchElementException
 import kotlin.collections.get
 import kotlinx.coroutines.tasks.await
 
@@ -62,7 +63,8 @@ class RentalListingRepositoryFirestore(
     val document =
         rentalListingDb.collection(RENTAL_LISTINGS_COLLECTION).document(rentalPostId).get().await()
     return documentToRentalListing(document)
-        ?: throw Exception("RentalListingRepositoryFirestore: Rental listing not found")
+        ?: throw NoSuchElementException(
+            "RentalListingRepositoryFirestore: Rental listing $rentalPostId not found")
   }
 
   override suspend fun addRentalListing(rentalPost: RentalListing) {

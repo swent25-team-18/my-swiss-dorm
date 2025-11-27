@@ -25,7 +25,7 @@ class ReviewsRepositoryLocalTest {
         Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-    repository = ReviewsRepositoryLocal(database.reviewDao(), database)
+    repository = ReviewsRepositoryLocal(database.reviewDao())
   }
 
   @After

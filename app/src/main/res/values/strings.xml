@@ -243,6 +243,7 @@
     <string name="bookmarked_listings_title">Bookmarked Listings</string>
     <string name="bookmarked_listings_no_bookmarks_yet">No bookmarked listings yet.</string>
     <string name="bookmarked_listings_failed_to_load">Failed to load bookmarked listings</string>
+    <string name="bookmarked_listings_no_image">No image</string>
 
     <!-- ProfileContributionsScreen -->
     <string name="profile_contributions_title">My contributions</string>

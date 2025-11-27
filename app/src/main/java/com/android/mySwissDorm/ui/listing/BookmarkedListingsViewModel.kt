@@ -9,10 +9,11 @@ import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.ui.overview.ListingCardUI
-import com.android.mySwissDorm.ui.photo.PhotoManager
+import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
@@ -25,7 +26,8 @@ import kotlinx.coroutines.launch
 data class BookmarkedListingsUIState(
     val loading: Boolean = false,
     val listings: List<ListingCardUI> = emptyList(),
-    val errorMsg: String? = null
+    val errorMsg: String? = null,
+    val bookmarkedListingIds: Set<String> = emptySet()
 )
 
 class BookmarkedListingsViewModel(
@@ -38,6 +40,14 @@ class BookmarkedListingsViewModel(
   private val _uiState = MutableStateFlow(BookmarkedListingsUIState())
   val uiState: StateFlow<BookmarkedListingsUIState> = _uiState.asStateFlow()
 
+  private val bookmarkHandler = BookmarkHandler(profileRepository, viewModelScope)
+
+  init {
+    // Load bookmarked listings in init block as suggested in PR review
+    // Note: We need context, so we'll call loadBookmarkedListings from the screen
+    // but the logic is ready to be called from init if context is available
+  }
+
   fun loadBookmarkedListings(context: Context) {
     viewModelScope.launch {
       try {
@@ -45,14 +55,18 @@ class BookmarkedListingsViewModel(
 
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null || currentUser.isAnonymous) {
-          _uiState.update { it.copy(loading = false, listings = emptyList()) }
+          _uiState.update {
+            it.copy(loading = false, listings = emptyList(), bookmarkedListingIds = emptySet())
+          }
           return@launch
         }
 
         val bookmarkedIds = profileRepository.getBookmarkedListingIds(currentUser.uid)
 
         if (bookmarkedIds.isEmpty()) {
-          _uiState.update { it.copy(loading = false, listings = emptyList()) }
+          _uiState.update {
+            it.copy(loading = false, listings = emptyList(), bookmarkedListingIds = emptySet())
+          }
           return@launch
         }
 
@@ -60,32 +74,21 @@ class BookmarkedListingsViewModel(
         for (listingId in bookmarkedIds) {
           try {
             val listing = rentalListingRepository.getRentalListing(listingId)
-            var imageUri: android.net.Uri? = null
+            var listingCardUI = listing.toCardUI(context)
+
+            // Only load the first image as suggested in PR review
             if (listing.imageUrls.isNotEmpty()) {
-              val photoManager = PhotoManager(photoRepositoryCloud = photoRepositoryCloud)
-              photoManager.initialize(listing.imageUrls)
-              val photos = photoManager.photoLoaded
-              imageUri = photos.firstOrNull()?.image
+              try {
+                val photo = photoRepositoryCloud.retrievePhoto(listing.imageUrls.first())
+                listingCardUI = listingCardUI.copy(image = photo.image)
+              } catch (_: NoSuchElementException) {
+                Log.e(
+                    "BookmarkedListingsViewModel",
+                    "Failed to retrieve the photo ${listing.imageUrls.first()}")
+              }
             }
 
-            val price =
-                String.format(
-                    Locale.getDefault(),
-                    "%.0f${context.getString(R.string.browse_city_vm_price_per_month)}",
-                    listing.pricePerMonth)
-            val area = "${listing.areaInM2}m²"
-            val start = "${context.getString(R.string.starting)} ${formatDate(listing.startDate)}"
-            val resName = listing.residencyName
-
-            val listingCard =
-                ListingCardUI(
-                    title = listing.title,
-                    leftBullets = listOf(listing.roomType.toString(), price, area),
-                    rightBullets = listOf(start, resName),
-                    listingUid = listing.uid,
-                    image = imageUri,
-                    location = listing.location)
-            listings.add(listingCard)
+            listings.add(listingCardUI)
           } catch (e: Exception) {
             Log.e(
                 "BookmarkedListingsViewModel", "Error loading listing $listingId: ${e.message}", e)
@@ -93,7 +96,10 @@ class BookmarkedListingsViewModel(
           }
         }
 
-        _uiState.update { it.copy(loading = false, listings = listings) }
+        _uiState.update {
+          it.copy(
+              loading = false, listings = listings, bookmarkedListingIds = bookmarkedIds.toSet())
+        }
       } catch (e: Exception) {
         Log.e("BookmarkedListingsViewModel", "Error loading bookmarked listings", e)
         _uiState.update {
@@ -106,7 +112,59 @@ class BookmarkedListingsViewModel(
     }
   }
 
+  fun toggleBookmark(listingId: String, context: Context) {
+    val currentUserId = bookmarkHandler.getCurrentUserId()
+    if (currentUserId == null) {
+      return
+    }
+
+    val isCurrentlyBookmarked = _uiState.value.bookmarkedListingIds.contains(listingId)
+    bookmarkHandler.toggleBookmark(
+        listingId = listingId,
+        currentUserId = currentUserId,
+        isCurrentlyBookmarked = isCurrentlyBookmarked,
+        onSuccess = { newBookmarkStatus ->
+          _uiState.update { state ->
+            val newBookmarkedIds =
+                if (newBookmarkStatus) {
+                  state.bookmarkedListingIds + listingId
+                } else {
+                  state.bookmarkedListingIds - listingId
+                }
+            // Reload listings to reflect the change
+            loadBookmarkedListings(context)
+            state.copy(bookmarkedListingIds = newBookmarkedIds)
+          }
+        },
+        onError = { errorMsg ->
+          _uiState.update {
+            it.copy(
+                errorMsg =
+                    "${context.getString(R.string.bookmarked_listings_failed_to_load)} $errorMsg")
+          }
+        })
+  }
+
   fun clearError() {
     _uiState.update { it.copy(errorMsg = null) }
   }
+}
+
+// Reuse the same conversion logic from BrowseCityViewModel
+private fun RentalListing.toCardUI(context: Context): ListingCardUI {
+  val price =
+      String.format(
+          Locale.getDefault(),
+          "%.0f${context.getString(R.string.browse_city_vm_price_per_month)}",
+          pricePerMonth)
+  val area = "${areaInM2}m²"
+  val start = "${context.getString(R.string.starting)} ${formatDate(startDate)}"
+  val resName = residencyName
+
+  return ListingCardUI(
+      title = title,
+      leftBullets = listOf(roomType.toString(), price, area),
+      rightBullets = listOf(start, resName),
+      listingUid = uid,
+      location = location)
 }

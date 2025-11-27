@@ -23,6 +23,7 @@ import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
+import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -179,6 +180,7 @@ class BrowseCityViewModel(
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()
 
   private val maxDistanceToDisplay = 15.0
+  private val bookmarkHandler = BookmarkHandler(profileRepository, viewModelScope)
 
   init {
     _uiState.update { it.copy(isGuest = auth.currentUser?.isAnonymous ?: true) }
@@ -530,34 +532,30 @@ class BrowseCityViewModel(
 
   /** Toggles bookmark status for a listing. */
   fun toggleBookmark(listingId: String, context: Context) {
-    viewModelScope.launch {
-      try {
-        val currentUser = auth.currentUser
-        val currentUserId = currentUser?.uid
-        if (currentUserId == null || currentUser.isAnonymous) {
-          return@launch
-        }
-
-        val isCurrentlyBookmarked = _uiState.value.bookmarkedListingIds.contains(listingId)
-        if (isCurrentlyBookmarked) {
-          profileRepository.removeBookmark(currentUserId, listingId)
-        } else {
-          profileRepository.addBookmark(currentUserId, listingId)
-        }
-
-        _uiState.update { state ->
-          val newBookmarkedIds =
-              if (isCurrentlyBookmarked) {
-                state.bookmarkedListingIds - listingId
-              } else {
-                state.bookmarkedListingIds + listingId
-              }
-          state.copy(bookmarkedListingIds = newBookmarkedIds)
-        }
-      } catch (e: Exception) {
-        Log.e("BrowseCityViewModel", "Error toggling bookmark", e)
-      }
+    val currentUserId = bookmarkHandler.getCurrentUserId()
+    if (currentUserId == null) {
+      return
     }
+
+    val isCurrentlyBookmarked = _uiState.value.bookmarkedListingIds.contains(listingId)
+    bookmarkHandler.toggleBookmark(
+        listingId = listingId,
+        currentUserId = currentUserId,
+        isCurrentlyBookmarked = isCurrentlyBookmarked,
+        onSuccess = { newBookmarkStatus ->
+          _uiState.update { state ->
+            val newBookmarkedIds =
+                if (newBookmarkStatus) {
+                  state.bookmarkedListingIds + listingId
+                } else {
+                  state.bookmarkedListingIds - listingId
+                }
+            state.copy(bookmarkedListingIds = newBookmarkedIds)
+          }
+        },
+        onError = { errorMsg ->
+          Log.e("BrowseCityViewModel", "Error toggling bookmark: $errorMsg")
+        })
   }
 }
 

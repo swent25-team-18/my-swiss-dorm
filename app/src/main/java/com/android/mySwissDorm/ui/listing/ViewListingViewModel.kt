@@ -19,6 +19,7 @@ import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
+import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -70,6 +71,7 @@ class ViewListingViewModel(
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
 
   val photoManager = PhotoManager(photoRepositoryCloud = photoRepositoryCloud)
+  private val bookmarkHandler = BookmarkHandler(profileRepository, viewModelScope)
 
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {
@@ -163,26 +165,22 @@ class ViewListingViewModel(
   }
 
   fun toggleBookmark(listingId: String, context: Context) {
-    viewModelScope.launch {
-      try {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        val currentUserId = currentUser?.uid
-        if (currentUserId == null || currentUser.isAnonymous) {
-          return@launch
-        }
-
-        val isCurrentlyBookmarked = _uiState.value.isBookmarked
-        if (isCurrentlyBookmarked) {
-          profileRepository.removeBookmark(currentUserId, listingId)
-        } else {
-          profileRepository.addBookmark(currentUserId, listingId)
-        }
-        _uiState.update { it.copy(isBookmarked = !isCurrentlyBookmarked) }
-      } catch (e: Exception) {
-        Log.e("ViewListingViewModel", "Error toggling bookmark", e)
-        setErrorMsg(
-            "${context.getString(R.string.view_listing_failed_to_toggle_bookmark)} ${e.message}")
-      }
+    val currentUserId = bookmarkHandler.getCurrentUserId()
+    if (currentUserId == null) {
+      return
     }
+
+    val isCurrentlyBookmarked = _uiState.value.isBookmarked
+    bookmarkHandler.toggleBookmark(
+        listingId = listingId,
+        currentUserId = currentUserId,
+        isCurrentlyBookmarked = isCurrentlyBookmarked,
+        onSuccess = { newBookmarkStatus ->
+          _uiState.update { it.copy(isBookmarked = newBookmarkStatus) }
+        },
+        onError = { errorMsg ->
+          setErrorMsg(
+              "${context.getString(R.string.view_listing_failed_to_toggle_bookmark)} $errorMsg")
+        })
   }
 }

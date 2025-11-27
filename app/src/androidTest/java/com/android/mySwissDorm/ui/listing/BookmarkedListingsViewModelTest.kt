@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.listing
 
 import android.content.Context
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
@@ -16,11 +17,14 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class BookmarkedListingsViewModelTest : FirestoreTest() {
+
+  @get:Rule val compose = createComposeRule()
 
   private lateinit var profileRepo: ProfileRepository
   private lateinit var listingsRepo: RentalListingRepository
@@ -82,14 +86,11 @@ class BookmarkedListingsViewModelTest : FirestoreTest() {
     assertTrue("listing2 should be bookmarked", savedBookmarks.contains(listing2.uid))
 
     val vm = BookmarkedListingsViewModel(profileRepo, listingsRepo)
+    compose.setContent { /* Empty content for compose rule */}
     vm.loadBookmarkedListings(context)
 
-    // Wait for loading to complete - wait for both loading to finish and listings to appear
-    var attempts = 0
-    while ((vm.uiState.value.loading || vm.uiState.value.listings.size < 2) && attempts < 150) {
-      kotlinx.coroutines.delay(100)
-      attempts++
-    }
+    // Wait for loading to complete using compose.waitUntil as suggested in PR review
+    compose.waitUntil(15_000) { !vm.uiState.value.loading && vm.uiState.value.listings.size >= 2 }
 
     val state = vm.uiState.value
     assertFalse("Should not be loading", state.loading)
@@ -111,14 +112,11 @@ class BookmarkedListingsViewModelTest : FirestoreTest() {
     profileRepo.removeBookmark(userId, listing3.uid)
 
     val vm = BookmarkedListingsViewModel(profileRepo, listingsRepo)
+    compose.setContent { /* Empty content for compose rule */}
     vm.loadBookmarkedListings(context)
 
-    // Wait for loading to complete
-    var attempts = 0
-    while (vm.uiState.value.loading && attempts < 50) {
-      kotlinx.coroutines.delay(100)
-      attempts++
-    }
+    // Wait for loading to complete using compose.waitUntil as suggested in PR review
+    compose.waitUntil(5_000) { !vm.uiState.value.loading }
 
     val state = vm.uiState.value
     assertFalse("Should not be loading", state.loading)
@@ -131,14 +129,11 @@ class BookmarkedListingsViewModelTest : FirestoreTest() {
     signInAnonymous()
 
     val vm = BookmarkedListingsViewModel(profileRepo, listingsRepo)
+    compose.setContent { /* Empty content for compose rule */}
     vm.loadBookmarkedListings(context)
 
-    // Wait for loading to complete
-    var attempts = 0
-    while (vm.uiState.value.loading && attempts < 50) {
-      kotlinx.coroutines.delay(100)
-      attempts++
-    }
+    // Wait for loading to complete using compose.waitUntil as suggested in PR review
+    compose.waitUntil(5_000) { !vm.uiState.value.loading }
 
     val state = vm.uiState.value
     assertFalse("Should not be loading", state.loading)
@@ -155,14 +150,11 @@ class BookmarkedListingsViewModelTest : FirestoreTest() {
     profileRepo.addBookmark(userId, "invalid-listing-id")
 
     val vm = BookmarkedListingsViewModel(profileRepo, listingsRepo)
+    compose.setContent { /* Empty content for compose rule */}
     vm.loadBookmarkedListings(context)
 
-    // Wait for loading to complete - wait for both loading to finish and listing to appear
-    var attempts = 0
-    while ((vm.uiState.value.loading || vm.uiState.value.listings.size < 1) && attempts < 150) {
-      kotlinx.coroutines.delay(100)
-      attempts++
-    }
+    // Wait for loading to complete using compose.waitUntil as suggested in PR review
+    compose.waitUntil(15_000) { !vm.uiState.value.loading && vm.uiState.value.listings.size >= 1 }
 
     val state = vm.uiState.value
     assertFalse("Should not be loading", state.loading)

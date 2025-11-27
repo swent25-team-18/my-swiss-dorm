@@ -107,6 +107,7 @@ object C {
     const val LOADING = "browseCityLoading"
     const val ERROR = "browseCityError"
     const val EMPTY = "browseCityEmpty"
+    const val BOOKMARKED_LISTINGS_ROOT = "bookmarkedListingsRoot"
 
     const val FABMENU = "fab_main"
 

@@ -74,10 +74,6 @@ class EditReviewScreenTest : FirestoreTest() {
 
   private var review1: Review? = null
   private var review2: Review? = null
-  private val photo =
-      Photo(
-          image = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri(),
-          "zurich.png")
 
   private suspend fun getAllReviewsByUserCount(userId: String): Int {
     return ReviewsRepositoryProvider.repository.getAllReviewsByUser(userId).size

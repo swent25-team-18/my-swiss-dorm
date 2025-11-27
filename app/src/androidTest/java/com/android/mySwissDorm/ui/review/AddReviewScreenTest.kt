@@ -297,9 +297,10 @@ class AddReviewScreenTest : FirestoreTest() {
     vm.setReviewText("Some anonymous text")
     vm.setGrade(4.0)
     vm.setIsAnonymous(true)
-
     composeRule.onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true).performClick()
-    composeRule.waitForIdle()
-    assertTrue("The image has not been uploaded to the cloud when submitting the review", uploaded)
+    composeRule.waitUntil(
+        "The image has not been uploaded to the cloud when submitting the review", 5_000) {
+          uploaded
+        }
   }
 }

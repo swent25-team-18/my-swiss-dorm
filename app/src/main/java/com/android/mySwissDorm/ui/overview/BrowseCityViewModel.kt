@@ -145,7 +145,8 @@ data class BrowseCityUiState(
     val locationSuggestions: List<Location> = emptyList(),
     val showCustomLocationDialog: Boolean = false,
     val filterState: FilterState = FilterState(),
-    val isGuest: Boolean = false
+    val isGuest: Boolean = false,
+    val bookmarkedListingIds: Set<String> = emptySet()
 )
 
 /**
@@ -276,6 +277,19 @@ class BrowseCityViewModel(
               filtered
             }
 
+        // Load bookmarked listing IDs
+        val bookmarkedIds =
+            if (currentUid != null && auth.currentUser?.isAnonymous == false) {
+              runCatching { profileRepository.getBookmarkedListingIds(currentUid) }
+                  .onFailure { e ->
+                    Log.w("BrowseCityViewModel", "Failed to load bookmarked listings", e)
+                  }
+                  .getOrDefault(emptyList())
+                  .toSet()
+            } else {
+              emptySet()
+            }
+
         val mapped =
             sorted.map { listing ->
               var listingCardUI = listing.toCardUI(context)
@@ -295,7 +309,9 @@ class BrowseCityViewModel(
             }
 
         _uiState.update {
-          it.copy(listings = it.listings.copy(loading = false, items = mapped, error = null))
+          it.copy(
+              listings = it.listings.copy(loading = false, items = mapped, error = null),
+              bookmarkedListingIds = bookmarkedIds)
         }
       } catch (e: Exception) {
         _uiState.update {
@@ -509,6 +525,38 @@ class BrowseCityViewModel(
     _uiState.update {
       it.copy(
           filterState = it.filterState.copy(showFilterBottomSheet = false, activeFilterType = null))
+    }
+  }
+
+  /** Toggles bookmark status for a listing. */
+  fun toggleBookmark(listingId: String, context: Context) {
+    viewModelScope.launch {
+      try {
+        val currentUser = auth.currentUser
+        val currentUserId = currentUser?.uid
+        if (currentUserId == null || currentUser.isAnonymous) {
+          return@launch
+        }
+
+        val isCurrentlyBookmarked = _uiState.value.bookmarkedListingIds.contains(listingId)
+        if (isCurrentlyBookmarked) {
+          profileRepository.removeBookmark(currentUserId, listingId)
+        } else {
+          profileRepository.addBookmark(currentUserId, listingId)
+        }
+
+        _uiState.update { state ->
+          val newBookmarkedIds =
+              if (isCurrentlyBookmarked) {
+                state.bookmarkedListingIds - listingId
+              } else {
+                state.bookmarkedListingIds + listingId
+              }
+          state.copy(bookmarkedListingIds = newBookmarkedIds)
+        }
+      } catch (e: Exception) {
+        Log.e("BrowseCityViewModel", "Error toggling bookmark", e)
+      }
     }
   }
 }

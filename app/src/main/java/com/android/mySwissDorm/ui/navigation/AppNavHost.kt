@@ -38,6 +38,7 @@ import com.android.mySwissDorm.ui.authentification.SignUpScreen
 import com.android.mySwissDorm.ui.chat.ChannelsScreen
 import com.android.mySwissDorm.ui.chat.MyChatScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
+import com.android.mySwissDorm.ui.listing.BookmarkedListingsScreen
 import com.android.mySwissDorm.ui.listing.EditListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingViewModel
@@ -545,8 +546,17 @@ fun AppNavHost(
                       context.getString(R.string.app_nav_host_not_implemented_yet),
                       Toast.LENGTH_SHORT)
                   .show()
-            })
+            },
+            onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
       }
+    }
+
+    composable(Screen.BookmarkedListings.route) {
+      BookmarkedListingsScreen(
+          onGoBack = { navActions.goBack() },
+          onSelectListing = { listing ->
+            navActions.navigateTo(Screen.ListingOverview(listing.listingUid))
+          })
     }
 
     composable(Screen.ChatChannel.route) { entry ->

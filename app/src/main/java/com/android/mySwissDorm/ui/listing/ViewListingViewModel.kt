@@ -53,7 +53,8 @@ data class ViewListingUIState(
     val isBlockedByOwner: Boolean = false,
     val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
     val images: List<Photo> = emptyList(),
-    val isGuest: Boolean = false
+    val isGuest: Boolean = false,
+    val isBookmarked: Boolean = false
 )
 
 class ViewListingViewModel(
@@ -122,6 +123,20 @@ class ViewListingViewModel(
             } else {
               false
             }
+
+        // Check if the listing is bookmarked by the current user
+        val isBookmarked =
+            if (currentUserId != null && !isGuest) {
+              runCatching { profileRepository.getBookmarkedListingIds(currentUserId) }
+                  .onFailure { e ->
+                    Log.e("ViewListingViewModel", "Error checking bookmark status", e)
+                  }
+                  .getOrDefault(emptyList())
+                  .contains(listingId)
+            } else {
+              false
+            }
+
         photoManager.initialize(listing.imageUrls)
         val photos = photoManager.photoLoaded
         _uiState.update {
@@ -132,7 +147,8 @@ class ViewListingViewModel(
               isBlockedByOwner = isBlockedByOwner,
               locationOfListing = listing.location,
               images = photos,
-              isGuest = isGuest)
+              isGuest = isGuest,
+              isBookmarked = isBookmarked)
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
@@ -144,5 +160,29 @@ class ViewListingViewModel(
 
   fun setContactMessage(contactMessage: String) {
     _uiState.value = _uiState.value.copy(contactMessage = contactMessage)
+  }
+
+  fun toggleBookmark(listingId: String, context: Context) {
+    viewModelScope.launch {
+      try {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val currentUserId = currentUser?.uid
+        if (currentUserId == null || currentUser.isAnonymous) {
+          return@launch
+        }
+
+        val isCurrentlyBookmarked = _uiState.value.isBookmarked
+        if (isCurrentlyBookmarked) {
+          profileRepository.removeBookmark(currentUserId, listingId)
+        } else {
+          profileRepository.addBookmark(currentUserId, listingId)
+        }
+        _uiState.update { it.copy(isBookmarked = !isCurrentlyBookmarked) }
+      } catch (e: Exception) {
+        Log.e("ViewListingViewModel", "Error toggling bookmark", e)
+        setErrorMsg(
+            "${context.getString(R.string.view_listing_failed_to_toggle_bookmark)} ${e.message}")
+      }
+    }
   }
 }

@@ -48,4 +48,13 @@ interface ProfileRepository {
 
   /** Removes [targetUid] from the blocked list of [ownerId]. */
   suspend fun removeBlockedUser(ownerId: String, targetUid: String)
+
+  /** Returns the list of bookmarked listing ids for the given [ownerId]. */
+  suspend fun getBookmarkedListingIds(ownerId: String): List<String>
+
+  /** Adds [listingId] to the bookmarked list of [ownerId]. */
+  suspend fun addBookmark(ownerId: String, listingId: String)
+
+  /** Removes [listingId] from the bookmarked list of [ownerId]. */
+  suspend fun removeBookmark(ownerId: String, listingId: String)
 }

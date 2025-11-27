@@ -9,10 +9,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
@@ -117,6 +119,7 @@ fun BrowseCityScreen(
       listingsState = uiState.listings,
       residenciesState = uiState.residencies,
       filterState = uiState.filterState,
+      bookmarkedListingIds = uiState.bookmarkedListingIds,
       onSelectListing = onSelectListing,
       onSelectResidency = onSelectResidency,
       onLocationClick = onLocationClick,
@@ -136,6 +139,7 @@ fun BrowseCityScreen(
       onSetStartDateFilter = { min, max -> browseCityViewModel.setStartDateFilter(min, max) },
       onSetSortByMostRecent = { sort -> browseCityViewModel.setSortByMostRecent(sort) },
       onDismissFilterSheet = { browseCityViewModel.hideFilterSheet() },
+      onToggleBookmark = { listingId -> browseCityViewModel.toggleBookmark(listingId, context) },
       startTab = startTab,
       onAddListingClick = { navigationActions?.navigateTo(Screen.AddListing) },
       onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
@@ -189,6 +193,7 @@ private fun BrowseCityScreenUI(
     listingsState: ListingsState,
     residenciesState: ResidenciesState,
     filterState: FilterState,
+    bookmarkedListingIds: Set<String> = emptySet(),
     onSelectListing: (ListingCardUI) -> Unit,
     onSelectResidency: (ResidencyCardUI) -> Unit,
     onLocationClick: () -> Unit,
@@ -202,6 +207,7 @@ private fun BrowseCityScreenUI(
     onSetStartDateFilter: (Timestamp?, Timestamp?) -> Unit,
     onSetSortByMostRecent: (Boolean) -> Unit,
     onDismissFilterSheet: () -> Unit,
+    onToggleBookmark: (String) -> Unit = {},
     onAddListingClick: () -> Unit = {},
     onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
@@ -393,7 +399,14 @@ private fun BrowseCityScreenUI(
                                 .testTag(C.BrowseCityTags.LISTING_LIST),
                         contentPadding = PaddingValues(vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                          items(listingsState.items) { item -> ListingCard(item, onSelectListing) }
+                          items(listingsState.items) { item ->
+                            ListingCard(
+                                item,
+                                onSelectListing,
+                                isBookmarked = bookmarkedListingIds.contains(item.listingUid),
+                                onToggleBookmark = { onToggleBookmark(item.listingUid) },
+                                isGuest = isGuest)
+                          }
                         }
                   }
                 }
@@ -837,44 +850,68 @@ private fun StartDateFilterContent(
  * @param onClick A callback invoked when the card is clicked, passing the listing data.
  */
 @Composable
-private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
+private fun ListingCard(
+    data: ListingCardUI,
+    onClick: (ListingCardUI) -> Unit,
+    isBookmarked: Boolean = false,
+    onToggleBookmark: () -> Unit = {},
+    isGuest: Boolean = false
+) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
       modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.listingCard(data.listingUid)),
       onClick = { onClick(data) }) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-          // Image placeholder (left)
-          Box(
-              modifier =
-                  Modifier.height(140.dp)
-                      .fillMaxWidth(0.35F)
-                      .clip(RoundedCornerShape(12.dp))
-                      .background(Color(0xFFEAEAEA))) {
-                AsyncImage(
-                    model = data.image,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop)
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+          Row(
+              modifier = Modifier.fillMaxWidth().padding(end = if (!isGuest) 48.dp else 0.dp),
+              verticalAlignment = Alignment.CenterVertically) {
+                // Image placeholder (left)
+                Box(
+                    modifier =
+                        Modifier.height(140.dp)
+                            .fillMaxWidth(0.35F)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFEAEAEA))) {
+                      AsyncImage(
+                          model = data.image,
+                          contentDescription = null,
+                          modifier = Modifier.fillMaxSize(),
+                          contentScale = ContentScale.Crop)
+                    }
+
+                Spacer(Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                  Text(
+                      text = data.title,
+                      style = MaterialTheme.typography.titleMedium,
+                      fontWeight = FontWeight.SemiBold,
+                      textAlign = TextAlign.Center,
+                      color = TextColor,
+                      modifier = Modifier.fillMaxWidth())
+
+                  Spacer(Modifier.height(8.dp))
+
+                  Row(modifier = Modifier.fillMaxWidth()) {
+                    BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
+                    Spacer(Modifier.width(8.dp))
+                    BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
+                  }
+                }
               }
 
-          Spacer(Modifier.width(12.dp))
-
-          Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = data.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                color = TextColor,
-                modifier = Modifier.fillMaxWidth())
-
-            Spacer(Modifier.height(8.dp))
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-              BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
-              Spacer(Modifier.width(8.dp))
-              BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
-            }
+          // Bookmark button (top-right corner, above title)
+          if (!isGuest) {
+            IconButton(
+                onClick = { onToggleBookmark() },
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) {
+                  Icon(
+                      imageVector =
+                          if (isBookmarked) Icons.Filled.Bookmark
+                          else Icons.Outlined.BookmarkBorder,
+                      contentDescription = if (isBookmarked) "Remove bookmark" else "Add bookmark",
+                      tint = MainColor)
+                }
           }
         }
       }

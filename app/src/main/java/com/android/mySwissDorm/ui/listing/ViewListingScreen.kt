@@ -10,6 +10,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,6 +66,7 @@ fun ViewListingScreen(
   val hasMessage = listingUIState.contactMessage.any { !it.isWhitespace() }
   val isOwner = listingUIState.isOwner
   val isBlockedByOwner = listingUIState.isBlockedByOwner
+  val isBookmarked = listingUIState.isBookmarked
 
   // Button is enabled only if there's a message and user is not blocked
   val canApply = hasMessage && !isBlockedByOwner
@@ -91,6 +94,21 @@ fun ViewListingScreen(
                         contentDescription = "Back",
                         tint = MainColor)
                   }
+            },
+            actions = {
+              if (!listingUIState.isGuest && !isOwner) {
+                IconButton(
+                    onClick = { viewListingViewModel.toggleBookmark(listingUid, context) },
+                    modifier = Modifier.testTag(C.ViewListingTags.BOOKMARK_BTN)) {
+                      Icon(
+                          imageVector =
+                              if (isBookmarked) Icons.Filled.Bookmark
+                              else Icons.Outlined.BookmarkBorder,
+                          contentDescription =
+                              if (isBookmarked) "Remove bookmark" else "Add bookmark",
+                          tint = if (isBookmarked) MainColor else MainColor)
+                    }
+              }
             })
       },
       content = { paddingValues ->

@@ -63,6 +63,34 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
         .await()
   }
 
+  override suspend fun getBookmarkedListingIds(ownerId: String): List<String> {
+    val doc = db.collection(PROFILE_COLLECTION_PATH).document(ownerId).get().await()
+    @Suppress("UNCHECKED_CAST")
+    return doc.get("bookmarkedListingIds") as? List<String> ?: emptyList()
+  }
+
+  override suspend fun addBookmark(ownerId: String, listingId: String) {
+    db.collection(PROFILE_COLLECTION_PATH)
+        .document(ownerId)
+        .set(mapOf("ownerId" to ownerId), SetOptions.merge())
+        .await()
+    db.collection(PROFILE_COLLECTION_PATH)
+        .document(ownerId)
+        .update("bookmarkedListingIds", FieldValue.arrayUnion(listingId))
+        .await()
+  }
+
+  override suspend fun removeBookmark(ownerId: String, listingId: String) {
+    db.collection(PROFILE_COLLECTION_PATH)
+        .document(ownerId)
+        .set(mapOf("ownerId" to ownerId), SetOptions.merge())
+        .await()
+    db.collection(PROFILE_COLLECTION_PATH)
+        .document(ownerId)
+        .update("bookmarkedListingIds", FieldValue.arrayRemove(listingId))
+        .await()
+  }
+
   private fun documentToProfile(document: DocumentSnapshot): Profile? {
     return try {
       val ownerId = document.id

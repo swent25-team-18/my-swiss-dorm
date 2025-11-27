@@ -42,7 +42,7 @@ object ReviewsRepositoryProvider {
    */
   var repository: ReviewsRepository
     get() {
-      if (!initialized || _repository == null) {
+      if (_repository == null) {
         throw IllegalStateException(
             "ReviewsRepositoryProvider not initialized. Call initialize(context) first.")
       }

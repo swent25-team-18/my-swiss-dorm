@@ -46,7 +46,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class Epic1Test : FirestoreTest() {
-  val rentalUid = RentalListingRepositoryProvider.repository.getNewUid()
+  private lateinit var rentalUid: String
 
   override fun createRepositories() {
     AuthRepositoryProvider.repository = AuthRepositoryFirebase(FirebaseEmulator.auth)
@@ -59,6 +59,9 @@ class Epic1Test : FirestoreTest() {
     UniversitiesRepositoryProvider.repository =
         UniversitiesRepositoryFirestore(FirebaseEmulator.firestore)
     PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
+
+    // Initialize rentalUid after repository provider is set
+    rentalUid = RentalListingRepositoryProvider.repository.getNewUid()
 
     runTest {
       switchToUser(FakeUser.FakeUser1)

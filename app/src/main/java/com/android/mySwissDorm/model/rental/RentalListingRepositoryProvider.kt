@@ -41,7 +41,7 @@ object RentalListingRepositoryProvider {
    */
   var repository: RentalListingRepository
     get() {
-      if (!initialized || _repository == null) {
+      if (_repository == null) {
         throw IllegalStateException(
             "RentalListingRepositoryProvider not initialized. Call initialize(context) first.")
       }

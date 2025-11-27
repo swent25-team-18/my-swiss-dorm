@@ -11,10 +11,15 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ApplicationProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
+import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
@@ -34,9 +39,9 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
   @get:Rule val compose = createComposeRule()
 
-  private val reviewsRepo = ReviewsRepositoryProvider.repository
-  private val residenciesRepo = ResidenciesRepositoryProvider.repository
-  private val profileRepo = ProfileRepositoryProvider.repository
+  private lateinit var reviewsRepo: ReviewsRepository
+  private lateinit var residenciesRepo: ResidenciesRepository
+  private lateinit var profileRepo: ProfileRepository
 
   private lateinit var vm: ReviewsByResidencyViewModel
 
@@ -50,9 +55,13 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
   private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
+    ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
+    ResidenciesRepositoryProvider.repository =
+        ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
+    ProfileRepositoryProvider.repository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     runBlocking {
-      residenciesRepo.addResidency(vortex)
-      residenciesRepo.addResidency(atrium)
+      ResidenciesRepositoryProvider.repository.addResidency(vortex)
+      ResidenciesRepositoryProvider.repository.addResidency(atrium)
     }
   }
 
@@ -61,6 +70,10 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
     runTest {
       super.setUp()
       createRepositories()
+      // Initialize repositories after createRepositories() sets the providers
+      reviewsRepo = ReviewsRepositoryProvider.repository
+      residenciesRepo = ResidenciesRepositoryProvider.repository
+      profileRepo = ProfileRepositoryProvider.repository
 
       switchToUser(FakeUser.FakeUser1)
       userId = FirebaseEmulator.auth.currentUser!!.uid

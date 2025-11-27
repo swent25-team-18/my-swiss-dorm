@@ -10,9 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
  * This handler provides a reusable way to toggle bookmark status for listings, ensuring consistent
  * behavior and easier testing.
  */
-class BookmarkHandler(
-    private val profileRepository: ProfileRepository
-) {
+class BookmarkHandler(private val profileRepository: ProfileRepository) {
   /**
    * Toggles the bookmark status for a listing.
    *

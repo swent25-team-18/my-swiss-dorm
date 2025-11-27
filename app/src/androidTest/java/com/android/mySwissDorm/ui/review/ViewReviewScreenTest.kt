@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RoomType
@@ -37,7 +38,9 @@ import java.util.Date
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -72,7 +75,6 @@ class ViewReviewScreenTest : FirestoreTest() {
   @Before
   override fun setUp() {
     super.setUp()
-    createRepositories()
     vm = ViewReviewViewModel(reviewsRepo, profilesRepo)
 
     runTest {
@@ -104,7 +106,7 @@ class ViewReviewScreenTest : FirestoreTest() {
               roomType = RoomType.STUDIO,
               pricePerMonth = 300.0,
               areaInM2 = 64,
-              imageUrls = emptyList(),
+              imageUrls = listOf(photo.fileName),
               upvotedBy = emptySet(),
               downvotedBy = emptySet())
       review2 =
@@ -136,6 +138,12 @@ class ViewReviewScreenTest : FirestoreTest() {
       reviewsRepo.addReview(anonymousReviewOwned)
       reviewsRepo.addReview(nonAnonymousReviewOwned)
     }
+  }
+
+  @After
+  override fun tearDown() {
+    runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
+    super.tearDown()
   }
 
   private fun setOwnerReview() {
@@ -177,24 +185,30 @@ class ViewReviewScreenTest : FirestoreTest() {
 
   @Test
   fun everythingIsDisplayed() {
-    setOwnerReview()
-    waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
-    compose.onNodeWithTag(C.ViewReviewTags.ROOT, useUnmergedTree = true).assertIsDisplayed()
-    scrollListTo(C.ViewReviewTags.TITLE)
-    compose.onNodeWithTag(C.ViewReviewTags.TITLE, useUnmergedTree = true).assertIsDisplayed()
-    scrollListTo(C.ViewReviewTags.POSTED_BY)
-    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY, useUnmergedTree = true).assertIsDisplayed()
-    scrollListTo(C.ViewReviewTags.BULLETS)
-    compose.onNodeWithTag(C.ViewReviewTags.BULLETS, useUnmergedTree = true).assertIsDisplayed()
-    scrollListTo(C.ViewReviewTags.REVIEW_TEXT)
-    compose.onNodeWithTag(C.ViewReviewTags.REVIEW_TEXT, useUnmergedTree = true).assertIsDisplayed()
-    scrollListTo(C.ViewReviewTags.PHOTOS)
-    compose.onNodeWithTag(C.ViewReviewTags.PHOTOS, useUnmergedTree = true).assertIsDisplayed()
-    scrollListTo(C.ViewReviewTags.LOCATION)
-    compose.onNodeWithTag(C.ViewReviewTags.LOCATION, useUnmergedTree = true).assertIsDisplayed()
-    scrollListTo(C.ViewReviewTags.EDIT_BTN)
-    compose.onNodeWithTag(C.ViewReviewTags.EDIT_BTN, useUnmergedTree = true).assertIsDisplayed()
+    runTest {
+      // Photo upload
+      PhotoRepositoryProvider.cloud_repository.uploadPhoto(photo)
+      setOwnerReview()
+      waitForScreenRoot()
+      compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+      compose.onNodeWithTag(C.ViewReviewTags.ROOT, useUnmergedTree = true).assertIsDisplayed()
+      scrollListTo(C.ViewReviewTags.TITLE)
+      compose.onNodeWithTag(C.ViewReviewTags.TITLE, useUnmergedTree = true).assertIsDisplayed()
+      scrollListTo(C.ViewReviewTags.POSTED_BY)
+      compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY, useUnmergedTree = true).assertIsDisplayed()
+      scrollListTo(C.ViewReviewTags.BULLETS)
+      compose.onNodeWithTag(C.ViewReviewTags.BULLETS, useUnmergedTree = true).assertIsDisplayed()
+      scrollListTo(C.ViewReviewTags.REVIEW_TEXT)
+      compose
+          .onNodeWithTag(C.ViewReviewTags.REVIEW_TEXT, useUnmergedTree = true)
+          .assertIsDisplayed()
+      scrollListTo(C.ViewReviewTags.PHOTOS)
+      compose.onNodeWithTag(C.ViewReviewTags.PHOTOS, useUnmergedTree = true).assertIsDisplayed()
+      scrollListTo(C.ViewReviewTags.LOCATION)
+      compose.onNodeWithTag(C.ViewReviewTags.LOCATION, useUnmergedTree = true).assertIsDisplayed()
+      scrollListTo(C.ViewReviewTags.EDIT_BTN)
+      compose.onNodeWithTag(C.ViewReviewTags.EDIT_BTN, useUnmergedTree = true).assertIsDisplayed()
+    }
   }
 
   @Test

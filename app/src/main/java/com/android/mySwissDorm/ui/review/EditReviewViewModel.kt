@@ -1,8 +1,13 @@
 package com.android.mySwissDorm.ui.review
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -12,6 +17,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
+import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
@@ -39,7 +45,7 @@ import kotlinx.coroutines.launch
  * @property roomType The type of room (Studio, Apartment, etc.).
  * @property pricePerMonth The monthly rent price as a string (for input field).
  * @property areaInM2 The area in square meters as a string (for input field).
- * @property imageUrls The list of image URLs associated with the review.
+ * @property images The list of images associated with the review.
  * @property isAnonymous Whether the review should be posted anonymously.
  */
 data class EditReviewUiState(
@@ -52,7 +58,7 @@ data class EditReviewUiState(
     val roomType: RoomType,
     val pricePerMonth: String = "",
     val areaInM2: String = "",
-    val imageUrls: List<String> = emptyList(),
+    val images: List<Photo> = emptyList(),
     val isAnonymous: Boolean = false,
 ) {
   /**
@@ -96,18 +102,40 @@ data class EditReviewUiState(
  * @property reviewId The unique identifier of the review to edit.
  * @property reviewRepository The repository for accessing and updating reviews.
  * @property residenciesRepository The repository for accessing available residencies.
+ * @property photoRepositoryLocal The repository handling photo operations locally
+ * @property photoRepositoryCloud the repository handling photo operations with the cloud
  */
 class EditReviewViewModel(
     private val reviewId: String,
     private val reviewRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository
+        ResidenciesRepositoryProvider.repository,
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
   private val _uiState =
       MutableStateFlow(
           EditReviewUiState(
               postedAt = Timestamp.now(), roomType = RoomType.STUDIO, residencies = listOf()))
   val uiState: StateFlow<EditReviewUiState> = _uiState.asStateFlow()
+
+  private val photoManager =
+      PhotoManager(
+          photoRepositoryLocal = photoRepositoryLocal, photoRepositoryCloud = photoRepositoryCloud)
+
+  fun addPhoto(photo: Photo) {
+    viewModelScope.launch {
+      photoManager.addPhoto(photo)
+      _uiState.value = _uiState.value.copy(images = photoManager.photoLoaded)
+    }
+  }
+
+  fun removePhoto(uri: Uri) {
+    viewModelScope.launch {
+      photoManager.removePhoto(uri, false)
+      _uiState.value = _uiState.value.copy(images = photoManager.photoLoaded)
+    }
+  }
 
   /**
    * Updates the review title with normalized input.
@@ -178,15 +206,6 @@ class EditReviewViewModel(
   }
 
   /**
-   * Updates the list of image URLs.
-   *
-   * @param imageUrls The new list of image URLs.
-   */
-  fun setImageUrls(imageUrls: List<String>) {
-    _uiState.value = _uiState.value.copy(imageUrls = imageUrls)
-  }
-
-  /**
    * Updates the anonymous status of the review.
    *
    * @param isAnonymous Whether the review should be posted anonymously.
@@ -211,6 +230,9 @@ class EditReviewViewModel(
         val review = reviewRepository.getReview(reviewId)
         // Preserve existing residencies to avoid clearing them
         val currentResidencies = _uiState.value.residencies
+
+        photoManager.initialize(review.imageUrls)
+
         _uiState.value =
             _uiState.value.copy(
                 postedAt = review.postedAt,
@@ -222,7 +244,7 @@ class EditReviewViewModel(
                 roomType = review.roomType,
                 pricePerMonth = review.pricePerMonth.toString(),
                 areaInM2 = review.areaInM2.toString(),
-                imageUrls = review.imageUrls,
+                images = photoManager.photoLoaded,
                 isAnonymous = review.isAnonymous)
         // If residencies haven't been loaded yet, load them now
         if (currentResidencies.isEmpty()) {
@@ -257,6 +279,7 @@ class EditReviewViewModel(
    */
   fun deleteReview(reviewID: String) {
     viewModelScope.launch {
+      photoManager.deleteAll()
       try {
         reviewRepository.deleteReview(reviewId = reviewID)
       } catch (e: Exception) {
@@ -277,6 +300,7 @@ class EditReviewViewModel(
    */
   private fun editReviewToRepository(id: String, review: Review) {
     viewModelScope.launch {
+      photoManager.commitChanges()
       try {
         reviewRepository.editReview(reviewId = id, newValue = review)
       } catch (e: Exception) {
@@ -324,7 +348,7 @@ class EditReviewViewModel(
                 roomType = state.roomType,
                 pricePerMonth = state.pricePerMonth.toDouble(),
                 areaInM2 = state.areaInM2.toInt(),
-                imageUrls = state.imageUrls,
+                imageUrls = state.images.map { it.fileName },
                 isAnonymous = state.isAnonymous))
 
     return true

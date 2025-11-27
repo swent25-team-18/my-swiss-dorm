@@ -15,7 +15,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -47,7 +47,7 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
 
   @Before
   override fun setUp() {
-    runTest {
+    runBlocking {
       super.setUp()
       context = InstrumentationRegistry.getInstrumentation().targetContext
 
@@ -70,7 +70,7 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
   }
 
   @Test
-  fun loadListings_loadsBookmarkedIds() = runTest {
+  fun loadListings_loadsBookmarkedIds() = runBlocking {
     // Bookmark listing1
     profileRepo.addBookmark(userId, listing1.uid)
 
@@ -79,8 +79,12 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
             listingsRepo, reviewsRepo, residenciesRepo, locationRepository, profileRepo)
     vm.loadListings(location, context)
 
-    // Wait for loading
-    kotlinx.coroutines.delay(2000)
+    // Wait for loading to complete
+    var attempts = 0
+    while (vm.uiState.value.listings.loading && attempts < 50) {
+      kotlinx.coroutines.delay(100)
+      attempts++
+    }
 
     val state = vm.uiState.value
     assertFalse("Should not be loading", state.listings.loading)
@@ -92,12 +96,18 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
   }
 
   @Test
-  fun toggleBookmark_addsBookmark() = runTest {
+  fun toggleBookmark_addsBookmark() = runBlocking {
     val vm =
         BrowseCityViewModel(
             listingsRepo, reviewsRepo, residenciesRepo, locationRepository, profileRepo)
     vm.loadListings(location, context)
-    kotlinx.coroutines.delay(2000)
+
+    // Wait for loading to complete
+    var attempts = 0
+    while (vm.uiState.value.listings.loading && attempts < 50) {
+      kotlinx.coroutines.delay(100)
+      attempts++
+    }
 
     // Initially not bookmarked
     assertFalse(
@@ -105,7 +115,13 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
 
     // Toggle bookmark
     vm.toggleBookmark(listing1.uid, context)
-    kotlinx.coroutines.delay(500)
+
+    // Wait for bookmark to be added
+    attempts = 0
+    while (!vm.uiState.value.bookmarkedListingIds.contains(listing1.uid) && attempts < 50) {
+      kotlinx.coroutines.delay(100)
+      attempts++
+    }
 
     // Verify bookmark was added
     assertTrue(
@@ -116,7 +132,7 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
   }
 
   @Test
-  fun toggleBookmark_removesBookmark() = runTest {
+  fun toggleBookmark_removesBookmark() = runBlocking {
     // Bookmark listing first
     profileRepo.addBookmark(userId, listing1.uid)
 
@@ -124,14 +140,27 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
         BrowseCityViewModel(
             listingsRepo, reviewsRepo, residenciesRepo, locationRepository, profileRepo)
     vm.loadListings(location, context)
-    kotlinx.coroutines.delay(2000)
+
+    // Wait for loading to complete and bookmark to be loaded
+    var attempts = 0
+    while ((vm.uiState.value.listings.loading ||
+        !vm.uiState.value.bookmarkedListingIds.contains(listing1.uid)) && attempts < 100) {
+      kotlinx.coroutines.delay(100)
+      attempts++
+    }
 
     // Initially bookmarked
     assertTrue("Initially bookmarked", vm.uiState.value.bookmarkedListingIds.contains(listing1.uid))
 
     // Toggle bookmark
     vm.toggleBookmark(listing1.uid, context)
-    kotlinx.coroutines.delay(500)
+
+    // Wait for bookmark to be removed
+    attempts = 0
+    while (vm.uiState.value.bookmarkedListingIds.contains(listing1.uid) && attempts < 50) {
+      kotlinx.coroutines.delay(100)
+      attempts++
+    }
 
     // Verify bookmark was removed
     assertFalse(
@@ -142,7 +171,7 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
   }
 
   @Test
-  fun toggleBookmark_doesNothing_whenGuest() = runTest {
+  fun toggleBookmark_doesNothing_whenGuest() = runBlocking {
     // Switch to anonymous user
     signInAnonymous()
 
@@ -150,7 +179,13 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
         BrowseCityViewModel(
             listingsRepo, reviewsRepo, residenciesRepo, locationRepository, profileRepo)
     vm.loadListings(location, context)
-    kotlinx.coroutines.delay(2000)
+
+    // Wait for loading to complete
+    var attempts = 0
+    while (vm.uiState.value.listings.loading && attempts < 50) {
+      kotlinx.coroutines.delay(100)
+      attempts++
+    }
 
     val initialState = vm.uiState.value.bookmarkedListingIds.size
 
@@ -166,7 +201,7 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
   }
 
   @Test
-  fun loadListings_handlesGuestUser() = runTest {
+  fun loadListings_handlesGuestUser() = runBlocking {
     // Switch to anonymous user
     signInAnonymous()
 
@@ -174,7 +209,13 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
         BrowseCityViewModel(
             listingsRepo, reviewsRepo, residenciesRepo, locationRepository, profileRepo)
     vm.loadListings(location, context)
-    kotlinx.coroutines.delay(2000)
+
+    // Wait for loading to complete
+    var attempts = 0
+    while (vm.uiState.value.listings.loading && attempts < 50) {
+      kotlinx.coroutines.delay(100)
+      attempts++
+    }
 
     val state = vm.uiState.value
     assertTrue("Guest should have empty bookmarked list", state.bookmarkedListingIds.isEmpty())

@@ -25,6 +25,26 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 
+/**
+ * The primary Map View screen for browsing dormitory listings.
+ *
+ * This screen displays a Google Map with markers representing available listings. It handles the
+ * following features:
+ * 1. **Clustering/Grouping:** Listings at the exact same coordinates are grouped together into a
+ *    single marker.
+ * 2. **Dynamic Overlays:** Clicking a marker opens a floating preview card. If the marker
+ *    represents multiple listings, a carousel (MultiListingCarouselCard) is shown; otherwise, a
+ *    single card (SmallListingPreviewCard) is shown.
+ * 3. **Smart Camera Positioning:** Automatically centers on a specific location (if provided), the
+ *    first listing, or a default fallback (Switzerland center).
+ *
+ * @param listings The complete list of ListingCardUI objects to display on the map.
+ * @param centerLocation An optional specific location to center the map on initially (e.g., if the
+ *   user navigated from a specific city search).
+ * @param onGoBack Callback to navigate back to the previous screen.
+ * @param onListingClick Callback triggered when a user clicks the preview card to view full details
+ *   of a specific listing.
+ */
 @Composable
 fun MapOverviewScreen(
     listings: List<ListingCardUI>,

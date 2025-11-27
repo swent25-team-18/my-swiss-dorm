@@ -32,8 +32,23 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 
 /**
- * A shared Scaffold for Map screens. Handles the TopBar, the FAB, the Map, and OVERLAYS (like
- * cards).
+ * A shared Scaffold specialized for Map screens within the application.
+ *
+ * This component standardizes the layout for any screen that features a full-screen Google Map. It
+ * manages:
+ * 1. The Top Bar (Title and Back navigation).
+ * 2. The Floating Action Button (FAB) for external map navigation.
+ * 3. The Google Map instance itself.
+ * 4. An overlay layer for drawing UI elements (like Listing Cards) on top of the map.
+ *
+ * @param title The text to display in the TopAppBar.
+ * @param onGoBack Callback triggered when the back arrow is clicked.
+ * @param onFabClick Callback triggered when the FAB is clicked.
+ * @param cameraPositionState State object controlling the map's camera (zoom, location).
+ * @param googleMapUiSettings Settings for map UI controls (compass, zoom controls, etc.).
+ * @param onMapClick Callback triggered when the user taps somewhere on the map surface.
+ * @param content The scope for map specific content (Markers, Polylines, etc.).
+ * @param overlayContent The scope for UI elements floating *above* the map (e.g., Preview Cards).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +94,15 @@ fun MapScreenScaffold(
       }
 }
 
-/** Helper to launch Google Maps Intent */
+/**
+ * Helper function to launch an external Intent to Google Maps.
+ *
+ * This function attempts to open the given URI specifically in the Google Maps app package. If the
+ * app is not installed, it falls back to a generic ACTION_VIEW intent (which may open a browser).
+ *
+ * @param context The Android Context required to start the activity.
+ * @param uriString The URI string (e.g., "geo:0,0?q=...") to be opened.
+ */
 fun launchGoogleMaps(context: Context, uriString: String) {
   val gmmIntentUri = Uri.parse(uriString)
   val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
@@ -92,7 +115,17 @@ fun launchGoogleMaps(context: Context, uriString: String) {
 }
 
 // --- SHARED CARDS ---
-
+/**
+ * A composite card component that displays a carousel of [SmallListingPreviewCard]s.
+ *
+ * This is used when multiple listings exist at the exact same location (or very close proximity).
+ * It provides "Previous" and "Next" buttons to cycle through the provided list of listings.
+ *
+ * @param listings The list of [ListingCardUI] data objects to display.
+ * @param onListingClick Callback triggered when the listing preview card is tapped. Passes the
+ *   Listing UID.
+ * @param onClose Callback triggered when the close (X) button is tapped.
+ */
 @Composable
 fun MultiListingCarouselCard(
     listings: List<ListingCardUI>,
@@ -147,6 +180,20 @@ fun MultiListingCarouselCard(
   }
 }
 
+/**
+ * A compact preview card representing a single dormitory listing.
+ *
+ * This card is designed to overlay the map when a marker is clicked. It displays the primary image,
+ * title, price (via bullets), and location name.
+ *
+ * It includes a custom close button implemented as a clickable Box to ensure precise sizing and
+ * hit-target control.
+ *
+ * @param listing The data object containing listing details.
+ * @param onClick Callback triggered when the card body is clicked (navigate to details).
+ * @param onClose Callback triggered when the top-right X is clicked.
+ * @param modifier Modifier to be applied to the root Card.
+ */
 @Composable
 fun SmallListingPreviewCard(
     listing: ListingCardUI,

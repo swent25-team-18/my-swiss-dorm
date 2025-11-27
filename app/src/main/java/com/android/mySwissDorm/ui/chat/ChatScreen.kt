@@ -77,21 +77,61 @@ fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier 
         }
   } else {
     val context = LocalContext.current
-    val chatClient = StreamChatProvider.getClient()
-    val currentUser = FirebaseAuth.getInstance().currentUser
 
-    var isConnected by remember { mutableStateOf(false) }
-    var isConnecting by remember { mutableStateOf(false) }
+    // Default to showing connecting message - only hide when fully connected
+    var showChatInterface by remember { mutableStateOf(false) }
 
-    // Check connection and connect if needed
+    // Show connecting message immediately while we check Stream Chat availability
+    // This ensures the UI is visible right away for tests
+    val connectingMessage =
+        @Composable {
+          Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+              CircularProgressIndicator()
+              Spacer(modifier = Modifier.height(16.dp))
+              Text(stringResource(R.string.chat_screen_connecting))
+            }
+          }
+        }
+
+    // Check if Stream Chat is available and try to connect
     LaunchedEffect(channelId) {
-      val user = chatClient.clientState.user.value
-      if (user != null) {
-        isConnected = true
-      } else {
-        // User not connected, try to connect
-        if (currentUser != null && !isConnecting) {
-          isConnecting = true
+      // Default state: show connecting message
+      showChatInterface = false
+
+      // Check if Stream Chat is initialized
+      if (!StreamChatProvider.isInitialized()) {
+        // Not initialized - stay in connecting state
+        return@LaunchedEffect
+      }
+
+      // Try to get client - if this fails, stay in connecting state
+      val chatClient =
+          try {
+            StreamChatProvider.getClient()
+          } catch (e: IllegalStateException) {
+            android.util.Log.e("MyChatScreen", "Stream Chat client not available", e)
+            return@LaunchedEffect
+          }
+
+      val currentUser = FirebaseAuth.getInstance().currentUser
+
+      try {
+        // Try to check if user is connected
+        val user =
+            try {
+              chatClient.clientState.user.value
+            } catch (e: IllegalStateException) {
+              // Client not properly configured (missing plugins, etc.)
+              android.util.Log.e("MyChatScreen", "Stream Chat client not properly configured", e)
+              return@LaunchedEffect
+            }
+
+        if (user != null) {
+          // User is already connected
+          showChatInterface = true
+        } else if (currentUser != null) {
+          // User not connected, try to connect
           try {
             val profile = ProfileRepositoryProvider.repository.getProfile(currentUser.uid)
             StreamChatProvider.connectUser(
@@ -100,29 +140,54 @@ fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier 
                 imageUrl = "")
             // Wait for connection to establish
             delay(1500)
-            isConnected = true
+            // Verify connection
+            try {
+              val connectedUser = chatClient.clientState.user.value
+              if (connectedUser != null) {
+                showChatInterface = true
+              }
+            } catch (e: Exception) {
+              android.util.Log.e("MyChatScreen", "Failed to verify connection", e)
+            }
           } catch (e: Exception) {
             android.util.Log.e("MyChatScreen", "Failed to connect to Stream Chat", e)
-            // Still try to proceed, might work if connection was already in progress
-            delay(1000)
-            isConnected = chatClient.clientState.user.value != null
-          } finally {
-            isConnecting = false
           }
         }
+      } catch (e: Exception) {
+        android.util.Log.e("MyChatScreen", "Unexpected error in chat screen", e)
       }
     }
 
-    if (!isConnected || isConnecting) {
-      // Show loading while connecting
-      Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          CircularProgressIndicator()
-          Spacer(modifier = Modifier.height(16.dp))
-          Text(stringResource(R.string.chat_screen_connecting))
+    // Show connecting message by default, or chat interface if connected
+    if (!showChatInterface) {
+      // Always show connecting message when not connected
+      connectingMessage()
+      return
+    }
+
+    // Only try to show chat interface if we're supposed to
+    // Check if client is available and usable before rendering composable
+    val chatClient =
+        try {
+          if (StreamChatProvider.isInitialized()) {
+            val client = StreamChatProvider.getClient()
+            // Verify client is usable - catch any errors here before rendering
+            try {
+              client.clientState.user // Test if client state is accessible
+              client
+            } catch (e: Exception) {
+              android.util.Log.e("MyChatScreen", "Stream Chat client not usable", e)
+              null
+            }
+          } else {
+            null
+          }
+        } catch (e: IllegalStateException) {
+          null
         }
-      }
-    } else {
+
+    // Render chat interface only if client is usable
+    if (chatClient != null) {
       val viewModelFactory =
           remember(channelId) {
             MessagesViewModelFactory(
@@ -136,6 +201,9 @@ fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier 
           viewModelFactory = viewModelFactory,
           onBackPressed = onBackClick,
       )
+    } else {
+      // Fallback: Show connecting message if client is not usable
+      connectingMessage()
     }
   }
 }

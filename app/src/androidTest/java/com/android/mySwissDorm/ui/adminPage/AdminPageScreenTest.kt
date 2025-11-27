@@ -27,6 +27,7 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -363,6 +364,20 @@ class AdminPageScreenTest : FirestoreTest() {
     setContent()
 
     val email = "success@example.com"
+
+    // Remove admin if it exists to ensure clean state
+    val adminRepo =
+        com.android.mySwissDorm.model.admin.AdminRepository(
+            com.android.mySwissDorm.utils.FirebaseEmulator.firestore,
+            com.android.mySwissDorm.utils.FirebaseEmulator.auth)
+    if (adminRepo.isAdmin(email)) {
+      // Delete the admin document if it exists
+      FirebaseEmulator.firestore
+          .collection("admins")
+          .document(email.lowercase().trim())
+          .delete()
+          .await()
+    }
 
     // Configure ViewModel directly
     viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)

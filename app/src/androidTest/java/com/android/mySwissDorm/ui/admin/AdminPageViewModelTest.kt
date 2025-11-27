@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.ui.admin
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
@@ -21,6 +23,7 @@ import org.junit.Test
 class AdminPageViewModelTest : FirestoreTest() {
   private lateinit var adminRepo: AdminRepository
   private lateinit var viewModel: AdminPageViewModel
+  private lateinit var context: Context
 
   override fun createRepositories() {
     CitiesRepositoryProvider.repository = CitiesRepositoryFirestore(FirebaseEmulator.firestore)
@@ -33,6 +36,7 @@ class AdminPageViewModelTest : FirestoreTest() {
   @Before
   override fun setUp() {
     super.setUp()
+    context = ApplicationProvider.getApplicationContext()
     adminRepo = AdminRepository(FirebaseEmulator.firestore, FirebaseEmulator.auth)
     viewModel =
         AdminPageViewModel(
@@ -67,7 +71,7 @@ class AdminPageViewModelTest : FirestoreTest() {
   fun onTypeChange_clearsMessage() {
     // Set a message first
     viewModel.onEmail("test@example.com")
-    viewModel.submit() // This might set a message
+    viewModel.submit(context) // This might set a message
 
     // Change type
     viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
@@ -88,7 +92,7 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
     viewModel.onEmail("")
 
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
 
     val message = viewModel.uiState.message
@@ -101,7 +105,7 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
     viewModel.onEmail("invalid-email")
 
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
 
     val message = viewModel.uiState.message
@@ -115,7 +119,7 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
     viewModel.onEmail("newadmin@example.com")
 
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
 
     assertTrue("Should show confirmation dialog", viewModel.uiState.showAdminConfirmDialog)
@@ -131,10 +135,10 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onEmail(email)
 
     // Trigger confirmation flow
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
 
-    viewModel.confirmAdminAdd()
+    viewModel.confirmAdminAdd(context)
     advanceUntilIdle()
 
     // Wait until the repository reports the admin as existing
@@ -166,9 +170,9 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onEmail(email)
 
     // Trigger confirmation flow
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
-    viewModel.confirmAdminAdd()
+    viewModel.confirmAdminAdd(context)
     advanceUntilIdle()
 
     // Core guarantee: existing admin is still present (no duplicate / crash)
@@ -181,7 +185,7 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onEmail("test@example.com")
 
     // Trigger confirmation dialog
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
     assertTrue("Should show confirmation dialog", viewModel.uiState.showAdminConfirmDialog)
 
@@ -195,7 +199,7 @@ class AdminPageViewModelTest : FirestoreTest() {
     // Set a message by submitting with invalid data
     viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
     viewModel.onEmail("")
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
 
     assertNotNull("Should have message", viewModel.uiState.message)
@@ -213,10 +217,10 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
     viewModel.onEmail(email)
 
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
 
-    viewModel.confirmAdminAdd()
+    viewModel.confirmAdminAdd(context)
     advanceUntilIdle()
 
     // Wait until repository reports the admin as existing
@@ -239,7 +243,7 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onEmail("valid@example.com")
 
     // Should not require location
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
 
     // Should show confirmation dialog, not validation error
@@ -254,7 +258,7 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onImageId("123")
     // No location set
 
-    viewModel.submit()
+    viewModel.submit(context)
     advanceUntilIdle()
 
     val message = viewModel.uiState.message

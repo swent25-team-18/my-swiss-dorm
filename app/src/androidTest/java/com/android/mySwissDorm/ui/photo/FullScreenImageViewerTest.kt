@@ -5,7 +5,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.doubleClick
-import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -72,7 +72,7 @@ class FullScreenImageViewerTest {
     composeTestRule.onNodeWithTag(C.FullScreenImageViewerTags.imageTag(uri2)).assertIsDisplayed()
     // Go to the previous image with the left arrow
     composeTestRule
-        .onNodeWithTag(C.FullScreenImageViewerTags.RIGHT_ARROW_BUTTON)
+        .onNodeWithTag(C.FullScreenImageViewerTags.LEFT_ARROW_BUTTON)
         .assertIsDisplayed()
         .performClick()
     composeTestRule.waitForIdle()
@@ -80,7 +80,7 @@ class FullScreenImageViewerTest {
     composeTestRule.onNodeWithTag(C.FullScreenImageViewerTags.imageTag(uri2)).assertIsNotDisplayed()
     // Go to the second image with the left arrow (it should loop)
     composeTestRule
-        .onNodeWithTag(C.FullScreenImageViewerTags.RIGHT_ARROW_BUTTON)
+        .onNodeWithTag(C.FullScreenImageViewerTags.LEFT_ARROW_BUTTON)
         .assertIsDisplayed()
         .performClick()
     composeTestRule.waitForIdle()
@@ -153,9 +153,13 @@ class FullScreenImageViewerTest {
           up()
         }
     composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON).isDisplayed()
-      composeTestRule.onNodeWithTag(C.FullScreenImageViewerTags.LEFT_ARROW_BUTTON).isDisplayed()
-      composeTestRule.onNodeWithTag(C.FullScreenImageViewerTags.RIGHT_ARROW_BUTTON).isDisplayed()
+      composeTestRule.onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON).isNotDisplayed() &&
+          composeTestRule
+              .onNodeWithTag(C.FullScreenImageViewerTags.LEFT_ARROW_BUTTON)
+              .isNotDisplayed() &&
+          composeTestRule
+              .onNodeWithTag(C.FullScreenImageViewerTags.RIGHT_ARROW_BUTTON)
+              .isNotDisplayed()
     }
   }
 

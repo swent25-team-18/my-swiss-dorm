@@ -128,19 +128,16 @@ fun FullScreenImageViewer(
         }
     // Navigation arrows
     AnimatedVisibility(
-        visible = showControls && imageUris.size > 1, enter = fadeIn(), exit = fadeOut()) {
+        visible = showControls && imageUris.size > 1,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = Modifier.align(Alignment.CenterStart)) {
           Row(
               modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
-                    onClick = {
-                      if (currentIndex > 0) {
-                        currentIndex--
-                      } else {
-                        currentIndex = imageUris.size - 1
-                      }
-                    },
+                    onClick = { currentIndex = Math.floorMod(currentIndex - 1, imageUris.size) },
                     modifier =
                         Modifier.background(color = buttonBackGroundColor)
                             .testTag(C.FullScreenImageViewerTags.LEFT_ARROW_BUTTON)) {
@@ -151,13 +148,7 @@ fun FullScreenImageViewer(
                     }
 
                 IconButton(
-                    onClick = {
-                      if (currentIndex < imageUris.size - 1) {
-                        currentIndex++
-                      } else {
-                        currentIndex = 0
-                      }
-                    },
+                    onClick = { currentIndex = Math.floorMod(currentIndex - 1, imageUris.size) },
                     modifier =
                         Modifier.background(color = buttonBackGroundColor)
                             .testTag(C.FullScreenImageViewerTags.RIGHT_ARROW_BUTTON)) {

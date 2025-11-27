@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.hasClickAction
@@ -19,7 +20,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -28,6 +35,8 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -36,6 +45,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import java.util.UUID
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -79,6 +89,7 @@ class EditReviewScreenTest : FirestoreTest() {
       roomType: RoomType = RoomType.STUDIO,
       isAnonymous: Boolean = false,
       user: FakeUser = FakeUser.FakeUser1,
+      imageUrls: List<String> = emptyList()
   ): String {
     // Ensure a deterministic user when seeding (for getAllReviewsByUser)
     switchToUser(user)
@@ -97,7 +108,7 @@ class EditReviewScreenTest : FirestoreTest() {
             roomType = roomType,
             pricePerMonth = price,
             areaInM2 = sizeM2,
-            imageUrls = emptyList(),
+            imageUrls = imageUrls,
             isAnonymous = isAnonymous)
 
     repo.addReview(review)
@@ -162,6 +173,7 @@ class EditReviewScreenTest : FirestoreTest() {
       // Seed two reviews for two users in a deterministic way
       switchToUser(FakeUser.FakeUser1)
       ResidenciesRepositoryProvider.repository.addResidency(resTest)
+      PhotoRepositoryProvider.cloud_repository.uploadPhoto(photo = photo)
       review1 =
           Review(
               uid = "review1",
@@ -205,6 +217,7 @@ class EditReviewScreenTest : FirestoreTest() {
 
   @After
   override fun tearDown() {
+    runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
     super.tearDown()
   }
 
@@ -1016,6 +1029,36 @@ class EditReviewScreenTest : FirestoreTest() {
     // Verify that the anonymous status is loaded correctly
     assertEquals(true, vm.uiState.value.isAnonymous)
     composeRule.onNodeWithText("Post anonymously", useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun deletePhotoWork() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+    val reviewId = seedReviewUpsert(imageUrls = listOf(photo.fileName))
+    val photo =
+        Photo(
+            image = "android.resource://com.android.mySwissDorm/${R.drawable.geneve}".toUri(),
+            "geneve.png")
+    val localRepository: PhotoRepository = FakePhotoRepository.commonLocalRepo({ photo }, {}, true)
+    val cloudRepository: PhotoRepositoryCloud =
+        FakePhotoRepositoryCloud(onRetrieve = { photo }, {}, true)
+    val vm =
+        EditReviewViewModel(
+            photoRepositoryLocal = localRepository,
+            photoRepositoryCloud = cloudRepository,
+            reviewId = reviewId)
+    setContentFor(vm, seedReviewUpsert(user = FakeUser.FakeUser2))
+    composeRule.waitForIdle()
+    // verify photo displayed
+    composeRule.onNodeWithTag(C.EditReviewTags.PHOTOS).performScrollTo().assertIsDisplayed()
+    composeRule.onNodeWithTag(C.ImageGridTags.imageTag(photo.image)).assertIsDisplayed()
+
+    composeRule
+        .onNodeWithTag(C.ImageGridTags.deleteButtonTag(photo.image), useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+
+    composeRule.onNodeWithTag(C.EditReviewTags.PHOTOS).assertIsNotDisplayed()
   }
 }
 //

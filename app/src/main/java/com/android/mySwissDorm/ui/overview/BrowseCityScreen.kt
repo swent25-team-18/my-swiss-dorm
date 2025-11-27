@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.*
@@ -80,7 +81,8 @@ fun BrowseCityScreen(
     startTab: Int = 1,
     onAddListingClick: () -> Unit = {},
     onAddReviewClick: () -> Unit = {},
-    navigationActions: NavigationActions? = null
+    navigationActions: NavigationActions? = null,
+    onMapClick: (List<ListingCardUI>) -> Unit = {}
 ) {
   val context = LocalContext.current
 
@@ -138,7 +140,8 @@ fun BrowseCityScreen(
       onAddListingClick = { navigationActions?.navigateTo(Screen.AddListing) },
       onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
       navigationActions = navigationActions,
-      isGuest = uiState.isGuest)
+      isGuest = uiState.isGuest,
+      onMapClick = onMapClick)
 
   if (uiState.showCustomLocationDialog) {
     CustomLocationDialog(
@@ -203,7 +206,8 @@ private fun BrowseCityScreenUI(
     onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
     startTab: Int = 1,
-    isGuest: Boolean
+    isGuest: Boolean,
+    onMapClick: (List<ListingCardUI>) -> Unit = {}
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(startTab) } // 0 Reviews, 1 Listings
 
@@ -243,6 +247,16 @@ private fun BrowseCityScreenUI(
                         contentDescription = "Back to Homepage",
                         tint = MainColor)
                   }
+            },
+            actions = {
+              if (selectedTab == 1) {
+                IconButton(onClick = { onMapClick(listingsState.items) }) {
+                  Icon(
+                      imageVector = Icons.Default.Map,
+                      contentDescription = "Open Map",
+                      tint = MainColor)
+                }
+              }
             })
       }) { pd ->
         Column(modifier = Modifier.padding(pd).fillMaxSize().testTag(C.BrowseCityTags.ROOT)) {
@@ -1037,13 +1051,15 @@ private fun BrowseCityScreen_Preview() {
                       title = "Subletting my room",
                       leftBullets = listOf("Room in flatshare", "600.-/month", "19m²"),
                       rightBullets = listOf("Starting 15/09/2025", "Vortex"),
-                      listingUid = "preview1"),
+                      listingUid = "preview1",
+                      location = Location("Lausanne", 46.5197, 6.6323)),
                   ListingCardUI(
                       title = "Bright studio near EPFL",
                       leftBullets = listOf("Studio", "1’150.-/month", "24m²"),
                       rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
-                      listingUid = "preview2")),
-      )
+                      listingUid = "preview2",
+                      location = Location("Lausanne", 46.5197, 6.6323)),
+              ))
 
   val sampleReview =
       Review(
@@ -1102,3 +1118,4 @@ private fun BrowseCityScreen_Preview() {
         isGuest = false)
   }
 }
+//

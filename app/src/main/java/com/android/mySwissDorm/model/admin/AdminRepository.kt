@@ -21,4 +21,16 @@ class AdminRepository(
     val active = doc.getBoolean("active") ?: false
     return doc.exists() && active
   }
+
+  suspend fun isAdmin(email: String): Boolean {
+    val normalizedEmail = email.lowercase().trim()
+    val doc = firestore.collection("admins").document(normalizedEmail).get().await()
+    val active = doc.getBoolean("active") ?: false
+    return doc.exists() && active
+  }
+
+  suspend fun addAdmin(email: String) {
+    val adminData = mapOf("active" to true)
+    firestore.collection("admins").document(email.lowercase().trim()).set(adminData).await()
+  }
 }

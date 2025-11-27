@@ -74,7 +74,7 @@ fun CameraButton(
         if (it && photoCaptured != null && uriCaptured.path?.isNotEmpty() ?: false) {
           onSave(photoCaptured!!)
         }
-      }
+      } //
   Button(
       onClick = {
         val photo = Photo.createCapturablePhoto(context, UUID.randomUUID().toString() + ".jpg")

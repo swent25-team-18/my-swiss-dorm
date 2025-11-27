@@ -9,6 +9,7 @@ sealed class Screen(
     @StringRes val nameId: Int,
     val isTopLevelDestination: Boolean = false,
 ) {
+  data object CityMapOverview : Screen("cityMapOverview", R.string.location)
   // Auth flow
   data object SignIn : Screen("signIn", R.string.screen_sign_in)
 
@@ -85,6 +86,14 @@ sealed class Screen(
       Screen(route = "viewProfile/${userId}", nameId = R.string.screen_view_user_profile) {
     companion object {
       const val route = "viewProfile/{userId}"
+    }
+  }
+
+  data class Map(val lat: Float, val lng: Float, val title: String, val name: Int) :
+      Screen(route = "mapScreen/${lat}/${lng}/${title}/${name}", nameId = R.string.Map_Screen) {
+
+    companion object {
+      const val route = "mapScreen/{lat}/{lng}/{title}/{name}"
     }
   }
 

@@ -67,21 +67,42 @@
 
     <!-- AdminPageScreen -->
     <string name="admin_page_admins_only">Réservé aux administrateurs.</string>
-    <string name="admin_page_title">Page Admin</string>
-    <string name="admin_page_image_id">ID de l’image</string>
+    <string name="admin_page_title">Page Administrateur</string>
+    <string name="admin_page_image_id">ID de l\'image</string>
     <string name="admin_page_select_location">Sélectionner une localisation</string>
+    
+    <!-- AdminPageViewModel -->
+    <string name="admin_page_email_required">L\'e-mail est requis pour un administrateur.</string>
+    <string name="admin_page_email_invalid">Veuillez entrer une adresse e-mail valide.</string>
+    <string name="admin_page_name_required">Le nom est requis.</string>
+    <string name="admin_page_location_required">La localisation est requise.</string>
+    <string name="admin_page_description_required_city">La description est requise pour une ville.</string>
+    <string name="admin_page_image_id_required_city">L\'ID de l\'image est requis pour une ville.</string>
+    <string name="admin_page_city_name_required_residency">Le nom de la ville est requis pour une résidence.</string>
+    <string name="admin_page_city_name_required_university">Le nom de la ville est requis pour une université.</string>
+    <string name="admin_page_email_required_university">L\'e-mail est requis pour une université.</string>
+    <string name="admin_page_phone_required_university">Le téléphone est requis pour une université.</string>
+    <string name="admin_page_website_required_university">L\'URL du site web est requise pour une université.</string>
+    <string name="admin_page_already_admin">Erreur : L\'utilisateur inséré est déjà un administrateur !</string>
+    <string name="admin_page_added_as_admin">%1$s a été ajouté en tant qu\'administrateur</string>
+    <string name="admin_page_saved_successfully">Enregistré avec succès !</string>
+    <string name="admin_page_error_unknown">Erreur : inconnue</string>
+    <string name="admin_page_error">Erreur</string>
+    <string name="admin_page_confirm_add_admin">Confirmez que vous souhaitez ajouter %1$s en tant qu\'administrateur</string>
+    <string name="admin_page_ok">OK</string>
+    <string name="admin_page_website_url">%1$s URL</string>
 
     <!-- AdminPageViewModel -->
     <string name="admin_page_vm_name_required">Le nom est requis.</string>
     <string name="admin_page_vm_location_required">La localisation est requise.</string>
     <string name="admin_page_vm_description_required_for_city">La description est requise pour une ville.</string>
-    <string name="admin_page_vm_image_id_required_for_city">L’ID de l’image est requis pour une ville.</string>
+    <string name="admin_page_vm_image_id_required_for_city">L\'ID de l\'image est requis pour une ville.</string>
     <string name="admin_page_vm_city_name_required_for_residency">Le nom de la ville est requis pour une résidence.</string>
     <string name="admin_page_vm_city_name_required_for_university">Le nom de la ville est requis pour une université.</string>
-    <string name="admin_page_vm_email_required_for_university">L’e-mail est requis pour une université.</string>
+    <string name="admin_page_vm_email_required_for_university">L\'e-mail est requis pour une université.</string>
     <string name="admin_page_vm_phone_required_for_university">Le téléphone est requis pour une université.</string>
-    <string name="admin_page_vm_website_required_for_university">L’URL du site web est requise pour une université.</string>
-    <string name="admin_page_vm_saved_successfully">Enregistré avec succès.</string>
+    <string name="admin_page_vm_website_required_for_university">L\'URL du site web est requise pour une université.</string>
+    <string name="admin_page_vm_saved_successfully">Enregistré avec succès !</string>
 
     <!-- SignInScreen -->
     <string name="app_name">MySwissDorm</string>
@@ -396,11 +417,15 @@
     <string name="sanitized_text_fields_room_size_range">La taille doit être entre 1.0 et 1000.0 m²</string>
     <string name="sanitized_text_fields_description_length">Description trop longue</string>
     <string name="sanitized_text_fields_price_required">Le prix est requis</string>
-    <string name="sanitized_text_fields_price_leading_zero">Pas de zéro initial</string>
-    <string name="sanitized_text_fields_price_range">Le prix doit être entre 1 et 10000 CHF</string>
+    <string name="sanitized_text_fields_price_leading_zero">Aucun zéro initial</string>
+    <string name="sanitized_text_fields_price_range">Le prix doit être entre 1 et 10’000 CHF</string>
+    <!-- Map -->
+    <string name="map_view">Carte d\'annonces</string>
+    <string name="Map_Screen">Écran de carte</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_second">SecondActivity</string>
     <string name="default_web_client_id">587708119125-oqlivs13orms6lmp32pujt11ft3fat3h.apps.googleusercontent.com</string>
+    <string name="of">de</string>
 </resources>

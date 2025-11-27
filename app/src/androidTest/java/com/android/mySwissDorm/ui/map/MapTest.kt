@@ -82,7 +82,7 @@ class MapTest {
           onGoBack = {},
           nameId = R.string.view_listing_listing_location)
     }
-    composeTestRule.onNodeWithContentDescription("Start navigation").performClick()
+    composeTestRule.onNodeWithContentDescription("Open in Maps").performClick()
     Intents.intended(
         allOf(
             hasAction(Intent.ACTION_VIEW),

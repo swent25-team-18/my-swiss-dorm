@@ -245,6 +245,7 @@
     <string name="bookmarked_listings_title">Annonces enregistrées</string>
     <string name="bookmarked_listings_no_bookmarks_yet">Aucune annonce enregistrée pour le moment.</string>
     <string name="bookmarked_listings_failed_to_load">Impossible de charger les annonces enregistrées</string>
+    <string name="bookmarked_listings_no_image">Aucune image</string>
 
     <!-- ProfileContributionsScreen -->
     <string name="profile_contributions_title">Mes contributions</string>

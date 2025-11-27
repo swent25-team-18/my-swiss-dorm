@@ -106,7 +106,7 @@ fun ViewListingScreen(
                               else Icons.Outlined.BookmarkBorder,
                           contentDescription =
                               if (isBookmarked) "Remove bookmark" else "Add bookmark",
-                          tint = if (isBookmarked) MainColor else MainColor)
+                          tint = MainColor)
                     }
               }
             })

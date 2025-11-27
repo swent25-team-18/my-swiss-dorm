@@ -47,7 +47,8 @@ data class ListingCardUI(
     val leftBullets: List<String>,
     val rightBullets: List<String>,
     val listingUid: String,
-    val image: Uri? = null
+    val image: Uri? = null,
+    val location: Location
 )
 
 /**
@@ -527,5 +528,6 @@ private fun RentalListing.toCardUI(context: Context): ListingCardUI {
       title = title,
       leftBullets = listOf(roomType.toString(), price, area),
       rightBullets = listOf(start, resName),
-      listingUid = uid)
+      listingUid = uid,
+      location = location)
 }

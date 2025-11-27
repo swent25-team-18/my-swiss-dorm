@@ -43,6 +43,8 @@ import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingViewModel
 import com.android.mySwissDorm.ui.map.MapScreen
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
+import com.android.mySwissDorm.ui.overview.ListingCardUI
+import com.android.mySwissDorm.ui.overview.MapOverviewScreen
 import com.android.mySwissDorm.ui.profile.ContributionType
 import com.android.mySwissDorm.ui.profile.ProfileContributionsScreen
 import com.android.mySwissDorm.ui.profile.ProfileContributionsViewModel
@@ -220,13 +222,13 @@ fun AppNavHost(
     }
 
     composable(
-        route = "mapScreen/{lat}/{lng}/{title}/{name}",
+        route = Screen.Map.route,
         arguments =
             listOf(
                 navArgument("lat") { type = NavType.FloatType },
                 navArgument("lng") { type = NavType.FloatType },
                 navArgument("title") { type = NavType.StringType },
-                navArgument("name") { type = NavType.StringType })) { backStackEntry ->
+                navArgument("name") { type = NavType.IntType })) { backStackEntry ->
           MapScreen(
               latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
               longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
@@ -262,8 +264,22 @@ fun AppNavHost(
               navActions.navigateTo(Screen.BrowseOverview(newLocation))
             },
             navigationActions = navActions,
-            startTab = startTab)
+            startTab = startTab,
+            onMapClick = { listings ->
+              MapNavigationData.currentListings = listings
+              MapNavigationData.browseLocation = location
+              navActions.navigateTo(Screen.CityMapOverview)
+            })
       }
+    }
+    composable(Screen.CityMapOverview.route) {
+      MapOverviewScreen(
+          listings = MapNavigationData.currentListings,
+          onGoBack = { navActions.goBack() },
+          centerLocation = MapNavigationData.browseLocation,
+          onListingClick = { listingUid ->
+            navActions.navigateTo(Screen.ListingOverview(listingUid))
+          })
     }
 
     composable(Screen.AddReview.route) {
@@ -354,7 +370,7 @@ fun AppNavHost(
               }
             },
             onViewMap = { lat, lng, title, name ->
-              navController.navigate("mapScreen/$lat/$lng/$title/$name")
+              navController.navigate(Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
             })
       }
           ?: run {
@@ -386,7 +402,7 @@ fun AppNavHost(
               }
             },
             onViewMap = { lat, lng, title, name ->
-              navController.navigate("mapScreen/$lat/$lng/$title/$name")
+              navController.navigate(Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
             })
       }
           ?: run {
@@ -542,4 +558,9 @@ fun AppNavHost(
 
     // RequestedMessages and SelectUserToChat routes will be added in a future PR
   }
+}
+
+object MapNavigationData {
+  var currentListings: List<ListingCardUI> = emptyList()
+  var browseLocation: Location? = null
 }

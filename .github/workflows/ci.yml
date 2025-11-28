@@ -211,6 +211,7 @@ jobs:
           disable-animations: true
           script: |
             sudo chmod +x $ANDROID_HOME/platform-tools/adb
+            export STREAM_API_KEY="4rttny6ynk4g"
             ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.numShards=${{ matrix.total-shards }} -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} --parallel --build-cache
 
       - name: Upload instrumentation coverage (Part ${{ matrix.shard }})

@@ -4,6 +4,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,12 +23,16 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.admin.AdminPageViewModel
 import com.android.mySwissDorm.ui.navigation.NavigationActions
+import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -49,11 +55,16 @@ class AdminPageScreenTest : FirestoreTest() {
   @Before
   override fun setUp() {
     super.setUp()
+    val adminRepo =
+        com.android.mySwissDorm.model.admin.AdminRepository(
+            com.android.mySwissDorm.utils.FirebaseEmulator.firestore,
+            com.android.mySwissDorm.utils.FirebaseEmulator.auth)
     viewModel =
         AdminPageViewModel(
             CitiesRepositoryProvider.repository,
             ResidenciesRepositoryProvider.repository,
-            UniversitiesRepositoryProvider.repository)
+            UniversitiesRepositoryProvider.repository,
+            adminRepo)
   }
 
   @After
@@ -67,6 +78,27 @@ class AdminPageScreenTest : FirestoreTest() {
       val navigationActions = NavigationActions(navController)
       AdminPageScreen(
           vm = viewModel, canAccess = canAccess, onBack = { navigationActions.goBack() })
+    }
+  }
+
+  // Helper to wait for text to appear (similar to SettingsScreenTest)
+  private fun waitUntilTextExists(
+      text: String,
+      timeoutMs: Long = 5_000,
+      useSubstring: Boolean = false
+  ) {
+    composeTestRule.waitUntil(timeoutMs) {
+      if (useSubstring) {
+        composeTestRule
+            .onAllNodesWithText(text, substring = true, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } else {
+        composeTestRule
+            .onAllNodesWithText(text, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
     }
   }
 
@@ -132,6 +164,20 @@ class AdminPageScreenTest : FirestoreTest() {
         .onNode(hasText("Website") and hasSetTextAction())
         .performScrollTo()
         .assertIsDisplayed()
+
+    // Switch to Admin
+    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_ADMIN).performClick()
+    composeTestRule.waitUntil(5_000) {
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.ADMIN
+    }
+    // Admin only has Email field, no location button
+    composeTestRule
+        .onNode(hasText("Email") and hasSetTextAction())
+        .performScrollTo()
+        .assertIsDisplayed()
+    composeTestRule.onNodeWithTag(C.AdminPageTags.LOCATION_BUTTON).assertDoesNotExist()
+    composeTestRule.onNode(hasText("Name") and hasSetTextAction()).assertDoesNotExist()
+    composeTestRule.onNodeWithText("Image ID").assertDoesNotExist()
 
     // Switch back to City
     composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_CITY).performClick()
@@ -215,5 +261,284 @@ class AdminPageScreenTest : FirestoreTest() {
     runTest { assertEquals(1, getResidenciesCount()) }
 
     composeTestRule.onNodeWithText("Saved successfully!").assertIsDisplayed()
+  }
+
+  @Test
+  fun adminChip_isDisplayedAndSelectable() {
+    setContent()
+    composeTestRule.onNodeWithText("Admin").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_ADMIN).assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_ADMIN).performClick()
+    composeTestRule.waitUntil(5_000) {
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.ADMIN
+    }
+  }
+
+  @Test
+  fun adminType_showsEmailFieldOnly() {
+    setContent()
+    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_ADMIN).performClick()
+    composeTestRule.waitUntil(5_000) {
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.ADMIN
+    }
+
+    // Should show email field
+    composeTestRule
+        .onNode(hasText("Email") and hasSetTextAction())
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // Should NOT show location button
+    composeTestRule.onNodeWithTag(C.AdminPageTags.LOCATION_BUTTON).assertDoesNotExist()
+
+    // Should NOT show name field
+    composeTestRule.onNode(hasText("Name") and hasSetTextAction()).assertDoesNotExist()
+  }
+
+  @Test
+  fun submit_adminType_withEmptyEmail_showsValidationError() = runTest {
+    setContent()
+    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_ADMIN).performClick()
+    composeTestRule.waitUntil(5_000) {
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.ADMIN
+    }
+
+    composeTestRule.onNodeWithTag(C.AdminPageTags.SAVE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) { viewModel.uiState.message != null }
+
+    composeTestRule.onNodeWithText("Email is required", substring = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun submit_adminType_withInvalidEmail_showsValidationError() = runTest {
+    setContent()
+    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_ADMIN).performClick()
+    composeTestRule.waitUntil(5_000) {
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.ADMIN
+    }
+
+    composeTestRule
+        .onNode(hasText("Email") and hasSetTextAction())
+        .performScrollTo()
+        .performTextInput("invalid-email")
+
+    composeTestRule.onNodeWithTag(C.AdminPageTags.SAVE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) { viewModel.uiState.message != null }
+
+    composeTestRule.onNodeWithText("valid email", substring = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun submit_adminType_withValidEmail_showsConfirmationDialog() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    setContent()
+    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_ADMIN).performClick()
+    composeTestRule.waitUntil(5_000) {
+      viewModel.uiState.selected == AdminPageViewModel.EntityType.ADMIN
+    }
+
+    composeTestRule
+        .onNode(hasText("Email") and hasSetTextAction())
+        .performScrollTo()
+        .performTextInput("newadmin@example.com")
+
+    composeTestRule.onNodeWithTag(C.AdminPageTags.SAVE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) { viewModel.uiState.showAdminConfirmDialog }
+
+    // Should show confirmation dialog
+    composeTestRule.onNodeWithText("Confirm", substring = true).assertIsDisplayed()
+    composeTestRule.onNodeWithText("newadmin@example.com").assertIsDisplayed()
+    // Use onAllNodesWithText and get the one in the dialog (should be the second one if bottom bar
+    // Save is first)
+    composeTestRule.onAllNodesWithText("Save").onFirst().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Cancel").assertIsDisplayed()
+  }
+
+  @Test
+  fun confirmAdminAdd_showsSuccessMessage() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    setContent()
+
+    val email = "success@example.com"
+
+    // Remove admin if it exists to ensure clean state
+    val adminRepo =
+        com.android.mySwissDorm.model.admin.AdminRepository(
+            com.android.mySwissDorm.utils.FirebaseEmulator.firestore,
+            com.android.mySwissDorm.utils.FirebaseEmulator.auth)
+    if (adminRepo.isAdmin(email)) {
+      // Delete the admin document if it exists
+      FirebaseEmulator.firestore
+          .collection("admins")
+          .document(email.lowercase().trim())
+          .delete()
+          .await()
+    }
+
+    // Configure ViewModel directly
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
+    viewModel.onEmail(email)
+
+    // Open confirmation dialog
+    composeTestRule.onNodeWithTag(C.AdminPageTags.SAVE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) { viewModel.uiState.showAdminConfirmDialog }
+
+    // Wait until both "Save" buttons exist (bottom bar + dialog)
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule.onAllNodesWithText("Save").fetchSemanticsNodes().size >= 2
+    }
+
+    // Click the dialog "Save" button (index 1)
+    val saveButtons = composeTestRule.onAllNodesWithText("Save")
+    saveButtons[1].performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait until ViewModel has *any* message (success or error) – this
+    // indicates that performSubmit() finished.
+    composeTestRule.waitUntil(15_000) { viewModel.uiState.message != null }
+
+    // Now assert on the final state
+    val message = viewModel.uiState.message
+    assertNotNull("Message should be set", message)
+    assertTrue(
+        "Message should contain expected success text, but was: $message",
+        message!!.contains("has been added as an admin"))
+    assertTrue("Message should contain email, but was: $message", message.contains(email))
+  }
+
+  @Test
+  fun cancelAdminAdd_dismissesDialog() = runTest {
+    setContent()
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
+    viewModel.onEmail("test@example.com")
+
+    composeTestRule.onNodeWithTag(C.AdminPageTags.SAVE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) { viewModel.uiState.showAdminConfirmDialog }
+
+    // Should show dialog
+    composeTestRule.onNodeWithText("Confirm", substring = true).assertIsDisplayed()
+
+    // Click cancel
+    composeTestRule.onNodeWithText("Cancel").performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) { !viewModel.uiState.showAdminConfirmDialog }
+
+    // Dialog should be dismissed
+    composeTestRule.onNodeWithText("Confirm", substring = true).assertDoesNotExist()
+  }
+
+  @Test
+  fun submit_adminType_withDuplicateEmail_showsError() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val email = "duplicate@example.com"
+
+    // Add admin first
+    val adminRepo =
+        com.android.mySwissDorm.model.admin.AdminRepository(
+            com.android.mySwissDorm.utils.FirebaseEmulator.firestore,
+            com.android.mySwissDorm.utils.FirebaseEmulator.auth)
+    adminRepo.addAdmin(email)
+
+    setContent()
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
+    viewModel.onEmail(email)
+
+    composeTestRule.onNodeWithTag(C.AdminPageTags.SAVE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) { viewModel.uiState.showAdminConfirmDialog }
+
+    // Wait for dialog to be fully displayed
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule.onAllNodesWithText("Save").fetchSemanticsNodes().size >= 2
+    }
+
+    // Click confirm in dialog - use onAllNodesWithText to get the dialog Save button
+    val saveButtonsDup = composeTestRule.onAllNodesWithText("Save")
+    saveButtonsDup[1].performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for the message to be set and operation to complete
+    // Increase timeout and use more flexible condition
+    composeTestRule.waitUntil(15_000) {
+      val state = viewModel.uiState
+      !state.isSubmitting && state.message != null && state.message!!.contains("already an admin")
+    }
+
+    // Give UI time to recompose after state change
+    composeTestRule.waitForIdle()
+
+    // Wait for the error message dialog text to appear in UI
+    waitUntilTextExists("already an admin", timeoutMs = 5_000, useSubstring = true)
+
+    // Should show error message
+    composeTestRule.onNodeWithText("Error", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText("already an admin", substring = true, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun adminMessageDialog_canBeDismissed() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    setContent()
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.ADMIN)
+    viewModel.onEmail("dismiss@example.com")
+
+    composeTestRule.onNodeWithTag(C.AdminPageTags.SAVE_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) { viewModel.uiState.showAdminConfirmDialog }
+
+    // Wait for dialog to be fully displayed with both Save buttons
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule.onAllNodesWithText("Save").fetchSemanticsNodes().size >= 2
+    }
+
+    // Click confirm in dialog
+    val saveButtons = composeTestRule.onAllNodesWithText("Save")
+    saveButtons[1].performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for the message to be set and operation to complete
+    // Increase timeout and use more flexible condition
+    composeTestRule.waitUntil(15_000) {
+      val state = viewModel.uiState
+      !state.isSubmitting &&
+          state.message != null &&
+          state.message!!.contains("has been added as an admin")
+    }
+
+    // Give UI time to recompose after state change
+    composeTestRule.waitForIdle()
+
+    // Wait for the success message dialog text to appear in UI
+    waitUntilTextExists("has been added as an admin", timeoutMs = 5_000, useSubstring = true)
+
+    // Should show message dialog
+    composeTestRule
+        .onNodeWithText("has been added as an admin", substring = true, useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Click OK to dismiss - wait for it to be displayed first
+    waitUntilTextExists("OK", timeoutMs = 5_000, useSubstring = false)
+    composeTestRule.onNodeWithText("OK", useUnmergedTree = true).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for dialog to be dismissed (message cleared)
+    composeTestRule.waitUntil(5_000) { viewModel.uiState.message == null }
+
+    // Dialog should be dismissed - verify the text no longer exists
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithText(
+              "has been added as an admin", substring = true, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
   }
 }

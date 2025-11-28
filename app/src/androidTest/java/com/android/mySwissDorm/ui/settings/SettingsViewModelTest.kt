@@ -86,6 +86,12 @@ class SettingsViewModelTest : FirestoreTest() {
           override suspend fun addBlockedUser(ownerId: String, targetUid: String) {}
 
           override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {}
+
+          override suspend fun getBookmarkedListingIds(ownerId: String): List<String> = emptyList()
+
+          override suspend fun addBookmark(ownerId: String, listingId: String) {}
+
+          override suspend fun removeBookmark(ownerId: String, listingId: String) {}
         }
 
     val vm = vm(repo = fakeRepo)

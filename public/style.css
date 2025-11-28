@@ -1,0 +1,100 @@
+/* public/style.css */
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f5f7;
+  color: #222;
+}
+
+#app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.header h1 {
+  color: #ff6666;
+}
+
+.section-title,
+.section-subtitle,
+.review-title {
+  color: #ff6666;
+}
+
+.share-card h3 {
+  color: #ff6666;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.card,
+.share-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.meta {
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.share-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.share-input {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 6px;
+}
+
+.section-title {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+
+.section-subtitle {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.details-list {
+  margin: 0;
+  padding-left: 18px; /* bullet list like in app */
+}
+
+.review-title {
+  margin: 0 0 4px;
+  font-size: 1.4rem;
+}
+
+.stars {
+  margin-top: 12px;
+  font-size: 1.1rem;
+  color: #eab308; /* gold-ish; tweak if you want */
+}

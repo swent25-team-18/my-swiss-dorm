@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.photo
 
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -41,7 +42,8 @@ import com.android.mySwissDorm.ui.theme.Red0
 fun ImageGrid(
     imageUris: Set<Uri>,
     isEditingMode: Boolean,
-    onRemove: (Uri) -> Unit,
+    onImageClick: (Uri) -> Unit = {},
+    onRemove: (Uri) -> Unit = {},
     modifier: Modifier = Modifier,
     imageSize: Dp = 120.dp
 ) {
@@ -54,7 +56,10 @@ fun ImageGrid(
             AsyncImage(
                 model = uri,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+                modifier =
+                    Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).clickable {
+                      onImageClick(uri)
+                    },
                 contentScale = ContentScale.Crop)
             if (isEditingMode) {
               FloatingActionButton(

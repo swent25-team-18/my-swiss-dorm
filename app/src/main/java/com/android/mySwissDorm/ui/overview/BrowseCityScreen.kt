@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.*
@@ -22,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -32,12 +32,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.listing.ListingCard
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
@@ -80,7 +80,8 @@ fun BrowseCityScreen(
     startTab: Int = 1,
     onAddListingClick: () -> Unit = {},
     onAddReviewClick: () -> Unit = {},
-    navigationActions: NavigationActions? = null
+    navigationActions: NavigationActions? = null,
+    onMapClick: (List<ListingCardUI>) -> Unit = {}
 ) {
   val context = LocalContext.current
 
@@ -115,6 +116,7 @@ fun BrowseCityScreen(
       listingsState = uiState.listings,
       residenciesState = uiState.residencies,
       filterState = uiState.filterState,
+      bookmarkedListingIds = uiState.bookmarkedListingIds,
       onSelectListing = onSelectListing,
       onSelectResidency = onSelectResidency,
       onLocationClick = onLocationClick,
@@ -134,11 +136,13 @@ fun BrowseCityScreen(
       onSetStartDateFilter = { min, max -> browseCityViewModel.setStartDateFilter(min, max) },
       onSetSortByMostRecent = { sort -> browseCityViewModel.setSortByMostRecent(sort) },
       onDismissFilterSheet = { browseCityViewModel.hideFilterSheet() },
+      onToggleBookmark = { listingId -> browseCityViewModel.toggleBookmark(listingId, context) },
       startTab = startTab,
       onAddListingClick = { navigationActions?.navigateTo(Screen.AddListing) },
       onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
       navigationActions = navigationActions,
-      isGuest = uiState.isGuest)
+      isGuest = uiState.isGuest,
+      onMapClick = onMapClick)
 
   if (uiState.showCustomLocationDialog) {
     CustomLocationDialog(
@@ -186,6 +190,7 @@ private fun BrowseCityScreenUI(
     listingsState: ListingsState,
     residenciesState: ResidenciesState,
     filterState: FilterState,
+    bookmarkedListingIds: Set<String> = emptySet(),
     onSelectListing: (ListingCardUI) -> Unit,
     onSelectResidency: (ResidencyCardUI) -> Unit,
     onLocationClick: () -> Unit,
@@ -199,11 +204,13 @@ private fun BrowseCityScreenUI(
     onSetStartDateFilter: (Timestamp?, Timestamp?) -> Unit,
     onSetSortByMostRecent: (Boolean) -> Unit,
     onDismissFilterSheet: () -> Unit,
+    onToggleBookmark: (String) -> Unit = {},
     onAddListingClick: () -> Unit = {},
     onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
     startTab: Int = 1,
-    isGuest: Boolean
+    isGuest: Boolean,
+    onMapClick: (List<ListingCardUI>) -> Unit = {}
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(startTab) } // 0 Reviews, 1 Listings
 
@@ -243,6 +250,16 @@ private fun BrowseCityScreenUI(
                         contentDescription = "Back to Homepage",
                         tint = MainColor)
                   }
+            },
+            actions = {
+              if (selectedTab == 1) {
+                IconButton(onClick = { onMapClick(listingsState.items) }) {
+                  Icon(
+                      imageVector = Icons.Default.Map,
+                      contentDescription = "Open Map",
+                      tint = MainColor)
+                }
+              }
             })
       }) { pd ->
         Column(modifier = Modifier.padding(pd).fillMaxSize().testTag(C.BrowseCityTags.ROOT)) {
@@ -379,7 +396,14 @@ private fun BrowseCityScreenUI(
                                 .testTag(C.BrowseCityTags.LISTING_LIST),
                         contentPadding = PaddingValues(vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                          items(listingsState.items) { item -> ListingCard(item, onSelectListing) }
+                          items(listingsState.items) { item ->
+                            ListingCard(
+                                item,
+                                onSelectListing,
+                                isBookmarked = bookmarkedListingIds.contains(item.listingUid),
+                                onToggleBookmark = { onToggleBookmark(item.listingUid) },
+                                isGuest = isGuest)
+                          }
                         }
                   }
                 }
@@ -813,58 +837,7 @@ private fun StartDateFilterContent(
       minDate = minDate)
 }
 
-/**
- * A card component that displays information about a rental listing.
- *
- * The card shows a placeholder image on the left, and the listing title with bullet points on the
- * right. The card is clickable and invokes [onClick] when tapped.
- *
- * @param data The listing data to display, including title, bullets, and listing UID.
- * @param onClick A callback invoked when the card is clicked, passing the listing data.
- */
-@Composable
-private fun ListingCard(data: ListingCardUI, onClick: (ListingCardUI) -> Unit) {
-  OutlinedCard(
-      shape = RoundedCornerShape(16.dp),
-      modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.listingCard(data.listingUid)),
-      onClick = { onClick(data) }) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-          // Image placeholder (left)
-          Box(
-              modifier =
-                  Modifier.height(140.dp)
-                      .fillMaxWidth(0.35F)
-                      .clip(RoundedCornerShape(12.dp))
-                      .background(Color(0xFFEAEAEA))) {
-                AsyncImage(
-                    model = data.image,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop)
-              }
-
-          Spacer(Modifier.width(12.dp))
-
-          Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = data.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                color = TextColor,
-                modifier = Modifier.fillMaxWidth())
-
-            Spacer(Modifier.height(8.dp))
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-              BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
-              Spacer(Modifier.width(8.dp))
-              BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
-            }
-          }
-        }
-      }
-}
+// ListingCard has been moved to com.android.mySwissDorm.ui.listing.ListingCard for reuse
 
 @Composable
 private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> Unit) {
@@ -1001,23 +974,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
       }
 }
 
-/**
- * A column that displays a list of items as bullet points.
- *
- * Each item is displayed with a bullet point (•) prefix and proper spacing between items.
- *
- * @param items The list of strings to display as bullet points.
- * @param modifier Optional modifier to apply to the column.
- */
-@Composable
-private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
-  Column(modifier) {
-    items.forEach {
-      Text("• $it", style = MaterialTheme.typography.bodyMedium, color = TextColor)
-      Spacer(Modifier.height(6.dp))
-    }
-  }
-}
+// BulletColumn has been moved to com.android.mySwissDorm.ui.listing.ListingCard for reuse
 
 /**
  * Preview composable for the BrowseCityScreen UI.
@@ -1037,13 +994,15 @@ private fun BrowseCityScreen_Preview() {
                       title = "Subletting my room",
                       leftBullets = listOf("Room in flatshare", "600.-/month", "19m²"),
                       rightBullets = listOf("Starting 15/09/2025", "Vortex"),
-                      listingUid = "preview1"),
+                      listingUid = "preview1",
+                      location = Location("Lausanne", 46.5197, 6.6323)),
                   ListingCardUI(
                       title = "Bright studio near EPFL",
                       leftBullets = listOf("Studio", "1’150.-/month", "24m²"),
                       rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
-                      listingUid = "preview2")),
-      )
+                      listingUid = "preview2",
+                      location = Location("Lausanne", 46.5197, 6.6323)),
+              ))
 
   val sampleReview =
       Review(
@@ -1102,3 +1061,4 @@ private fun BrowseCityScreen_Preview() {
         isGuest = false)
   }
 }
+//

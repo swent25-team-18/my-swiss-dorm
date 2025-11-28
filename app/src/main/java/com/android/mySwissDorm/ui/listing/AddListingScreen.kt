@@ -227,7 +227,8 @@ fun AddListingScreen(
                     ImageGrid(
                         imageUris = ui.pickedImages.map { it.image }.toSet(),
                         isEditingMode = true,
-                        onRemove = { addListingViewModel.removePhoto(it, true) })
+                        onRemove = { addListingViewModel.removePhoto(it, true) },
+                        modifier = Modifier.testTag(C.AddReviewTags.PHOTOS))
                   }
             }
 

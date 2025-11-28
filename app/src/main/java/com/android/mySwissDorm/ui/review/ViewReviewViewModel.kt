@@ -6,6 +6,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
@@ -17,6 +21,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.model.review.computeDownvoteChange
 import com.android.mySwissDorm.model.review.computeUpvoteChange
+import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,7 +52,8 @@ data class ViewReviewUIState(
     val isOwner: Boolean = false,
     val locationOfReview: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
     val netScore: Int = 0,
-    val userVote: VoteType = VoteType.NONE
+    val userVote: VoteType = VoteType.NONE,
+    val images: List<Photo> = emptyList()
 )
 
 class ViewReviewViewModel(
@@ -55,10 +61,16 @@ class ViewReviewViewModel(
     private val profilesRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val residencyRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewReviewUIState())
   val uiState: StateFlow<ViewReviewUIState> = _uiState.asStateFlow()
+
+  private val photoManager =
+      PhotoManager(
+          photoRepositoryLocal = photoRepositoryLocal, photoRepositoryCloud = photoRepositoryCloud)
 
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {
@@ -99,6 +111,7 @@ class ViewReviewViewModel(
     viewModelScope.launch {
       try {
         val review = reviewsRepository.getReview(reviewId)
+        photoManager.initialize(review.imageUrls)
         val currentUserId = auth.currentUser?.uid
         val fullNameOfPoster =
             if (review.isAnonymous) {
@@ -123,6 +136,7 @@ class ViewReviewViewModel(
               isOwner = isOwner,
               netScore = review.getNetScore(),
               userVote = review.getUserVote(currentUserId),
+              images = photoManager.photoLoaded,
               errorMsg = it.errorMsg) // Preserve error message if it was set
         }
       } catch (e: Exception) {

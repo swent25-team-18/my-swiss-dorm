@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.DescriptionField
 import com.android.mySwissDorm.ui.HousingTypeDropdown
@@ -26,10 +27,10 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
+import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
-import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
 
 /**
@@ -255,8 +256,13 @@ fun EditReviewScreen(
               Row(
                   verticalAlignment = Alignment.CenterVertically,
                   horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DefaultAddPhotoButton(onSelectPhoto = {}) // TODO display the photo
-              }
+                    DefaultAddPhotoButton(onSelectPhoto = { editReviewViewModel.addPhoto(it) })
+                    ImageGrid(
+                        imageUris = ui.images.map { it.image }.toSet(),
+                        isEditingMode = true,
+                        onRemove = { editReviewViewModel.removePhoto(it) },
+                        modifier = Modifier.testTag(C.EditReviewTags.PHOTOS))
+                  }
             }
       }
 

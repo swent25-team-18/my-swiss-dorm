@@ -37,7 +37,7 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import io.github.kakaocup.compose.node.element.ComposeScreen
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -63,7 +63,7 @@ class Epic1Test : FirestoreTest() {
     // Initialize rentalUid after repository provider is set
     rentalUid = RentalListingRepositoryProvider.repository.getNewUid()
 
-    runTest {
+    runBlocking {
       switchToUser(FakeUser.FakeUser1)
       cities.forEach { CitiesRepositoryProvider.repository.addCity(it) }
       ResidenciesRepositoryProvider.repository.addResidency(vortex)

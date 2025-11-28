@@ -176,4 +176,21 @@ class NetworkUtilsTest {
     val result = NetworkUtils.isNetworkAvailable(context)
     assertFalse(result)
   }
+
+  @Test
+  fun isNetworkException_checksFirestoreDeadlineExceededInCause() {
+    val rootCause =
+        FirebaseFirestoreException(
+            "Request timeout", FirebaseFirestoreException.Code.DEADLINE_EXCEEDED)
+    val wrappedException = RuntimeException("Wrapped exception", rootCause)
+    assertTrue(NetworkUtils.isNetworkException(wrappedException))
+  }
+
+  @Test
+  fun isNetworkException_checksFirestoreInternalInCause() {
+    val rootCause =
+        FirebaseFirestoreException("Internal error", FirebaseFirestoreException.Code.INTERNAL)
+    val wrappedException = RuntimeException("Wrapped exception", rootCause)
+    assertTrue(NetworkUtils.isNetworkException(wrappedException))
+  }
 }

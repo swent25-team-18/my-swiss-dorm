@@ -424,6 +424,155 @@ class ReviewsRepositoryHybridTest {
     assertEquals(0, localRepository.getAllReviews().size)
   }
 
+  @Test
+  fun upvoteReview_online_succeedsAndSyncsUpdatedReview() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val review = createTestReview("review-1")
+    val updatedReview = review.copy(upvotedBy = setOf("user-2"))
+
+    coEvery { remoteRepository.upvoteReview("review-1", "user-2") } returns Unit
+    coEvery { remoteRepository.getReview("review-1") } returns updatedReview
+
+    hybridRepository.upvoteReview("review-1", "user-2")
+
+    coVerify { remoteRepository.upvoteReview("review-1", "user-2") }
+    coVerify { remoteRepository.getReview("review-1") }
+    assertEquals(updatedReview.upvotedBy, localRepository.getReview("review-1").upvotedBy)
+  }
+
+  @Test
+  fun upvoteReview_online_handlesSyncErrorGracefully() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    coEvery { remoteRepository.upvoteReview("review-1", "user-2") } returns Unit
+    coEvery { remoteRepository.getReview("review-1") } throws IOException("Sync error")
+
+    // Should not throw even if sync fails
+    hybridRepository.upvoteReview("review-1", "user-2")
+
+    coVerify { remoteRepository.upvoteReview("review-1", "user-2") }
+  }
+
+  @Test
+  fun downvoteReview_online_succeedsAndSyncsUpdatedReview() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val review = createTestReview("review-1")
+    val updatedReview = review.copy(downvotedBy = setOf("user-2"))
+
+    coEvery { remoteRepository.downvoteReview("review-1", "user-2") } returns Unit
+    coEvery { remoteRepository.getReview("review-1") } returns updatedReview
+
+    hybridRepository.downvoteReview("review-1", "user-2")
+
+    coVerify { remoteRepository.downvoteReview("review-1", "user-2") }
+    coVerify { remoteRepository.getReview("review-1") }
+    assertEquals(updatedReview.downvotedBy, localRepository.getReview("review-1").downvotedBy)
+  }
+
+  @Test
+  fun downvoteReview_online_handlesSyncErrorGracefully() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    coEvery { remoteRepository.downvoteReview("review-1", "user-2") } returns Unit
+    coEvery { remoteRepository.getReview("review-1") } throws IOException("Sync error")
+
+    // Should not throw even if sync fails
+    hybridRepository.downvoteReview("review-1", "user-2")
+
+    coVerify { remoteRepository.downvoteReview("review-1", "user-2") }
+  }
+
+  @Test
+  fun removeVote_online_succeedsAndSyncsUpdatedReview() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val review = createTestReview("review-1", upvotedBy = setOf("user-2"))
+    val updatedReview = review.copy(upvotedBy = emptySet())
+
+    coEvery { remoteRepository.removeVote("review-1", "user-2") } returns Unit
+    coEvery { remoteRepository.getReview("review-1") } returns updatedReview
+
+    hybridRepository.removeVote("review-1", "user-2")
+
+    coVerify { remoteRepository.removeVote("review-1", "user-2") }
+    coVerify { remoteRepository.getReview("review-1") }
+    assertEquals(emptySet<String>(), localRepository.getReview("review-1").upvotedBy)
+  }
+
+  @Test
+  fun removeVote_online_handlesSyncErrorGracefully() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    coEvery { remoteRepository.removeVote("review-1", "user-2") } returns Unit
+    coEvery { remoteRepository.getReview("review-1") } throws IOException("Sync error")
+
+    // Should not throw even if sync fails
+    hybridRepository.removeVote("review-1", "user-2")
+
+    coVerify { remoteRepository.removeVote("review-1", "user-2") }
+  }
+
+  @Test
+  fun syncReviewsToLocal_handlesIndividualReviewSyncErrors() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val review1 = createTestReview("review-1")
+    val review2 = createTestReview("review-2")
+    val review3 = createTestReview("review-3")
+
+    // Add review2 first so it will fail when trying to sync again
+    localRepository.addReview(review2)
+
+    coEvery { remoteRepository.getAllReviews() } returns listOf(review1, review2, review3)
+
+    // Should not throw even if one review fails to sync
+    val result = hybridRepository.getAllReviews()
+
+    assertEquals(3, result.size)
+    // review1 and review3 should be synced, review2 might fail but shouldn't crash
+  }
+
+  @Test
+  fun getAllReviewsByResidency_offline_usesLocalImmediately() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    val localReview = createTestReview("review-1", residencyName = "Vortex")
+    localRepository.addReview(localReview)
+
+    val result = hybridRepository.getAllReviewsByResidency("Vortex")
+
+    assertEquals(listOf(localReview), result)
+    coVerify(exactly = 0) { remoteRepository.getAllReviewsByResidency(any()) }
+  }
+
+  @Test
+  fun editReview_online_handlesLocalSyncError() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val review = createTestReview("review-1")
+    val updatedReview = review.copy(title = "Updated Title")
+
+    coEvery { remoteRepository.editReview("review-1", updatedReview) } returns Unit
+    // Make local edit fail by not having the review in local
+    // (editReview will throw if review doesn't exist)
+
+    // Should not throw even if local sync fails
+    hybridRepository.editReview("review-1", updatedReview)
+
+    coVerify { remoteRepository.editReview("review-1", updatedReview) }
+  }
+
   private fun createTestReview(
       uid: String,
       ownerId: String = "user-1",

@@ -60,6 +60,7 @@ object C {
     const val BLOCKED_NOTICE = "viewListingBlockedNotice"
     const val BLOCKED_BACK_BTN = "viewListingBlockedBackBtn"
     const val BACK_BTN = "viewListingBackBtn"
+    const val BOOKMARK_BTN = "viewListingBookmarkBtn"
   }
 
   object ViewReviewTags {
@@ -106,6 +107,7 @@ object C {
     const val LOADING = "browseCityLoading"
     const val ERROR = "browseCityError"
     const val EMPTY = "browseCityEmpty"
+    const val BOOKMARKED_LISTINGS_ROOT = "bookmarkedListingsRoot"
 
     const val FABMENU = "fab_main"
 

@@ -194,7 +194,8 @@
     <string name="view_listing_sign_in_to_apply">Connectez-vous pour contacter le propriétaire et postuler.</string>
 
     <!-- ViewListingViewModel -->
-    <string name="view_listing_failed_to_load_listings">Impossible de charger l’annonce :</string>
+    <string name="view_listing_failed_to_load_listings">Impossible de charger l\'annonce :</string>
+    <string name="view_listing_failed_to_toggle_bookmark">Échec du basculement du signet :</string>
 
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Pas encore implémenté</string>
@@ -232,6 +233,7 @@
     <string name="screen_chat">Chat</string>
     <string name="screen_select_user_to_chat">Sélectionner un utilisateur</string>
     <string name="screen_requested_messages">Messages demandés</string>
+    <string name="screen_bookmarked_listings">Annonces enregistrées</string>
 
     <!-- AddButton -->
     <string name="add_button_add_listing">Ajouter une annonce</string>
@@ -259,6 +261,12 @@
     <string name="browse_city_vm_failed_to_load_listings">Impossible de charger les annonces</string>
     <string name="browse_city_vm_failed_to_load_residencies">Impossible de charger les résidences</string>
     <string name="browse_city_vm_price_per_month">.-/mois</string>
+    
+    <!-- BookmarkedListingsScreen -->
+    <string name="bookmarked_listings_title">Annonces enregistrées</string>
+    <string name="bookmarked_listings_no_bookmarks_yet">Aucune annonce enregistrée pour le moment.</string>
+    <string name="bookmarked_listings_failed_to_load">Impossible de charger les annonces enregistrées</string>
+    <string name="bookmarked_listings_no_image">Aucune image</string>
 
     <!-- ProfileContributionsScreen -->
     <string name="profile_contributions_title">Mes contributions</string>
@@ -274,6 +282,7 @@
     <string name="profile_saving">ENREGISTREMENT…</string>
     <string name="profile_save">ENREGISTRER</string>
     <string name="profile_logout">DÉCONNEXION</string>
+    <string name="profile_view_bookmarks">Voir les annonces enregistrées</string>
 
     <!-- ProfileViewModel -->
     <string name="profile_vm_not_signed_in">Non connecté.</string>

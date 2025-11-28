@@ -165,6 +165,18 @@ class NavigationViewModelTest : FirestoreTest() {
           override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
             throw UnsupportedOperationException()
           }
+
+          override suspend fun getBookmarkedListingIds(ownerId: String): List<String> {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun addBookmark(ownerId: String, listingId: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun removeBookmark(ownerId: String, listingId: String) {
+            throw UnsupportedOperationException()
+          }
         }
 
     val viewModel = createViewModel(profileRepository = throwingRepository)
@@ -340,6 +352,18 @@ class NavigationViewModelTest : FirestoreTest() {
           }
 
           override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun getBookmarkedListingIds(ownerId: String): List<String> {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun addBookmark(ownerId: String, listingId: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun removeBookmark(ownerId: String, listingId: String) {
             throw UnsupportedOperationException()
           }
         }

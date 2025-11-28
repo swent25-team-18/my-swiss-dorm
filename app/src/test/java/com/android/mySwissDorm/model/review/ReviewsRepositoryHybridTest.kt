@@ -293,6 +293,9 @@ class ReviewsRepositoryHybridTest {
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
     val review = createTestReview("review-1")
+    // Add review to local first so editReview can find it
+    localRepository.addReview(review)
+
     val updatedReview = review.copy(title = "Updated Title")
     coEvery { remoteRepository.editReview("review-1", updatedReview) } returns Unit
 

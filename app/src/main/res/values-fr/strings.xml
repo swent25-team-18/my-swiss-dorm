@@ -298,10 +298,13 @@
 
     <!-- ViewUserProfileViewModel -->
     <string name="view_user_profile_not_signed_in">Non connecté</string>
-    <string name="view_user_profile_failed_to_block_user">Échec du blocage</string>
-    <string name="view_user_profile_failed_to_unblock_user">Échec du déblocage</string>
+  
+    <string name="view_user_profile_failed_to_block_user">Échec du blocage de l’utilisateur</string>
+    <string name="view_user_profile_failed_to_unblock_user">Échec du déblocage de l’utilisateur</string>
+    <string name="failed_to_load_user">Échec du chargement de l’utilisateur</string>
     <string name="view_user_profile_no_residency">Aucune résidence</string>
     <string name="view_user_profile_failed_to_load_profile">Impossible de charger le profil :</string>
+
 
     <!-- AddReviewScreen -->
     <string name="add_review_title">Ajouter un avis</string>
@@ -431,6 +434,18 @@
     <!-- Map -->
     <string name="map_view">Carte d\'annonces</string>
     <string name="Map_Screen">Écran de carte</string>
+
+    <!-- Chat -->
+    <string name="new_chat">Nouvelle Conversation</string>
+    <string name="search_users">Rechercher des utilisateurs...</string>
+    <string name="no_users_found">Aucun utilisateur trouvé</string>
+    <string name="no_users_match_your_search">Aucun utilisateur ne correspond à votre recherche</string>
+    <string name="chat_created">Conversation créée!</string>
+    <string name="requested_messages">Messages Demandés</string>
+    <string name="no_requested_messages">Acun message demandé</string>
+    <string name="no_message_provided">Acun message fourni</string>
+    <string name="failed_to_create_chat">Échec de la création de la conversation</string>
+
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

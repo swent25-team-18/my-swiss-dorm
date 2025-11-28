@@ -31,12 +31,17 @@ import androidx.navigation.navArgument
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.model.chat.StreamChatProvider
+import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
 import com.android.mySwissDorm.ui.chat.ChannelsScreen
 import com.android.mySwissDorm.ui.chat.MyChatScreen
+import com.android.mySwissDorm.ui.chat.RequestedMessagesScreen
+import com.android.mySwissDorm.ui.chat.SelectUserToChatScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
 import com.android.mySwissDorm.ui.listing.BookmarkedListingsScreen
 import com.android.mySwissDorm.ui.listing.EditListingScreen
@@ -60,6 +65,7 @@ import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.utils.SignInPopUp
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavHost(
@@ -135,6 +141,26 @@ fun AppNavHost(
     }
 
     composable(Screen.Inbox.route) {
+      var requestedMessagesCount by remember { mutableStateOf(0) }
+      val currentRoute = navController.currentDestination?.route
+
+      // Refresh count whenever the Inbox screen is visible
+      // Use a key that only changes when we actually navigate to Inbox
+      LaunchedEffect(currentRoute == Screen.Inbox.route) {
+        if (currentRoute == Screen.Inbox.route) {
+          val currentUser = FirebaseAuth.getInstance().currentUser
+          if (currentUser != null) {
+            try {
+              requestedMessagesCount =
+                  RequestedMessageRepositoryProvider.repository.getPendingMessageCount(
+                      currentUser.uid)
+            } catch (e: Exception) {
+              android.util.Log.e("AppNavHost", "Error loading requested messages count", e)
+            }
+          }
+        }
+      }
+
       Scaffold(
           bottomBar = {
             BottomNavigationMenu(
@@ -144,15 +170,8 @@ fun AppNavHost(
                 onChannelClick = { channelId ->
                   navActions.navigateTo(Screen.ChatChannel(channelId))
                 },
-                onRequestedMessagesClick = {
-                  // Feature coming soon - show toast for now
-                  Toast.makeText(
-                          context,
-                          context.getString(R.string.app_nav_host_not_implemented_yet),
-                          Toast.LENGTH_SHORT)
-                      .show()
-                },
-                requestedMessagesCount = 0, // Hardcoded to 0 until feature is implemented
+                onRequestedMessagesClick = { navActions.navigateTo(Screen.RequestedMessages) },
+                requestedMessagesCount = requestedMessagesCount,
                 modifier = Modifier.padding(paddingValues))
           }
     }
@@ -354,12 +373,17 @@ fun AppNavHost(
             listingUid = it,
             onGoBack = { navActions.goBack() },
             onApply = {
-              // Contact message feature coming soon
-              Toast.makeText(
-                      context,
-                      context.getString(R.string.app_nav_host_not_implemented_yet),
-                      Toast.LENGTH_SHORT)
-                  .show()
+              coroutineScope.launch {
+                val success = viewListingViewModel.submitContactMessage()
+                if (success) {
+                  Toast.makeText(
+                          context,
+                          "Message sent! The listing owner will review it.",
+                          Toast.LENGTH_LONG)
+                      .show()
+                  navActions.goBack()
+                }
+              }
             },
             onEdit = { navActions.navigateTo(Screen.EditListing(it)) },
             onViewProfile = { ownerId ->
@@ -566,7 +590,134 @@ fun AppNavHost(
       MyChatScreen(channelId = decodedChannelId, onBackClick = navActions::goBack)
     }
 
-    // RequestedMessages and SelectUserToChat routes will be added in a future PR
+    composable(Screen.SelectUserToChat.route) {
+      SelectUserToChatScreen(
+          onBackClick = { navActions.goBack() },
+          onUserSelected = { channelCid -> navActions.navigateTo(Screen.ChatChannel(channelCid)) })
+    }
+
+    composable(Screen.RequestedMessages.route) {
+      RequestedMessagesScreen(
+          onBackClick = { navActions.goBack() },
+          onViewProfile = { userId -> navActions.navigateTo(Screen.ViewUserProfile(userId)) },
+          onApprove = { messageId, onSuccess ->
+            coroutineScope.launch {
+              try {
+                val repository = RequestedMessageRepositoryProvider.repository
+                val message = repository.getRequestedMessage(messageId)
+                if (message != null) {
+                  // Update status to approved first
+                  repository.updateMessageStatus(messageId, MessageStatus.APPROVED)
+
+                  // Call onSuccess to refresh the list immediately
+                  onSuccess()
+
+                  // Try to create chat channel (but don't fail if it doesn't work)
+                  val currentUser = FirebaseAuth.getInstance().currentUser
+                  if (currentUser != null && !currentUser.isAnonymous) {
+                    try {
+                      // Check if Stream Chat is initialized
+                      if (!StreamChatProvider.isInitialized()) {
+                        Log.w(
+                            "AppNavHost", "Stream Chat not initialized, skipping channel creation")
+                        Toast.makeText(
+                                context,
+                                "Message approved. You can start a chat manually from the inbox.",
+                                Toast.LENGTH_SHORT)
+                            .show()
+                        return@launch
+                      }
+
+                      // Try to connect user (ignore errors if already connected)
+                      try {
+                        val profileRepository =
+                            com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+                                .repository
+                        val profile = profileRepository.getProfile(currentUser.uid)
+                        val displayName =
+                            "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                        val imageUrl = ""
+
+                        StreamChatProvider.connectUser(
+                            firebaseUserId = currentUser.uid,
+                            displayName = displayName,
+                            imageUrl = imageUrl)
+                        // Wait a bit for connection to establish
+                        kotlinx.coroutines.delay(500)
+                      } catch (connectError: Exception) {
+                        // If connection fails, log but continue - user might already be connected
+                        Log.w(
+                            "AppNavHost",
+                            "Could not connect to Stream Chat (may already be connected)",
+                            connectError)
+                      }
+
+                      // Try to create channel (but don't navigate away)
+                      StreamChatProvider.createChannel(
+                          channelType = "messaging",
+                          channelId = null,
+                          memberIds = listOf(message.fromUserId, message.toUserId),
+                          extraData = mapOf("name" to "Chat"))
+
+                      // Show success message and stay on requested messages screen
+                      Toast.makeText(
+                              context,
+                              "Message approved and chat channel created.",
+                              Toast.LENGTH_SHORT)
+                          .show()
+                    } catch (channelError: Exception) {
+                      // Channel creation failed, but message is already approved
+                      Log.e("AppNavHost", "Error creating channel", channelError)
+                      Toast.makeText(
+                              context,
+                              "Message approved. You can start a chat manually from the inbox.",
+                              Toast.LENGTH_SHORT)
+                          .show()
+                    }
+                  } else {
+                    // User is anonymous or not logged in
+                    Toast.makeText(
+                            context,
+                            "Message approved. Sign in to start chatting.",
+                            Toast.LENGTH_SHORT)
+                        .show()
+                  }
+                }
+              } catch (e: Exception) {
+                Log.e("AppNavHost", "Error approving requested message", e)
+                Toast.makeText(
+                        context, "Failed to approve message: ${e.message}", Toast.LENGTH_SHORT)
+                    .show()
+              }
+            }
+          },
+          onReject = { messageId, onSuccess ->
+            coroutineScope.launch {
+              try {
+                val repository = RequestedMessageRepositoryProvider.repository
+                // Update status first, then delete
+                repository.updateMessageStatus(messageId, MessageStatus.REJECTED)
+                // Delete might fail if already deleted, but that's okay
+                try {
+                  repository.deleteRequestedMessage(messageId)
+                } catch (deleteError: Exception) {
+                  // If deletion fails, that's okay - the status is already updated
+                  Log.d(
+                      "AppNavHost",
+                      "Message already deleted or deletion failed, but status updated",
+                      deleteError)
+                }
+                // Call onSuccess to refresh the list
+                onSuccess()
+              } catch (e: Exception) {
+                Log.e("AppNavHost", "Error rejecting requested message", e)
+                Toast.makeText(
+                        context, "Failed to reject message: ${e.message}", Toast.LENGTH_SHORT)
+                    .show()
+              }
+            }
+          })
+    }
   }
 }
 

@@ -28,6 +28,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.android.mySwissDorm.MainActivity
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
@@ -65,6 +66,7 @@ fun AppNavHost(
     credentialManager: CredentialManager = CredentialManager.create(context),
     navActionsExternal: NavigationActions? = null,
     navigationViewModel: NavigationViewModel = viewModel(),
+    activity: MainActivity,
 ) {
   val navController = navActionsExternal?.navController() ?: rememberNavController()
 
@@ -529,7 +531,8 @@ fun AppNavHost(
                       context.getString(R.string.app_nav_host_not_implemented_yet),
                       Toast.LENGTH_SHORT)
                   .show()
-            })
+            },
+            onLanguageChange = { activity.updateLanguage(it) })
       }
     }
 

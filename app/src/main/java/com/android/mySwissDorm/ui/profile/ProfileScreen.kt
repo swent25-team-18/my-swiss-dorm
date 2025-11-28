@@ -57,6 +57,7 @@ import com.android.mySwissDorm.ui.theme.TextColor
 fun ProfileScreen(
     onLogout: () -> Unit,
     onChangeProfilePicture: (Photo) -> Unit,
+    onLanguageChange: (String) -> Unit,
     onBack: () -> Unit,
     viewModel: ProfileScreenViewModel = viewModel()
 ) {
@@ -70,7 +71,18 @@ fun ProfileScreen(
       state = state,
       onFirstNameChange = viewModel::onFirstNameChange,
       onLastNameChange = viewModel::onLastNameChange,
-      onLanguageChange = viewModel::onLanguageChange,
+      onLanguageChange = {
+        viewModel.onLanguageChange(it)
+        if (state.language != it) {
+          val lang =
+              when (it) {
+                "English" -> "en"
+                "Français" -> "fr"
+                else -> "en"
+              }
+          onLanguageChange(lang)
+        }
+      },
       onResidenceChange = viewModel::onResidenceChange,
       onLogout = onLogout,
       onChangeProfilePicture = onChangeProfilePicture,

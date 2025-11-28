@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
@@ -12,9 +13,15 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -23,6 +30,8 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.utils.FakePhotoRepository
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -254,5 +263,44 @@ class AddReviewScreenTest : FirestoreTest() {
 
     composeRule.awaitIdle()
     assertTrue(backCalled)
+  }
+
+  @Test
+  fun photoCallsWork() = runTest {
+    var uploaded = false
+    val photo =
+        Photo(
+            image = "android.resource://com.android.mySwissDorm/${R.drawable.geneve}".toUri(),
+            "geneve.png")
+    val localRepository: PhotoRepository = FakePhotoRepository.commonLocalRepo({ photo }, {}, true)
+    val cloudRepository: PhotoRepositoryCloud =
+        FakePhotoRepositoryCloud(onRetrieve = { photo }, { uploaded = true }, true)
+    val vm =
+        AddReviewViewModel(
+            photoRepositoryLocal = localRepository, photoRepositoryCloud = cloudRepository)
+    setContent(viewModel = vm)
+    vm.addPhoto(photo)
+    composeRule.waitForIdle()
+    composeRule.onNodeWithTag(C.AddReviewTags.PHOTOS).performScrollTo().assertIsDisplayed()
+    composeRule
+        .onNodeWithTag(C.ImageGridTags.deleteButtonTag(photo.image), useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
+    composeRule.onNodeWithTag(C.AddReviewTags.PHOTOS).assertIsNotDisplayed()
+    vm.addPhoto(photo)
+    // Fill required fields via the ViewModel
+    vm.setTitle("Anon review")
+    vm.setResidencyName("Test residency")
+    vm.setRoomType(RoomType.STUDIO)
+    vm.setAreaInM2("18")
+    vm.setPricePerMonth("700")
+    vm.setReviewText("Some anonymous text")
+    vm.setGrade(4.0)
+    vm.setIsAnonymous(true)
+    composeRule.onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true).performClick()
+    composeRule.waitUntil(
+        "The image has not been uploaded to the cloud when submitting the review", 5_000) {
+          uploaded
+        }
   }
 }

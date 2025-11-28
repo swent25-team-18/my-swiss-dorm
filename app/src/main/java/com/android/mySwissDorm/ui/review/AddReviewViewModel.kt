@@ -1,7 +1,12 @@
 package com.android.mySwissDorm.ui.review
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -11,6 +16,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
+import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -31,7 +37,7 @@ data class AddReviewUiState(
     val roomType: RoomType,
     val pricePerMonth: String = "",
     val areaInM2: String = "",
-    val imageUrls: List<String> = emptyList(),
+    val images: List<Photo> = emptyList(),
     val isAnonymous: Boolean = false,
 ) {
   val isFormValid: Boolean
@@ -52,13 +58,33 @@ data class AddReviewUiState(
 class AddReviewViewModel(
     private val reviewRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository
+        ResidenciesRepositoryProvider.repository,
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
   private val _uiState =
       MutableStateFlow(
           AddReviewUiState(
               postedAt = Timestamp.now(), roomType = RoomType.STUDIO, residencies = listOf()))
   val uiState: StateFlow<AddReviewUiState> = _uiState.asStateFlow()
+
+  private val photoManager =
+      PhotoManager(
+          photoRepositoryLocal = photoRepositoryLocal, photoRepositoryCloud = photoRepositoryCloud)
+
+  fun addPhoto(photo: Photo) {
+    viewModelScope.launch {
+      photoManager.addPhoto(photo)
+      _uiState.value = _uiState.value.copy(images = photoManager.photoLoaded)
+    }
+  }
+
+  fun removePhoto(uri: Uri) {
+    viewModelScope.launch {
+      photoManager.removePhoto(uri, true)
+      _uiState.value = _uiState.value.copy(images = photoManager.photoLoaded)
+    }
+  }
 
   // Helpers for updating individual fields
   fun setTitle(title: String) {
@@ -92,10 +118,6 @@ class AddReviewViewModel(
   fun setAreaInM2(areaInM2: String) {
     val norm = InputSanitizers.normalizeWhileTyping(FieldType.RoomSize, areaInM2)
     _uiState.value = _uiState.value.copy(areaInM2 = norm)
-  }
-
-  fun setImageUrls(imageUrls: List<String>) {
-    _uiState.value = _uiState.value.copy(imageUrls = imageUrls)
   }
 
   fun setIsAnonymous(isAnonymous: Boolean) {
@@ -145,13 +167,14 @@ class AddReviewViewModel(
             roomType = state.roomType,
             pricePerMonth = priceRes.value!!.toDouble(),
             areaInM2 = areaRes.value!!.roundToInt(),
-            imageUrls = state.imageUrls,
+            imageUrls = state.images.map { it.fileName },
             isAnonymous = state.isAnonymous,
         )
 
     viewModelScope.launch {
       try {
         reviewRepository.addReview(reviewToAdd)
+        photoManager.commitChanges()
         onConfirm(reviewToAdd)
       } catch (_: Exception) {}
     }

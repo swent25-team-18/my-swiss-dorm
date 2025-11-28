@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -45,10 +46,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -162,11 +163,13 @@ private fun ReviewCard(
                           .background(LightGray)
                           .testTag(
                               C.ReviewsByResidencyTag.reviewImagePlaceholder(data.reviewUid))) {
-                    Text(
-                        stringResource(R.string.image),
-                        modifier = Modifier.align(Alignment.Center),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Gray)
+                    AsyncImage(
+                        model = data.image,
+                        contentDescription = null,
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .testTag(C.ReviewsByResidencyTag.reviewPhoto(data.reviewUid)),
+                        contentScale = ContentScale.Crop)
                   }
 
               Spacer(Modifier.width(4.dp))

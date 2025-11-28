@@ -955,4 +955,101 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         .assertTextContains("Bob", substring = true, ignoreCase = true)
         .assertTextContains("King", substring = true, ignoreCase = true)
   }
+
+  @Test
+  fun navigateToMap_displaysMapContent() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    var currentScreen by mutableStateOf("browse")
+    var mapListings: List<ListingCardUI> = emptyList()
+
+    compose.setContent {
+      if (currentScreen == "browse") {
+        BrowseCityScreen(
+            browseCityViewModel = vm,
+            location = lausanneLocation,
+            onMapClick = { listings ->
+              mapListings = listings
+              currentScreen = "map"
+            })
+      } else {
+        MapOverviewScreen(
+            listings = mapListings,
+            centerLocation = lausanneLocation,
+            onGoBack = { currentScreen = "browse" },
+            onListingClick = {})
+      }
+    }
+    compose.waitUntil(5_000) { vm.uiState.value.listings.items.isNotEmpty() }
+    compose.onNodeWithContentDescription("Open Map").assertIsDisplayed().performClick()
+    compose.waitForIdle()
+    compose.onNodeWithText("Listings map").assertIsDisplayed()
+    compose.onNodeWithContentDescription("Open in Maps").assertIsDisplayed()
+    compose.onNodeWithContentDescription("Back").assertIsDisplayed()
+  }
+
+  @Test
+  fun mapShowsCorrectNumberOfListings() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    var mapListings: List<ListingCardUI> = emptyList()
+    var onMapScreen by mutableStateOf(false)
+
+    compose.setContent {
+      if (!onMapScreen) {
+        BrowseCityScreen(
+            browseCityViewModel = vm,
+            location = lausanneLocation,
+            onMapClick = { listings ->
+              mapListings = listings
+              onMapScreen = true
+            })
+      } else {
+        MapOverviewScreen(
+            listings = mapListings,
+            centerLocation = lausanneLocation,
+            onGoBack = {},
+            onListingClick = {})
+      }
+    }
+    compose.waitUntil(5_000) { vm.uiState.value.listings.items.isNotEmpty() }
+    compose.onNodeWithContentDescription("Open Map").performClick()
+    compose.waitForIdle()
+    assertEquals(2, mapListings.size)
+  }
+
+  @Test
+  fun mapCarousel_appears_whenMultipleListingsAtSameLocation() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val duplicateListing =
+        listingLaus1.copy(uid = "duplicate", title = "Duplicate Listing", pricePerMonth = 999.0)
+    listingsRepo.addRentalListing(duplicateListing)
+
+    var onMapScreen by mutableStateOf(false)
+    var mapListings: List<ListingCardUI> = emptyList()
+
+    compose.setContent {
+      if (!onMapScreen) {
+        BrowseCityScreen(
+            browseCityViewModel = vm,
+            location = lausanneLocation,
+            onMapClick = { listings ->
+              mapListings = listings
+              onMapScreen = true
+            })
+      } else {
+        MapOverviewScreen(
+            listings = mapListings,
+            centerLocation = lausanneLocation,
+            onGoBack = {},
+            onListingClick = {})
+      }
+    }
+    compose.waitUntil(5_000) { vm.uiState.value.listings.items.size >= 3 }
+    compose.onNodeWithContentDescription("Open Map").performClick()
+    compose.waitForIdle()
+    val grouped = mapListings.groupBy { it.location.latitude to it.location.longitude }
+    val locationGroup =
+        grouped[Pair(listingLaus1.location.latitude, listingLaus1.location.longitude)]
+    assertEquals(3, locationGroup?.size)
+  }
 }

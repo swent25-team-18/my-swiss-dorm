@@ -1,11 +1,13 @@
 package com.android.mySwissDorm.ui.admin
 
 import android.content.Context
+import android.util.Patterns
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.city.CitiesRepository
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.city.City
@@ -27,6 +29,7 @@ class AdminPageViewModel(
     private val residenciesRepo: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
     private val universitiesRepo: UniversitiesRepository =
         UniversitiesRepositoryProvider.repository,
+    private val adminRepo: AdminRepository = AdminRepository(),
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
 ) : BaseLocationSearchViewModel() {
   override val logTag = "AdminPageViewModel"
@@ -34,7 +37,8 @@ class AdminPageViewModel(
   enum class EntityType {
     CITY,
     RESIDENCY,
-    UNIVERSITY
+    UNIVERSITY,
+    ADMIN
   }
 
   data class UiState(
@@ -52,7 +56,8 @@ class AdminPageViewModel(
       val customLocationQuery: String = "",
       val customLocation: Location? = null,
       val locationSuggestions: List<Location> = emptyList(),
-      val showCustomLocationDialog: Boolean = false
+      val showCustomLocationDialog: Boolean = false,
+      val showAdminConfirmDialog: Boolean = false
   )
 
   var uiState by mutableStateOf(UiState())
@@ -126,35 +131,49 @@ class AdminPageViewModel(
     uiState = uiState.copy(website = v)
   }
 
-  private fun validate(context: Context): String? {
-    if (uiState.name.isBlank()) return context.getString(R.string.admin_page_vm_name_required)
-    if (uiState.location == null) return context.getString(R.string.admin_page_vm_location_required)
+  fun clearMessage() {
+    uiState = uiState.copy(message = null)
+  }
 
+  private fun validate(context: Context): String? {
     return when (uiState.selected) {
+      EntityType.ADMIN -> {
+        if (uiState.email.isBlank()) context.getString(R.string.admin_page_email_required)
+        else if (!Patterns.EMAIL_ADDRESS.matcher(uiState.email.trim()).matches()) {
+          context.getString(R.string.admin_page_email_invalid)
+        } else null
+      }
       EntityType.CITY -> {
         when {
+          uiState.name.isBlank() -> context.getString(R.string.admin_page_name_required)
+          uiState.location == null -> context.getString(R.string.admin_page_location_required)
           uiState.description.isBlank() ->
-              context.getString(R.string.admin_page_vm_description_required_for_city)
-          uiState.imageId.isBlank() ->
-              context.getString(R.string.admin_page_vm_image_id_required_for_city)
+              context.getString(R.string.admin_page_description_required_city)
+          uiState.imageId.isBlank() -> context.getString(R.string.admin_page_image_id_required_city)
           else -> null
         }
       }
       EntityType.RESIDENCY -> {
-        if (uiState.city.isBlank())
-            context.getString(R.string.admin_page_vm_city_name_required_for_residency)
-        else null
+        when {
+          uiState.name.isBlank() -> context.getString(R.string.admin_page_name_required)
+          uiState.location == null -> context.getString(R.string.admin_page_location_required)
+          uiState.city.isBlank() ->
+              context.getString(R.string.admin_page_city_name_required_residency)
+          else -> null
+        }
       }
       EntityType.UNIVERSITY -> {
         when {
+          uiState.name.isBlank() -> context.getString(R.string.admin_page_name_required)
+          uiState.location == null -> context.getString(R.string.admin_page_location_required)
           uiState.city.isBlank() ->
-              context.getString(R.string.admin_page_vm_city_name_required_for_university)
+              context.getString(R.string.admin_page_city_name_required_university)
           uiState.email.isBlank() ->
-              context.getString(R.string.admin_page_vm_email_required_for_university)
+              context.getString(R.string.admin_page_email_required_university)
           uiState.phone.isBlank() ->
-              context.getString(R.string.admin_page_vm_phone_required_for_university)
+              context.getString(R.string.admin_page_phone_required_university)
           uiState.website.isBlank() ->
-              context.getString(R.string.admin_page_vm_website_required_for_university)
+              context.getString(R.string.admin_page_website_required_university)
           else -> null
         }
       }
@@ -167,15 +186,51 @@ class AdminPageViewModel(
       uiState = uiState.copy(message = error)
       return
     }
-    // Location is validated to be non-null
-    val location = uiState.location!!
 
+    // Show confirmation dialog for admin
+    if (uiState.selected == EntityType.ADMIN) {
+      uiState = uiState.copy(showAdminConfirmDialog = true, message = null)
+      return
+    }
+
+    performSubmit(context)
+  }
+
+  fun confirmAdminAdd(context: Context) {
+    uiState = uiState.copy(showAdminConfirmDialog = false)
+    performSubmit(context)
+  }
+
+  fun cancelAdminAdd() {
+    uiState = uiState.copy(showAdminConfirmDialog = false)
+  }
+
+  private fun performSubmit(context: Context) {
     viewModelScope.launch {
       uiState = uiState.copy(isSubmitting = true, message = null)
       try {
         // Submit based on selected entity type
         when (uiState.selected) {
+          EntityType.ADMIN -> {
+            val email = uiState.email.trim()
+            // Check if admin already exists
+            if (adminRepo.isAdmin(email)) {
+              uiState =
+                  uiState.copy(
+                      isSubmitting = false,
+                      message = context.getString(R.string.admin_page_already_admin))
+              return@launch
+            }
+            adminRepo.addAdmin(email)
+            uiState =
+                uiState.copy(
+                    isSubmitting = false,
+                    message = context.getString(R.string.admin_page_added_as_admin, email),
+                    email = "") // Clear email field after success
+          }
           EntityType.CITY -> {
+            // Location is validated to be non-null
+            val location = uiState.location!!
             val city =
                 City(
                     name = uiState.name.trim(),
@@ -185,6 +240,8 @@ class AdminPageViewModel(
             citiesRepo.addCity(city)
           }
           EntityType.RESIDENCY -> {
+            // Location is validated to be non-null
+            val location = uiState.location!!
             val residency =
                 Residency(
                     name = uiState.name.trim(),
@@ -197,6 +254,8 @@ class AdminPageViewModel(
             residenciesRepo.addResidency(residency)
           }
           EntityType.UNIVERSITY -> {
+            // Location is validated to be non-null
+            val location = uiState.location!!
             val university =
                 University(
                     name = uiState.name.trim(),
@@ -208,16 +267,18 @@ class AdminPageViewModel(
             universitiesRepo.addUniversity(university)
           }
         }
-        uiState =
-            UiState(
-                selected = uiState.selected,
-                message = context.getString(R.string.admin_page_vm_saved_successfully))
+        if (uiState.selected != EntityType.ADMIN) {
+          uiState =
+              UiState(
+                  selected = uiState.selected,
+                  message = context.getString(R.string.admin_page_saved_successfully))
+        }
       } catch (e: Exception) {
+        val errorMsg = e.message ?: context.getString(R.string.admin_page_error_unknown)
         uiState =
             uiState.copy(
                 isSubmitting = false,
-                message =
-                    "${context.getString(R.string.error)}: ${e.message ?: context.getString(R.string.unknown)}")
+                message = "${context.getString(R.string.admin_page_error)}: $errorMsg")
       }
     }
   }

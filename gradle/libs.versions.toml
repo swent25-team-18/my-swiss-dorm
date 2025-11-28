@@ -43,6 +43,10 @@ streamChat = "6.0.0"
 # Networking
 okhttp = "4.12.0"
 
+# Local Data Storage
+room = "2.6.1"
+ksp = "1.9.0-1.0.13"
+
 # Testing Unit
 junit = "4.13.2"
 mockitoCore = "5.13.0"
@@ -129,6 +133,9 @@ coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 stream-chat-android-compose = { module = "io.getstream:stream-chat-android-compose", version.ref = "streamChat" }
 stream-chat-android-client = { module = "io.getstream:stream-chat-android-client", version.ref = "streamChat" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
 
 [plugins]
@@ -137,3 +144,4 @@ jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "k
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
 sonar = { id = "org.sonarqube", version.ref = "sonar" }
 gms = { id = "com.google.gms.google-services", version.ref = "gms" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

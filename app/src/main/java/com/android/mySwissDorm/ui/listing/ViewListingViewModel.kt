@@ -18,6 +18,8 @@ import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.ui.photo.PhotoManager
+import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -52,7 +54,8 @@ data class ViewListingUIState(
     val isBlockedByOwner: Boolean = false,
     val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
     val images: List<Photo> = emptyList(),
-    val isGuest: Boolean = false
+    val isGuest: Boolean = false,
+    val isBookmarked: Boolean = false
 )
 
 class ViewListingViewModel(
@@ -66,6 +69,9 @@ class ViewListingViewModel(
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
+
+  val photoManager = PhotoManager(photoRepositoryCloud = photoRepositoryCloud)
+  private val bookmarkHandler = BookmarkHandler(profileRepository)
 
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {
@@ -119,15 +125,22 @@ class ViewListingViewModel(
             } else {
               false
             }
-        val photos =
-            listing.imageUrls.mapNotNull { fileName ->
-              try {
-                photoRepositoryCloud.retrievePhoto(fileName)
-              } catch (_: NoSuchElementException) {
-                Log.d("ViewListingViewModel", "Failed to retrieve the photo : $fileName")
-                null
-              }
+
+        // Check if the listing is bookmarked by the current user
+        val isBookmarked =
+            if (currentUserId != null && !isGuest) {
+              runCatching { profileRepository.getBookmarkedListingIds(currentUserId) }
+                  .onFailure { e ->
+                    Log.e("ViewListingViewModel", "Error checking bookmark status", e)
+                  }
+                  .getOrDefault(emptyList())
+                  .contains(listingId)
+            } else {
+              false
             }
+
+        photoManager.initialize(listing.imageUrls)
+        val photos = photoManager.photoLoaded
         _uiState.update {
           it.copy(
               listing = listing,
@@ -136,7 +149,8 @@ class ViewListingViewModel(
               isBlockedByOwner = isBlockedByOwner,
               locationOfListing = listing.location,
               images = photos,
-              isGuest = isGuest)
+              isGuest = isGuest,
+              isBookmarked = isBookmarked)
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
@@ -148,5 +162,28 @@ class ViewListingViewModel(
 
   fun setContactMessage(contactMessage: String) {
     _uiState.value = _uiState.value.copy(contactMessage = contactMessage)
+  }
+
+  fun toggleBookmark(listingId: String, context: Context) {
+    val currentUserId = bookmarkHandler.getCurrentUserId()
+    if (currentUserId == null) {
+      return
+    }
+
+    val isCurrentlyBookmarked = _uiState.value.isBookmarked
+    viewModelScope.launch {
+      try {
+        val newBookmarkStatus =
+            bookmarkHandler.toggleBookmark(
+                listingId = listingId,
+                currentUserId = currentUserId,
+                isCurrentlyBookmarked = isCurrentlyBookmarked)
+
+        _uiState.update { it.copy(isBookmarked = newBookmarkStatus) }
+      } catch (e: Exception) {
+        setErrorMsg(
+            "${context.getString(R.string.view_listing_failed_to_toggle_bookmark)} ${e.message}")
+      }
+    }
   }
 }

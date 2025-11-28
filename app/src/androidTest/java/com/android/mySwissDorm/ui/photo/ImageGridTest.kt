@@ -12,6 +12,7 @@ import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -104,5 +105,19 @@ class ImageGridTest {
           .performClick()
     }
     composeTestRule.waitUntil(5_000) { removedUris.containsAll(testUris) }
+  }
+
+  @Test
+  fun imageOnClickWorks() {
+    val clicked = mutableMapOf<Uri, Boolean>()
+
+    composeTestRule.setContent {
+      ImageGrid(imageUris = testUris, isEditingMode = true, onImageClick = { clicked[it] = true })
+    }
+    testUris.forEach { uri ->
+      composeTestRule.onNodeWithTag(C.ImageGridTags.imageTag(uri)).performClick()
+    }
+    composeTestRule.waitForIdle()
+    testUris.forEach { uri -> assertTrue(clicked[uri] ?: false) }
   }
 }

@@ -56,8 +56,8 @@ abstract class FirestoreTest : TestCase() {
 
   // Application initialization
   init {
-    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().targetContext)
     assert(FirebaseEmulator.isRunning) { "FirebaseEmulator must be running for these tests" }
+    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().targetContext)
   }
 
   /** Should change the repository providers if needed. Called in [setUp] fun */

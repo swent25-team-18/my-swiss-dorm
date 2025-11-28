@@ -22,6 +22,8 @@ import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
@@ -37,7 +39,6 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import io.github.kakaocup.compose.node.element.ComposeScreen
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -55,6 +56,7 @@ class Epic1Test : FirestoreTest() {
     ProfileRepositoryProvider.repository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     RentalListingRepositoryProvider.repository =
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+    ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
     ResidenciesRepositoryProvider.repository =
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
     UniversitiesRepositoryProvider.repository =
@@ -64,7 +66,7 @@ class Epic1Test : FirestoreTest() {
     // Initialize rentalUid after repository provider is set
     rentalUid = RentalListingRepositoryProvider.repository.getNewUid()
 
-    runBlocking {
+    runTest {
       switchToUser(FakeUser.FakeUser1)
       cities.forEach { CitiesRepositoryProvider.repository.addCity(it) }
       ResidenciesRepositoryProvider.repository.addResidency(vortex)

@@ -4,7 +4,6 @@ import android.util.Log
 import com.android.mySwissDorm.model.rental.RoomType
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlin.NoSuchElementException
 import kotlinx.coroutines.tasks.await
 
 const val REVIEWS_COLLECTION_PATH = "reviews"

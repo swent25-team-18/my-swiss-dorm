@@ -3,7 +3,6 @@ package com.android.mySwissDorm.model
 import android.content.Context
 import android.util.Log
 import com.android.mySwissDorm.utils.NetworkUtils
-import kotlin.NoSuchElementException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 

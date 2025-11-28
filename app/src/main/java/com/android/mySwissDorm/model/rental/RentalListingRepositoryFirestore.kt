@@ -7,7 +7,6 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlin.NoSuchElementException
 import kotlin.collections.get
 import kotlinx.coroutines.tasks.await
 

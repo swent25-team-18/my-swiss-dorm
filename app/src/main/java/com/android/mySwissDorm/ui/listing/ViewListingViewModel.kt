@@ -91,7 +91,7 @@ class ViewListingViewModel(
         _uiState.value = _uiState.value.copy(locationOfListing = listing.location)
       } catch (e: Exception) {
         Log.e(
-            "MyViewModel",
+            "ViewListingViewModel",
             "Failed to load location, this is expected if listing is new or missing.",
             e)
       }

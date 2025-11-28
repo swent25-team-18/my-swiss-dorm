@@ -17,11 +17,12 @@ class ReviewsRepositoryFirestoreTest : FirestoreTest() {
     ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
-  private val repo = ReviewsRepositoryProvider.repository
+  private lateinit var repo: ReviewsRepository
 
   @Before
   override fun setUp() {
     super.setUp()
+    repo = ReviewsRepositoryProvider.repository
   }
 
   @Test

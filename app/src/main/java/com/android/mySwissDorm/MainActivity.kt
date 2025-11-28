@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
 fun MySwissDormApp(
     context: Context = LocalContext.current,
     credentialManager: CredentialManager = CredentialManager.create(context),
-    activity: MainActivity
+    activity: MainActivity = MainActivity()
 ) {
   AppNavHost(context = context, credentialManager = credentialManager, activity = activity)
 }

@@ -72,8 +72,9 @@ fun ProfileScreen(
       onFirstNameChange = viewModel::onFirstNameChange,
       onLastNameChange = viewModel::onLastNameChange,
       onLanguageChange = {
+        val oldLanguage = state.language
         viewModel.onLanguageChange(it)
-        if (state.language != it) {
+        if (oldLanguage != it) {
           val lang =
               when (it) {
                 "English" -> "en"

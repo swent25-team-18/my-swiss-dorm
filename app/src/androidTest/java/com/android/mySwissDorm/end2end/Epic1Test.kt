@@ -38,6 +38,7 @@ import io.github.kakaocup.compose.node.element.ComposeScreen
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule

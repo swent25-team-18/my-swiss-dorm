@@ -39,6 +39,7 @@ data class AddReviewUiState(
     val areaInM2: String = "",
     val images: List<Photo> = emptyList(),
     val isAnonymous: Boolean = false,
+    val isSubmitting: Boolean = false,
 ) {
   val isFormValid: Boolean
     get() {
@@ -140,6 +141,11 @@ class AddReviewViewModel(
   fun submitReviewForm(onConfirm: (Review) -> Unit) {
     val state = _uiState.value
 
+    // Prevent duplicate submissions
+    if (state.isSubmitting) {
+      return
+    }
+
     // To check if fields are well written
     val titleRes = InputSanitizers.validateFinal<String>(FieldType.Title, state.title)
     val residencyNameRes =
@@ -171,12 +177,18 @@ class AddReviewViewModel(
             isAnonymous = state.isAnonymous,
         )
 
+    // Mark as submitting
+    _uiState.value = _uiState.value.copy(isSubmitting = true)
+
     viewModelScope.launch {
       try {
         reviewRepository.addReview(reviewToAdd)
         photoManager.commitChanges()
         onConfirm(reviewToAdd)
-      } catch (_: Exception) {}
+      } catch (_: Exception) {
+        // Reset submitting state on error so user can retry
+        _uiState.value = _uiState.value.copy(isSubmitting = false)
+      }
     }
   }
 }

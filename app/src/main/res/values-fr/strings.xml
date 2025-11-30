@@ -61,7 +61,6 @@
     <string name="unblock">Débloquer</string>
     <string name="unexpected_error">Erreur inattendue</string>
     <string name="university">Université</string>
-    <string name="market">Marché</string>
     <string name="supermarket">Supermarché</string>
     <string name="unknown">Inconnu</string>
     <string name="user">Utilisateur</string>
@@ -211,7 +210,6 @@
     <string name="view_listing_distance_at_km_of_no_type">à %1$.1f km de %2$s</string>
     <string name="view_listing_walking_time_university">%1$d minutes de l\'université %2$s</string>
     <string name="view_listing_walking_time_supermarket">%1$d minutes de %2$s</string>
-    <string name="view_listing_walking_time_market">%1$d minutes de %2$s</string>
     <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes de %2$s %3$s</string>
     <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes de %2$s</string>
     <string name="view_listing_no_points_of_interest">Aucun point d\'intérêt à proximité disponible</string>

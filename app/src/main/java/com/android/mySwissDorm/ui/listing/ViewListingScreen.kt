@@ -214,7 +214,6 @@ fun ViewListingScreen(
 
                 // Nearby Points of Interest - right after "posted by"
                 val poiDistances = listingUIState.poiDistances
-                Spacer(Modifier.height(4.dp))
                 Text(
                     stringResource(R.string.view_listing_nearby_points_of_interest),
                     style =
@@ -248,11 +247,6 @@ fun ViewListingScreen(
                                               R.string.view_listing_walking_time_supermarket,
                                               poiDistance.walkingTimeMinutes,
                                               poiDistance.poiName)
-                                      POIType.MARKET ->
-                                          stringResource(
-                                              R.string.view_listing_walking_time_market,
-                                              poiDistance.walkingTimeMinutes,
-                                              poiDistance.poiName)
                                     }
                                 Text(
                                     timeText,
@@ -273,15 +267,13 @@ fun ViewListingScreen(
                                               poiNames.last()
                                     }
 
-                                // Determine the type label (university, supermarket, or market)
+                                // Determine the type label (university or supermarket)
                                 val typeLabel =
                                     when {
                                       pois.all { it.poiType == POIType.UNIVERSITY } ->
                                           stringResource(R.string.university)
                                       pois.all { it.poiType == POIType.SUPERMARKET } ->
                                           "" // Supermarkets don't need a type label
-                                      pois.all { it.poiType == POIType.MARKET } ->
-                                          stringResource(R.string.market)
                                       else -> "" // Mixed types, no label
                                     }
 

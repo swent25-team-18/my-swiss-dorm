@@ -2,8 +2,6 @@ package com.android.mySwissDorm.model.poi
 
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.WalkingRouteService
-import com.android.mySwissDorm.model.market.Market
-import com.android.mySwissDorm.model.market.MarketsRepository
 import com.android.mySwissDorm.model.supermarket.Supermarket
 import com.android.mySwissDorm.model.supermarket.SupermarketsRepository
 import com.android.mySwissDorm.model.university.UniversitiesRepository
@@ -25,7 +23,6 @@ import org.mockito.kotlin.whenever
 class DistanceServiceTest {
   private lateinit var universitiesRepo: UniversitiesRepository
   private lateinit var supermarketsRepo: SupermarketsRepository
-  private lateinit var marketsRepo: MarketsRepository
   private lateinit var walkingRouteService: WalkingRouteService
   private lateinit var distanceService: DistanceService
 
@@ -66,10 +63,8 @@ class DistanceServiceTest {
   fun setUp() {
     universitiesRepo = mock()
     supermarketsRepo = mock()
-    marketsRepo = mock()
     walkingRouteService = mock()
-    distanceService =
-        DistanceService(universitiesRepo, supermarketsRepo, marketsRepo, walkingRouteService)
+    distanceService = DistanceService(universitiesRepo, supermarketsRepo, walkingRouteService)
   }
 
   @Test
@@ -85,7 +80,6 @@ class DistanceServiceTest {
   fun calculateDistancesToPOIs_noUserUniversity_showsTwoNearestUniversities() = runTest {
     whenever(universitiesRepo.getAllUniversities()).thenReturn(listOf(epfl, unil))
     whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(emptyList())
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
     whenever(walkingRouteService.calculateWalkingTimeMinutes(any(), any())).thenReturn(5)
 
     val result = distanceService.calculateDistancesToPOIs(testLocation, null)
@@ -100,7 +94,6 @@ class DistanceServiceTest {
   fun calculateDistancesToPOIs_withUserUniversity_showsOnlyThatUniversity() = runTest {
     whenever(universitiesRepo.getAllUniversities()).thenReturn(listOf(epfl, unil))
     whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(emptyList())
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
     whenever(walkingRouteService.calculateWalkingTimeMinutes(any(), any())).thenReturn(5)
 
     val result = distanceService.calculateDistancesToPOIs(testLocation, "EPFL")
@@ -116,7 +109,6 @@ class DistanceServiceTest {
   fun calculateDistancesToPOIs_userUniversityNotFound_fallsBackToTwoNearest() = runTest {
     whenever(universitiesRepo.getAllUniversities()).thenReturn(listOf(epfl, unil))
     whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(emptyList())
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
     whenever(walkingRouteService.calculateWalkingTimeMinutes(any(), any())).thenReturn(5)
 
     val result = distanceService.calculateDistancesToPOIs(testLocation, "NonExistent")
@@ -131,7 +123,6 @@ class DistanceServiceTest {
     whenever(universitiesRepo.getAllUniversities()).thenReturn(emptyList())
     whenever(supermarketsRepo.getAllSupermarkets())
         .thenReturn(listOf(migrosEPFL, dennerEPFL, migrosRenens))
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
     whenever(
             walkingRouteService.calculateWalkingTimeMinutes(
                 eq(testLocation), eq(migrosEPFL.location)))
@@ -160,30 +151,9 @@ class DistanceServiceTest {
   }
 
   @Test
-  fun calculateDistancesToPOIs_includesMarkets() = runTest {
-    val market =
-        Market(
-            name = "Flon Market",
-            location = Location("Flon Market", 46.5180, 6.6290),
-            city = "Lausanne")
-
-    whenever(universitiesRepo.getAllUniversities()).thenReturn(emptyList())
-    whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(emptyList())
-    whenever(marketsRepo.getAllMarkets()).thenReturn(listOf(market))
-    whenever(walkingRouteService.calculateWalkingTimeMinutes(any(), any())).thenReturn(3)
-
-    val result = distanceService.calculateDistancesToPOIs(testLocation, null)
-
-    val marketResult = result.find { it.poiType == POIType.MARKET }
-    assertNotNull("Should include market", marketResult)
-    assertEquals("Should be Flon Market", "Flon Market", marketResult!!.poiName)
-  }
-
-  @Test
   fun calculateDistancesToPOIs_sortsByWalkingTime() = runTest {
     whenever(universitiesRepo.getAllUniversities()).thenReturn(listOf(epfl))
     whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(listOf(migrosEPFL))
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
     whenever(walkingRouteService.calculateWalkingTimeMinutes(eq(testLocation), eq(epfl.location)))
         .thenReturn(10)
     whenever(
@@ -203,7 +173,6 @@ class DistanceServiceTest {
   fun calculateDistancesToPOIs_walkingServiceReturnsNull_filtersOutPOI() = runTest {
     whenever(universitiesRepo.getAllUniversities()).thenReturn(listOf(epfl, unil))
     whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(emptyList())
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
     whenever(walkingRouteService.calculateWalkingTimeMinutes(eq(testLocation), eq(epfl.location)))
         .thenReturn(null) // API failed for EPFL
     whenever(walkingRouteService.calculateWalkingTimeMinutes(eq(testLocation), eq(unil.location)))
@@ -219,7 +188,6 @@ class DistanceServiceTest {
   fun calculateDistancesToPOIs_alwaysIncludesBothSupermarkets() = runTest {
     whenever(universitiesRepo.getAllUniversities()).thenReturn(listOf(epfl, unil))
     whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(listOf(migrosEPFL, dennerEPFL))
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
     whenever(walkingRouteService.calculateWalkingTimeMinutes(any(), any())).thenReturn(5)
 
     val result = distanceService.calculateDistancesToPOIs(testLocation, null)
@@ -235,7 +203,6 @@ class DistanceServiceTest {
   fun calculateDistancesToPOIs_limitsOtherPOIsWhenBothSupermarketsPresent() = runTest {
     whenever(universitiesRepo.getAllUniversities()).thenReturn(listOf(epfl, unil))
     whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(listOf(migrosEPFL, dennerEPFL))
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
     whenever(walkingRouteService.calculateWalkingTimeMinutes(any(), any())).thenReturn(5)
 
     val result = distanceService.calculateDistancesToPOIs(testLocation, null)
@@ -250,7 +217,6 @@ class DistanceServiceTest {
   fun findNearestPOIByType_returnsNearestOfType() = runTest {
     whenever(universitiesRepo.getAllUniversities()).thenReturn(listOf(epfl, unil))
     whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(emptyList())
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
     whenever(walkingRouteService.calculateWalkingTimeMinutes(eq(testLocation), eq(epfl.location)))
         .thenReturn(5)
     whenever(walkingRouteService.calculateWalkingTimeMinutes(eq(testLocation), eq(unil.location)))
@@ -275,7 +241,6 @@ class DistanceServiceTest {
   fun calculateDistancesToPOIs_repositoryException_returnsEmptyList() = runTest {
     whenever(universitiesRepo.getAllUniversities()).thenThrow(RuntimeException("Database error"))
     whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(emptyList())
-    whenever(marketsRepo.getAllMarkets()).thenReturn(emptyList())
 
     val result = distanceService.calculateDistancesToPOIs(testLocation, null)
 

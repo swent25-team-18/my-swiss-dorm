@@ -59,7 +59,6 @@
     <string name="unblock">Unblock</string>
     <string name="unexpected_error">Unexpected error</string>
     <string name="university">University</string>
-    <string name="market">Market</string>
     <string name="supermarket">Supermarket</string>
     <string name="unknown">Unknown</string>
     <string name="user">User</string>
@@ -209,7 +208,6 @@
     <string name="view_listing_distance_at_km_of_no_type">at %1$.1f km of %2$s</string>
     <string name="view_listing_walking_time_university">%1$d minutes from %2$s university</string>
     <string name="view_listing_walking_time_supermarket">%1$d minutes from %2$s</string>
-    <string name="view_listing_walking_time_market">%1$d minutes from %2$s</string>
     <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes from %2$s %3$s</string>
     <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes from %2$s</string>
     <string name="view_listing_no_points_of_interest">No nearby points of interest available</string>

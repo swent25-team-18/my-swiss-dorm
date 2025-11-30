@@ -76,17 +76,15 @@ class PointOfInterestTest {
 
   @Test
   fun poiType_enumValues() {
-    assertEquals("Should have 3 types", 3, POIType.values().size)
+    assertEquals("Should have 2 types", 2, POIType.values().size)
     assertTrue("Should have UNIVERSITY", POIType.values().contains(POIType.UNIVERSITY))
     assertTrue("Should have SUPERMARKET", POIType.values().contains(POIType.SUPERMARKET))
-    assertTrue("Should have MARKET", POIType.values().contains(POIType.MARKET))
   }
 
   @Test
   fun poiType_valueOf() {
     assertEquals("Should parse UNIVERSITY", POIType.UNIVERSITY, POIType.valueOf("UNIVERSITY"))
     assertEquals("Should parse SUPERMARKET", POIType.SUPERMARKET, POIType.valueOf("SUPERMARKET"))
-    assertEquals("Should parse MARKET", POIType.MARKET, POIType.valueOf("MARKET"))
   }
 
   @Test
@@ -101,14 +99,8 @@ class PointOfInterestTest {
             name = "Migros EPFL",
             location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
             type = POIType.SUPERMARKET)
-    val market =
-        PointOfInterest(
-            name = "Flon Market",
-            location = Location(name = "Flon Market", latitude = 46.5180, longitude = 6.6290),
-            type = POIType.MARKET)
 
     assertEquals("University type", POIType.UNIVERSITY, university.type)
     assertEquals("Supermarket type", POIType.SUPERMARKET, supermarket.type)
-    assertEquals("Market type", POIType.MARKET, market.type)
   }
 }

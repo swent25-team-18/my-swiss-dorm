@@ -10,7 +10,6 @@ import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.market.MarketsRepositoryProvider
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
@@ -178,7 +177,6 @@ class ViewListingViewModel(
                   DistanceService(
                       universitiesRepository = UniversitiesRepositoryProvider.repository,
                       supermarketsRepository = SupermarketsRepositoryProvider.repository,
-                      marketsRepository = MarketsRepositoryProvider.repository,
                       walkingRouteService =
                           com.android.mySwissDorm.model.map.WalkingRouteServiceProvider.service)
               val distances =

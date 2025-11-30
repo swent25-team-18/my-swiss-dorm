@@ -77,12 +77,6 @@ class PointsOfInterestRepositoryFirestoreTest : FirestoreTest() {
             "location" to
                 mapOf("name" to "Migros EPFL", "latitude" to 46.5200, "longitude" to 6.6300),
             "type" to "SUPERMARKET")
-    val marketPOI =
-        mapOf(
-            "name" to "Flon Market",
-            "location" to
-                mapOf("name" to "Flon Market", "latitude" to 46.5180, "longitude" to 6.6290),
-            "type" to "MARKET")
 
     FirebaseEmulator.firestore
         .collection("pointsOfInterest")
@@ -94,15 +88,9 @@ class PointsOfInterestRepositoryFirestoreTest : FirestoreTest() {
         .document("Migros_EPFL")
         .set(supermarketPOI)
         .await()
-    FirebaseEmulator.firestore
-        .collection("pointsOfInterest")
-        .document("Flon_Market")
-        .set(marketPOI)
-        .await()
 
     val universities = repo.getPointsOfInterestByType(POIType.UNIVERSITY)
     val supermarkets = repo.getPointsOfInterestByType(POIType.SUPERMARKET)
-    val markets = repo.getPointsOfInterestByType(POIType.MARKET)
 
     assertEquals("Should have 1 university", 1, universities.size)
     assertEquals("Should be EPFL", "EPFL", universities.first().name)
@@ -111,10 +99,6 @@ class PointsOfInterestRepositoryFirestoreTest : FirestoreTest() {
     assertEquals("Should have 1 supermarket", 1, supermarkets.size)
     assertEquals("Should be Migros EPFL", "Migros EPFL", supermarkets.first().name)
     assertEquals("Should have correct type", POIType.SUPERMARKET, supermarkets.first().type)
-
-    assertEquals("Should have 1 market", 1, markets.size)
-    assertEquals("Should be Flon Market", "Flon Market", markets.first().name)
-    assertEquals("Should have correct type", POIType.MARKET, markets.first().type)
   }
 
   @Test

@@ -38,11 +38,9 @@ class POIDistanceTest {
   fun poiDistance_differentTypes() {
     val university = POIDistance("EPFL", 5, POIType.UNIVERSITY)
     val supermarket = POIDistance("Migros EPFL", 2, POIType.SUPERMARKET)
-    val market = POIDistance("Flon Market", 3, POIType.MARKET)
 
     assertEquals("University type", POIType.UNIVERSITY, university.poiType)
     assertEquals("Supermarket type", POIType.SUPERMARKET, supermarket.poiType)
-    assertEquals("Market type", POIType.MARKET, market.poiType)
   }
 
   @Test

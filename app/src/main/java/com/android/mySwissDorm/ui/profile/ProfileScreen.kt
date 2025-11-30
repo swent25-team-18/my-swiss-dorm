@@ -255,6 +255,7 @@ private fun ProfileScreenContent(
                   modifier = Modifier.fillMaxWidth(),
                   tag = "field_residence",
                   options = state.allResidencies.map { it.name })
+            Spacer(Modifier.height(16.dp))
               Button(
                   onClick = onEditPreferencesClick,
                   modifier = Modifier.fillMaxWidth().height(52.dp),

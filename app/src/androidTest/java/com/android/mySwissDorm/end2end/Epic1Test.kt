@@ -149,7 +149,7 @@ class Epic1Test : FirestoreTest() {
           }
         }
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithText("Sign Up with Google").isDisplayed()
+          composeTestRule.onNodeWithText("Sign Up with Google").performScrollTo().isDisplayed()
         }
 
         composeTestRule.onNodeWithText("Sign Up with Google").performScrollTo().performClick()

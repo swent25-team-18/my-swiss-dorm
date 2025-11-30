@@ -55,17 +55,17 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onSignedUp = {})
     }
 
-    composeTestRule.onNodeWithText("Sign Up with Google").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Sign Up with Google").performScrollTo().assertIsDisplayed().assertIsEnabled()
     composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Custom Location").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Budget").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Preferred Size").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Preferred Room Type").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("locationField").assertIsDisplayed().assertHasClickAction()
-    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).assertIsDisplayed()
-    composeTestRule.onNodeWithText(RoomType.COLOCATION.toString()).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Sign Up with Google").assertIsDisplayed().assertIsEnabled()
+    composeTestRule.onNodeWithText("Custom Location").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Budget").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Preferred Size").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Preferred Room Type").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag("locationField").performScrollTo().assertIsDisplayed().assertHasClickAction()
+    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText(RoomType.COLOCATION.toString()).performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Sign Up with Google").performScrollTo().assertIsDisplayed().assertIsEnabled()
   }
 
   @Test

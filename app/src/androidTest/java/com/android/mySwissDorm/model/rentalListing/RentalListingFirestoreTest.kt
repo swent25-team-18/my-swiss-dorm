@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.model.rentalListing
 
+import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalStatus
@@ -19,11 +20,12 @@ class RentalListingRepositoryFirestoreAndroidTest : FirestoreTest() {
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
-  private val repo = RentalListingRepositoryProvider.repository
+  private lateinit var repo: RentalListingRepository
 
   @Before
   override fun setUp() {
     super.setUp()
+    repo = RentalListingRepositoryProvider.repository
   }
 
   @Test

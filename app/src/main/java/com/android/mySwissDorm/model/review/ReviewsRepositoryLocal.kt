@@ -1,7 +1,5 @@
 package com.android.mySwissDorm.model.review
 
-import androidx.room.withTransaction
-import com.android.mySwissDorm.model.database.AppDatabase
 import com.android.mySwissDorm.model.database.ReviewDao
 import com.android.mySwissDorm.model.database.ReviewEntity
 
@@ -12,8 +10,7 @@ import com.android.mySwissDorm.model.database.ReviewEntity
  * implements the same interface as [ReviewsRepositoryFirestore], allowing seamless switching
  * between local and remote data sources.
  */
-class ReviewsRepositoryLocal(private val reviewDao: ReviewDao, private val database: AppDatabase) :
-    ReviewsRepository {
+class ReviewsRepositoryLocal(private val reviewDao: ReviewDao) : ReviewsRepository {
 
   /**
    * Generates a new unique identifier for a review.
@@ -114,134 +111,42 @@ class ReviewsRepositoryLocal(private val reviewDao: ReviewDao, private val datab
   /**
    * Applies an upvote to the review by the given user.
    *
-   * If the user has already upvoted, the upvote is removed. If the user has downvoted, the downvote
-   * is removed and replaced with an upvote.
+   * This method is not supported in the local repository. Voting operations are only allowed when
+   * online, and the hybrid repository handles voting by fetching the updated review from the server
+   * and syncing it to local storage.
    *
-   * This operation is performed atomically within a transaction to prevent race conditions.
-   *
-   * @param reviewId The unique identifier of the review to upvote.
-   * @param userId The unique identifier of the user casting the vote.
-   * @throws NoSuchElementException if the review is not found.
-   * @throws IllegalArgumentException if the user is the owner of the review.
+   * @throws UnsupportedOperationException Always, as voting is not supported offline.
    */
   override suspend fun upvoteReview(reviewId: String, userId: String) {
-    database.withTransaction {
-      val entity =
-          reviewDao.getReview(reviewId)
-              ?: throw NoSuchElementException("ReviewsRepositoryLocal: Review $reviewId not found")
-
-      val review = entity.toReview()
-
-      if (review.ownerId == userId) {
-        throw IllegalArgumentException(
-            "ReviewsRepositoryLocal: Users cannot vote on their own reviews")
-      }
-
-      val newUpvotedBy = review.upvotedBy.toMutableSet()
-      val newDownvotedBy = review.downvotedBy.toMutableSet()
-
-      when (userId) {
-        in newUpvotedBy -> {
-          // Already upvoted: remove upvote
-          newUpvotedBy.remove(userId)
-        }
-        in newDownvotedBy -> {
-          // Downvoted: remove downvote and add upvote
-          newDownvotedBy.remove(userId)
-          newUpvotedBy.add(userId)
-        }
-        else -> {
-          // No vote: add upvote
-          newUpvotedBy.add(userId)
-        }
-      }
-
-      val updatedReview = review.copy(upvotedBy = newUpvotedBy, downvotedBy = newDownvotedBy)
-      reviewDao.updateReview(ReviewEntity.fromReview(updatedReview))
-    }
+    throw UnsupportedOperationException(
+        "ReviewsRepositoryLocal: Cannot vote on reviews offline. Please connect to the internet.")
   }
 
   /**
    * Applies a downvote to the review by the given user.
    *
-   * If the user has already downvoted, the downvote is removed. If the user has upvoted, the upvote
-   * is removed and replaced with a downvote.
+   * This method is not supported in the local repository. Voting operations are only allowed when
+   * online, and the hybrid repository handles voting by fetching the updated review from the server
+   * and syncing it to local storage.
    *
-   * This operation is performed atomically within a transaction to prevent race conditions.
-   *
-   * @param reviewId The unique identifier of the review to downvote.
-   * @param userId The unique identifier of the user casting the vote.
-   * @throws NoSuchElementException if the review is not found.
-   * @throws IllegalArgumentException if the user is the owner of the review.
+   * @throws UnsupportedOperationException Always, as voting is not supported offline.
    */
   override suspend fun downvoteReview(reviewId: String, userId: String) {
-    database.withTransaction {
-      val entity =
-          reviewDao.getReview(reviewId)
-              ?: throw NoSuchElementException("ReviewsRepositoryLocal: Review $reviewId not found")
-
-      val review = entity.toReview()
-
-      if (review.ownerId == userId) {
-        throw IllegalArgumentException(
-            "ReviewsRepositoryLocal: Users cannot vote on their own reviews")
-      }
-
-      val newUpvotedBy = review.upvotedBy.toMutableSet()
-      val newDownvotedBy = review.downvotedBy.toMutableSet()
-
-      when (userId) {
-        in newDownvotedBy -> {
-          // Already downvoted: remove downvote
-          newDownvotedBy.remove(userId)
-        }
-        in newUpvotedBy -> {
-          // Upvoted: remove upvote and add downvote
-          newUpvotedBy.remove(userId)
-          newDownvotedBy.add(userId)
-        }
-        else -> {
-          // No vote: add downvote
-          newDownvotedBy.add(userId)
-        }
-      }
-
-      val updatedReview = review.copy(upvotedBy = newUpvotedBy, downvotedBy = newDownvotedBy)
-      reviewDao.updateReview(ReviewEntity.fromReview(updatedReview))
-    }
+    throw UnsupportedOperationException(
+        "ReviewsRepositoryLocal: Cannot vote on reviews offline. Please connect to the internet.")
   }
 
   /**
    * Removes any existing vote (upvote or downvote) from the review by the given user.
    *
-   * This operation is performed atomically within a transaction to prevent race conditions.
+   * This method is not supported in the local repository. Voting operations are only allowed when
+   * online, and the hybrid repository handles voting by fetching the updated review from the server
+   * and syncing it to local storage.
    *
-   * @param reviewId The unique identifier of the review to remove the vote from.
-   * @param userId The unique identifier of the user whose vote should be removed.
-   * @throws NoSuchElementException if the review is not found.
-   * @throws IllegalArgumentException if the user is the owner of the review.
+   * @throws UnsupportedOperationException Always, as voting is not supported offline.
    */
   override suspend fun removeVote(reviewId: String, userId: String) {
-    database.withTransaction {
-      val entity =
-          reviewDao.getReview(reviewId)
-              ?: throw NoSuchElementException("ReviewsRepositoryLocal: Review $reviewId not found")
-
-      val review = entity.toReview()
-
-      if (review.ownerId == userId) {
-        throw IllegalArgumentException(
-            "ReviewsRepositoryLocal: Users cannot vote on their own reviews")
-      }
-
-      val newUpvotedBy = review.upvotedBy.toMutableSet()
-      val newDownvotedBy = review.downvotedBy.toMutableSet()
-
-      newUpvotedBy.remove(userId)
-      newDownvotedBy.remove(userId)
-
-      val updatedReview = review.copy(upvotedBy = newUpvotedBy, downvotedBy = newDownvotedBy)
-      reviewDao.updateReview(ReviewEntity.fromReview(updatedReview))
-    }
+    throw UnsupportedOperationException(
+        "ReviewsRepositoryLocal: Cannot vote on reviews offline. Please connect to the internet.")
   }
 }

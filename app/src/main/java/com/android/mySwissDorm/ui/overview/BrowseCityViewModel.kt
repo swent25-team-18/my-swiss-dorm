@@ -23,6 +23,7 @@ import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
+import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -145,7 +146,8 @@ data class BrowseCityUiState(
     val locationSuggestions: List<Location> = emptyList(),
     val showCustomLocationDialog: Boolean = false,
     val filterState: FilterState = FilterState(),
-    val isGuest: Boolean = false
+    val isGuest: Boolean = false,
+    val bookmarkedListingIds: Set<String> = emptySet()
 )
 
 /**
@@ -178,6 +180,7 @@ class BrowseCityViewModel(
   val uiState: StateFlow<BrowseCityUiState> = _uiState.asStateFlow()
 
   private val maxDistanceToDisplay = 15.0
+  private val bookmarkHandler = BookmarkHandler(profileRepository)
 
   init {
     _uiState.update { it.copy(isGuest = auth.currentUser?.isAnonymous ?: true) }
@@ -276,6 +279,19 @@ class BrowseCityViewModel(
               filtered
             }
 
+        // Load bookmarked listing IDs
+        val bookmarkedIds =
+            if (currentUid != null && auth.currentUser?.isAnonymous == false) {
+              runCatching { profileRepository.getBookmarkedListingIds(currentUid) }
+                  .onFailure { e ->
+                    Log.w("BrowseCityViewModel", "Failed to load bookmarked listings", e)
+                  }
+                  .getOrDefault(emptyList())
+                  .toSet()
+            } else {
+              emptySet()
+            }
+
         val mapped =
             sorted.map { listing ->
               var listingCardUI = listing.toCardUI(context)
@@ -295,7 +311,9 @@ class BrowseCityViewModel(
             }
 
         _uiState.update {
-          it.copy(listings = it.listings.copy(loading = false, items = mapped, error = null))
+          it.copy(
+              listings = it.listings.copy(loading = false, items = mapped, error = null),
+              bookmarkedListingIds = bookmarkedIds)
         }
       } catch (e: Exception) {
         _uiState.update {
@@ -509,6 +527,37 @@ class BrowseCityViewModel(
     _uiState.update {
       it.copy(
           filterState = it.filterState.copy(showFilterBottomSheet = false, activeFilterType = null))
+    }
+  }
+
+  /** Toggles bookmark status for a listing. */
+  fun toggleBookmark(listingId: String, context: Context) {
+    val currentUserId = bookmarkHandler.getCurrentUserId()
+    if (currentUserId == null) {
+      return
+    }
+
+    val isCurrentlyBookmarked = _uiState.value.bookmarkedListingIds.contains(listingId)
+    viewModelScope.launch {
+      try {
+        val newBookmarkStatus =
+            bookmarkHandler.toggleBookmark(
+                listingId = listingId,
+                currentUserId = currentUserId,
+                isCurrentlyBookmarked = isCurrentlyBookmarked)
+
+        _uiState.update { state ->
+          val newBookmarkedIds =
+              if (newBookmarkStatus) {
+                state.bookmarkedListingIds + listingId
+              } else {
+                state.bookmarkedListingIds - listingId
+              }
+          state.copy(bookmarkedListingIds = newBookmarkedIds)
+        }
+      } catch (e: Exception) {
+        Log.e("BrowseCityViewModel", "Error toggling bookmark", e)
+      }
     }
   }
 }

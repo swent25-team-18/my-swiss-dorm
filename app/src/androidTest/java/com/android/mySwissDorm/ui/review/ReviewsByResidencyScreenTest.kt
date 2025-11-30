@@ -5,16 +5,23 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ApplicationProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
+import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
@@ -34,9 +41,9 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
   @get:Rule val compose = createComposeRule()
 
-  private val reviewsRepo = ReviewsRepositoryProvider.repository
-  private val residenciesRepo = ResidenciesRepositoryProvider.repository
-  private val profileRepo = ProfileRepositoryProvider.repository
+  private lateinit var reviewsRepo: ReviewsRepository
+  private lateinit var residenciesRepo: ResidenciesRepository
+  private lateinit var profileRepo: ProfileRepository
 
   private lateinit var vm: ReviewsByResidencyViewModel
 
@@ -44,15 +51,21 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
   private val reviewUid1 = "vortexReview1"
   private val reviewUid2 = "vortexReview2"
+  private val reviewUid3 = "atriumReviewPhoto"
   private lateinit var review1: Review
   private lateinit var review2: Review
+  private lateinit var review3: Review
 
   private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {
+    ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
+    ResidenciesRepositoryProvider.repository =
+        ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
+    ProfileRepositoryProvider.repository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     runBlocking {
-      residenciesRepo.addResidency(vortex)
-      residenciesRepo.addResidency(atrium)
+      ResidenciesRepositoryProvider.repository.addResidency(vortex)
+      ResidenciesRepositoryProvider.repository.addResidency(atrium)
     }
   }
 
@@ -61,14 +74,25 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
     runTest {
       super.setUp()
       createRepositories()
+      // Initialize repositories after createRepositories() sets the providers
+      reviewsRepo = ReviewsRepositoryProvider.repository
+      residenciesRepo = ResidenciesRepositoryProvider.repository
+      profileRepo = ProfileRepositoryProvider.repository
 
       switchToUser(FakeUser.FakeUser1)
       userId = FirebaseEmulator.auth.currentUser!!.uid
       profileRepo.createProfile(profile1.copy(ownerId = userId))
+      PhotoRepositoryProvider.cloud_repository.uploadPhoto(photo)
     }
 
     review1 = reviewVortex1.copy(uid = reviewUid1, ownerId = userId)
     review2 = reviewVortex2.copy(uid = reviewUid2, ownerId = userId)
+    review3 =
+        reviewVortex1.copy(
+            uid = reviewUid3,
+            ownerId = userId,
+            residencyName = atrium.name,
+            imageUrls = listOf(photo.fileName))
 
     runTest {
       switchToUser(FakeUser.FakeUser1)
@@ -81,6 +105,7 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
   @After
   override fun tearDown() {
+    runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
     super.tearDown()
   }
 
@@ -521,5 +546,17 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
             C.ReviewsByResidencyTag.reviewPosterName(nonAnonymousReviewUid), useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextEquals("Posted by Bob King")
+  }
+
+  @Test
+  fun photoIsCorrectlyDisplayedOnReview() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    reviewsRepo.addReview(review3)
+    compose.setContent { ReviewsByResidencyScreen(residencyName = atrium.name) }
+    compose.waitUntil("The image is not displayed after 5s", 5_000) {
+      compose
+          .onNodeWithTag(C.ReviewsByResidencyTag.reviewPhoto(review3.uid), useUnmergedTree = true)
+          .isDisplayed()
+    }
   }
 }

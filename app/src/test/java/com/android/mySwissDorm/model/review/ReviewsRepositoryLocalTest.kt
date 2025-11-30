@@ -25,7 +25,7 @@ class ReviewsRepositoryLocalTest {
         Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-    repository = ReviewsRepositoryLocal(database.reviewDao(), database)
+    repository = ReviewsRepositoryLocal(database.reviewDao())
   }
 
   @After
@@ -105,126 +105,33 @@ class ReviewsRepositoryLocalTest {
   }
 
   @Test
-  fun upvoteReview_addsUpvote() = runTest {
-    val ownerId = "owner-1"
-    val voterId = "voter-1"
-    val review = createTestReview("review-1", ownerId = ownerId)
+  fun upvoteReview_throwsUnsupportedOperationException() = runTest {
+    val review = createTestReview("review-1")
     repository.addReview(review)
 
-    repository.upvoteReview("review-1", voterId)
-    val retrieved = repository.getReview("review-1")
-
-    assertTrue(voterId in retrieved.upvotedBy)
+    val result = runCatching { repository.upvoteReview("review-1", "voter-1") }
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
   }
 
   @Test
-  fun upvoteReview_togglesOffIfAlreadyUpvoted() = runTest {
-    val ownerId = "owner-1"
-    val voterId = "voter-1"
-    val review = createTestReview("review-1", ownerId = ownerId, upvotedBy = setOf(voterId))
+  fun downvoteReview_throwsUnsupportedOperationException() = runTest {
+    val review = createTestReview("review-1")
     repository.addReview(review)
 
-    repository.upvoteReview("review-1", voterId)
-    val retrieved = repository.getReview("review-1")
-
-    assertFalse(voterId in retrieved.upvotedBy)
+    val result = runCatching { repository.downvoteReview("review-1", "voter-1") }
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
   }
 
   @Test
-  fun upvoteReview_switchesFromDownvoteToUpvote() = runTest {
-    val ownerId = "owner-1"
-    val voterId = "voter-1"
-    val review = createTestReview("review-1", ownerId = ownerId, downvotedBy = setOf(voterId))
+  fun removeVote_throwsUnsupportedOperationException() = runTest {
+    val review = createTestReview("review-1")
     repository.addReview(review)
 
-    repository.upvoteReview("review-1", voterId)
-    val retrieved = repository.getReview("review-1")
-
-    assertTrue(voterId in retrieved.upvotedBy)
-    assertFalse(voterId in retrieved.downvotedBy)
-  }
-
-  @Test
-  fun downvoteReview_addsDownvote() = runTest {
-    val ownerId = "owner-1"
-    val voterId = "voter-1"
-    val review = createTestReview("review-1", ownerId = ownerId)
-    repository.addReview(review)
-
-    repository.downvoteReview("review-1", voterId)
-    val retrieved = repository.getReview("review-1")
-
-    assertTrue(voterId in retrieved.downvotedBy)
-  }
-
-  @Test
-  fun downvoteReview_switchesFromUpvoteToDownvote() = runTest {
-    val ownerId = "owner-1"
-    val voterId = "voter-1"
-    val review = createTestReview("review-1", ownerId = ownerId, upvotedBy = setOf(voterId))
-    repository.addReview(review)
-
-    repository.downvoteReview("review-1", voterId)
-    val retrieved = repository.getReview("review-1")
-
-    assertFalse(voterId in retrieved.upvotedBy)
-    assertTrue(voterId in retrieved.downvotedBy)
-  }
-
-  @Test
-  fun removeVote_removesVote() = runTest {
-    val ownerId = "owner-1"
-    val voterId = "voter-1"
-    val review = createTestReview("review-1", ownerId = ownerId, upvotedBy = setOf(voterId))
-    repository.addReview(review)
-
-    repository.removeVote("review-1", voterId)
-    val retrieved = repository.getReview("review-1")
-
-    assertFalse(voterId in retrieved.upvotedBy)
-    assertFalse(voterId in retrieved.downvotedBy)
-  }
-
-  @Test
-  fun upvoteReview_preventsSelfVoting() = runTest {
-    val ownerId = "owner-1"
-    val review = createTestReview("review-1", ownerId = ownerId)
-    repository.addReview(review)
-
-    assertTrue(runCatching { repository.upvoteReview("review-1", ownerId) }.isFailure)
-  }
-
-  @Test
-  fun downvoteReview_preventsSelfVoting() = runTest {
-    val ownerId = "owner-1"
-    val review = createTestReview("review-1", ownerId = ownerId)
-    repository.addReview(review)
-
-    assertTrue(runCatching { repository.downvoteReview("review-1", ownerId) }.isFailure)
-  }
-
-  @Test
-  fun removeVote_preventsSelfVoting() = runTest {
-    val ownerId = "owner-1"
-    val review = createTestReview("review-1", ownerId = ownerId)
-    repository.addReview(review)
-
-    assertTrue(runCatching { repository.removeVote("review-1", ownerId) }.isFailure)
-  }
-
-  @Test
-  fun upvoteReview_throwsWhenReviewNotFound() = runTest {
-    assertTrue(runCatching { repository.upvoteReview("non-existent", "voter-1") }.isFailure)
-  }
-
-  @Test
-  fun downvoteReview_throwsWhenReviewNotFound() = runTest {
-    assertTrue(runCatching { repository.downvoteReview("non-existent", "voter-1") }.isFailure)
-  }
-
-  @Test
-  fun removeVote_throwsWhenReviewNotFound() = runTest {
-    assertTrue(runCatching { repository.removeVote("non-existent", "voter-1") }.isFailure)
+    val result = runCatching { repository.removeVote("review-1", "voter-1") }
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
   }
 
   @Test

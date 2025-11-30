@@ -14,10 +14,16 @@ import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.*
+import com.android.mySwissDorm.model.residency.ResidenciesRepository
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.model.review.ReviewsRepository
+import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakePhotoRepository
@@ -44,10 +50,10 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   @get:Rule val compose = createComposeRule()
 
   private val context = ApplicationProvider.getApplicationContext<Context>()
-  private val profileRepo = ProfileRepositoryProvider.repository
-  private val listingsRepo = RentalListingRepositoryProvider.repository
-  private val reviewsRepo = ReviewsRepositoryProvider.repository
-  private val residenciesRepo = ResidenciesRepositoryProvider.repository
+  private lateinit var profileRepo: ProfileRepository
+  private lateinit var listingsRepo: RentalListingRepository
+  private lateinit var reviewsRepo: ReviewsRepository
+  private lateinit var residenciesRepo: ResidenciesRepository
   val fakePhoto = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
   private lateinit var vm: BrowseCityViewModel
 
@@ -60,11 +66,17 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private lateinit var listingFrib1: RentalListing
 
   override fun createRepositories() {
+    ProfileRepositoryProvider.repository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    RentalListingRepositoryProvider.repository =
+        RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+    ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
+    ResidenciesRepositoryProvider.repository =
+        ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
     PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
     runBlocking {
-      residenciesRepo.addResidency(vortex)
-      residenciesRepo.addResidency(woko)
-      residenciesRepo.addResidency(atrium)
+      ResidenciesRepositoryProvider.repository.addResidency(vortex)
+      ResidenciesRepositoryProvider.repository.addResidency(woko)
+      ResidenciesRepositoryProvider.repository.addResidency(atrium)
     }
   }
 
@@ -73,6 +85,11 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     runTest {
       super.setUp()
       createRepositories()
+      // Initialize repositories after createRepositories() sets the providers
+      profileRepo = ProfileRepositoryProvider.repository
+      listingsRepo = RentalListingRepositoryProvider.repository
+      reviewsRepo = ReviewsRepositoryProvider.repository
+      residenciesRepo = ResidenciesRepositoryProvider.repository
       // two users + profiles
       switchToUser(FakeUser.FakeUser1)
       ownerUid = FirebaseEmulator.auth.currentUser!!.uid

@@ -17,6 +17,8 @@ import androidx.credentials.CredentialManager
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.AppNavHost
 import com.android.mySwissDorm.ui.navigation.Screen
@@ -46,6 +48,8 @@ class MainActivity : ComponentActivity() {
     setContent {
       val context = LocalContext.current
       PhotoRepositoryProvider.initialize(context)
+      ReviewsRepositoryProvider.initialize(context)
+      RentalListingRepositoryProvider.initialize(context)
       Log.d("", Screen.topLevel.joinToString { context.getString(it.nameId) })
 
       MySwissDormAppTheme {

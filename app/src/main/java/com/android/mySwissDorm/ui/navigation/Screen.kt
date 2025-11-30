@@ -116,6 +116,9 @@ sealed class Screen(
   data object RequestedMessages :
       Screen(route = "requestedMessages", nameId = R.string.screen_requested_messages)
 
+  data object BookmarkedListings :
+      Screen(route = "bookmarkedListings", nameId = R.string.screen_bookmarked_listings)
+
   companion object {
     // Compute on access so objects are definitely initialized
     val topLevel: List<Screen>

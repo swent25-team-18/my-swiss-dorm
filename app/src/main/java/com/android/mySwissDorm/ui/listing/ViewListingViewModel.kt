@@ -5,6 +5,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
@@ -19,6 +23,7 @@ import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
+import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -53,7 +58,8 @@ data class ViewListingUIState(
     val isBlockedByOwner: Boolean = false,
     val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
     val images: List<Photo> = emptyList(),
-    val isGuest: Boolean = false
+    val isGuest: Boolean = false,
+    val isBookmarked: Boolean = false
 )
 
 class ViewListingViewModel(
@@ -63,12 +69,15 @@ class ViewListingViewModel(
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository
+        PhotoRepositoryProvider.cloud_repository,
+    private val requestedMessageRepository: RequestedMessageRepository =
+        RequestedMessageRepositoryProvider.repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewListingUIState())
   val uiState: StateFlow<ViewListingUIState> = _uiState.asStateFlow()
 
   val photoManager = PhotoManager(photoRepositoryCloud = photoRepositoryCloud)
+  private val bookmarkHandler = BookmarkHandler(profileRepository)
 
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {
@@ -88,7 +97,7 @@ class ViewListingViewModel(
         _uiState.value = _uiState.value.copy(locationOfListing = listing.location)
       } catch (e: Exception) {
         Log.e(
-            "MyViewModel",
+            "ViewListingViewModel",
             "Failed to load location, this is expected if listing is new or missing.",
             e)
       }
@@ -122,6 +131,20 @@ class ViewListingViewModel(
             } else {
               false
             }
+
+        // Check if the listing is bookmarked by the current user
+        val isBookmarked =
+            if (currentUserId != null && !isGuest) {
+              runCatching { profileRepository.getBookmarkedListingIds(currentUserId) }
+                  .onFailure { e ->
+                    Log.e("ViewListingViewModel", "Error checking bookmark status", e)
+                  }
+                  .getOrDefault(emptyList())
+                  .contains(listingId)
+            } else {
+              false
+            }
+
         photoManager.initialize(listing.imageUrls)
         val photos = photoManager.photoLoaded
         _uiState.update {
@@ -132,7 +155,8 @@ class ViewListingViewModel(
               isBlockedByOwner = isBlockedByOwner,
               locationOfListing = listing.location,
               images = photos,
-              isGuest = isGuest)
+              isGuest = isGuest,
+              isBookmarked = isBookmarked)
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
@@ -144,5 +168,84 @@ class ViewListingViewModel(
 
   fun setContactMessage(contactMessage: String) {
     _uiState.value = _uiState.value.copy(contactMessage = contactMessage)
+  }
+
+  /**
+   * Submits a contact message for the current listing. Creates a RequestedMessage that requires
+   * approval from the listing owner.
+   *
+   * @return true if the message was successfully submitted, false otherwise
+   */
+  fun submitContactMessage(): Boolean {
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val listing = _uiState.value.listing
+    val contactMessage = _uiState.value.contactMessage.trim()
+
+    if (currentUser == null || currentUser.isAnonymous) {
+      Log.e("ViewListingViewModel", "User not authenticated or is anonymous")
+      return false
+    }
+
+    if (contactMessage.isBlank()) {
+      Log.e("ViewListingViewModel", "Contact message is blank")
+      return false
+    }
+
+    if (listing.uid.isBlank() || listing.ownerId.isBlank()) {
+      Log.e("ViewListingViewModel", "Listing ID or owner ID is blank")
+      return false
+    }
+
+    if (currentUser.uid == listing.ownerId) {
+      Log.e("ViewListingViewModel", "User cannot send message to themselves")
+      return false
+    }
+
+    viewModelScope.launch {
+      try {
+        // Generate a unique ID for the message
+        val messageId = requestedMessageRepository.getNewUid()
+        val requestedMessage =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = currentUser.uid,
+                toUserId = listing.ownerId,
+                listingId = listing.uid,
+                listingTitle = listing.title,
+                message = contactMessage,
+                timestamp = System.currentTimeMillis(),
+                status = MessageStatus.PENDING)
+
+        requestedMessageRepository.createRequestedMessage(requestedMessage)
+        Log.d("ViewListingViewModel", "Contact message submitted successfully with ID: $messageId")
+      } catch (e: Exception) {
+        Log.e("ViewListingViewModel", "Error submitting contact message", e)
+      }
+    }
+
+    return true
+  }
+
+  fun toggleBookmark(listingId: String, context: Context) {
+    val currentUserId = bookmarkHandler.getCurrentUserId()
+    if (currentUserId == null) {
+      return
+    }
+
+    val isCurrentlyBookmarked = _uiState.value.isBookmarked
+    viewModelScope.launch {
+      try {
+        val newBookmarkStatus =
+            bookmarkHandler.toggleBookmark(
+                listingId = listingId,
+                currentUserId = currentUserId,
+                isCurrentlyBookmarked = isCurrentlyBookmarked)
+
+        _uiState.update { it.copy(isBookmarked = newBookmarkStatus) }
+      } catch (e: Exception) {
+        setErrorMsg(
+            "${context.getString(R.string.view_listing_failed_to_toggle_bookmark)} ${e.message}")
+      }
+    }
   }
 }

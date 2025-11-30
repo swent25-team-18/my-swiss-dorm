@@ -62,7 +62,8 @@ class RentalListingRepositoryFirestore(
     val document =
         rentalListingDb.collection(RENTAL_LISTINGS_COLLECTION).document(rentalPostId).get().await()
     return documentToRentalListing(document)
-        ?: throw Exception("RentalListingRepositoryFirestore: Rental listing not found")
+        ?: throw NoSuchElementException(
+            "RentalListingRepositoryFirestore: Rental listing $rentalPostId not found")
   }
 
   override suspend fun addRentalListing(rentalPost: RentalListing) {

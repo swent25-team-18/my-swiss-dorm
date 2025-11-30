@@ -60,6 +60,7 @@ object C {
     const val BLOCKED_NOTICE = "viewListingBlockedNotice"
     const val BLOCKED_BACK_BTN = "viewListingBlockedBackBtn"
     const val BACK_BTN = "viewListingBackBtn"
+    const val BOOKMARK_BTN = "viewListingBookmarkBtn"
   }
 
   object ViewReviewTags {
@@ -106,6 +107,7 @@ object C {
     const val LOADING = "browseCityLoading"
     const val ERROR = "browseCityError"
     const val EMPTY = "browseCityEmpty"
+    const val BOOKMARKED_LISTINGS_ROOT = "bookmarkedListingsRoot"
 
     const val FABMENU = "fab_main"
 
@@ -167,6 +169,8 @@ object C {
 
     fun reviewVoteButtons(reviewUid: String) = "reviewsByResidencyReviewVoteButtons_$reviewUid"
 
+    fun reviewPhoto(reviewUid: String) = "reviewByResidencyPhoto$reviewUid"
+
     const val COMPACT_VOTE_UPVOTE_BUTTON = "reviewsByResidencyCompactVoteUpvoteButton"
     const val COMPACT_VOTE_DOWNVOTE_BUTTON = "reviewsByResidencyCompactVoteDownvoteButton"
     const val COMPACT_VOTE_SCORE = "reviewsByResidencyCompactVoteScore"
@@ -201,6 +205,7 @@ object C {
     const val DESC_FIELD = "descField"
     const val GRADE_FIELD = "gradeField"
     const val SUBMIT_BUTTON = "submitButton"
+    const val PHOTOS = "addReviewPhotos"
   }
 
   object StarRatingBarTags {
@@ -225,6 +230,7 @@ object C {
     const val SAVE_BUTTON = "saveButton"
 
     const val REVIEW_TITLE = "reviewTitleField"
+    const val PHOTOS = "editReviewPhotos"
   }
 
   object CustomDatePickerDialogTags {
@@ -258,6 +264,7 @@ object C {
     const val CHIP_CITY = "adminPageChipCity"
     const val CHIP_RESIDENCY = "adminPageChipResidency"
     const val CHIP_UNIVERSITY = "adminPageChipUniversity"
+    const val CHIP_ADMIN = "adminPageChipAdmin"
     const val LOCATION_BUTTON = "adminPageLocationButton"
     const val SAVE_BUTTON = "adminPageSaveButton"
   }
@@ -288,6 +295,14 @@ object C {
     fun deleteButtonTag(uri: Uri): String = "ImageGridDeleteButton$uri"
 
     const val ICON_DELETE_CONTENT_DESC: String = "Remove image"
+  }
+
+  object FullScreenImageViewerTags {
+    fun imageTag(uri: Uri): String = "FullScreenImageViewerImage$uri"
+
+    const val DELETE_BUTTON = "FullScreenImageViewerDeleteButton"
+    const val LEFT_ARROW_BUTTON = "FullScreenImageViewerLeftArrowButton"
+    const val RIGHT_ARROW_BUTTON = "FullScreenImageViewerRightArrowButton"
   }
 
   object ChannelsScreenTestTags {

@@ -23,6 +23,8 @@ import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
@@ -47,7 +49,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class Epic1Test : FirestoreTest() {
-  val rentalUid = RentalListingRepositoryProvider.repository.getNewUid()
+  private lateinit var rentalUid: String
 
   override fun createRepositories() {
     AuthRepositoryProvider.repository = AuthRepositoryFirebase(FirebaseEmulator.auth)
@@ -55,11 +57,15 @@ class Epic1Test : FirestoreTest() {
     ProfileRepositoryProvider.repository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     RentalListingRepositoryProvider.repository =
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+    ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
     ResidenciesRepositoryProvider.repository =
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
     UniversitiesRepositoryProvider.repository =
         UniversitiesRepositoryFirestore(FirebaseEmulator.firestore)
     PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
+
+    // Initialize rentalUid after repository provider is set
+    rentalUid = RentalListingRepositoryProvider.repository.getNewUid()
 
     runTest {
       switchToUser(FakeUser.FakeUser1)

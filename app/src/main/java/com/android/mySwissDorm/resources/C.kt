@@ -247,6 +247,8 @@ object C {
     const val DESC_FIELD = "descField"
     const val CONFIRM_BUTTON = "confirmButton"
     const val CUSTOM_LOCATION_BUTTON = "customLocationButton"
+    const val ERROR_MESSAGE = "addListingErrorMessage"
+    const val RESIDENCY_DROPDOWN = "addListingResidencyDropdown"
   }
 
   object EditListingScreenTags {

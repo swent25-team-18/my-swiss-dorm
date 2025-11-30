@@ -92,7 +92,8 @@ fun AddListingScreen(
               Text(
                   stringResource(R.string.add_listing_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant)
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  modifier = Modifier.testTag(C.AddListingScreenTags.ERROR_MESSAGE))
             }
           }
         }
@@ -125,7 +126,8 @@ fun AddListingScreen(
                   onSelected = { addListingViewModel.setResidency(it) },
                   residencies = ui.residencies,
                   isListing = true,
-                  accentColor = MainColor)
+                  accentColor = MainColor,
+                  modifier = Modifier.testTag(C.AddListingScreenTags.RESIDENCY_DROPDOWN))
 
               HousingTypeDropdown(
                   selected = ui.housingType,

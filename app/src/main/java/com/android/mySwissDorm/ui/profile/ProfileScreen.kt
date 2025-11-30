@@ -278,12 +278,19 @@ private fun ProfileScreenContent(
                     }
               }
 
-              Spacer(Modifier.height(16.dp))
+              Spacer(Modifier.height(10.dp))
               Button(
                   onClick = onEditPreferencesClick,
-                  modifier = Modifier.fillMaxWidth().height(52.dp),
-                  colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
-                    Text(stringResource(R.string.listing_preferences), color = Color.White)
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .padding(top = 16.dp)
+                          .height(52.dp)
+                          .clip(RoundedCornerShape(12.dp)),
+                  colors =
+                      ButtonDefaults.buttonColors(
+                          containerColor = BackGroundColor, contentColor = MainColor),
+                  border = androidx.compose.foundation.BorderStroke(1.dp, MainColor)) {
+                    Text(stringResource(R.string.listing_preferences), color = MainColor)
                   }
               // Bottom action area: Save (edit mode) or Logout (view mode)
               if (state.isEditing) {

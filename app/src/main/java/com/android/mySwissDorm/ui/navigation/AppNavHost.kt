@@ -75,7 +75,7 @@ fun AppNavHost(
     credentialManager: CredentialManager = CredentialManager.create(context),
     navActionsExternal: NavigationActions? = null,
     navigationViewModel: NavigationViewModel = viewModel(),
-    activity: MainActivity,
+    activity: MainActivity? = null,
 ) {
   val navController = navActionsExternal?.navController() ?: rememberNavController()
 
@@ -577,7 +577,7 @@ fun AppNavHost(
                   .show()
             },
             onLanguageChange = {
-              activity.updateLanguage(it)
+              activity?.updateLanguage(it)
               navigationViewModel.determineInitialDestination(Screen.Profile.route)
             },
             onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })

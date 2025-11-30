@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.core.content.edit
 import androidx.credentials.CredentialManager
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.chat.StreamChatProvider
@@ -32,6 +33,10 @@ class MainActivity : ComponentActivity() {
   private lateinit var auth: FirebaseAuth
   private lateinit var authRepository: AuthRepository
 
+  companion object {
+    var enableStreamInitialization = true
+  }
+
   /**
    * Applies the correct app language before the activity is created. Loads the language from
    * SharedPreferences or uses by default the device language.
@@ -39,7 +44,7 @@ class MainActivity : ComponentActivity() {
    * @param newBase The base context Android provides o the activity.
    */
   override fun attachBaseContext(newBase: Context) {
-    val prefs = newBase.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    val prefs = newBase.getSharedPreferences("settings", MODE_PRIVATE)
     val savedLang = prefs.getString("app_language", null)
 
     val locale =
@@ -64,8 +69,8 @@ class MainActivity : ComponentActivity() {
    * @param lang The language code to save (e.g. "en", "fr").
    */
   fun updateLanguage(lang: String) {
-    val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
-    prefs.edit().putString("app_language", lang).apply()
+    val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+    prefs.edit { putString("app_language", lang) }
 
     recreate()
   }
@@ -81,7 +86,9 @@ class MainActivity : ComponentActivity() {
     // If savedPreference is null, we leave it null to follow system theme
     ThemePreferenceState.updatePreference(savedPreference)
 
-    StreamChatProvider.initialize(this)
+    if (enableStreamInitialization) {
+      StreamChatProvider.initialize(this)
+    }
 
     setContent {
       val context = LocalContext.current

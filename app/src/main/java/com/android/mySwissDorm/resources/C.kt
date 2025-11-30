@@ -320,4 +320,12 @@ object C {
 
     fun getResidencyTag(residencyName: String) = "sanitizedResidencyDropdown_$residencyName"
   }
+
+  object ShareLinkDialogTags {
+    const val DIALOG_TITLE = "shareLinkDialogTitle"
+    const val QR_CODE = "shareLinkDialogQrCode"
+    const val QR_ERROR = "shareLinkDialogQrError"
+    const val COPY_LINK_BUTTON = "shareLinkDialogCopyLinkButton"
+    const val CANCEL_TEXT = "shareLinkDialogCancelText"
+  }
 }

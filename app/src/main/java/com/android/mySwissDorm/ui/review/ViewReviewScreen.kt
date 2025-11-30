@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -63,6 +64,7 @@ import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.share.ShareLinkDialog
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -92,6 +94,10 @@ fun ViewReviewScreen(
   val fullNameOfPoster = uiState.fullNameOfPoster
   val errorMsg = uiState.errorMsg //
   val isOwner = uiState.isOwner
+  var showShareDialog by remember { mutableStateOf(false) }
+
+  // Generate share link
+  val shareLink = "https://my-swiss-dorm.web.app/review/$reviewUid"
 
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {
@@ -109,6 +115,15 @@ fun ViewReviewScreen(
               IconButton(onClick = { onGoBack() }) {
                 Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
               }
+            },
+            actions = {
+              IconButton(
+                  onClick = { showShareDialog = true }, modifier = Modifier.testTag("share_btn")) {
+                    Icon(
+                        imageVector = Icons.Outlined.Share,
+                        contentDescription = stringResource(R.string.share),
+                        tint = MainColor)
+                  }
             })
       },
       content = { paddingValues ->
@@ -269,6 +284,10 @@ fun ViewReviewScreen(
               }
             }
       })
+
+  if (showShareDialog) {
+    ShareLinkDialog(link = shareLink, onDismiss = { showShareDialog = false })
+  }
 }
 
 @Composable

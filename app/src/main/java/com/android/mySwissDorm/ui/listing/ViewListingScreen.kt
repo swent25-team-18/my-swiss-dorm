@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.share.ShareLinkDialog
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -67,11 +69,15 @@ fun ViewListingScreen(
   val isOwner = listingUIState.isOwner
   val isBlockedByOwner = listingUIState.isBlockedByOwner
   val isBookmarked = listingUIState.isBookmarked
+  var showShareDialog by remember { mutableStateOf(false) }
 
   // Button is enabled only if there's a message and user is not blocked
   val canApply = hasMessage && !isBlockedByOwner
   // Button color: violet if blocked, red (MainColor) if normal
   val buttonColor = if (isBlockedByOwner && hasMessage) Color(0xFF9C27B0) else MainColor
+
+  // Generate share link
+  val shareLink = "https://my-swiss-dorm.web.app/listing/$listingUid"
 
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {
@@ -96,6 +102,13 @@ fun ViewListingScreen(
                   }
             },
             actions = {
+              IconButton(
+                  onClick = { showShareDialog = true }, modifier = Modifier.testTag("share_btn")) {
+                    Icon(
+                        imageVector = Icons.Outlined.Share,
+                        contentDescription = stringResource(R.string.share),
+                        tint = MainColor)
+                  }
               if (!listingUIState.isGuest && !isOwner) {
                 IconButton(
                     onClick = { viewListingViewModel.toggleBookmark(listingUid, context) },
@@ -330,6 +343,10 @@ fun ViewListingScreen(
               }
         }
       })
+
+  if (showShareDialog) {
+    ShareLinkDialog(link = shareLink, onDismiss = { showShareDialog = false })
+  }
 }
 
 @Composable

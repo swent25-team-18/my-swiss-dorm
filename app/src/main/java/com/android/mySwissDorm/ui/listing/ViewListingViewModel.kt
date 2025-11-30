@@ -10,9 +10,12 @@ import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.market.MarketsRepositoryProvider
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.poi.DistanceService
+import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
@@ -22,6 +25,8 @@ import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.supermarket.SupermarketsRepositoryProvider
+import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.google.firebase.Timestamp
@@ -59,7 +64,8 @@ data class ViewListingUIState(
     val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
     val images: List<Photo> = emptyList(),
     val isGuest: Boolean = false,
-    val isBookmarked: Boolean = false
+    val isBookmarked: Boolean = false,
+    val poiDistances: List<POIDistance> = emptyList()
 )
 
 class ViewListingViewModel(
@@ -147,6 +153,54 @@ class ViewListingViewModel(
 
         photoManager.initialize(listing.imageUrls)
         val photos = photoManager.photoLoaded
+
+        // Get current user's university from profile (if logged in and not guest)
+        val userUniversityName =
+            if (currentUserId != null && !isGuest) {
+              try {
+                val userProfile = profileRepository.getProfile(currentUserId)
+                userProfile.userInfo.universityName
+              } catch (e: Exception) {
+                Log.d(
+                    "ViewListingViewModel",
+                    "Could not get user profile for university, showing 2 nearest universities",
+                    e)
+                null
+              }
+            } else {
+              null
+            }
+
+        // Calculate walking times to nearby points of interest from Firestore collections
+        val poiDistances =
+            try {
+              val distanceService =
+                  DistanceService(
+                      universitiesRepository = UniversitiesRepositoryProvider.repository,
+                      supermarketsRepository = SupermarketsRepositoryProvider.repository,
+                      marketsRepository = MarketsRepositoryProvider.repository,
+                      walkingRouteService =
+                          com.android.mySwissDorm.model.map.WalkingRouteServiceProvider.service)
+              val distances =
+                  distanceService.calculateDistancesToPOIs(listing.location, userUniversityName)
+              Log.d(
+                  "ViewListingViewModel",
+                  "Calculated ${distances.size} POI distances for listing ${listing.uid}")
+              Log.d(
+                  "ViewListingViewModel",
+                  "Listing location: lat=${listing.location.latitude}, lng=${listing.location.longitude}")
+              if (userUniversityName != null) {
+                Log.d("ViewListingViewModel", "User's university: $userUniversityName")
+              } else {
+                Log.d(
+                    "ViewListingViewModel", "User has no university in profile - showing 2 nearest")
+              }
+              distances
+            } catch (e: Exception) {
+              Log.e("ViewListingViewModel", "Error calculating POI distances", e)
+              emptyList()
+            }
+
         _uiState.update {
           it.copy(
               listing = listing,
@@ -156,7 +210,8 @@ class ViewListingViewModel(
               locationOfListing = listing.location,
               images = photos,
               isGuest = isGuest,
-              isBookmarked = isBookmarked)
+              isBookmarked = isBookmarked,
+              poiDistances = poiDistances)
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)

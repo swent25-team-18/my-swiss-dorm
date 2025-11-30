@@ -354,6 +354,8 @@ fun AdminPageScreen(
               }
 
               Spacer(Modifier.height(16.dp))
+
+              // POI Data Seeder Section
             }
 
         // Custom Location Dialog

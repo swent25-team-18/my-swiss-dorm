@@ -61,6 +61,8 @@
     <string name="unblock">Débloquer</string>
     <string name="unexpected_error">Erreur inattendue</string>
     <string name="university">Université</string>
+    <string name="market">Marché</string>
+    <string name="supermarket">Supermarché</string>
     <string name="unknown">Inconnu</string>
     <string name="user">Utilisateur</string>
     <string name="website">Site web</string>
@@ -91,6 +93,10 @@
     <string name="admin_page_confirm_add_admin">Confirmez que vous souhaitez ajouter %1$s en tant qu\'administrateur</string>
     <string name="admin_page_ok">OK</string>
     <string name="admin_page_website_url">%1$s URL</string>
+    <string name="admin_page_poi_data_seeder">Générateur de données POI</string>
+    <string name="admin_page_poi_data_seeder_description">Ajouter des points d\'intérêt d\'exemple (universités, supermarchés) à Firestore pour les tests. Cela ajoutera EPFL, Migros et Denner près de Lausanne.</string>
+    <string name="admin_page_seed_poi_data">Générer les données POI</string>
+    <string name="admin_page_poi_data_seeded_successfully">Données POI générées avec succès ! Ajout de EPFL, Migros et Denner.</string>
 
     <!-- AdminPageViewModel -->
     <string name="admin_page_vm_name_required">Le nom est requis.</string>
@@ -196,6 +202,19 @@
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Impossible de charger l\'annonce :</string>
     <string name="view_listing_failed_to_toggle_bookmark">Échec du basculement du signet :</string>
+    <string name="view_listing_nearby_points_of_interest">Points d\'intérêt à proximité</string>
+    <string name="view_listing_distance_away_from">à %1$.1f km de %2$s</string>
+    <string name="view_listing_distance_university">à %1$.1f km de l\'université %2$s</string>
+    <string name="view_listing_distance_supermarket">à %1$.1f km de %2$s</string>
+    <string name="view_listing_distance_from_nearest_supermarket">à %1$.1f km du supermarché le plus proche</string>
+    <string name="view_listing_distance_at_km_of_multiple">à %1$.1f km de %2$s %3$s</string>
+    <string name="view_listing_distance_at_km_of_no_type">à %1$.1f km de %2$s</string>
+    <string name="view_listing_walking_time_university">%1$d minutes de l\'université %2$s</string>
+    <string name="view_listing_walking_time_supermarket">%1$d minutes de %2$s</string>
+    <string name="view_listing_walking_time_market">%1$d minutes de %2$s</string>
+    <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes de %2$s %3$s</string>
+    <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes de %2$s</string>
+    <string name="view_listing_no_points_of_interest">Aucun point d\'intérêt à proximité disponible</string>
 
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Pas encore implémenté</string>

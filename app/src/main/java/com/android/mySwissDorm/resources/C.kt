@@ -54,6 +54,7 @@ object C {
     const val DESCRIPTION = "viewListingDescription"
     const val PHOTOS = "viewListingPhotos"
     const val LOCATION = "viewListingLocation"
+    const val POI_DISTANCES = "viewListingPOIDistances"
     const val CONTACT_FIELD = "viewListingContactField"
     const val APPLY_BTN = "viewListingApplyBtn"
     const val EDIT_BTN = "viewListingEditBtn"

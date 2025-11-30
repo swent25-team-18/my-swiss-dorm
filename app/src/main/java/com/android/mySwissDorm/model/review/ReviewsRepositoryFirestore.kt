@@ -62,12 +62,13 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
   /**
    * Fetches a single review by its [reviewId].
    *
-   * @throws Exception if the document does not exist or cannot be converted to [Review].
+   * @throws NoSuchElementException if the document does not exist or cannot be converted to
+   *   [Review].
    */
   override suspend fun getReview(reviewId: String): Review {
     val document = db.collection(REVIEWS_COLLECTION_PATH).document(reviewId).get().await()
     return documentToReview(document)
-        ?: throw Exception("ReviewsRepositoryFirestore: Review $reviewId not found")
+        ?: throw NoSuchElementException("ReviewsRepositoryFirestore: Review $reviewId not found")
   }
 
   /** Inserts a new [review] document or overwrites an existing document with the same id. */

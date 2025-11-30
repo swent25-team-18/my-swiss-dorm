@@ -278,7 +278,7 @@ private fun ProfileScreenContent(
                     }
               }
 
-            Spacer(Modifier.height(16.dp))
+              Spacer(Modifier.height(16.dp))
               Button(
                   onClick = onEditPreferencesClick,
                   modifier = Modifier.fillMaxWidth().height(52.dp),

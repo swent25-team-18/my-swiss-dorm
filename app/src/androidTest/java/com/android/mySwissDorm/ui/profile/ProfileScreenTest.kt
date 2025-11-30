@@ -23,10 +23,7 @@ import androidx.test.espresso.action.ViewActions.swipeRight
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
-import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
-import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency

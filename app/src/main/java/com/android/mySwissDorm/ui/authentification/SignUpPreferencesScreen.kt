@@ -25,6 +25,7 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.BUDGET
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -181,16 +182,14 @@ fun ListingPreferencesContent(
                       Modifier.fillMaxWidth()
                           .clickable { onLocationClick() }
                           .testTag("locationField"),
-                  label = { Text(stringResource(R.string.screen_browse_overview)) },
                   placeholder = { Text("e.g. Lausanne") },
                   colors =
                       OutlinedTextFieldDefaults.colors(
-                          disabledBorderColor = TextBoxColor,
+                          disabledBorderColor = BackGroundColor,
                           disabledTextColor = TextColor,
-                          disabledLabelColor = Gray,
-                          disabledPlaceholderColor = Gray,
-                          disabledContainerColor = TextBoxColor),
-                  shape = RoundedCornerShape(10.dp),
+                          disabledPlaceholderColor = BackGroundColor,
+                          disabledContainerColor = BackGroundColor),
+                  shape = RoundedCornerShape(5.dp),
                   trailingIcon = {
                     Icon(Icons.Default.Place, contentDescription = null, tint = MainColor)
                   })

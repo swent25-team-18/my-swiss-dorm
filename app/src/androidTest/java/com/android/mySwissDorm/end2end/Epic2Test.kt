@@ -177,8 +177,10 @@ class Epic2Test : FirestoreTest() {
     compose.waitUntil(5000) { compose.onNodeWithText(rentalListing1.title, true).isDisplayed() }
     compose.onNodeWithText(rentalListing1.title, true).performClick()
 
-    compose.waitUntil(5000) { compose.onNodeWithTag(C.ViewListingTags.POSTED_BY).isDisplayed() }
-    compose.onNodeWithTag(C.ViewListingTags.POSTED_BY).performClick()
+    compose.waitUntil(5000) {
+      compose.onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME).isDisplayed()
+    }
+    compose.onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()
 
     compose.waitUntil(5000) {
       compose.onNodeWithTag(C.ViewUserProfileTags.BLOCK_BUTTON).isDisplayed()

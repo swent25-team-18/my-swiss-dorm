@@ -310,8 +310,10 @@ class ViewReviewScreenTest : FirestoreTest() {
       vm.uiState.value.review.uid == review1.uid && vm.uiState.value.fullNameOfPoster.isNotBlank()
     }
     scrollListTo(C.ViewReviewTags.POSTED_BY)
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY).assertIsDisplayed()
+    // Check the name Text specifically since it contains "(You)" when owner
     compose
-        .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextContains("(You)", substring = true)
   }
@@ -326,19 +328,29 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.waitUntil(10_000) { testVm.uiState.value.review.uid == review2.uid }
     // Wait for fullNameOfPoster to be loaded
     compose.waitUntil(10_000) { testVm.uiState.value.fullNameOfPoster.isNotEmpty() }
-    val postedByNode = compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY)
-    postedByNode.assertIsDisplayed()
-    postedByNode.assertTextContains("Posted by", substring = true)
-    postedByNode.assertTextContains(testVm.uiState.value.fullNameOfPoster, substring = true)
-    // Verify "(You)" is NOT present by checking the text doesn't contain it
-    val text =
-        postedByNode
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY).assertIsDisplayed()
+    // Check individual text elements since Row doesn't merge text semantics
+    compose.onNodeWithText("Posted by", substring = true).assertIsDisplayed()
+    compose
+        .onNodeWithText(testVm.uiState.value.fullNameOfPoster, substring = true)
+        .assertIsDisplayed()
+    // Verify "(You)" is NOT present by checking the name Text doesn't contain it
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextContains(testVm.uiState.value.fullNameOfPoster, substring = true)
+    // Verify the name text does NOT contain "(You)"
+    val nameText =
+        compose
+            .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
             .fetchSemanticsNode()
             .config
             .getOrNull(SemanticsProperties.Text)
             ?.firstOrNull()
             ?.text ?: ""
-    assert(!text.contains("(You)")) { "Text should not contain '(You)' but was: $text" }
+    assert(!nameText.contains("(You)")) {
+      "Name text should not contain '(You)' but was: $nameText"
+    }
   }
 
   @Test
@@ -395,9 +407,9 @@ class ViewReviewScreenTest : FirestoreTest() {
     }
     waitForScreenRoot()
     compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
-    scrollListTo(C.ViewReviewTags.POSTED_BY)
-    // Click on the posted by text (which contains the name)
-    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY).performClick()
+    scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
+    // Click on the name (which is the clickable element)
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()
     assert(profileCalled) { "onViewProfile callback was not triggered." }
     assertEquals(ownerId, capturedOwnerId)
   }
@@ -635,24 +647,16 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReviewOwned.uid }
 
     scrollListTo(C.ViewReviewTags.POSTED_BY)
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY).assertIsDisplayed()
 
-    val postedByText =
-        compose
-            .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
-            .assertIsDisplayed()
-            .fetchSemanticsNode()
-            .config
-            .getOrNull(SemanticsProperties.Text)
-            ?.firstOrNull()
-            ?.text ?: ""
-
-    assertTrue(
-        "Should contain 'Posted by anonymous'",
-        postedByText.contains("Posted by anonymous", ignoreCase = true))
+    // Check individual text elements since Row doesn't merge text semantics
+    compose.onNodeWithText("Posted by", substring = true).assertIsDisplayed()
+    compose.onNodeWithText("anonymous", substring = true, ignoreCase = true).assertIsDisplayed()
     // After the fix, "(You)" should always show for the owner, even if anonymous
-    assertTrue(
-        "Should contain '(You)' for owner's anonymous review",
-        postedByText.contains("(You)", ignoreCase = true))
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextContains("(You)", substring = true)
   }
 
   @Test
@@ -662,21 +666,15 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.waitUntil(5_000) { vm.uiState.value.review.uid == anonymousReviewOwned.uid }
 
     scrollListTo(C.ViewReviewTags.POSTED_BY)
-    val postedByText =
-        compose
-            .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
-            .assertIsDisplayed()
-            .fetchSemanticsNode()
-            .config
-            .getOrNull(SemanticsProperties.Text)
-            ?.firstOrNull()
-            ?.text ?: ""
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY).assertIsDisplayed()
 
-    assertTrue("Should contain 'anonymous'", postedByText.contains("anonymous", ignoreCase = true))
+    // Check individual text elements since Row doesn't merge text semantics
+    compose.onNodeWithText("anonymous", substring = true, ignoreCase = true).assertIsDisplayed()
     // After the fix, "(You)" should always show for the owner, even if anonymous
-    assertTrue(
-        "Should contain '(You)' when owner views their anonymous review",
-        postedByText.contains("(You)", ignoreCase = true))
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextContains("(You)", substring = true)
   }
 
   @Test
@@ -686,22 +684,25 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.waitUntil(5_000) { vm.uiState.value.review.uid == nonAnonymousReviewOwned.uid }
 
     scrollListTo(C.ViewReviewTags.POSTED_BY)
-    val postedByText =
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY).assertIsDisplayed()
+
+    // Check individual text elements since Row doesn't merge text semantics
+    // Verify it does NOT contain "anonymous"
+    compose.onNodeWithText("anonymous", substring = true, ignoreCase = true).assertDoesNotExist()
+    // Verify it contains the actual user name
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+    val nameText =
         compose
-            .onNodeWithTag(C.ViewReviewTags.POSTED_BY)
-            .assertIsDisplayed()
+            .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
             .fetchSemanticsNode()
             .config
             .getOrNull(SemanticsProperties.Text)
             ?.firstOrNull()
             ?.text ?: ""
-
-    assertTrue(
-        "Should contain actual name, not 'anonymous'",
-        !postedByText.contains("anonymous", ignoreCase = true))
     assertTrue(
         "Should contain user name",
-        postedByText.contains("Bob", ignoreCase = true) ||
-            postedByText.contains("King", ignoreCase = true))
+        nameText.contains("Bob", ignoreCase = true) || nameText.contains("King", ignoreCase = true))
   }
 }

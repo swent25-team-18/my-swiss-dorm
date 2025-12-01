@@ -253,8 +253,10 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       s.listing.uid == ownerListing.uid && s.isOwner && s.fullNameOfPoster.isNotBlank()
     }
 
+    compose.onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true).assertIsDisplayed()
+    // Check the name Text specifically since it contains "(You)" when owner
     compose
-        .onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true)
+        .onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextContains("(You)", substring = true)
   }
@@ -278,10 +280,10 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       s.listing.uid == ownerListing.uid && s.isOwner && s.fullNameOfPoster.isNotBlank()
     }
 
-    // Scroll to and click the "Posted by ..." text
-    scrollListTo(C.ViewListingTags.POSTED_BY)
+    // Scroll to and click the name (which is the clickable element)
+    scrollListTo(C.ViewListingTags.POSTED_BY_NAME)
     compose
-        .onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true)
+        .onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME, useUnmergedTree = true)
         .assertIsDisplayed()
         .performClick()
 
@@ -307,10 +309,10 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       s.listing.uid == otherListing.uid && !s.isOwner && s.fullNameOfPoster.isNotBlank()
     }
 
-    // Scroll to and click the "Posted by ..." text
-    scrollListTo(C.ViewListingTags.POSTED_BY)
+    // Scroll to and click the name (which is the clickable element)
+    scrollListTo(C.ViewListingTags.POSTED_BY_NAME)
     compose
-        .onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true)
+        .onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME, useUnmergedTree = true)
         .assertIsDisplayed()
         .performClick()
 
@@ -426,12 +428,16 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
         rentalListing3.copy(
             ownerId = FirebaseEmulator.auth.currentUser!!.uid,
             imageUrls = listOf(fakePhoto.fileName))
-    RentalListingRepositoryProvider.repository.addRentalListing(listing)
+    listingsRepo.addRentalListing(listing)
 
     val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
     val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
 
-    val vm = ViewListingViewModel(photoRepositoryCloud = fakeCloudRepo)
+    val vm =
+        ViewListingViewModel(
+            rentalListingRepository = listingsRepo,
+            profileRepository = profileRepo,
+            photoRepositoryCloud = fakeCloudRepo)
 
     vm.loadListing(listing.uid, context)
     compose.waitForIdle()

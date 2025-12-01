@@ -65,7 +65,9 @@ import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.utils.SignInPopUp
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun AppNavHost(
@@ -620,11 +622,14 @@ fun AppNavHost(
                       if (!StreamChatProvider.isInitialized()) {
                         Log.w(
                             "AppNavHost", "Stream Chat not initialized, skipping channel creation")
-                        Toast.makeText(
-                                context,
-                                "Message approved. You can start a chat manually from the inbox.",
-                                Toast.LENGTH_SHORT)
-                            .show()
+                        // Ensure Toast is shown on main thread
+                        withContext(Dispatchers.Main) {
+                          Toast.makeText(
+                                  context,
+                                  "Message approved. You can start a chat manually from the inbox.",
+                                  Toast.LENGTH_SHORT)
+                              .show()
+                        }
                         return@launch
                       }
 
@@ -660,34 +665,42 @@ fun AppNavHost(
                           extraData = mapOf("name" to "Chat"))
 
                       // Show success message and stay on requested messages screen
-                      Toast.makeText(
-                              context,
-                              "Message approved and chat channel created.",
-                              Toast.LENGTH_SHORT)
-                          .show()
+                      withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                                context,
+                                "Message approved and chat channel created.",
+                                Toast.LENGTH_SHORT)
+                            .show()
+                      }
                     } catch (channelError: Exception) {
                       // Channel creation failed, but message is already approved
                       Log.e("AppNavHost", "Error creating channel", channelError)
-                      Toast.makeText(
-                              context,
-                              "Message approved. You can start a chat manually from the inbox.",
-                              Toast.LENGTH_SHORT)
-                          .show()
+                      withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                                context,
+                                "Message approved. You can start a chat manually from the inbox.",
+                                Toast.LENGTH_SHORT)
+                            .show()
+                      }
                     }
                   } else {
                     // User is anonymous or not logged in
-                    Toast.makeText(
-                            context,
-                            "Message approved. Sign in to start chatting.",
-                            Toast.LENGTH_SHORT)
-                        .show()
+                    withContext(Dispatchers.Main) {
+                      Toast.makeText(
+                              context,
+                              "Message approved. Sign in to start chatting.",
+                              Toast.LENGTH_SHORT)
+                          .show()
+                    }
                   }
                 }
               } catch (e: Exception) {
                 Log.e("AppNavHost", "Error approving requested message", e)
-                Toast.makeText(
-                        context, "Failed to approve message: ${e.message}", Toast.LENGTH_SHORT)
-                    .show()
+                withContext(Dispatchers.Main) {
+                  Toast.makeText(
+                          context, "Failed to approve message: ${e.message}", Toast.LENGTH_SHORT)
+                      .show()
+                }
               }
             }
           },
@@ -711,9 +724,11 @@ fun AppNavHost(
                 onSuccess()
               } catch (e: Exception) {
                 Log.e("AppNavHost", "Error rejecting requested message", e)
-                Toast.makeText(
-                        context, "Failed to reject message: ${e.message}", Toast.LENGTH_SHORT)
-                    .show()
+                withContext(Dispatchers.Main) {
+                  Toast.makeText(
+                          context, "Failed to reject message: ${e.message}", Toast.LENGTH_SHORT)
+                      .show()
+                }
               }
             }
           })

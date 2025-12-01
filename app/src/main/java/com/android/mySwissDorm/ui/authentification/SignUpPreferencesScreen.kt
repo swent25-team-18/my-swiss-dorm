@@ -22,6 +22,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.resources.C.FilterTestTags.BUDGET
+import com.android.mySwissDorm.resources.C.FilterTestTags.LOCATION_PREFERENCE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
@@ -179,7 +180,7 @@ fun ListingPreferencesContent(
                   modifier =
                       Modifier.fillMaxWidth()
                           .clickable { onLocationClick() }
-                          .testTag("locationField"),
+                          .testTag(LOCATION_PREFERENCE),
                   placeholder = { Text("e.g. Lausanne") },
                   colors =
                       OutlinedTextFieldDefaults.colors(

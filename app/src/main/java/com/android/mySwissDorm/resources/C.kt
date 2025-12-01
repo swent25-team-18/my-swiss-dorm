@@ -334,5 +334,6 @@ object C {
     const val PREFERRED_SIZE = "preferred_size"
     const val PREFERRED_ROOM_TYPE = "preferred_room_type"
     const val SIGN_UP_WITH_PREFERENCES = "sign_up_with_preferences"
+    const val LOCATION_PREFERENCE = "locationField"
   }
 }

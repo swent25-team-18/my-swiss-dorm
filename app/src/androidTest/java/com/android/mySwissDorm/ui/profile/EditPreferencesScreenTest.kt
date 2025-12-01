@@ -14,6 +14,7 @@ import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.FilterTestTags.LOCATION_PREFERENCE
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -121,7 +122,7 @@ class EditPreferencesScreenTest : FirestoreTest() {
   @Test
   fun customLocationSearch_updatesQuery() {
     composeTestRule.setContent { EditPreferencesScreen(viewModel = viewModel, onBack = {}) }
-    composeTestRule.onNodeWithText("Location").performScrollTo().performClick()
+    composeTestRule.onNodeWithTag(LOCATION_PREFERENCE).performScrollTo().performClick()
     composeTestRule.onNodeWithTag(C.CustomLocationDialogTags.DIALOG_TITLE).assertIsDisplayed()
     val query = "Lausanne"
     composeTestRule.onNodeWithTag(C.CustomLocationDialogTags.LOCATION_TEXT_FIELD).performClick()

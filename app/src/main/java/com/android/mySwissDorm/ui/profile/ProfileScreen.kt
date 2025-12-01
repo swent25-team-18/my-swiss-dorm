@@ -39,9 +39,7 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
-import com.android.mySwissDorm.ui.theme.Transparent
 
 /**
  * High-level Profile screen entry point.
@@ -364,13 +362,13 @@ fun EditableTextField(
       shape = RoundedCornerShape(12.dp),
       colors =
           TextFieldDefaults.colors(
-              unfocusedIndicatorColor = Transparent,
+              unfocusedIndicatorColor = Gray,
               focusedIndicatorColor = MainColor,
               focusedLabelColor = MainColor,
-              cursorColor = MainColor,
-              focusedContainerColor = TextBoxColor,
-              unfocusedContainerColor = TextBoxColor,
-              disabledContainerColor = TextBoxColor),
+              cursorColor = TextColor,
+              focusedContainerColor = BackGroundColor,
+              unfocusedContainerColor = BackGroundColor,
+              disabledContainerColor = BackGroundColor),
       textStyle = TextStyle(color = TextColor, fontSize = 16.sp, textAlign = TextAlign.Start),
       keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done))
 }
@@ -417,13 +415,13 @@ private fun DropdownField(
             modifier = Modifier.menuAnchor().fillMaxWidth().height(64.dp).testTag(tag),
             colors =
                 TextFieldDefaults.colors(
-                    unfocusedIndicatorColor = Transparent,
+                    unfocusedIndicatorColor = Gray,
                     focusedIndicatorColor = MainColor,
                     focusedLabelColor = MainColor,
-                    cursorColor = MainColor,
-                    focusedContainerColor = TextBoxColor,
-                    unfocusedContainerColor = TextBoxColor,
-                    disabledContainerColor = TextBoxColor),
+                    cursorColor = TextColor,
+                    focusedContainerColor = BackGroundColor,
+                    unfocusedContainerColor = BackGroundColor,
+                    disabledContainerColor = BackGroundColor),
             textStyle = TextStyle(color = TextColor, fontSize = 16.sp, textAlign = TextAlign.Start))
 
         // Dropdown menu (rounded corners to match the field)

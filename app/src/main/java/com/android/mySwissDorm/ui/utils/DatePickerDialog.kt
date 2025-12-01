@@ -302,7 +302,7 @@ fun CustomDatePickerDialog(
                                 unfocusedTextColor = TextColor,
                                 focusedLabelColor = TextColor,
                                 unfocusedLabelColor = TextColor,
-                                cursorColor = MainColor)))
+                                cursorColor = TextColor)))
           }
         }
   }

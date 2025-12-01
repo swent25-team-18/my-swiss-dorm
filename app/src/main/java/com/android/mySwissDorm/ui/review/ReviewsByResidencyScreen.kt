@@ -85,7 +85,8 @@ fun ReviewsByResidencyScreen(
                   modifier = Modifier.testTag(C.ReviewsByResidencyTag.BACK_BUTTON)) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back")
+                        contentDescription = "Back",
+                        tint = MainColor)
                   }
             })
       }) { pd ->

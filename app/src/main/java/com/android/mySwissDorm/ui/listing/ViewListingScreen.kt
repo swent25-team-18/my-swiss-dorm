@@ -2,7 +2,7 @@ package com.android.mySwissDorm.ui.listing
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
@@ -17,16 +17,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -168,49 +163,35 @@ fun ViewListingScreen(
                     modifier = Modifier.testTag(C.ViewListingTags.TITLE),
                     color = TextColor)
 
-                // tag we'll look for
-                val tagProfile = "PROFILE_ID"
+                val context = LocalContext.current
+                val baseTextStyle =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-                // build the AnnotatedString tagging the name
-                val annotatedPostedByString = buildAnnotatedString {
-                  append("${stringResource(R.string.view_listing_posted_by)} ")
-
-                  // pushStringAnnotation to "tag" this part of the string
-                  pushStringAnnotation(tag = tagProfile, annotation = listing.ownerId)
-                  // apply the style to the name
-                  withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
-                    append(fullNameOfPoster)
-                  }
-                  // stop tagging
-                  pop()
-
-                  val context = LocalContext.current
-                  append(" ${formatRelative(listing.postedAt, context = context)}")
-                }
-
-                // remember the TextLayoutResult
-                var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-
-                Text(
-                    text = annotatedPostedByString,
-                    style = MaterialTheme.typography.bodyMedium.copy(color = Gray),
-                    onTextLayout = { textLayoutResult = it },
-                    modifier =
-                        Modifier.testTag(C.ViewListingTags.POSTED_BY).pointerInput(Unit) {
-                          detectTapGestures { pos ->
-                            val l = textLayoutResult ?: return@detectTapGestures
-                            val offset = l.getOffsetForPosition(pos)
-
-                            // find any annotations at that exact offset
-                            annotatedPostedByString
-                                .getStringAnnotations(start = offset, end = offset)
-                                .firstOrNull { it.tag == tagProfile } // Check if it's our tag
-                                ?.let { annotation ->
-                                  // trigger the callback with the stored ownerId
-                                  onViewProfile(annotation.item)
-                                }
-                          }
-                        })
+                Row(
+                    modifier = Modifier.testTag(C.ViewListingTags.POSTED_BY),
+                    verticalAlignment = Alignment.CenterVertically) {
+                      Text(
+                          text = "${stringResource(R.string.view_listing_posted_by)} ",
+                          style = baseTextStyle,
+                          color = Gray)
+                      Text(
+                          text =
+                              fullNameOfPoster +
+                                  if (isOwner)
+                                      " ${stringResource(R.string.view_listing_owner_is_you)}"
+                                  else "",
+                          style =
+                              baseTextStyle.copy(fontWeight = FontWeight.Bold, color = MainColor),
+                          modifier =
+                              Modifier.testTag(C.ViewListingTags.POSTED_BY_NAME).clickable {
+                                onViewProfile(listing.ownerId)
+                              })
+                      Text(
+                          text = " ${formatRelative(listing.postedAt, context = context)}",
+                          style = baseTextStyle,
+                          color = Gray)
+                    }
 
                 // Bullet section
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {

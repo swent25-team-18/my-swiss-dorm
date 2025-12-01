@@ -102,7 +102,7 @@ class EditPreferencesScreenTest : FirestoreTest() {
     val roomTypeToSelect = RoomType.STUDIO
     composeTestRule.onNodeWithText(roomTypeToSelect.toString()).performScrollTo().performClick()
     composeTestRule.onNodeWithTag(C.FilterTestTags.SLIDER_PRICE).performTouchInput { swipeRight() }
-    composeTestRule.onNodeWithText("Save Preferences").performScrollTo().performClick()
+    composeTestRule.onNodeWithText("Save Preferences").performClick()
     composeTestRule.waitUntil(timeoutMillis = 5000) { backPressed }
 
     assertTrue("onBack callback should be triggered after save", backPressed)

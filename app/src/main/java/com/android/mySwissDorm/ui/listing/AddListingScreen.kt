@@ -67,25 +67,33 @@ fun AddListingScreen(
         Surface(shadowElevation = 8.dp) {
           Column(Modifier.padding(16.dp)) {
             val ui = listingUIState
+            val isButtonEnabled =
+                ui.isFormValid &&
+                    !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) &&
+                    !ui.isSubmitting
             Button(
                 onClick = { addListingViewModel.submitForm(onConfirm, context) },
-                enabled =
-                    ui.isFormValid &&
-                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true),
+                enabled = isButtonEnabled,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth()
                         .height(52.dp)
                         .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
-                  Text(stringResource(R.string.confirm_listing), color = Color.White)
+                  if (ui.isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                  } else {
+                    Text(stringResource(R.string.confirm_listing), color = Color.White)
+                  }
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
                   stringResource(R.string.add_listing_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant)
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  modifier = Modifier.testTag(C.AddListingScreenTags.ERROR_MESSAGE))
             }
           }
         }
@@ -118,7 +126,8 @@ fun AddListingScreen(
                   onSelected = { addListingViewModel.setResidency(it) },
                   residencies = ui.residencies,
                   isListing = true,
-                  accentColor = MainColor)
+                  accentColor = MainColor,
+                  modifier = Modifier.testTag(C.AddListingScreenTags.RESIDENCY_DROPDOWN))
 
               HousingTypeDropdown(
                   selected = ui.housingType,

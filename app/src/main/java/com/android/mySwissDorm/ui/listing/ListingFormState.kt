@@ -25,8 +25,8 @@ data class ListingFormState(
     val customLocation: Location? = null,
     val locationSuggestions: List<Location> = emptyList(),
     val showCustomLocationDialog: Boolean = false,
-    /** Add only: residency must be chosen; Edit: we can treat existing as valid even if blank. */
     val requireResidencyName: Boolean = false,
+    val isSubmitting: Boolean = false,
 ) {
   val isFormValid: Boolean
     get() {
@@ -36,7 +36,6 @@ data class ListingFormState(
       val descOk = InputSanitizers.validateFinal<String>(FieldType.Description, description).isValid
       val residencyOk = !requireResidencyName || residencyName.isNotEmpty()
 
-      // 🔒 New: for Private Accommodation, a custom location must be chosen.
       val locationOk =
           if (residencyName == "Private Accommodation") {
             customLocation != null

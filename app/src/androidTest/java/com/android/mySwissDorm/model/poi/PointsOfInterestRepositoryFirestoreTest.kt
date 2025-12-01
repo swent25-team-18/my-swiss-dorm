@@ -148,4 +148,76 @@ class PointsOfInterestRepositoryFirestoreTest : FirestoreTest() {
     // Should return empty (invalid type causes documentToPointOfInterest to return null)
     assertTrue("Should return empty for invalid type", result.isEmpty())
   }
+
+  @Test
+  fun getAllPointsOfInterest_documentMissingName_skipsIt() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Add document without name field
+    FirebaseEmulator.firestore
+        .collection("pointsOfInterest")
+        .document("no_name")
+        .set(
+            mapOf(
+                "location" to mapOf("name" to "Test", "latitude" to 46.5200, "longitude" to 6.6300),
+                "type" to "UNIVERSITY"))
+        .await()
+
+    val result = repo.getAllPointsOfInterest()
+    assertTrue("Should skip document without name", result.isEmpty())
+  }
+
+  @Test
+  fun getAllPointsOfInterest_documentMissingLocation_skipsIt() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Add document without location field
+    FirebaseEmulator.firestore
+        .collection("pointsOfInterest")
+        .document("no_location")
+        .set(mapOf("name" to "Test POI", "type" to "UNIVERSITY"))
+        .await()
+
+    val result = repo.getAllPointsOfInterest()
+    assertTrue("Should skip document without location", result.isEmpty())
+  }
+
+  @Test
+  fun getAllPointsOfInterest_documentMissingType_skipsIt() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Add document without type field
+    FirebaseEmulator.firestore
+        .collection("pointsOfInterest")
+        .document("no_type")
+        .set(
+            mapOf(
+                "name" to "Test POI",
+                "location" to
+                    mapOf("name" to "Test", "latitude" to 46.5200, "longitude" to 6.6300)))
+        .await()
+
+    val result = repo.getAllPointsOfInterest()
+    assertTrue("Should skip document without type", result.isEmpty())
+  }
+
+  @Test
+  fun documentToPointOfInterest_invalidLocationData_returnsNull() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Add document with invalid location data (wrong types)
+    FirebaseEmulator.firestore
+        .collection("pointsOfInterest")
+        .document("invalid_location")
+        .set(
+            mapOf(
+                "name" to "Test POI",
+                "location" to
+                    mapOf("name" to "Test", "latitude" to "not_a_number", "longitude" to 6.6300),
+                "type" to "UNIVERSITY"))
+        .await()
+
+    val result = repo.getAllPointsOfInterest()
+    assertTrue("Should skip document with invalid location data", result.isEmpty())
+  }
 }

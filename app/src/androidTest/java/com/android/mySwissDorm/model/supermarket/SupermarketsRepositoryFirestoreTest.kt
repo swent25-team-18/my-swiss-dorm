@@ -32,114 +32,84 @@ class SupermarketsRepositoryFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun addSupermarket_andGetAllSupermarkets_works() = runTest {
+  fun canAddAndGetSupermarketFromRepository() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    val supermarket =
+    val supermarketToAdd =
         Supermarket(
             name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
+            location = Location("Migros EPFL", 46.5200, 6.6300),
             city = "Lausanne")
-
-    repo.addSupermarket(supermarket)
-    val allSupermarkets = repo.getAllSupermarkets()
-
-    assertEquals("Should have 1 supermarket", 1, allSupermarkets.size)
-    assertEquals("Should be Migros EPFL", "Migros EPFL", allSupermarkets.first().name)
-    assertEquals(
-        "Should have correct location", supermarket.location, allSupermarkets.first().location)
-    assertEquals("Should have correct city", "Lausanne", allSupermarkets.first().city)
+    repo.addSupermarket(supermarketToAdd)
+    val fetchedSupermarkets = repo.getAllSupermarkets()
+    assertTrue(
+        "Should contain the added supermarket", fetchedSupermarkets.contains(supermarketToAdd))
   }
 
   @Test
-  fun addMultipleSupermarkets_returnsAll() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val supermarkets =
-        listOf(
-            Supermarket(
-                name = "Migros EPFL",
-                location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
-                city = "Lausanne"),
-            Supermarket(
-                name = "Denner EPFL",
-                location = Location(name = "Denner EPFL", latitude = 46.5205, longitude = 6.6305),
-                city = "Lausanne"),
-            Supermarket(
-                name = "Migros Renens",
-                location = Location(name = "Migros Renens", latitude = 46.5400, longitude = 6.5900),
-                city = "Lausanne"))
-
-    supermarkets.forEach { repo.addSupermarket(it) }
-    val allSupermarkets = repo.getAllSupermarkets()
-
-    assertEquals("Should have all 3 supermarkets", 3, allSupermarkets.size)
-    assertTrue("Should contain Migros EPFL", allSupermarkets.any { it.name == "Migros EPFL" })
-    assertTrue("Should contain Denner EPFL", allSupermarkets.any { it.name == "Denner EPFL" })
-    assertTrue("Should contain Migros Renens", allSupermarkets.any { it.name == "Migros Renens" })
-  }
-
-  @Test
-  fun addSupermarket_withSpacesInName_createsCorrectDocumentId() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val supermarket =
-        Supermarket(
-            name = "Migros Lausanne Centre",
-            location =
-                Location(name = "Migros Lausanne Centre", latitude = 46.5190, longitude = 6.6330),
-            city = "Lausanne")
-
-    repo.addSupermarket(supermarket)
-    val allSupermarkets = repo.getAllSupermarkets()
-
-    assertEquals("Should have 1 supermarket", 1, allSupermarkets.size)
-    assertEquals("Name should be preserved", "Migros Lausanne Centre", allSupermarkets.first().name)
-  }
-
-  @Test
-  fun addSupermarket_duplicateName_overwrites() = runTest {
+  fun getAllSupermarkets_returnsAllSupermarkets() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val supermarket1 =
         Supermarket(
             name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
+            location = Location("Migros EPFL", 46.5200, 6.6300),
             city = "Lausanne")
     val supermarket2 =
         Supermarket(
-            name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5201, longitude = 6.6301),
-            city = "Lausanne")
-
-    repo.addSupermarket(supermarket1)
-    repo.addSupermarket(supermarket2) // Same name, should overwrite
-
-    val allSupermarkets = repo.getAllSupermarkets()
-    assertEquals("Should have only 1 supermarket (duplicate overwritten)", 1, allSupermarkets.size)
-    // The second one should be the one stored (last write wins)
-    assertEquals(
-        "Should have updated location", 46.5201, allSupermarkets.first().location.latitude, 0.0001)
+            name = "Denner Ecublens",
+            location = Location("Denner Ecublens", 46.5245, 6.6245),
+            city = "Ecublens")
+    val allSupermarkets = listOf(supermarket1, supermarket2)
+    allSupermarkets.forEach { repo.addSupermarket(it) }
+    assertEquals(allSupermarkets.toSet(), repo.getAllSupermarkets().toSet())
   }
 
   @Test
   fun getAllSupermarkets_invalidDocument_skipsIt() = runTest {
     switchToUser(FakeUser.FakeUser1)
+
     // Add a valid supermarket
     val validSupermarket =
         Supermarket(
-            name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
-            city = "Lausanne")
+            name = "Migros Valid",
+            location = Location("Migros Valid", 46.0, 6.0),
+            city = "ValidCity")
     repo.addSupermarket(validSupermarket)
 
-    // Manually add an invalid document (missing required fields)
+    // Add an invalid document directly to Firestore (missing 'location' field)
     FirebaseEmulator.firestore
-        .collection("supermarkets")
+        .collection(SUPERMARKETS_COLLECTION_PATH)
         .document("invalid_supermarket")
-        .set(mapOf("name" to "Invalid")) // Missing location and city
+        .set(mapOf("name" to "Invalid", "city" to "InvalidCity"))
         .await()
 
-    val allSupermarkets = repo.getAllSupermarkets()
+    val fetchedSupermarkets = repo.getAllSupermarkets()
 
     // Should only return the valid one
-    assertEquals("Should only return valid supermarket", 1, allSupermarkets.size)
-    assertEquals("Should be the valid one", "Migros EPFL", allSupermarkets.first().name)
+    assertEquals("Should only return valid supermarket", 1, fetchedSupermarkets.size)
+    assertEquals("Should be the valid one", "Migros Valid", fetchedSupermarkets.first().name)
+  }
+
+  @Test
+  fun addSupermarket_duplicateName_overwritesExisting() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val supermarket1 =
+        Supermarket(
+            name = "Migros Test", location = Location("Migros Test", 46.0, 6.0), city = "Lausanne")
+    val supermarket2 =
+        Supermarket(
+            name = "Migros Test", // Same name
+            location = Location("Migros Test Updated", 46.1, 6.1),
+            city = "Geneva") // Updated data
+
+    repo.addSupermarket(supermarket1)
+    repo.addSupermarket(supermarket2) // This should overwrite
+
+    val fetchedSupermarkets = repo.getAllSupermarkets()
+    assertEquals("Should only have one supermarket with the same name", 1, fetchedSupermarkets.size)
+    assertEquals("Should have the updated data", "Geneva", fetchedSupermarkets.first().city)
+    assertEquals(
+        "Should have the updated location name",
+        "Migros Test Updated",
+        fetchedSupermarkets.first().location.name)
   }
 }

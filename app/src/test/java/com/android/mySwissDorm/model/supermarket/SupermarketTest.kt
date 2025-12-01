@@ -1,80 +1,55 @@
 package com.android.mySwissDorm.model.supermarket
 
 import com.android.mySwissDorm.model.map.Location
-import kotlin.test.DefaultAsserter.assertTrue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Tests for Supermarket data class. */
 class SupermarketTest {
 
-  @Test
-  fun supermarket_equality() {
-    val supermarket1 =
-        Supermarket(
-            name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
-            city = "Lausanne")
-    val supermarket2 =
-        Supermarket(
-            name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
-            city = "Lausanne")
-    val supermarket3 =
-        Supermarket(
-            name = "Denner EPFL",
-            location = Location(name = "Denner EPFL", latitude = 46.5205, longitude = 6.6305),
-            city = "Lausanne")
+  private val location1 = Location("Loc1", 1.0, 1.0)
+  private val location2 = Location("Loc2", 2.0, 2.0)
 
-    assertEquals("Equal supermarkets should be equal", supermarket1, supermarket2)
-    assertNotEquals("Different supermarkets should not be equal", supermarket1, supermarket3)
+  @Test
+  fun `Supermarket equality works correctly`() {
+    val s1 = Supermarket("Migros", location1, "Lausanne")
+    val s2 = Supermarket("Migros", location1, "Lausanne")
+    val s3 = Supermarket("Denner", location1, "Lausanne")
+    val s4 = Supermarket("Migros", location2, "Lausanne")
+    val s5 = Supermarket("Migros", location1, "Geneva")
+
+    assertEquals(s1, s2)
+    assertNotEquals(s1, s3)
+    assertNotEquals(s1, s4)
+    assertNotEquals(s1, s5)
   }
 
   @Test
-  fun supermarket_hashCode() {
-    val supermarket1 =
-        Supermarket(
-            name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
-            city = "Lausanne")
-    val supermarket2 =
-        Supermarket(
-            name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
-            city = "Lausanne")
+  fun `Supermarket hashCode works correctly`() {
+    val s1 = Supermarket("Migros", location1, "Lausanne")
+    val s2 = Supermarket("Migros", location1, "Lausanne")
+    val s3 = Supermarket("Denner", location1, "Lausanne")
 
-    assertEquals(
-        "Equal supermarkets should have same hashCode",
-        supermarket1.hashCode(),
-        supermarket2.hashCode())
+    assertEquals(s1.hashCode(), s2.hashCode())
+    assertNotEquals(s1.hashCode(), s3.hashCode())
   }
 
   @Test
-  fun supermarket_toString() {
-    val supermarket =
-        Supermarket(
-            name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
-            city = "Lausanne")
-    val toString = supermarket.toString()
-
-    assertTrue("toString should contain name", toString.contains("Migros EPFL"))
-    assertTrue("toString should contain city", toString.contains("Lausanne"))
+  fun `Supermarket toString works correctly`() {
+    val s = Supermarket("Migros EPFL", location1, "Lausanne")
+    assertTrue(s.toString().contains("Migros EPFL"))
+    assertTrue(s.toString().contains("Lausanne"))
   }
 
   @Test
-  fun supermarket_copy() {
-    val original =
-        Supermarket(
-            name = "Migros EPFL",
-            location = Location(name = "Migros EPFL", latitude = 46.5200, longitude = 6.6300),
-            city = "Lausanne")
-    val copied = original.copy(name = "Migros Renens")
+  fun `Supermarket copy functionality works`() {
+    val original = Supermarket("Migros", location1, "Lausanne")
+    val copied = original.copy(name = "Coop", city = "Geneva")
 
-    assertEquals("Location should be same", original.location, copied.location)
-    assertEquals("City should be same", original.city, copied.city)
-    assertNotEquals("Name should be different", original.name, copied.name)
-    assertEquals("New name should be Migros Renens", "Migros Renens", copied.name)
+    assertEquals("Coop", copied.name)
+    assertEquals(location1, copied.location)
+    assertEquals("Geneva", copied.city)
+    assertNotEquals(original, copied)
   }
 }

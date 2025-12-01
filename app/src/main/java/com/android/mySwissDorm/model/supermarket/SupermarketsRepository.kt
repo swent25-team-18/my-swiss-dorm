@@ -10,9 +10,9 @@ interface SupermarketsRepository {
   suspend fun getAllSupermarkets(): List<Supermarket>
 
   /**
-   * Adds a supermarket to the repository.
+   * Adds a new Supermarket item to the repository.
    *
-   * @param supermarket The supermarket to add.
+   * @param supermarket The Supermarket item to add.
    */
   suspend fun addSupermarket(supermarket: Supermarket)
 }

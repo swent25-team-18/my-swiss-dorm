@@ -117,12 +117,10 @@ class DistanceService(
           universities.firstOrNull { it.name.equals(userUniversityName, ignoreCase = true) }
       if (userUniversity != null) {
         return listOf(userUniversity)
-      } else {
-        Log.w(
-            "DistanceService",
-            "User's university '$userUniversityName' not found in database, showing 2 nearest instead")
-        return universities.sortedBy { location.distanceTo(it.location) }.take(2)
       }
+      Log.w(
+          "DistanceService",
+          "User's university '$userUniversityName' not found in database, showing 2 nearest instead")
     }
     return universities.sortedBy { location.distanceTo(it.location) }.take(2)
   }

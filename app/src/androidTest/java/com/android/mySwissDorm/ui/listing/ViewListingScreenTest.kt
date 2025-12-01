@@ -66,6 +66,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
         context = InstrumentationRegistry.getInstrumentation().context)
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     listingsRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+    RentalListingRepositoryProvider.repository = listingsRepo
     residenciesRepo = ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
@@ -319,11 +320,18 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun mapPreview_isDisplayed_whenLocationIsValid() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
-      val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
     waitForScreenRoot()
+
+    // Wait for listing to load
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid
+    }
+
     scrollListTo(C.ViewListingTags.LOCATION)
     compose.onNodeWithTag(C.ViewListingTags.LOCATION).assertIsDisplayed()
     compose.onNodeWithText("LOCATION (Not available)").assertDoesNotExist()
@@ -436,5 +444,55 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     vm.loadListing(listing.uid, context)
     compose.waitForIdle()
     assertEquals(1, fakeCloudRepo.retrieveCount)
+  }
+
+  @Test
+  fun poiDistances_displaysHeading_whenPOIsExist() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid
+    }
+
+    // Check that POI section heading exists
+    scrollListTo(C.ViewListingTags.POI_DISTANCES)
+    compose
+        .onNodeWithTag(C.ViewListingTags.POI_DISTANCES, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun poiDistances_displaysNoPOIsMessage_whenEmpty() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+    // Create listing with invalid coordinates (0.0, 0.0) which should result in no POIs
+    val invalidLocationListing =
+        rentalListing2.copy(
+            uid = listingsRepo.getNewUid(),
+            location = Location("Invalid", 0.0, 0.0),
+            ownerId = FirebaseEmulator.auth.currentUser!!.uid)
+    listingsRepo.addRentalListing(invalidLocationListing)
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = invalidLocationListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == invalidLocationListing.uid && s.poiDistances.isEmpty()
+    }
+
+    scrollListTo(C.ViewListingTags.POI_DISTANCES)
+    compose
+        .onNodeWithTag(C.ViewListingTags.POI_DISTANCES, useUnmergedTree = true)
+        .assertIsDisplayed()
+    // The "No nearby points of interest" message should be displayed
+    compose.onNodeWithText("No nearby points of interest", substring = true).assertIsDisplayed()
   }
 }

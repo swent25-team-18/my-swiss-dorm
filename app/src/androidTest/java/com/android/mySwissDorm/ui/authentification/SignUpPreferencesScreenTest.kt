@@ -14,6 +14,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.resources.C.FilterTestTags.BUDGET
+import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
+import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
+import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator
 import com.android.mySwissDorm.utils.FakeUser
@@ -55,17 +59,12 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onSignedUp = {})
     }
 
-    composeTestRule
-        .onNodeWithText("Sign Up with Google")
-        .performScrollTo()
-        .assertIsDisplayed()
-        .assertIsEnabled()
     composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithText("Custom Location").performScrollTo().assertIsDisplayed()
-    composeTestRule.onNodeWithText("Budget").performScrollTo().assertIsDisplayed()
-    composeTestRule.onNodeWithText("Preferred Size").performScrollTo().assertIsDisplayed()
-    composeTestRule.onNodeWithText("Preferred Room Type").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag(BUDGET).performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag(PREFERRED_SIZE).performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag(PREFERRED_ROOM_TYPE).performScrollTo().assertIsDisplayed()
     composeTestRule
         .onNodeWithTag("locationField")
         .performScrollTo()
@@ -76,11 +75,7 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
         .onNodeWithText(RoomType.COLOCATION.toString())
         .performScrollTo()
         .assertIsDisplayed()
-    composeTestRule
-        .onNodeWithText("Sign Up with Google")
-        .performScrollTo()
-        .assertIsDisplayed()
-        .assertIsEnabled()
+    composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).assertIsDisplayed().assertIsEnabled()
   }
 
   @Test
@@ -139,8 +134,7 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onSignedUp = {})
     }
 
-    val btn = composeTestRule.onNodeWithText("Sign Up with Google")
-    btn.performScrollTo()
+    val btn = composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES)
     btn.performClick()
   }
 
@@ -206,7 +200,7 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onUseCurrentLocationClick = {})
     }
 
-    composeTestRule.onNodeWithText(errorText).performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText(errorText).assertIsDisplayed()
   }
 
   @Test

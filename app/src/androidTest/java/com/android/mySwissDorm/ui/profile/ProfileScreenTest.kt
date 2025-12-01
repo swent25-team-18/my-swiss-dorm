@@ -299,7 +299,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.onNodeWithTag("price_slider").performTouchInput { swipeRight() }
     val roomType = RoomType.STUDIO.toString()
     compose.onNodeWithText(roomType).performScrollTo().performClick()
-    compose.onNodeWithText("Save Preferences").performScrollTo().performClick()
+    compose.onNodeWithText("Save Preferences").performClick()
     var success = false
     val startTime = System.currentTimeMillis()
     while (System.currentTimeMillis() - startTime < 5000) {

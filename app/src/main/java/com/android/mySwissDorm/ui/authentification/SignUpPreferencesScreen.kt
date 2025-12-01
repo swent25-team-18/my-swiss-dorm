@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -22,10 +21,15 @@ import androidx.credentials.CredentialManager
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.resources.C.FilterTestTags.BUDGET
+import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
+import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
+import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.PriceFilterContent
 import com.android.mySwissDorm.ui.utils.SizeFilterContent
@@ -130,6 +134,28 @@ fun ListingPreferencesContent(
                     tint = MainColor)
               }
             })
+      },
+      bottomBar = {
+        Column(modifier = Modifier.padding(16.dp)) {
+          if (errorMsg != null) {
+            Text(
+                text = errorMsg,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(bottom = 8.dp))
+          }
+
+          Button(
+              onClick = onBottomButtonClick,
+              modifier = Modifier.fillMaxWidth().height(52.dp).testTag(SIGN_UP_WITH_PREFERENCES),
+              shape = RoundedCornerShape(16.dp),
+              colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
+                if (isLoading) {
+                  CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                } else {
+                  Text(text = bottomButtonText, color = White)
+                }
+              }
+        }
       }) { innerPadding ->
         Column(
             modifier =
@@ -175,7 +201,8 @@ fun ListingPreferencesContent(
               Text(
                   stringResource(R.string.budget),
                   fontWeight = FontWeight.SemiBold,
-                  color = TextColor)
+                  color = TextColor,
+                  modifier = Modifier.testTag(BUDGET))
               PriceFilterContent(
                   priceRange = Pair(minPrice, maxPrice), onRangeChange = onPriceRangeChange)
 
@@ -185,7 +212,8 @@ fun ListingPreferencesContent(
               Text(
                   stringResource(R.string.preferred_size),
                   fontWeight = FontWeight.SemiBold,
-                  color = TextColor)
+                  color = TextColor,
+                  modifier = Modifier.testTag(PREFERRED_SIZE))
               SizeFilterContent(
                   sizeRange = Pair(minSize, maxSize), onRangeChange = onSizeRangeChange)
 
@@ -195,7 +223,8 @@ fun ListingPreferencesContent(
               Text(
                   stringResource(R.string.preferred_room_type),
                   fontWeight = FontWeight.SemiBold,
-                  color = TextColor)
+                  color = TextColor,
+                  modifier = Modifier.testTag(PREFERRED_ROOM_TYPE))
               val roomTypes = RoomType.entries.toList()
               roomTypes.chunked(2).forEach { rowTypes ->
                 Row(
@@ -219,26 +248,6 @@ fun ListingPreferencesContent(
                       }
                       if (rowTypes.size < 2) Spacer(modifier = Modifier.weight(1f))
                     }
-              }
-
-              Spacer(modifier = Modifier.height(24.dp))
-
-              // --- Bottom Button (Dynamic) ---
-              Button(
-                  onClick = onBottomButtonClick,
-                  modifier = Modifier.fillMaxWidth().height(52.dp),
-                  shape = RoundedCornerShape(16.dp),
-                  colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
-                    if (isLoading) {
-                      CircularProgressIndicator(
-                          color = Color.White, modifier = Modifier.size(24.dp))
-                    } else {
-                      Text(bottomButtonText, color = Color.White)
-                    }
-                  }
-
-              if (errorMsg != null) {
-                Text(errorMsg, color = MaterialTheme.colorScheme.error)
               }
 
               Spacer(modifier = Modifier.height(20.dp))

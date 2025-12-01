@@ -5,7 +5,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
@@ -28,6 +27,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.screen.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
@@ -155,10 +155,10 @@ class Epic1Test : FirestoreTest() {
           }
         }
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithText("Sign Up with Google").performScrollTo().isDisplayed()
+          composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).isDisplayed()
         }
 
-        composeTestRule.onNodeWithText("Sign Up with Google").performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).performClick()
 
         runCatching {
               ProfileRepositoryProvider.repository.getProfile(

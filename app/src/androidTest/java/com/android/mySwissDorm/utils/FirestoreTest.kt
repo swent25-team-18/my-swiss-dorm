@@ -322,25 +322,25 @@ abstract class FirestoreTest : TestCase() {
           description =
               "Lausanne is a city located on Lake Geneva, known for its universities and the Olympic Museum.",
           location = Location(name = "Lausanne", latitude = 46.5197, longitude = 6.6323),
-          imageId = R.drawable.lausanne)
+          imageId = "lausanne.png")
   val cityGeneva =
       City(
           name = "Geneva",
           description = "Geneva is a global city, hosting numerous international organizations.",
           location = Location(name = "Geneva", latitude = 46.2044, longitude = 6.1432),
-          imageId = R.drawable.geneve)
+          imageId = "geneva.png")
   val cityZurich =
       City(
           name = "Zurich",
           description = "Zurich is the largest city in Switzerland and a major financial hub.",
           location = Location(name = "Zürich", latitude = 47.3769, longitude = 8.5417),
-          imageId = R.drawable.zurich)
+          imageId = "zurich.png")
   val cityFribourg =
       City(
           name = "Fribourg",
           description = "Fribourg is a bilingual city famous for its medieval architecture.",
           location = Location(name = "Fribourg", latitude = 46.8065, longitude = 7.16197),
-          imageId = R.drawable.fribourg)
+          imageId = "fribourg.png")
 
   val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
 

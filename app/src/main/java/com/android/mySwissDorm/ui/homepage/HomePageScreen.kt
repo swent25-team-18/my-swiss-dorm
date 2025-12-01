@@ -1,7 +1,7 @@
 package com.android.mySwissDorm.ui.homepage
 
+import android.net.Uri
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -40,13 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
@@ -168,7 +168,8 @@ fun HomePageScreen(
                           val cityLocation = city.location
                           homePageViewModel.saveLocationToProfile(cityLocation)
                           onSelectLocation(cityLocation)
-                        })
+                        },
+                        uri = uiState.cityImageMap[city])
                     Spacer(modifier = Modifier.height(16.dp))
                   }
                 }
@@ -214,7 +215,7 @@ fun HomePageScreen(
  * @param onClick A callback for when the card is clicked.
  */
 @Composable
-fun CityCard(city: City, onClick: () -> Unit) {
+fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
   Card(
       modifier =
           Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCard(city.name))
@@ -224,8 +225,8 @@ fun CityCard(city: City, onClick: () -> Unit) {
               .clickable { onClick() },
   ) {
     Box {
-      Image(
-          painter = painterResource(city.imageId),
+      AsyncImage(
+          model = uri,
           contentDescription = city.name,
           contentScale = ContentScale.Crop,
           modifier = Modifier.fillMaxWidth().height(180.dp))

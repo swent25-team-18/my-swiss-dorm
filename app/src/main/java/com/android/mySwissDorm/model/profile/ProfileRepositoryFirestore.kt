@@ -128,6 +128,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
                       }
                     }
                   },
+              profilePicture = map["profilePicture"]?.let { it as? String ?: return null },
           )
         }
     return userInfo

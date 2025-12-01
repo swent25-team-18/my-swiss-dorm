@@ -1,10 +1,15 @@
 package com.android.mySwissDorm.ui.profile
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
@@ -13,6 +18,7 @@ import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,12 +38,14 @@ import kotlinx.coroutines.launch
  *   text).
  * @property errorMsg Optional error message to surface to the UI (e.g., auth or Firestore
  *   failures).
+ * @property profilePicture the user's profile picture
  */
 data class ProfileUiState(
     val firstName: String = "",
     val lastName: String = "",
     val language: String = "",
     val residence: String = "",
+    val profilePicture: Photo? = null,
     val isEditing: Boolean = false,
     val isSaving: Boolean = false,
     val errorMsg: String? = null,
@@ -61,12 +69,19 @@ data class ProfileUiState(
  */
 class ProfileScreenViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val profileRepo: ProfileRepository = ProfileRepositoryProvider.repository
+    private val profileRepo: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    private val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
 
   // Backing state; screen collects this as StateFlow
   private val _uiState = MutableStateFlow(ProfileUiState())
   val uiState: StateFlow<ProfileUiState> = _uiState
+
+  val photoManager =
+      PhotoManager(
+          photoRepositoryCloud = photoRepositoryCloud, photoRepositoryLocal = photoRepositoryLocal)
 
   init {
     viewModelScope.launch {
@@ -86,11 +101,17 @@ class ProfileScreenViewModel(
     viewModelScope.launch {
       try {
         val profile = profileRepo.getProfile(uid)
+        val profilePicture =
+            profile.userInfo.profilePicture?.let { profilePicture ->
+              photoManager.initialize(listOf(profilePicture))
+              photoManager.photoLoaded.firstOrNull()
+            }
         _uiState.update {
           it.copy(
               firstName = profile.userInfo.name,
               lastName = profile.userInfo.lastName,
               residence = profile.userInfo.residencyName ?: "",
+              profilePicture = profilePicture,
               language = profile.userSettings.language.displayLanguage)
         }
       } catch (e: Exception) {
@@ -117,6 +138,20 @@ class ProfileScreenViewModel(
   /** Update residence in UI state and clear any transient error. */
   fun onResidenceChange(value: String) {
     _uiState.value = _uiState.value.copy(residence = value, errorMsg = null)
+  }
+
+  /** Update the profile picture in the UI and clear any transient error. */
+  fun onProfilePictureChange(photo: Photo?) {
+    val currentPhotoUri: Uri? = _uiState.value.profilePicture?.image
+    viewModelScope.launch {
+      if (currentPhotoUri != null) {
+        photoManager.removePhoto(uri = currentPhotoUri, false)
+      }
+      if (photo != null) {
+        photoManager.addPhoto(photo)
+      }
+      _uiState.value = _uiState.value.copy(profilePicture = photo, errorMsg = null)
+    }
   }
 
   /** Flip between view and edit modes; clears any transient error on toggle. */
@@ -168,9 +203,11 @@ class ProfileScreenViewModel(
                       existingProfile.userInfo.copy(
                           name = state.firstName,
                           lastName = state.lastName,
+                          profilePicture = state.profilePicture?.fileName,
                           residencyName = state.residence),
                   userSettings = existingProfile.userSettings.copy(language = languageEnum))
           profileRepo.editProfile(updatedProfile)
+          photoManager.commitChanges()
         } else {
           // Create new profile
           val newProfile =

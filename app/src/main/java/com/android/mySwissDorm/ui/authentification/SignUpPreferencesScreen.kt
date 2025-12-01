@@ -26,9 +26,7 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
 import com.android.mySwissDorm.ui.theme.BackGroundColor
-import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog

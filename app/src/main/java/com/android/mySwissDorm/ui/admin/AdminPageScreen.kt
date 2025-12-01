@@ -39,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -128,9 +127,9 @@ fun AdminPageScreen(
                 shape = RoundedCornerShape(24.dp)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                        modifier = Modifier.size(24.dp), color = White, strokeWidth = 2.dp)
                   } else {
-                    Text(stringResource(R.string.save), color = Color.White)
+                    Text(stringResource(R.string.save), color = White)
                   }
                 }
           }

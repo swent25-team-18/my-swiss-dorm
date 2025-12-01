@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +38,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.Red
 
 @Composable
@@ -77,7 +78,7 @@ fun FullScreenImageViewer(
     offset = Offset.Zero
   }
 
-  Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary)) {
+  Box(modifier = Modifier.fillMaxSize().background(BackGroundColor)) {
     // Image
     AsyncImage(
         model = imageUris[currentIndex],
@@ -110,7 +111,7 @@ fun FullScreenImageViewer(
         CircularProgressIndicator(color = Red)
       }
     }
-    val buttonBackGroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+    val buttonBackGroundColor = BackGroundColor.copy(alpha = 0.5f)
 
     // Close control
     AnimatedVisibility(
@@ -139,7 +140,7 @@ fun FullScreenImageViewer(
                 IconButton(
                     onClick = { currentIndex = Math.floorMod(currentIndex - 1, imageUris.size) },
                     modifier =
-                        Modifier.background(color = buttonBackGroundColor)
+                        Modifier.background(color = MainColor)
                             .testTag(C.FullScreenImageViewerTags.LEFT_ARROW_BUTTON)) {
                       Icon(
                           imageVector = Icons.AutoMirrored.Filled.ArrowBack,

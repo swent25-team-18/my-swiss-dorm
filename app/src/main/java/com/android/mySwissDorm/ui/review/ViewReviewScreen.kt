@@ -64,6 +64,7 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -140,7 +141,6 @@ fun ViewReviewScreen(
                 // apply the style to the name
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
                   append(fullNameOfPoster)
-                  if (isOwner) append(" ${stringResource(R.string.view_review_posted_by_you)}")
                 }
                 // stop tagging
                 pop()
@@ -153,9 +153,7 @@ fun ViewReviewScreen(
               var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
               Text(
                   text = annotatedPostedByString,
-                  style =
-                      MaterialTheme.typography.bodyMedium.copy(
-                          color = MaterialTheme.colorScheme.onSurfaceVariant),
+                  style = MaterialTheme.typography.bodyMedium.copy(color = Gray),
                   onTextLayout = { textLayoutResult = it },
                   modifier =
                       Modifier.testTag(C.ViewReviewTags.POSTED_BY)

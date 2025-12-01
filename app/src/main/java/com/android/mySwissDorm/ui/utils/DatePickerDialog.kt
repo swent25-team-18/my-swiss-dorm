@@ -4,7 +4,6 @@ import android.content.res.Configuration
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -12,7 +11,9 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.Red
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.google.firebase.Timestamp
 import java.util.Calendar
 import java.util.Locale
@@ -287,7 +288,7 @@ fun CustomDatePickerDialog(
                     DatePickerDefaults.colors(
                         containerColor = BackGroundColor,
                         selectedDayContainerColor = MainColor,
-                        selectedDayContentColor = Color.White,
+                        selectedDayContentColor = White,
                         todayDateBorderColor = MainColor,
                         todayContentColor = MainColor,
                         dateTextFieldColors =
@@ -296,7 +297,7 @@ fun CustomDatePickerDialog(
                                 unfocusedContainerColor = BackGroundColor,
                                 focusedIndicatorColor = MainColor,
                                 unfocusedIndicatorColor = TextColor,
-                                errorIndicatorColor = Color.Red,
+                                errorIndicatorColor = Red,
                                 focusedTextColor = TextColor,
                                 unfocusedTextColor = TextColor,
                                 focusedLabelColor = TextColor,

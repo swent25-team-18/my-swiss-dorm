@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.Red0
+import com.android.mySwissDorm.ui.theme.MainColor
 
 /**
  * An image grid is a scrollable row which displays a list of images.
@@ -70,7 +70,7 @@ fun ImageGrid(
                         contentDescription = C.ImageGridTags.ICON_DELETE_CONTENT_DESC,
                         modifier =
                             Modifier.size(20.dp).testTag(C.ImageGridTags.deleteButtonTag(uri)),
-                        tint = Red0)
+                        tint = MainColor)
                   }
             }
           }

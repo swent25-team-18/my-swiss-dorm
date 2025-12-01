@@ -8,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -28,8 +27,10 @@ import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
@@ -78,14 +79,14 @@ fun AddListingScreen(
                         .height(52.dp)
                         .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
-                  Text(stringResource(R.string.confirm_listing), color = Color.White)
+                  Text(stringResource(R.string.confirm_listing), color = White)
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
                   stringResource(R.string.add_listing_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant)
+                  color = DarkGray)
             }
           }
         }

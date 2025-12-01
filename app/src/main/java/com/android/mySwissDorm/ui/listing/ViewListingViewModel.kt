@@ -59,7 +59,8 @@ data class ViewListingUIState(
     val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
     val images: List<Photo> = emptyList(),
     val isGuest: Boolean = false,
-    val isBookmarked: Boolean = false
+    val isBookmarked: Boolean = false,
+    val hasExistingMessage: Boolean = false
 )
 
 class ViewListingViewModel(
@@ -145,6 +146,23 @@ class ViewListingViewModel(
               false
             }
 
+        // Check if user has already sent a message for this listing
+        val hasExistingMessage =
+            if (currentUserId != null && !isOwner && !isGuest) {
+              runCatching {
+                    requestedMessageRepository.hasExistingMessage(
+                        fromUserId = currentUserId,
+                        toUserId = listing.ownerId,
+                        listingId = listingId)
+                  }
+                  .onFailure { e ->
+                    Log.e("ViewListingViewModel", "Error checking existing message", e)
+                  }
+                  .getOrDefault(false)
+            } else {
+              false
+            }
+
         photoManager.initialize(listing.imageUrls)
         val photos = photoManager.photoLoaded
         _uiState.update {
@@ -156,7 +174,8 @@ class ViewListingViewModel(
               locationOfListing = listing.location,
               images = photos,
               isGuest = isGuest,
-              isBookmarked = isBookmarked)
+              isBookmarked = isBookmarked,
+              hasExistingMessage = hasExistingMessage)
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
@@ -174,9 +193,10 @@ class ViewListingViewModel(
    * Submits a contact message for the current listing. Creates a RequestedMessage that requires
    * approval from the listing owner.
    *
+   * @param context Context for string resources
    * @return true if the message was successfully submitted, false otherwise
    */
-  fun submitContactMessage(): Boolean {
+  fun submitContactMessage(context: Context): Boolean {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val listing = _uiState.value.listing
     val contactMessage = _uiState.value.contactMessage.trim()
@@ -201,8 +221,24 @@ class ViewListingViewModel(
       return false
     }
 
+    // Check if user has already sent a message for this listing
     viewModelScope.launch {
       try {
+        val alreadyExists =
+            requestedMessageRepository.hasExistingMessage(
+                fromUserId = currentUser.uid, toUserId = listing.ownerId, listingId = listing.uid)
+
+        if (alreadyExists) {
+          Log.w(
+              "ViewListingViewModel",
+              "User has already sent a message for this listing. Preventing duplicate submission.")
+          setErrorMsg(
+              context.getString(R.string.view_listing_message_already_sent) +
+                  " " +
+                  context.getString(R.string.view_listing_please_wait_for_response))
+          return@launch
+        }
+
         // Generate a unique ID for the message
         val messageId = requestedMessageRepository.getNewUid()
         val requestedMessage =
@@ -217,9 +253,15 @@ class ViewListingViewModel(
                 status = MessageStatus.PENDING)
 
         requestedMessageRepository.createRequestedMessage(requestedMessage)
+
+        // Update state to reflect that a message has been sent
+        _uiState.update { it.copy(hasExistingMessage = true, contactMessage = "") }
+
         Log.d("ViewListingViewModel", "Contact message submitted successfully with ID: $messageId")
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error submitting contact message", e)
+        setErrorMsg(
+            "${context.getString(R.string.view_listing_failed_to_submit_message)} ${e.message}")
       }
     }
 

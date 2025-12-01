@@ -10,17 +10,15 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
-import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
-import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
-import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.LightGray0
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -43,74 +41,57 @@ import com.google.firebase.auth.FirebaseAuth
  * - Shows loading state while fetching messages
  * - Shows empty state when no pending messages exist
  *
- * **State Management:**
- * - Uses [LaunchedEffect] with a refresh key to load messages when the screen opens or after
- *   actions
- * - Lazy-loads user profile information for each message item
- * - Updates the list immediately after approve/reject to provide instant feedback
- *
- * **Authentication:**
- * - Requires the user to be signed in (non-anonymous)
- * - Shows a sign-in prompt if the user is not authenticated
- *
  * @param modifier Modifier to be applied to the screen
  * @param onBackClick Callback invoked when the back button is clicked
- * @param onApprove Callback invoked when a message is approved. Receives the message ID and an
- *   onSuccess callback. The onSuccess callback should be called after the approval is processed to
- *   trigger a UI refresh. This typically creates a Stream Chat channel and updates the message
- *   status to APPROVED.
- * @param onReject Callback invoked when a message is rejected. Receives the message ID and an
- *   onSuccess callback. The onSuccess callback should be called after the rejection is processed to
- *   trigger a UI refresh. This typically updates the message status to REJECTED.
+ * @param onApprove Callback invoked when a message is approved. Receives the message ID. The
+ *   ViewModel handles all approval logic including Stream Chat channel creation.
+ * @param onReject Callback invoked when a message is rejected. Receives the message ID. The
+ *   ViewModel handles all rejection logic.
  * @param onViewProfile Callback invoked when the sender's name is clicked. Receives the sender's
  *   user ID and should navigate to their profile screen.
+ * @param viewModel The ViewModel instance (defaults to viewModel() if not provided)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestedMessagesScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit,
-    onApprove: (String, suspend () -> Unit) -> Unit,
-    onReject: (String, suspend () -> Unit) -> Unit,
+    onApprove: (String) -> Unit = { messageId ->
+      // Default implementation uses ViewModel - can be overridden for testing
+    },
+    onReject: (String) -> Unit = { messageId ->
+      // Default implementation uses ViewModel - can be overridden for testing
+    },
     onViewProfile: (String) -> Unit = {},
+    viewModel: RequestedMessagesViewModel = viewModel()
 ) {
-  val currentUser = FirebaseAuth.getInstance().currentUser
+  val context = LocalContext.current
+  val uiState by viewModel.uiState.collectAsState()
 
+  // Load messages when screen is first displayed
+  LaunchedEffect(Unit) { viewModel.loadMessages(context) }
+
+  // Handle errors and success messages
+  LaunchedEffect(uiState.error) {
+    uiState.error?.let { error ->
+      android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_SHORT).show()
+      viewModel.clearError()
+    }
+  }
+
+  LaunchedEffect(uiState.successMessage) {
+    uiState.successMessage?.let { message ->
+      android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+      viewModel.clearSuccessMessage()
+    }
+  }
+
+  val currentUser = FirebaseAuth.getInstance().currentUser
   if (currentUser == null) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      stringResource(R.string.view_user_profile_not_signed_in)
+      Text(stringResource(R.string.view_user_profile_not_signed_in))
     }
     return
-  }
-
-  val repository = RequestedMessageRepositoryProvider.repository
-  val profileRepository = ProfileRepositoryProvider.repository
-  val coroutineScope = rememberCoroutineScope()
-
-  var requestedMessages by remember { mutableStateOf<List<RequestedMessage>>(emptyList()) }
-  var isLoading by remember { mutableStateOf(true) }
-  var refreshKey by remember { mutableIntStateOf(0) }
-
-  // Function to refresh messages
-  suspend fun refreshMessages() {
-    try {
-      requestedMessages = repository.getPendingMessagesForUser(currentUser.uid)
-    } catch (e: Exception) {
-      android.util.Log.e("RequestedMessagesScreen", "Error loading requested messages", e)
-    }
-  }
-
-  // Load requested messages - refresh when screen is opened or refreshKey changes
-  LaunchedEffect(refreshKey) {
-    isLoading = true
-    try {
-      // Only load messages, not profiles - profiles will be loaded lazily per item
-      requestedMessages = repository.getPendingMessagesForUser(currentUser.uid)
-    } catch (e: Exception) {
-      android.util.Log.e("RequestedMessagesScreen", "Error loading requested messages", e)
-    } finally {
-      isLoading = false
-    }
   }
 
   Scaffold(
@@ -128,56 +109,43 @@ fun RequestedMessagesScreen(
                     titleContentColor = TextColor,
                     navigationIconContentColor = TextColor))
       }) { paddingValues ->
-        if (isLoading) {
-          Box(
-              modifier = Modifier.fillMaxSize().padding(paddingValues),
-              contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MainColor)
-              }
-        } else if (requestedMessages.isEmpty()) {
-          Box(
-              modifier = Modifier.fillMaxSize().padding(paddingValues),
-              contentAlignment = Alignment.Center) {
-                Text(
-                    text = stringResource(R.string.no_requested_messages),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = LightGray0)
-              }
-        } else {
-          LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            items(requestedMessages) { message ->
-              // Load user info for display
-              var fromUserName by remember(message.fromUserId) { mutableStateOf("Loading...") }
-              var fromUserImageUrl by remember(message.fromUserId) { mutableStateOf<String?>(null) }
-
-              LaunchedEffect(message.fromUserId) {
-                try {
-                  val profile = profileRepository.getProfile(message.fromUserId)
-                  fromUserName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
-                  fromUserImageUrl = "profile.photoUrl"
-                } catch (e: Exception) {
-                  fromUserName = "Unknown User"
-                  fromUserImageUrl = null
+        when {
+          uiState.isLoading -> {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center) {
+                  CircularProgressIndicator(color = MainColor)
                 }
+          }
+          uiState.messages.isEmpty() -> {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center) {
+                  Text(
+                      text = stringResource(R.string.no_requested_messages),
+                      style = MaterialTheme.typography.bodyLarge,
+                      color = LightGray0)
+                }
+          }
+          else -> {
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+              items(uiState.messages) { enrichedMessage ->
+                RequestedMessageItem(
+                    message = enrichedMessage.message,
+                    fromUserName = enrichedMessage.senderName,
+                    fromUserImageUrl = enrichedMessage.senderImageUrl,
+                    fromUserId = enrichedMessage.message.fromUserId,
+                    onApprove = {
+                      onApprove(enrichedMessage.message.id)
+                      viewModel.approveMessage(enrichedMessage.message.id, context)
+                    },
+                    onReject = {
+                      onReject(enrichedMessage.message.id)
+                      viewModel.rejectMessage(enrichedMessage.message.id, context)
+                    },
+                    onViewProfile = { onViewProfile(enrichedMessage.message.fromUserId) })
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
               }
-
-              RequestedMessageItem(
-                  message = message,
-                  fromUserName = fromUserName,
-                  fromUserImageUrl = fromUserImageUrl,
-                  fromUserId = message.fromUserId,
-                  onApprove = {
-                    onApprove(message.id) {
-                      refreshKey++ // Trigger refresh after approve succeeds
-                    }
-                  },
-                  onReject = {
-                    onReject(message.id) {
-                      refreshKey++ // Trigger refresh after reject succeeds
-                    }
-                  },
-                  onViewProfile = { onViewProfile(message.fromUserId) })
-              HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             }
           }
         }
@@ -206,7 +174,7 @@ fun RequestedMessagesScreen(
  */
 @Composable
 fun RequestedMessageItem(
-    message: RequestedMessage,
+    message: com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage,
     fromUserName: String,
     fromUserImageUrl: String?,
     fromUserId: String,

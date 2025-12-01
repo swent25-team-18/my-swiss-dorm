@@ -57,4 +57,15 @@ interface RequestedMessageRepository {
    * @return a new unique document ID
    */
   fun getNewUid(): String
+
+  /**
+   * Checks if a message already exists from a user to a listing owner for a specific listing. This
+   * is used to prevent users from sending multiple messages for the same listing.
+   *
+   * @param fromUserId The user ID who sent the message
+   * @param toUserId The listing owner ID who receives the message
+   * @param listingId The listing ID
+   * @return true if a message already exists (regardless of status), false otherwise
+   */
+  suspend fun hasExistingMessage(fromUserId: String, toUserId: String, listingId: String): Boolean
 }

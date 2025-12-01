@@ -261,7 +261,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
         .assertIsDisplayed()
         .assertTextContains("(You)", substring = true)
   }
-
+  //
   @Test
   fun clickingPosterName_callsOnViewProfile_forOwner() = runTest {
     switchToUser(FakeUser.FakeUser1)

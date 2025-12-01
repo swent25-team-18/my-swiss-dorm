@@ -303,4 +303,77 @@ class AddReviewScreenTest : FirestoreTest() {
           uploaded
         }
   }
+
+  @Test
+  fun multiple_rapid_clicks_creates_only_one_review() = runTest {
+    val vm = AddReviewViewModel()
+    var submissionCount = 0
+
+    setContent(viewModel = vm, onConfirm = { submissionCount++ })
+
+    // Fill all required fields via the ViewModel
+    vm.setTitle("Test review")
+    vm.setResidencyName("Test residency")
+    vm.setRoomType(RoomType.STUDIO)
+    vm.setAreaInM2("20")
+    vm.setPricePerMonth("800")
+    vm.setReviewText("Test review text")
+    vm.setGrade(4.0)
+    vm.setIsAnonymous(false)
+
+    // Wait until the ViewModel marks the form as valid
+    composeRule.waitUntil(5_000) { vm.uiState.value.isFormValid }
+
+    val submitBtn =
+        composeRule
+            .onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true)
+            .assertIsEnabled()
+
+    // Rapidly click the button multiple times
+    submitBtn.performClick()
+    submitBtn.performClick()
+    submitBtn.performClick()
+
+    composeRule.awaitIdle()
+    composeRule.waitUntil(5_000) { submissionCount > 0 }
+
+    // Verify only one submission was made
+    assertEquals("Only one review should be created", 1, submissionCount)
+  }
+
+  @Test
+  fun button_is_disabled_during_submission() = runTest {
+    val vm = AddReviewViewModel()
+
+    setContent(viewModel = vm)
+
+    // Fill all required fields via the ViewModel
+    vm.setTitle("Test review")
+    vm.setResidencyName("Test residency")
+    vm.setRoomType(RoomType.STUDIO)
+    vm.setAreaInM2("20")
+    vm.setPricePerMonth("800")
+    vm.setReviewText("Test review text")
+    vm.setGrade(4.0)
+    vm.setIsAnonymous(false)
+
+    // Wait until the ViewModel marks the form as valid
+    composeRule.waitUntil(5_000) { vm.uiState.value.isFormValid }
+
+    val submitBtn =
+        composeRule
+            .onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true)
+            .assertIsEnabled()
+
+    // Click the button - it should become disabled immediately
+    submitBtn.performClick()
+
+    // Give a small delay for the state to update
+    composeRule.waitUntil(5_000) { vm.uiState.value.isSubmitting }
+
+    // Button should be disabled during submission
+    composeRule
+        .onNodeWithTag(C.AddReviewTags.SUBMIT_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
+  }
 }

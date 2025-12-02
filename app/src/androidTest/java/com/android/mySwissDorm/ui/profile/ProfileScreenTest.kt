@@ -25,8 +25,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.action.ViewActions.swipeRight
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -39,8 +39,8 @@ import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import io.mockk.unmockkAll
 import java.net.URL
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -144,10 +144,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun initialElements_viewMode_and_nonClickable_avatar() {
-    compose.setContent {
-      ProfileScreen(
-          onLogout = {}, onChangeProfilePicture = {}, onBack = {}, onEditPreferencesClick = {})
-    }
+    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}) }
     waitForProfileScreenReady()
 
     compose.onNodeWithTag("profile_title").assertIsDisplayed().assertTextEquals("Profile")
@@ -177,10 +174,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun editToggle_enablesFields_save_writes_to_firestore() = runTest {
     // Screen AFTER repos + seed are ready
-    compose.setContent {
-      ProfileScreen(
-          onLogout = {}, onChangeProfilePicture = {}, onBack = {}, onEditPreferencesClick = {})
-    }
+    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}) }
     waitForProfileScreenReady()
 
     // Enter edit mode
@@ -246,10 +240,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun editToggle_tap_twice_cancels_and_restores_viewMode() {
-    compose.setContent {
-      ProfileScreen(
-          onLogout = {}, onChangeProfilePicture = {}, onBack = {}, onEditPreferencesClick = {})
-    }
+    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}) }
     waitForProfileScreenReady()
 
     compose.onNodeWithTag("profile_edit_toggle").performClick()
@@ -267,10 +258,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun avatar_clickable_only_in_edit_mode() {
-    compose.setContent {
-      ProfileScreen(
-          onLogout = {}, onChangeProfilePicture = {}, onBack = {}, onEditPreferencesClick = {})
-    }
+    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}) }
     waitForProfileScreenReady()
 
     compose
@@ -300,7 +288,9 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
             photoRepositoryLocal = localRepo,
             photoRepositoryCloud = cloudRepo,
             profileRepo = fakeProfileRepo)
-    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, viewModel = vm) }
+    compose.setContent {
+      ProfileScreen(onLogout = {}, onBack = {}, viewModel = vm, onEditPreferencesClick = {})
+    }
     waitForProfileScreenReady()
 
     // Check can go on edit mode
@@ -344,7 +334,9 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
             photoRepositoryLocal = localRepo,
             photoRepositoryCloud = cloudRepo,
             profileRepo = fakeProfileRepo)
-    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, viewModel = vm) }
+    compose.setContent {
+      ProfileScreen(onLogout = {}, onBack = {}, viewModel = vm, onEditPreferencesClick = {})
+    }
 
     waitForProfileScreenReady()
 
@@ -384,15 +376,11 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
       cloudRepo.deleteCount == 1
     }
   }
-  
+
   fun preferences_button_is_displayed_and_navigates() {
     var clicked = false
     compose.setContent {
-      ProfileScreen(
-          onLogout = {},
-          onChangeProfilePicture = {},
-          onBack = {},
-          onEditPreferencesClick = { clicked = true })
+      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = { clicked = true })
     }
     waitForProfileScreenReady()
     compose
@@ -432,13 +420,14 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
         success = true
         break
       }
-    assertTrue("Timeout: Firestore was not updated with preferences within 5s", success)
-    val snap = FirebaseEmulator.firestore.collection("profiles").document(uid).get().await()
-    val data = snap.data!!
-    val userInfo = data["userInfo"] as Map<*, *>
-    val preferredRoomTypes = userInfo["preferredRoomTypes"] as? List<*>
-    assertNotNull("Room types should not be null", preferredRoomTypes)
-    val minPrice = userInfo["minPrice"] as? Number
-    assertNotNull("minPrice should be saved", minPrice)
+      assertTrue("Timeout: Firestore was not updated with preferences within 5s", success)
+      val snap = FirebaseEmulator.firestore.collection("profiles").document(uid).get().await()
+      val data = snap.data!!
+      val userInfo = data["userInfo"] as Map<*, *>
+      val preferredRoomTypes = userInfo["preferredRoomTypes"] as? List<*>
+      assertNotNull("Room types should not be null", preferredRoomTypes)
+      val minPrice = userInfo["minPrice"] as? Number
+      assertNotNull("minPrice should be saved", minPrice)
+    }
   }
 }

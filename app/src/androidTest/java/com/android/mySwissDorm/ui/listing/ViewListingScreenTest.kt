@@ -470,13 +470,13 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     uiStateField.isAccessible = true
     val mutableUiState =
         uiStateField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<ViewListingUIState>
-    
+
     // Set hasExistingMessage to true
     mutableUiState.update { it.copy(hasExistingMessage = true) }
 
     // Wait for composition to complete and state to be updated
     compose.waitForIdle()
-    
+
     // Verify state is set correctly
     assertTrue("hasExistingMessage should be true", vm.uiState.value.hasExistingMessage)
     assertFalse("isOwner should be false", vm.uiState.value.isOwner)
@@ -485,14 +485,16 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     // Wait for the UI elements to appear (wait for the text to be displayed)
     compose.waitUntil(5_000) {
       compose
-          .onAllNodesWithText(context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
+          .onAllNodesWithText(
+              context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
     // Scroll to and verify the "message already sent" text is displayed
     compose
-        .onNodeWithText(context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
+        .onNodeWithText(
+            context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
         .performScrollTo()
         .assertIsDisplayed()
 

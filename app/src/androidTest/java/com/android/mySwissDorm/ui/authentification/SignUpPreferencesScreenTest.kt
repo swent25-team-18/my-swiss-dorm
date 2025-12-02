@@ -19,6 +19,7 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.LOCATION_PREFERENCE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.ui.utils.ListingPreferencesContent
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator
 import com.android.mySwissDorm.utils.FakeUser

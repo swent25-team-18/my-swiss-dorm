@@ -63,16 +63,23 @@ fun AddReviewScreen(
         Surface(shadowElevation = 8.dp) {
           Column(Modifier.padding(16.dp)) {
             val ui = reviewUIState
+            val isButtonEnabled =
+                ui.isFormValid &&
+                    !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) &&
+                    !ui.isSubmitting
             Button(
                 onClick = { addReviewViewModel.submitReviewForm(onConfirm) },
-                enabled =
-                    ui.isFormValid &&
-                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true),
+                enabled = isButtonEnabled,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
-                  Text(stringResource(R.string.add_review_submit), color = White)
+                  if (ui.isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp), color = White, strokeWidth = 2.dp)
+                  } else {
+                    Text(stringResource(R.string.add_review_submit), color = White)
+                  }
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {

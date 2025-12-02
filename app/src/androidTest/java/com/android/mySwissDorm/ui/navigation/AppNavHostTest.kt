@@ -484,7 +484,7 @@ class AppNavHostTest : FirestoreTest() {
               useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
-    }
+    } //
     composeTestRule.waitForIdle()
 
     // The toast will be shown when profile is clicked, but we can't easily test that

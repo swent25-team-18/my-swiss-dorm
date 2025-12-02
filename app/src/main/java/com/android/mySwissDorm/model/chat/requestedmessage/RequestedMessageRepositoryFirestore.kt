@@ -119,19 +119,19 @@ class RequestedMessageRepositoryFirestore(private val db: FirebaseFirestore) :
   private fun documentToRequestedMessage(doc: DocumentSnapshot): RequestedMessage? {
     return try {
       val data = doc.data ?: return null
-        RequestedMessage(
-            id = doc.id,
-            fromUserId = data["fromUserId"] as? String ?: return null,
-            toUserId = data["toUserId"] as? String ?: return null,
-            listingId = data["listingId"] as? String ?: return null,
-            listingTitle = data["listingTitle"] as? String ?: "",
-            message = data["message"] as? String ?: "",
-            timestamp = (data["timestamp"] as? Long) ?: System.currentTimeMillis(),
-            status =
-                try {
-                    MessageStatus.valueOf(data["status"] as? String ?: MessageStatus.PENDING.name)
-                } catch (e: Exception) {
-                    MessageStatus.PENDING
+      RequestedMessage(
+          id = doc.id,
+          fromUserId = data["fromUserId"] as? String ?: return null,
+          toUserId = data["toUserId"] as? String ?: return null,
+          listingId = data["listingId"] as? String ?: return null,
+          listingTitle = data["listingTitle"] as? String ?: "",
+          message = data["message"] as? String ?: "",
+          timestamp = (data["timestamp"] as? Long) ?: System.currentTimeMillis(),
+          status =
+              try {
+                MessageStatus.valueOf(data["status"] as? String ?: MessageStatus.PENDING.name)
+              } catch (e: Exception) {
+                MessageStatus.PENDING
               })
     } catch (e: Exception) {
       Log.e("RequestedMessageRepository", "Error parsing document to RequestedMessage", e)

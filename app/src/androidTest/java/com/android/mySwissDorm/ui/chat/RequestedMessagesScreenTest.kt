@@ -683,20 +683,21 @@ class RequestedMessagesScreenTest : FirestoreTest() {
     compose.onNodeWithContentDescription("Approve").performClick()
 
     // Wait for success message to appear (covers Stream Chat connection and channel creation)
-    compose.waitUntil(timeoutMillis = 10_000) {
-      vm.uiState.value.successMessage != null
-    }
+    compose.waitUntil(timeoutMillis = 10_000) { vm.uiState.value.successMessage != null }
 
     // Verify success message is set
     val successMessage = vm.uiState.value.successMessage
     assertNotNull("Success message should be set", successMessage)
     assertTrue(
         "Success message should indicate channel creation or manual chat",
-        successMessage!!.contains(context.getString(R.string.requested_messages_approved_channel_created)) ||
-        successMessage.contains(context.getString(R.string.requested_messages_approved_manual_chat)))
+        successMessage!!.contains(
+            context.getString(R.string.requested_messages_approved_channel_created)) ||
+            successMessage.contains(
+                context.getString(R.string.requested_messages_approved_manual_chat)))
 
     // Verify message status is updated to APPROVED
     val updatedMessage = requestedMessageRepo.getRequestedMessage(message.id)
-    assertEquals("Message status should be APPROVED", MessageStatus.APPROVED, updatedMessage?.status)
+    assertEquals(
+        "Message status should be APPROVED", MessageStatus.APPROVED, updatedMessage?.status)
   }
 }

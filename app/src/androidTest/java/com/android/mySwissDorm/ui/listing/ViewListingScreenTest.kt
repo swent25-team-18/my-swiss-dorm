@@ -473,8 +473,10 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       uiStateField.isAccessible = true
       val mutableUiState =
           requireNotNull(
-              uiStateField.get(vm) as? kotlinx.coroutines.flow.MutableStateFlow<ViewListingUIState>
-          ) { "Failed to cast _uiState to MutableStateFlow<ViewListingUIState>" }
+              uiStateField.get(vm)
+                  as? kotlinx.coroutines.flow.MutableStateFlow<ViewListingUIState>) {
+                "Failed to cast _uiState to MutableStateFlow<ViewListingUIState>"
+              }
 
       // Set hasExistingMessage to true
       mutableUiState.update { it.copy(hasExistingMessage = true) }

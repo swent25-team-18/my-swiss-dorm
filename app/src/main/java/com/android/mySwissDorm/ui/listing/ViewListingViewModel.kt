@@ -129,15 +129,16 @@ class ViewListingViewModel(
         val userUniversityName = getUserUniversityName(currentUserId, isGuest)
         val poiDistances = calculatePOIDistances(listing, userUniversityName)
 
-        updateUIState(
-            listing = listing,
-            fullNameOfPoster = fullNameOfPoster,
-            isOwner = isOwner,
-            isBlockedByOwner = isBlockedByOwner,
-            photos = photos,
-            isGuest = isGuest,
-            isBookmarked = isBookmarked,
-            poiDistances = poiDistances)
+        val uiData =
+            UIUpdateData(
+                fullNameOfPoster = fullNameOfPoster,
+                isOwner = isOwner,
+                isBlockedByOwner = isBlockedByOwner,
+                photos = photos,
+                isGuest = isGuest,
+                isBookmarked = isBookmarked,
+                poiDistances = poiDistances)
+        updateUIState(listing, uiData)
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
         setErrorMsg(
@@ -230,27 +231,29 @@ class ViewListingViewModel(
     }
   }
 
-  private fun updateUIState(
-      listing: RentalListing,
-      fullNameOfPoster: String,
-      isOwner: Boolean,
-      isBlockedByOwner: Boolean,
-      photos: List<Photo>,
-      isGuest: Boolean,
-      isBookmarked: Boolean,
-      poiDistances: List<POIDistance>
-  ) {
+  /** Data class to group UI state update parameters, reducing the number of function parameters. */
+  private data class UIUpdateData(
+      val fullNameOfPoster: String,
+      val isOwner: Boolean,
+      val isBlockedByOwner: Boolean,
+      val photos: List<Photo>,
+      val isGuest: Boolean,
+      val isBookmarked: Boolean,
+      val poiDistances: List<POIDistance>
+  )
+
+  private fun updateUIState(listing: RentalListing, uiData: UIUpdateData) {
     _uiState.update {
       it.copy(
           listing = listing,
-          fullNameOfPoster = fullNameOfPoster,
-          isOwner = isOwner,
-          isBlockedByOwner = isBlockedByOwner,
+          fullNameOfPoster = uiData.fullNameOfPoster,
+          isOwner = uiData.isOwner,
+          isBlockedByOwner = uiData.isBlockedByOwner,
           locationOfListing = listing.location,
-          images = photos,
-          isGuest = isGuest,
-          isBookmarked = isBookmarked,
-          poiDistances = poiDistances)
+          images = uiData.photos,
+          isGuest = uiData.isGuest,
+          isBookmarked = uiData.isBookmarked,
+          poiDistances = uiData.poiDistances)
     }
   }
 

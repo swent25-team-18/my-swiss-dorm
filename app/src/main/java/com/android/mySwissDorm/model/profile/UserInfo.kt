@@ -11,4 +11,5 @@ data class UserInfo(
     val universityName: String? = null,
     val location: Location? = null,
     val residencyName: String? = null,
+    val bookmarkedListingIds: List<String> = emptyList(),
 )

@@ -55,29 +55,31 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
   }
 
   override suspend fun getBookmarkedListingIds(ownerId: String): List<String> {
-    val doc = db.collection(PROFILE_COLLECTION_PATH).document(ownerId).get().await()
-    @Suppress("UNCHECKED_CAST")
-    return doc.get("bookmarkedListingIds") as? List<String> ?: emptyList()
+    val profile = getProfile(ownerId)
+    return profile.userInfo.bookmarkedListingIds
   }
 
   override suspend fun addBookmark(ownerId: String, listingId: String) {
-    db.collection(PROFILE_COLLECTION_PATH)
-        .document(ownerId)
-        .update("bookmarkedListingIds", FieldValue.arrayUnion(listingId))
-        .await()
+    val profile = getProfile(ownerId)
+    val updatedBookmarks = profile.userInfo.bookmarkedListingIds + listingId
+    val updatedUserInfo = profile.userInfo.copy(bookmarkedListingIds = updatedBookmarks)
+    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+    editProfile(updatedProfile)
   }
 
   override suspend fun removeBookmark(ownerId: String, listingId: String) {
-    db.collection(PROFILE_COLLECTION_PATH)
-        .document(ownerId)
-        .update("bookmarkedListingIds", FieldValue.arrayRemove(listingId))
-        .await()
+    val profile = getProfile(ownerId)
+    val updatedBookmarks = profile.userInfo.bookmarkedListingIds - listingId
+    val updatedUserInfo = profile.userInfo.copy(bookmarkedListingIds = updatedBookmarks)
+    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+    editProfile(updatedProfile)
   }
 
   private fun documentToProfile(document: DocumentSnapshot): Profile? {
     return try {
       val ownerId = document.id
-      val userInfo = mapToUserInfo(map = document.get("userInfo") as? Map<*, *>) ?: return null
+      val userInfoMap = document.get("userInfo") as? Map<*, *>
+      val userInfo = mapToUserInfo(map = userInfoMap, document = document) ?: return null
       val userSettings =
           mapToUserSettings(map = document.get("userSettings") as? Map<*, *>) ?: return null
 
@@ -88,7 +90,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     }
   }
 
-  private fun mapToUserInfo(map: Map<*, *>?): UserInfo? {
+  private fun mapToUserInfo(map: Map<*, *>?, document: DocumentSnapshot): UserInfo? {
     val mapNotNull = map ?: return null
     val userInfo =
         mapNotNull.let { map ->
@@ -100,6 +102,16 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
                     latitude = (map2["latitude"] as? Number ?: return null).toDouble(),
                     longitude = (map2["longitude"] as? Number ?: return null).toDouble())
               }
+
+          // Read bookmarks from userInfo.bookmarkedListingIds if present, otherwise from top-level
+          // bookmarkedListingIds (for backward compatibility)
+          val bookmarkedListingIds =
+              (map["bookmarkedListingIds"] as? List<*>)?.mapNotNull { it as? String }
+                  ?: (document.get("bookmarkedListingIds") as? List<*>)?.mapNotNull {
+                    it as? String
+                  }
+                  ?: emptyList()
+
           UserInfo(
               name = map["name"] as? String ?: return null,
               lastName = map["lastName"] as? String ?: return null,
@@ -128,6 +140,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
                       }
                     }
                   },
+              bookmarkedListingIds = bookmarkedListingIds,
           )
         }
     return userInfo

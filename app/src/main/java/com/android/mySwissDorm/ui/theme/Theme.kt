@@ -40,7 +40,7 @@ private val LightColors =
         onTertiary = Dark,
         onBackground = Dark, // normal text color
         onSurface = Dark, // text on cards/fields
-        onSurfaceVariant = Color.DarkGray, // labels, hints
+        onSurfaceVariant = DarkGray, // labels, hints
         outline = Gray)
 
 private val DarkColors =

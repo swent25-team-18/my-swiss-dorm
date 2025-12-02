@@ -22,7 +22,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -44,12 +43,17 @@ import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.review.DisplayGrade
 import com.android.mySwissDorm.ui.review.truncateText
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Gray
+import com.android.mySwissDorm.ui.theme.ListingCardColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.android.mySwissDorm.ui.utils.PriceFilterContent
+import com.android.mySwissDorm.ui.utils.SizeFilterContent
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 import com.google.firebase.Timestamp
 
@@ -663,7 +667,7 @@ private fun FilterBottomSheet(
                             Modifier.weight(1f)
                                 .testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON),
                         colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
-                          Text(stringResource(R.string.apply), color = Color.White)
+                          Text(stringResource(R.string.apply), color = White)
                         }
                   }
             }
@@ -698,66 +702,6 @@ private fun RoomTypeFilterContent(
                 colors = CheckboxDefaults.colors(checkedColor = MainColor))
           }
     }
-  }
-}
-
-/** Price filter content with range slider. */
-@Composable
-private fun PriceFilterContent(
-    priceRange: Pair<Double?, Double?>,
-    onRangeChange: (Double?, Double?) -> Unit
-) {
-  var minPrice by remember(priceRange) { mutableFloatStateOf((priceRange.first ?: 0.0).toFloat()) }
-  var maxPrice by
-      remember(priceRange) { mutableFloatStateOf((priceRange.second ?: 2000.0).toFloat()) }
-
-  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-      Text("${stringResource(R.string.min)}: ${minPrice.toInt()} CHF", color = TextColor)
-      Text("${stringResource(R.string.max)}: ${maxPrice.toInt()} CHF", color = TextColor)
-    }
-    RangeSlider(
-        value = minPrice..maxPrice,
-        onValueChange = { range ->
-          minPrice = range.start
-          maxPrice = range.endInclusive
-          onRangeChange(minPrice.toDouble(), maxPrice.toDouble())
-        },
-        valueRange = 0f..5000f,
-        steps = 49,
-        colors =
-            SliderDefaults.colors(
-                thumbColor = MainColor,
-                activeTrackColor = MainColor,
-                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
-  }
-}
-
-/** Size filter content with range slider. */
-@Composable
-private fun SizeFilterContent(sizeRange: Pair<Int?, Int?>, onRangeChange: (Int?, Int?) -> Unit) {
-  var minSize by remember(sizeRange) { mutableFloatStateOf((sizeRange.first ?: 0).toFloat()) }
-  var maxSize by remember(sizeRange) { mutableFloatStateOf((sizeRange.second ?: 100).toFloat()) }
-
-  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-      Text("${stringResource(R.string.min)}: ${minSize.toInt()} m²", color = TextColor)
-      Text("${stringResource(R.string.max)}: ${maxSize.toInt()} m²", color = TextColor)
-    }
-    RangeSlider(
-        value = minSize..maxSize,
-        onValueChange = { range ->
-          minSize = range.start
-          maxSize = range.endInclusive
-          onRangeChange(minSize.toInt(), maxSize.toInt())
-        },
-        valueRange = 0f..200f,
-        steps = 39,
-        colors =
-            SliderDefaults.colors(
-                thumbColor = MainColor,
-                activeTrackColor = MainColor,
-                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
   }
 }
 
@@ -855,12 +799,12 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                       Modifier.height(160.dp)
                           .fillMaxWidth(0.4F)
                           .clip(RoundedCornerShape(12.dp))
-                          .background(Color(0xFFEAEAEA))) {
+                          .background(ListingCardColor)) {
                     Text(
                         stringResource(R.string.image),
                         modifier = Modifier.align(Alignment.Center),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray)
+                        color = Gray)
                   }
 
               Spacer(Modifier.width(12.dp))

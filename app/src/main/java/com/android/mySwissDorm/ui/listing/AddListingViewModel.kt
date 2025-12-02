@@ -43,6 +43,12 @@ class AddListingViewModel(
 
   fun submitForm(onConfirm: (RentalListing) -> Unit, context: Context) {
     val state = uiState.value
+
+    // Prevent duplicate submissions
+    if (state.isSubmitting) {
+      return
+    }
+
     // will probably never reach this if but it's just here for security
     if ((FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true)) {
       setErrorMsg(context.getString(R.string.add_listing_vm_guests_cannot_create_listings))
@@ -80,6 +86,9 @@ class AddListingViewModel(
             status = RentalStatus.POSTED,
             location = location)
 
+    // Mark as submitting
+    _uiState.value = _uiState.value.copy(isSubmitting = true)
+
     viewModelScope.launch {
       try {
         rentalListingRepository.addRentalListing(listingToAdd)
@@ -89,6 +98,8 @@ class AddListingViewModel(
       } catch (e: Exception) {
         setErrorMsg(
             "${context.getString(R.string.add_listing_vm_failed_to_add_listing)} ${e.message}")
+        // Reset submitting state on error so user can retry
+        _uiState.value = _uiState.value.copy(isSubmitting = false)
       }
     }
   }

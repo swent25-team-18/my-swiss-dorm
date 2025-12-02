@@ -7,10 +7,12 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.android.mySwissDorm.ui.theme.Gray
+import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.White
 
 // This code is based on the bootcamp and on AI
 
@@ -38,11 +40,11 @@ fun BottomNavigationMenu(
           alwaysShowLabel = true,
           colors =
               NavigationBarItemDefaults.colors(
-                  indicatorColor = Color(0xFFFF6666),
-                  selectedIconColor = Color.White,
-                  selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                  unselectedIconColor = Color(0xFFFF6666),
-                  unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                  indicatorColor = MainColor,
+                  selectedIconColor = White,
+                  selectedTextColor = Gray,
+                  unselectedIconColor = MainColor,
+                  unselectedTextColor = Gray),
           modifier = Modifier.testTag("bottom_nav_${screen.route}"))
     }
   }

@@ -14,11 +14,18 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.action.ViewActions.swipeRight
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.resources.C
@@ -26,10 +33,12 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import java.net.URL
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -107,9 +116,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
                           "lastName" to "Kanaan",
                           "email" to (FirebaseEmulator.auth.currentUser?.email ?: ""),
                           "phoneNumber" to "",
-                          "residencyName" to "Vortex, Coloc"),
+                          "residencyName" to "Vortex, Coloc",
+                          "minPrice" to 0.0,
+                          "maxPrice" to 2000.0),
                   // Store enum as NAME unless your repo writes display strings
-                  "userSettings" to mapOf("language" to "ENGLISH")))
+                  "userSettings" to
+                      mapOf("language" to "ENGLISH", "public" to true, "pushNotified" to true)))
           .await()
     }
   }
@@ -117,7 +129,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun initialElements_viewMode_and_nonClickable_avatar() {
     compose.setContent {
-      ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}, onLanguageChange = {})
+      ProfileScreen(
+          onLogout = {},
+          onChangeProfilePicture = {},
+          onBack = {},
+          onEditPreferencesClick = {},
+          onLanguageChange = {})
     }
     waitForProfileScreenReady()
 
@@ -146,7 +163,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   fun editToggle_enablesFields_save_writes_to_firestore() = runTest {
     // Screen AFTER repos + seed are ready
     compose.setContent {
-      ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}, onLanguageChange = {})
+      ProfileScreen(
+          onLogout = {},
+          onChangeProfilePicture = {},
+          onBack = {},
+          onEditPreferencesClick = {},
+          onLanguageChange = {})
     }
     waitForProfileScreenReady()
 
@@ -227,7 +249,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun editToggle_tap_twice_cancels_and_restores_viewMode() {
     compose.setContent {
-      ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}, onLanguageChange = {})
+      ProfileScreen(
+          onLogout = {},
+          onChangeProfilePicture = {},
+          onBack = {},
+          onEditPreferencesClick = {},
+          onLanguageChange = {})
     }
     waitForProfileScreenReady()
 
@@ -247,7 +274,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun avatar_clickable_only_in_edit_mode() {
     compose.setContent {
-      ProfileScreen(onLogout = {}, onChangeProfilePicture = {}, onBack = {}, onLanguageChange = {})
+      ProfileScreen(
+          onLogout = {},
+          onChangeProfilePicture = {},
+          onBack = {},
+          onEditPreferencesClick = {},
+          onLanguageChange = {})
     }
     waitForProfileScreenReady()
 
@@ -268,13 +300,13 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun onLanguageIsCalledWhenUserModifyLanguage() {
     var languageChanged = false
-
     compose.setContent {
       ProfileScreen(
           onLogout = {},
           onChangeProfilePicture = {},
           onBack = {},
-          onLanguageChange = { languageChanged = true })
+          onLanguageChange = { languageChanged = true },
+          onEditPreferencesClick = {})
     }
     waitForProfileScreenReady()
 
@@ -303,6 +335,25 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     assertTrue(languageChanged)
   }
 
+  fun preferences_button_is_displayed_and_navigates() {
+    var clicked = false
+    compose.setContent {
+      ProfileScreen(
+          onLogout = {},
+          onChangeProfilePicture = {},
+          onBack = {},
+          onLanguageChange = {},
+          onEditPreferencesClick = { clicked = true })
+    }
+    waitForProfileScreenReady()
+    compose
+        .onNodeWithText("Listing Preferences")
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+    assertTrue("Preferences navigation callback should be triggered", clicked)
+  }
+
   @Test
   fun onLanguageIsNotCalledWhenUserCancelModifyLanguage() {
     var languageChanged = false
@@ -312,7 +363,8 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
           onLogout = {},
           onChangeProfilePicture = {},
           onBack = {},
-          onLanguageChange = { languageChanged = true })
+          onLanguageChange = { languageChanged = true },
+          onEditPreferencesClick = {})
     }
     waitForProfileScreenReady()
 
@@ -341,5 +393,45 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG).assertIsNotDisplayed()
 
     assertFalse(languageChanged)
+  }
+
+  @Test
+  fun preferences_screen_saves_price_and_room_types() = runTest {
+    val vm =
+        ProfileScreenViewModel(
+            auth = FirebaseEmulator.auth,
+            profileRepo = ProfileRepositoryProvider.repository,
+            locationRepository = LocationRepositoryProvider.repository)
+
+    val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+    vm.loadProfile(context)
+    compose.setContent { EditPreferencesScreen(viewModel = vm, onBack = {}) }
+    compose.waitForIdle()
+    compose.onNodeWithTag("price_slider").performTouchInput { swipeRight() }
+    val roomType = RoomType.STUDIO.toString()
+    compose.onNodeWithText(roomType).performScrollTo().performClick()
+    compose.onNodeWithText("Save Preferences").performClick()
+    var success = false
+    val startTime = System.currentTimeMillis()
+    while (System.currentTimeMillis() - startTime < 5000) {
+      delay(100)
+      val currentSnap =
+          FirebaseEmulator.firestore.collection("profiles").document(uid).get().await()
+      val currentData = currentSnap.data ?: continue
+      val uInfo = currentData["userInfo"] as? Map<*, *> ?: continue
+
+      if (uInfo.containsKey("preferredRoomTypes")) {
+        success = true
+        break
+      }
+    }
+    assertTrue("Timeout: Firestore was not updated with preferences within 5s", success)
+    val snap = FirebaseEmulator.firestore.collection("profiles").document(uid).get().await()
+    val data = snap.data!!
+    val userInfo = data["userInfo"] as Map<*, *>
+    val preferredRoomTypes = userInfo["preferredRoomTypes"] as? List<*>
+    assertNotNull("Room types should not be null", preferredRoomTypes)
+    val minPrice = userInfo["minPrice"] as? Number
+    assertNotNull("minPrice should be saved", minPrice)
   }
 }

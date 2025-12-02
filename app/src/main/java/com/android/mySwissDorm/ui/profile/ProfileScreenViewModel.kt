@@ -2,17 +2,21 @@ package com.android.mySwissDorm.ui.profile
 
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
+import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +45,16 @@ data class ProfileUiState(
     val isEditing: Boolean = false,
     val isSaving: Boolean = false,
     val errorMsg: String? = null,
-    val allResidencies: List<Residency> = emptyList()
+    val allResidencies: List<Residency> = emptyList(),
+    val prefLocation: Location? = null,
+    val minPrice: Double? = null,
+    val maxPrice: Double? = null,
+    val minSize: Int? = null,
+    val maxSize: Int? = null,
+    val selectedRoomTypes: Set<RoomType> = emptySet(),
+    val showLocationDialog: Boolean = false,
+    val locationQuery: String = "",
+    val locationSuggestions: List<Location> = emptyList()
 )
 
 /**
@@ -61,10 +74,10 @@ data class ProfileUiState(
  */
 class ProfileScreenViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val profileRepo: ProfileRepository = ProfileRepositoryProvider.repository
-) : ViewModel() {
-
-  // Backing state; screen collects this as StateFlow
+    private val profileRepo: ProfileRepository = ProfileRepositoryProvider.repository,
+    override val locationRepository: LocationRepository = LocationRepositoryProvider.repository
+) : BaseLocationSearchViewModel() {
+  override val logTag = "ProfileScreenViewModel"
   private val _uiState = MutableStateFlow(ProfileUiState())
   val uiState: StateFlow<ProfileUiState> = _uiState
 
@@ -91,7 +104,13 @@ class ProfileScreenViewModel(
               firstName = profile.userInfo.name,
               lastName = profile.userInfo.lastName,
               residence = profile.userInfo.residencyName ?: "",
-              language = profile.userSettings.language.displayLanguage)
+              language = profile.userSettings.language.displayLanguage,
+              prefLocation = profile.userInfo.location,
+              minPrice = profile.userInfo.minPrice,
+              maxPrice = profile.userInfo.maxPrice,
+              minSize = profile.userInfo.minSize,
+              maxSize = profile.userInfo.maxSize,
+              selectedRoomTypes = profile.userInfo.preferredRoomTypes.toSet())
         }
       } catch (e: Exception) {
         Log.d("ProfileViewModel", "Profile not found for $uid, assuming new user.")
@@ -122,6 +141,47 @@ class ProfileScreenViewModel(
   /** Flip between view and edit modes; clears any transient error on toggle. */
   fun toggleEditing() {
     _uiState.value = _uiState.value.copy(isEditing = !_uiState.value.isEditing, errorMsg = null)
+  }
+
+  fun onPriceRangeChange(min: Double?, max: Double?) {
+    _uiState.update { it.copy(minPrice = min, maxPrice = max) }
+  }
+
+  fun onSizeRangeChange(min: Int?, max: Int?) {
+    _uiState.update { it.copy(minSize = min, maxSize = max) }
+  }
+
+  fun onToggleRoomType(type: RoomType) {
+    _uiState.update { state ->
+      val current = state.selectedRoomTypes.toMutableSet()
+      if (current.contains(type)) current.remove(type) else current.add(type)
+      state.copy(selectedRoomTypes = current)
+    }
+  }
+
+  override fun updateStateWithQuery(query: String) {
+    _uiState.update { it.copy(locationQuery = query) }
+  }
+
+  override fun updateStateWithSuggestions(suggestions: List<Location>) {
+    _uiState.update { it.copy(locationSuggestions = suggestions) }
+  }
+
+  override fun updateStateWithLocation(location: Location) {
+    _uiState.update { it.copy(prefLocation = location, locationQuery = location.name) }
+  }
+
+  override fun updateStateShowDialog(currentLocation: Location?) {
+    _uiState.update {
+      it.copy(showLocationDialog = true, locationQuery = currentLocation?.name ?: "")
+    }
+    if (currentLocation != null) {
+      setCustomLocationQuery(currentLocation.name)
+    }
+  }
+
+  override fun updateStateDismissDialog() {
+    _uiState.update { it.copy(showLocationDialog = false, locationSuggestions = emptyList()) }
   }
 
   /**
@@ -195,6 +255,33 @@ class ProfileScreenViewModel(
               isSaving = false,
               errorMsg = "${context.getString(R.string.profile_vm_failed_to_save)} ${e.message}")
         }
+      }
+    }
+  }
+
+  fun savePreferences(context: Context, onSuccess: () -> Unit) {
+    val uid = auth.currentUser?.uid ?: return
+
+    viewModelScope.launch {
+      _uiState.update { it.copy(isSaving = true) }
+      try {
+        val profile = profileRepo.getProfile(uid)
+
+        val updatedUserInfo =
+            profile.userInfo.copy(
+                location = _uiState.value.prefLocation,
+                minPrice = _uiState.value.minPrice,
+                maxPrice = _uiState.value.maxPrice,
+                minSize = _uiState.value.minSize,
+                maxSize = _uiState.value.maxSize,
+                preferredRoomTypes = _uiState.value.selectedRoomTypes.toList())
+        profileRepo.editProfile(profile.copy(userInfo = updatedUserInfo))
+
+        _uiState.update { it.copy(isSaving = false) }
+        onSuccess()
+      } catch (e: Exception) {
+        Log.e(logTag, "Failed to save preferences", e)
+        _uiState.update { it.copy(isSaving = false, errorMsg = e.message) }
       }
     }
   }

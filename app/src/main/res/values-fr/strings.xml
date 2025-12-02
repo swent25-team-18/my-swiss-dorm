@@ -71,7 +71,7 @@
     <string name="admin_page_title">Page Administrateur</string>
     <string name="admin_page_image_id">ID de l\'image</string>
     <string name="admin_page_select_location">Sélectionner une localisation</string>
-    
+
     <!-- AdminPageViewModel -->
     <string name="admin_page_email_required">L\'e-mail est requis pour un administrateur.</string>
     <string name="admin_page_email_invalid">Veuillez entrer une adresse e-mail valide.</string>
@@ -131,6 +131,14 @@
     <string name="sign_up_last_name_help">Votre nom doit contenir moins de 20 caractères</string>
     <string name="sign_up_email_help">Vous devez entrer une adresse e-mail valide</string>
     <string name="sign_up_phone_number_help">Vous devez entrer un numéro de téléphone valide</string>
+    <string name="continue_with_preferences">Poursuivez la configuration de votre compte</string>
+    <!-- SignUpPreferencesScreen -->
+    <string name="edit_preferences">Modifiez vos préférences</string>
+    <string name="budget">Budget</string>
+    <string name="preferred_size">Taille préférée</string>
+    <string name="preferred_room_type">Type de chambre préféré</string>
+
+
 
     <!-- SignUpViewModel -->
     <string name="sign_up_vm_auth_cancelled">Authentification annulée</string>
@@ -262,7 +270,10 @@
     <string name="browse_city_vm_failed_to_load_listings">Impossible de charger les annonces</string>
     <string name="browse_city_vm_failed_to_load_residencies">Impossible de charger les résidences</string>
     <string name="browse_city_vm_price_per_month">.-/mois</string>
-    
+    <!-- EditPreferencesScreen -->
+    <string name="listing_preferences">Préférences d\'affichage</string>
+    <string name="save_preferences">Enregistrer vos préférences</string>
+
     <!-- BookmarkedListingsScreen -->
     <string name="bookmarked_listings_title">Annonces enregistrées</string>
     <string name="bookmarked_listings_no_bookmarks_yet">Aucune annonce enregistrée pour le moment.</string>
@@ -300,7 +311,7 @@
 
     <!-- ViewUserProfileViewModel -->
     <string name="view_user_profile_not_signed_in">Non connecté</string>
-  
+
     <string name="view_user_profile_failed_to_block_user">Échec du blocage de l’utilisateur</string>
     <string name="view_user_profile_failed_to_unblock_user">Échec du déblocage de l’utilisateur</string>
     <string name="failed_to_load_user">Échec du chargement de l’utilisateur</string>

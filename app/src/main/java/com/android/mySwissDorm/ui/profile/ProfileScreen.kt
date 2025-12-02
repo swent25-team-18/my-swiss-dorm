@@ -24,7 +24,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -42,9 +41,9 @@ import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.AddPhotoDialog
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 
@@ -65,6 +64,7 @@ fun ProfileScreen(
     onChangeProfilePicture: (Photo) -> Unit,
     onLanguageChange: (String) -> Unit,
     onBack: () -> Unit,
+    onEditPreferencesClick: () -> Unit,
     onViewBookmarks: () -> Unit = {},
     viewModel: ProfileScreenViewModel = viewModel()
 ) {
@@ -92,7 +92,8 @@ fun ProfileScreen(
       onBack = onBack,
       onViewBookmarks = onViewBookmarks,
       onToggleEditing = viewModel::toggleEditing,
-      onSave = { viewModel.saveProfile(context) })
+      onSave = { viewModel.saveProfile(context) },
+      onEditPreferencesClick = onEditPreferencesClick)
 
   if (restartPopUpIsDisplayed && !state.isSaving) {
     RestartDialog(
@@ -147,7 +148,8 @@ private fun ProfileScreenContent(
     onBack: () -> Unit,
     onViewBookmarks: () -> Unit = {},
     onToggleEditing: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onEditPreferencesClick: () -> Unit
 ) {
   // Local editable buffers used ONLY in edit mode (remembered across recompositions)
   var firstLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.firstName) }
@@ -304,6 +306,20 @@ private fun ProfileScreenContent(
                     }
               }
 
+              Spacer(Modifier.height(10.dp))
+              Button(
+                  onClick = onEditPreferencesClick,
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .padding(top = 16.dp)
+                          .height(52.dp)
+                          .clip(RoundedCornerShape(12.dp)),
+                  colors =
+                      ButtonDefaults.buttonColors(
+                          containerColor = BackGroundColor, contentColor = MainColor),
+                  border = androidx.compose.foundation.BorderStroke(1.dp, MainColor)) {
+                    Text(stringResource(R.string.listing_preferences), color = MainColor)
+                  }
               // Bottom action area: Save (edit mode) or Logout (view mode)
               if (state.isEditing) {
                 Button(
@@ -374,31 +390,31 @@ private fun ProfileScreenContent(
  */
 @Composable
 fun EditableTextField(
+    modifier: Modifier = Modifier,
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     tag: String,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier
 ) {
   OutlinedTextField(
       value = value,
       onValueChange = onValueChange, // never gate this (enabled already blocks edits)
       enabled = enabled,
       singleLine = true,
-      label = { Text(text = label, color = Color.Gray) },
+      label = { Text(text = label, color = Gray) },
       modifier = modifier.height(64.dp).testTag(tag),
       placeholder = { Text(text = label) },
       shape = RoundedCornerShape(12.dp),
       colors =
           TextFieldDefaults.colors(
-              unfocusedIndicatorColor = Color.Transparent,
+              unfocusedIndicatorColor = Gray,
               focusedIndicatorColor = MainColor,
               focusedLabelColor = MainColor,
-              cursorColor = MainColor,
-              focusedContainerColor = TextBoxColor,
-              unfocusedContainerColor = TextBoxColor,
-              disabledContainerColor = TextBoxColor),
+              cursorColor = TextColor,
+              focusedContainerColor = BackGroundColor,
+              unfocusedContainerColor = BackGroundColor,
+              disabledContainerColor = BackGroundColor),
       textStyle = TextStyle(color = TextColor, fontSize = 16.sp, textAlign = TextAlign.Start),
       keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done))
 }
@@ -439,19 +455,19 @@ private fun DropdownField(
             readOnly = true,
             enabled = enabled,
             singleLine = true,
-            label = { Text(label, color = Color.Gray) },
+            label = { Text(label, color = Gray) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.menuAnchor().fillMaxWidth().height(64.dp).testTag(tag),
             colors =
                 TextFieldDefaults.colors(
-                    unfocusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Gray,
                     focusedIndicatorColor = MainColor,
                     focusedLabelColor = MainColor,
-                    cursorColor = MainColor,
-                    focusedContainerColor = TextBoxColor,
-                    unfocusedContainerColor = TextBoxColor,
-                    disabledContainerColor = TextBoxColor),
+                    cursorColor = TextColor,
+                    focusedContainerColor = BackGroundColor,
+                    unfocusedContainerColor = BackGroundColor,
+                    disabledContainerColor = BackGroundColor),
             textStyle = TextStyle(color = TextColor, fontSize = 16.sp, textAlign = TextAlign.Start))
 
         // Dropdown menu (rounded corners to match the field)
@@ -563,6 +579,7 @@ private fun Preview_Profile_Interactive() {
         onChangeProfilePicture = {},
         onBack = {},
         onToggleEditing = { isEditing = !isEditing },
-        onSave = { isEditing = false })
+        onSave = { isEditing = false },
+        onEditPreferencesClick = {})
   }
 }

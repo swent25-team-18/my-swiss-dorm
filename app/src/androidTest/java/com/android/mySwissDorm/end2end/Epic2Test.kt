@@ -21,6 +21,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.screen.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
@@ -114,7 +115,9 @@ class Epic2Test : FirestoreTest() {
     }
 
     compose.waitForIdle()
+    compose.waitUntil(5_000) { compose.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).isDisplayed() }
 
+    compose.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).performClick()
     // 2. Select custom location
     compose.waitUntil(5000) {
       compose.onNodeWithTag(HomePageScreenTestTags.LOCATION_SELECTION).isDisplayed()
@@ -177,8 +180,10 @@ class Epic2Test : FirestoreTest() {
     compose.waitUntil(5000) { compose.onNodeWithText(rentalListing1.title, true).isDisplayed() }
     compose.onNodeWithText(rentalListing1.title, true).performClick()
 
-    compose.waitUntil(5000) { compose.onNodeWithTag(C.ViewListingTags.POSTED_BY).isDisplayed() }
-    compose.onNodeWithTag(C.ViewListingTags.POSTED_BY).performClick()
+    compose.waitUntil(5000) {
+      compose.onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME).isDisplayed()
+    }
+    compose.onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()
 
     compose.waitUntil(5000) {
       compose.onNodeWithTag(C.ViewUserProfileTags.BLOCK_BUTTON).isDisplayed()

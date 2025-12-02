@@ -7,10 +7,8 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -93,93 +91,40 @@ class AddListingScreenTest : FirestoreTest() {
 
   // Helper function to select a residency from the dropdown
   private fun selectResidency(residencyName: String) {
-    // Wait for the "Residency Name" label to appear (field exists in UI)
+    // Wait for the dropdown box to appear
     composeRule.waitUntil(5_000) {
       composeRule
-          .onAllNodes(hasText("Residency Name"), useUnmergedTree = true)
+          .onAllNodes(
+              hasTestTag(C.SanitizedResidencyDropdownTags.RESIDENCY_DROPDOWN_BOX),
+              useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    // Wait for residencies to load - try to open dropdown until menu appears with residency
-    // We'll attempt to click the field and check if menu opens with options
-    var dropdownOpened = false
-    var attempts = 0
-    while (!dropdownOpened && attempts < 30) {
-      try {
-        // Try clicking on "Select residency" if it exists, otherwise try clicking on the label area
-        val hasSelectResidency =
-            composeRule
-                .onAllNodes(hasText("Select residency"), useUnmergedTree = true)
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+    // Click on the dropdown box to open the menu
+    composeRule
+        .onNodeWithTag(
+            C.SanitizedResidencyDropdownTags.RESIDENCY_DROPDOWN_BOX, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitForIdle()
 
-        if (hasSelectResidency) {
-          composeRule.onNodeWithText("Select residency", useUnmergedTree = true).performClick()
+    // Determine the test tag based on residency name
+    val testTag =
+        if (residencyName == "Private Accommodation") {
+          C.SanitizedResidencyDropdownTags.PRIVATE_ACCOMMODATION
         } else {
-          // If "Select residency" doesn't exist yet, try clicking on "Residency Name" label
-          // The field should still be clickable even if value isn't visible
-          composeRule.onNodeWithText("Residency Name", useUnmergedTree = true).performClick()
+          C.SanitizedResidencyDropdownTags.getResidencyTag(residencyName)
         }
-        composeRule.waitForIdle()
 
-        // Check if menu opened by looking for residency name in dropdown menu
-        val menuOpen =
-            composeRule
-                .onAllNodes(hasText(residencyName), useUnmergedTree = true)
-                .fetchSemanticsNodes()
-                .size >= 2 // Should appear at least in menu (and maybe field if already selected)
-
-        if (menuOpen) {
-          dropdownOpened = true
-        }
-      } catch (_: Exception) {
-        // Field might not be ready yet, wait and try again
-      }
-      attempts++
-      if (!dropdownOpened && attempts < 30) {
-        composeRule.waitForIdle()
-        // Small delay to allow residencies to load
-        Thread.sleep(200)
-      }
-    }
-
-    if (!dropdownOpened) {
-      // Final attempt with longer wait - residencies should be loaded by now
-      composeRule.waitUntil(5_000) {
-        val hasField =
-            composeRule
-                .onAllNodes(
-                    hasText("Select residency") or hasText("Residency Name"),
-                    useUnmergedTree = true)
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        if (hasField) {
-          val fieldNodes =
-              composeRule.onAllNodes(
-                  hasText("Select residency") or hasText("Residency Name"), useUnmergedTree = true)
-          fieldNodes[0].performClick()
-          composeRule.waitForIdle()
-          composeRule
-              .onAllNodes(hasText(residencyName), useUnmergedTree = true)
-              .fetchSemanticsNodes()
-              .isNotEmpty()
-        } else {
-          false
-        }
-      }
-    }
-
-    // Now click on the residency name in the dropdown menu
+    // Wait for the residency menu item to appear and click it
     composeRule.waitUntil(5_000) {
       composeRule
-          .onAllNodes(hasText(residencyName), useUnmergedTree = true)
+          .onAllNodes(hasTestTag(testTag), useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    val menuItems = composeRule.onAllNodes(hasText(residencyName), useUnmergedTree = true)
-    menuItems[0].performClick()
+    composeRule.onNodeWithTag(testTag, useUnmergedTree = true).performClick()
     composeRule.waitForIdle()
   }
 
@@ -194,17 +139,34 @@ class AddListingScreenTest : FirestoreTest() {
     var capturedUid: String? = null
     setContentWith { uid -> capturedUid = uid }
 
-    val confirmBtn = composeRule.onNodeWithText("Confirm listing").assertExists()
+    val confirmBtn =
+        composeRule
+            .onNodeWithTag(C.AddListingScreenTags.CONFIRM_BUTTON, useUnmergedTree = true)
+            .assertExists()
     confirmBtn.assertIsNotEnabled()
 
     // Fill fields with VALID values respecting new validators (size requires one decimal).
-    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("Cozy studio")
-    selectResidency("Vortex")
-    composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("25.0")
     composeRule
-        .onNode(hasText("Price (CHF / month)") and hasSetTextAction())
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.TITLE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Cozy studio")
+    selectResidency("Vortex")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.SIZE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("25.0")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.PRICE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
         .performTextInput("1200")
-    composeRule.onNode(hasText("Description") and hasSetTextAction()).performTextInput("Near EPFL")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.DESC_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Near EPFL")
 
     // Button should now enable
     confirmBtn.assertIsEnabled()
@@ -224,13 +186,28 @@ class AddListingScreenTest : FirestoreTest() {
     runTest { switchToUser(FakeUser.FakeUser2) }
     setContentWith {}
 
-    val confirmBtn = composeRule.onNodeWithText("Confirm listing").assertExists()
+    val confirmBtn =
+        composeRule
+            .onNodeWithTag(C.AddListingScreenTags.CONFIRM_BUTTON, useUnmergedTree = true)
+            .assertExists()
 
-    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("X")
-    composeRule.onNode(hasText("Description") and hasSetTextAction()).performTextInput("Y")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.TITLE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("X")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.DESC_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Y")
 
     // Entering 1000 (no decimal) is invalid per validateFinal (must have exactly one decimal)
-    composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("1000")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.SIZE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("1000")
 
     // Price is fine but we keep it blank to ensure the button remains disabled
     // (even with price filled size error must still block submit)
@@ -245,16 +222,29 @@ class AddListingScreenTest : FirestoreTest() {
     setContentWith {}
 
     // Enter noisy input; sanitizer should filter to digits only and drop leading zeros.
-    val priceNode = composeRule.onNode(hasText("Price (CHF / month)") and hasSetTextAction())
+    val priceNode =
+        composeRule.onNode(
+            hasTestTag(C.AddListingScreenTags.PRICE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
     priceNode.performTextInput("00a12b3!")
     // Enter minimal other fields so the button remains disabled (size missing decimal)
-    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("A")
-    composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("10")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.TITLE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("A")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.SIZE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("10")
     // Select a residency (now required)
     selectResidency("Vortex")
 
     // Still disabled because size invalid (no decimal) and description empty
-    composeRule.onNodeWithText("Confirm listing").assertIsEnabled()
+    composeRule
+        .onNodeWithTag(C.AddListingScreenTags.CONFIRM_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
   }
 
   @Test
@@ -275,7 +265,6 @@ class AddListingScreenTest : FirestoreTest() {
         .onNodeWithTag(C.AddListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
         .performScrollTo()
         .assertIsDisplayed()
-    composeRule.onNodeWithText("Start Date", useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
@@ -362,17 +351,34 @@ class AddListingScreenTest : FirestoreTest() {
     runTest { switchToUser(FakeUser.FakeUser1) }
     setContentWith {}
 
-    val confirmBtn = composeRule.onNodeWithText("Confirm listing").assertExists()
+    val confirmBtn =
+        composeRule
+            .onNodeWithTag(C.AddListingScreenTags.CONFIRM_BUTTON, useUnmergedTree = true)
+            .assertExists()
     confirmBtn.assertIsNotEnabled()
 
     // Fill required fields
-    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("Cozy studio")
-    selectResidency("Vortex")
-    composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("25.0")
     composeRule
-        .onNode(hasText("Price (CHF / month)") and hasSetTextAction())
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.TITLE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Cozy studio")
+    selectResidency("Vortex")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.SIZE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("25.0")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.PRICE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
         .performTextInput("1200")
-    composeRule.onNode(hasText("Description") and hasSetTextAction()).performTextInput("Near EPFL")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.DESC_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Near EPFL")
 
     // Wait for the start date field to exist, then scroll to it
     composeRule.waitUntil(5_000) {
@@ -434,18 +440,128 @@ class AddListingScreenTest : FirestoreTest() {
   fun ui_guest_user_sees_disabled_button_and_warning() = run {
     runTest { signInAnonymous() }
     setContentWith {}
-    composeRule.onNode(hasText("Title") and hasSetTextAction()).performTextInput("Guest Attempt")
-    selectResidency("Vortex")
-    composeRule.onNode(hasText("Room size (m²)") and hasSetTextAction()).performTextInput("20.0")
     composeRule
-        .onNode(hasText("Price (CHF / month)") and hasSetTextAction())
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.TITLE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Guest Attempt")
+    selectResidency("Vortex")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.SIZE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("20.0")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.PRICE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
         .performTextInput("1000")
-    composeRule.onNode(hasText("Description") and hasSetTextAction()).performTextInput("Guest Desc")
-    val confirmBtn = composeRule.onNodeWithText("Confirm listing").assertExists()
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.DESC_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Guest Desc")
+    val confirmBtn =
+        composeRule
+            .onNodeWithTag(C.AddListingScreenTags.CONFIRM_BUTTON, useUnmergedTree = true)
+            .assertExists()
     confirmBtn.assertIsNotEnabled()
     composeRule
-        .onNodeWithText(
-            "Please complete all required fields (valid size, price, and starting date) or Sign-in if you're a guest.")
+        .onNodeWithTag(C.AddListingScreenTags.ERROR_MESSAGE, useUnmergedTree = true)
         .assertIsDisplayed()
+  }
+
+  @Test
+  fun multiple_rapid_clicks_creates_only_one_listing() = run {
+    runTest { switchToUser(FakeUser.FakeUser1) }
+    var submissionCount = 0
+    setContentWith { submissionCount++ }
+
+    // Fill all required fields
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.TITLE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Test listing")
+    selectResidency("Vortex")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.SIZE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("25.0")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.PRICE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("1200")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.DESC_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Test desc")
+
+    val confirmBtn =
+        composeRule
+            .onNodeWithTag(C.AddListingScreenTags.CONFIRM_BUTTON, useUnmergedTree = true)
+            .assertExists()
+            .assertIsEnabled()
+
+    // Rapidly click the button multiple times
+    confirmBtn.performClick()
+    confirmBtn.performClick()
+    confirmBtn.performClick()
+
+    // Allow submissions to process
+    runBlocking { delay(500) }
+
+    // Verify only one submission was made
+    assertEquals("Only one listing should be created", 1, submissionCount)
+    runTest { assertEquals("Only one listing should be in Firestore", 1, getRentalListingCount()) }
+  }
+
+  @Test
+  fun button_is_disabled_during_submission() = run {
+    runTest { switchToUser(FakeUser.FakeUser1) }
+    setContentWith {}
+
+    // Fill all required fields
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.TITLE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Test listing")
+    selectResidency("Vortex")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.SIZE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("25.0")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.PRICE_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("1200")
+    composeRule
+        .onNode(
+            hasTestTag(C.AddListingScreenTags.DESC_FIELD) and hasSetTextAction(),
+            useUnmergedTree = true)
+        .performTextInput("Test desc")
+
+    val confirmBtn =
+        composeRule
+            .onNodeWithTag(C.AddListingScreenTags.CONFIRM_BUTTON, useUnmergedTree = true)
+            .assertExists()
+            .assertIsEnabled()
+
+    // Click the button - it should become disabled immediately
+    confirmBtn.performClick()
+
+    // Give a small delay for the state to update
+    runBlocking { delay(50) }
+
+    // Button should be disabled during submission
+    composeRule
+        .onNodeWithTag(C.AddListingScreenTags.CONFIRM_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
   }
 }

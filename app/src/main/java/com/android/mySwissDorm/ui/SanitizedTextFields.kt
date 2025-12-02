@@ -346,7 +346,7 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
                 focusedBorderColor = MainColor, // Focused outline color (Red)
                 unfocusedBorderColor = MainColor, // Remove the default border when not focused
                 focusedLabelColor = MainColor, // Optional: Change label color when focused
-                unfocusedLabelColor = Color.Gray // Optional: Change label color when not focused
+                unfocusedLabelColor = Gray // Optional: Change label color when not focused
                 ),
         modifier = Modifier.menuAnchor().fillMaxWidth(),
     )
@@ -393,7 +393,7 @@ fun ResidencyDropdownResID(
                     focusedBorderColor = MainColor,
                     unfocusedBorderColor = MainColor,
                     focusedLabelColor = MainColor,
-                    unfocusedLabelColor = Color.Gray),
+                    unfocusedLabelColor = Gray),
             modifier = Modifier.menuAnchor().fillMaxWidth(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

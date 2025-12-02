@@ -2,7 +2,7 @@ package com.android.mySwissDorm.ui.review
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,21 +39,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -64,6 +57,7 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -128,60 +122,39 @@ fun ViewReviewScreen(
                   modifier = Modifier.testTag(C.ViewReviewTags.TITLE),
                   color = TextColor)
 
-              // tag we'll look for
-              val tagProfile = "PROFILE_ID"
+              val context = LocalContext.current
+              val baseTextStyle =
+                  MaterialTheme.typography.bodyMedium.copy(
+                      color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-              // build the AnnotatedString tagging the name
-              val annotatedPostedByString = buildAnnotatedString {
-                append("${stringResource(R.string.view_review_posted_by)} ")
-
-                // pushStringAnnotation to "tag" this part of the string
-                pushStringAnnotation(tag = tagProfile, annotation = review.ownerId)
-                // apply the style to the name
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MainColor)) {
-                  append(fullNameOfPoster)
-                  if (isOwner) append(" ${stringResource(R.string.view_review_posted_by_you)}")
-                }
-                // stop tagging
-                pop()
-
-                val context = LocalContext.current
-                append(" ${formatRelative(review.postedAt, context = context)}")
-              }
-              //
-              // Make the whole line clickable and trigger onViewProfile when the name is tapped
-              var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-              Text(
-                  text = annotatedPostedByString,
-                  style =
-                      MaterialTheme.typography.bodyMedium.copy(
-                          color = MaterialTheme.colorScheme.onSurfaceVariant),
-                  onTextLayout = { textLayoutResult = it },
-                  modifier =
-                      Modifier.testTag(C.ViewReviewTags.POSTED_BY)
-                          .then(
-                              // Only make clickable if review is not anonymous (privacy)
-                              if (!review.isAnonymous) {
-                                Modifier.pointerInput(Unit) {
-                                  detectTapGestures { pos ->
-                                    val l = textLayoutResult ?: return@detectTapGestures
-                                    val offset = l.getOffsetForPosition(pos)
-
-                                    // find any annotations at that exact offset
-                                    annotatedPostedByString
-                                        .getStringAnnotations(start = offset, end = offset)
-                                        .firstOrNull {
-                                          it.tag == tagProfile
-                                        } // Check if it's our tag
-                                        ?.let { annotation ->
-                                          // trigger the callback with the stored ownerId
-                                          onViewProfile(annotation.item)
-                                        }
-                                  }
-                                }
-                              } else {
-                                Modifier
-                              }))
+              Row(
+                  modifier = Modifier.testTag(C.ViewReviewTags.POSTED_BY),
+                  verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${stringResource(R.string.view_review_posted_by)} ",
+                        style = baseTextStyle,
+                        color = Gray)
+                    Text(
+                        text =
+                            fullNameOfPoster +
+                                if (isOwner)
+                                    " ${stringResource(R.string.view_review_posted_by_you)}"
+                                else "",
+                        style = baseTextStyle.copy(fontWeight = FontWeight.Bold, color = MainColor),
+                        modifier =
+                            Modifier.testTag(C.ViewReviewTags.POSTED_BY_NAME)
+                                .then(
+                                    // Only make clickable if review is not anonymous (privacy)
+                                    if (!review.isAnonymous) {
+                                      Modifier.clickable { onViewProfile(review.ownerId) }
+                                    } else {
+                                      Modifier
+                                    }))
+                    Text(
+                        text = " ${formatRelative(review.postedAt, context = context)}",
+                        style = baseTextStyle,
+                        color = Gray)
+                  }
 
               // Bullet section
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.BULLETS)) {

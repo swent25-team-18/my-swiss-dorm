@@ -332,5 +332,18 @@ object C {
 
     const val SAVE_BUTTON = "profile_save_button"
     const val DELETE_PP_BUTTON = "profilePictureDeleteButton"
+    
+  object FilterTestTags {
+    const val MIN_PRICE = "price_min_text"
+    const val MAX_PRICE = "price_max_text"
+    const val SLIDER_PRICE = "price_slider"
+    const val MAX_SIZE = "size_max_text"
+    const val MIN_SIZE = "size_min_text"
+    const val SLIDER_SIZE = "size_slider"
+    const val BUDGET = "budget"
+    const val PREFERRED_SIZE = "preferred_size"
+    const val PREFERRED_ROOM_TYPE = "preferred_room_type"
+    const val SIGN_UP_WITH_PREFERENCES = "sign_up_with_preferences"
+    const val LOCATION_PREFERENCE = "locationField"
   }
 }

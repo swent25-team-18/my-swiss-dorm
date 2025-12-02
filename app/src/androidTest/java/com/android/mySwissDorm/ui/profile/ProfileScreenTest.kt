@@ -420,14 +420,14 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
         success = true
         break
       }
-      assertTrue("Timeout: Firestore was not updated with preferences within 5s", success)
-      val snap = FirebaseEmulator.firestore.collection("profiles").document(uid).get().await()
-      val data = snap.data!!
-      val userInfo = data["userInfo"] as Map<*, *>
-      val preferredRoomTypes = userInfo["preferredRoomTypes"] as? List<*>
-      assertNotNull("Room types should not be null", preferredRoomTypes)
-      val minPrice = userInfo["minPrice"] as? Number
-      assertNotNull("minPrice should be saved", minPrice)
     }
+    assertTrue("Timeout: Firestore was not updated with preferences within 5s", success)
+    val snap = FirebaseEmulator.firestore.collection("profiles").document(uid).get().await()
+    val data = snap.data!!
+    val userInfo = data["userInfo"] as Map<*, *>
+    val preferredRoomTypes = userInfo["preferredRoomTypes"] as? List<*>
+    assertNotNull("Room types should not be null", preferredRoomTypes)
+    val minPrice = userInfo["minPrice"] as? Number
+    assertNotNull("minPrice should be saved", minPrice)
   }
 }

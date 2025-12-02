@@ -57,6 +57,7 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -131,7 +132,8 @@ fun ViewReviewScreen(
                   verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "${stringResource(R.string.view_review_posted_by)} ",
-                        style = baseTextStyle)
+                        style = baseTextStyle,
+                        color = Gray)
                     Text(
                         text =
                             fullNameOfPoster +
@@ -150,7 +152,8 @@ fun ViewReviewScreen(
                                     }))
                     Text(
                         text = " ${formatRelative(review.postedAt, context = context)}",
-                        style = baseTextStyle)
+                        style = baseTextStyle,
+                        color = Gray)
                   }
 
               // Bullet section

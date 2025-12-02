@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -32,9 +31,16 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.theme.AlmostWhite
+import com.android.mySwissDorm.ui.theme.DarkGray
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.OutlineColor
+import com.android.mySwissDorm.ui.theme.PinkyWhite
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.Violet
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
 
@@ -66,7 +72,7 @@ fun ViewListingScreen(
   // Button is enabled only if there's a message and user is not blocked
   val canApply = hasMessage && !isBlockedByOwner
   // Button color: violet if blocked, red (MainColor) if normal
-  val buttonColor = if (isBlockedByOwner && hasMessage) Color(0xFF9C27B0) else MainColor
+  val buttonColor = if (isBlockedByOwner && hasMessage) Violet else MainColor
 
   LaunchedEffect(errorMsg) {
     if (errorMsg != null) {
@@ -124,9 +130,7 @@ fun ViewListingScreen(
                           modifier = Modifier.testTag(C.ViewListingTags.BLOCKED_NOTICE))
                       Text(
                           text = stringResource(R.string.view_listing_blocked_text),
-                          style =
-                              MaterialTheme.typography.bodyMedium.copy(
-                                  color = MaterialTheme.colorScheme.onSurfaceVariant),
+                          style = MaterialTheme.typography.bodyMedium.copy(color = DarkGray),
                           textAlign = TextAlign.Center)
                       Button(
                           onClick = onGoBack,
@@ -136,7 +140,7 @@ fun ViewListingScreen(
                           shape = RoundedCornerShape(14.dp),
                           colors =
                               ButtonDefaults.buttonColors(
-                                  containerColor = MainColor, contentColor = Color.White)) {
+                                  containerColor = MainColor, contentColor = White)) {
                             Text(stringResource(R.string.go_back))
                           }
                     }
@@ -169,7 +173,8 @@ fun ViewListingScreen(
                     verticalAlignment = Alignment.CenterVertically) {
                       Text(
                           text = "${stringResource(R.string.view_listing_posted_by)} ",
-                          style = baseTextStyle)
+                          style = baseTextStyle,
+                          color = Gray)
                       Text(
                           text =
                               fullNameOfPoster +
@@ -184,7 +189,8 @@ fun ViewListingScreen(
                               })
                       Text(
                           text = " ${formatRelative(listing.postedAt, context = context)}",
-                          style = baseTextStyle)
+                          style = baseTextStyle,
+                          color = Gray)
                     }
 
                 // Bullet section
@@ -275,11 +281,11 @@ fun ViewListingScreen(
                       minLines = 1,
                       colors =
                           OutlinedTextFieldDefaults.colors(
-                              focusedContainerColor = Color(0xFFF0F0F0),
-                              unfocusedContainerColor = Color(0xFFF0F0F0),
-                              disabledContainerColor = Color(0xFFF0F0F0),
-                              focusedBorderColor = MaterialTheme.colorScheme.outline,
-                              unfocusedBorderColor = MaterialTheme.colorScheme.outline))
+                              focusedContainerColor = AlmostWhite,
+                              unfocusedContainerColor = AlmostWhite,
+                              disabledContainerColor = AlmostWhite,
+                              focusedBorderColor = OutlineColor,
+                              unfocusedBorderColor = OutlineColor))
 
                   // Apply now button (centered, half width, rounded, red or violet)
                   Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -294,11 +300,11 @@ fun ViewListingScreen(
                         colors =
                             ButtonDefaults.buttonColors(
                                 containerColor = buttonColor,
-                                disabledContainerColor = Color(0xFFEBD0CE),
-                                disabledContentColor = Color(0xFFFFFFFF))) {
+                                disabledContainerColor = PinkyWhite,
+                                disabledContentColor = White)) {
                           Text(
                               stringResource(R.string.view_listing_apply_now),
-                              color = Color.White,
+                              color = White,
                               style = MaterialTheme.typography.titleMedium)
                         }
                   }

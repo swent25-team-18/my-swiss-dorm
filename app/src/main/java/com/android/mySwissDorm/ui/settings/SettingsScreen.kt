@@ -50,6 +50,7 @@ import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -261,7 +262,7 @@ fun SettingsScreenContent(
                                   Text(
                                       stringResource(R.string.settings_view_profile),
                                       style = MaterialTheme.typography.bodySmall,
-                                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                      color = DarkGray,
                                       maxLines = 1,
                                       overflow = TextOverflow.Ellipsis)
                                 }

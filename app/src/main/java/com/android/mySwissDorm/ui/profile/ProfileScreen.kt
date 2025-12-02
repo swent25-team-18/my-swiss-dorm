@@ -22,7 +22,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -41,10 +40,10 @@ import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.AddPhotoDialog
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.Red0
-import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
 /**
@@ -384,31 +383,31 @@ private fun ProfileScreenContent(
  */
 @Composable
 fun EditableTextField(
+    modifier: Modifier = Modifier,
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     tag: String,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier
 ) {
   OutlinedTextField(
       value = value,
       onValueChange = onValueChange, // never gate this (enabled already blocks edits)
       enabled = enabled,
       singleLine = true,
-      label = { Text(text = label, color = Color.Gray) },
+      label = { Text(text = label, color = Gray) },
       modifier = modifier.height(64.dp).testTag(tag),
       placeholder = { Text(text = label) },
       shape = RoundedCornerShape(12.dp),
       colors =
           TextFieldDefaults.colors(
-              unfocusedIndicatorColor = Color.Transparent,
+              unfocusedIndicatorColor = Gray,
               focusedIndicatorColor = MainColor,
               focusedLabelColor = MainColor,
-              cursorColor = MainColor,
-              focusedContainerColor = TextBoxColor,
-              unfocusedContainerColor = TextBoxColor,
-              disabledContainerColor = TextBoxColor),
+              cursorColor = TextColor,
+              focusedContainerColor = BackGroundColor,
+              unfocusedContainerColor = BackGroundColor,
+              disabledContainerColor = BackGroundColor),
       textStyle = TextStyle(color = TextColor, fontSize = 16.sp, textAlign = TextAlign.Start),
       keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done))
 }
@@ -449,19 +448,19 @@ private fun DropdownField(
             readOnly = true,
             enabled = enabled,
             singleLine = true,
-            label = { Text(label, color = Color.Gray) },
+            label = { Text(label, color = Gray) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.menuAnchor().fillMaxWidth().height(64.dp).testTag(tag),
             colors =
                 TextFieldDefaults.colors(
-                    unfocusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Gray,
                     focusedIndicatorColor = MainColor,
                     focusedLabelColor = MainColor,
-                    cursorColor = MainColor,
-                    focusedContainerColor = TextBoxColor,
-                    unfocusedContainerColor = TextBoxColor,
-                    disabledContainerColor = TextBoxColor),
+                    cursorColor = TextColor,
+                    focusedContainerColor = BackGroundColor,
+                    unfocusedContainerColor = BackGroundColor,
+                    disabledContainerColor = BackGroundColor),
             textStyle = TextStyle(color = TextColor, fontSize = 16.sp, textAlign = TextAlign.Start))
 
         // Dropdown menu (rounded corners to match the field)

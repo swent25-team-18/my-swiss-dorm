@@ -22,7 +22,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -44,9 +43,12 @@ import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.review.DisplayGrade
 import com.android.mySwissDorm.ui.review.truncateText
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Gray
+import com.android.mySwissDorm.ui.theme.ListingCardColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
@@ -663,7 +665,7 @@ private fun FilterBottomSheet(
                             Modifier.weight(1f)
                                 .testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON),
                         colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
-                          Text(stringResource(R.string.apply), color = Color.White)
+                          Text(stringResource(R.string.apply), color = White)
                         }
                   }
             }
@@ -855,12 +857,12 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                       Modifier.height(160.dp)
                           .fillMaxWidth(0.4F)
                           .clip(RoundedCornerShape(12.dp))
-                          .background(Color(0xFFEAEAEA))) {
+                          .background(ListingCardColor)) {
                     Text(
                         stringResource(R.string.image),
                         modifier = Modifier.align(Alignment.Center),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray)
+                        color = Gray)
                   }
 
               Spacer(Modifier.width(12.dp))

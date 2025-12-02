@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.overview.ListingCardUI
+import com.android.mySwissDorm.ui.theme.ListingCardColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
@@ -57,7 +57,7 @@ fun ListingCard(
                         Modifier.height(140.dp)
                             .fillMaxWidth(0.35F)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFEAEAEA))) {
+                            .background(ListingCardColor)) {
                       AsyncImage(
                           model = data.image,
                           contentDescription = null,

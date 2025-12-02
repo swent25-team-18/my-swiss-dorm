@@ -83,7 +83,7 @@ private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, in
       shape = MaterialTheme.shapes.large,
       colors = CardDefaults.cardColors(containerColor = BackGroundColor),
       elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))) {
+      border = BorderStroke(1.dp, OutlineColor.copy(alpha = 0.5f))) {
         Column(Modifier.padding(16.dp)) {
           Row(
               modifier = Modifier.fillMaxWidth(),
@@ -103,7 +103,7 @@ private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, in
           Text(
               text = contribution.description,
               style = MaterialTheme.typography.bodyMedium,
-              color = MaterialTheme.colorScheme.onSurfaceVariant)
+              color = DarkGray)
           Spacer(Modifier.height(12.dp))
           OutlinedButton(
               onClick = onClick,

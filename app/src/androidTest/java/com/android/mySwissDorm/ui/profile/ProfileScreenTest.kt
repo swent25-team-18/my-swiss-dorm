@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.profile
 
-import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
@@ -149,7 +148,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.onNodeWithTag("field_language").assertIsNotEnabled()
     compose.onNodeWithTag("field_residence").assertIsNotEnabled()
     compose
-        .onNodeWithTag(C.ProfileTags.profilePictureTag(Uri.EMPTY), useUnmergedTree = true)
+        .onNodeWithTag(C.ProfileTags.profilePictureTag(null), useUnmergedTree = true)
         .assertIsDisplayed()
 
     compose

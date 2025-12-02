@@ -1,9 +1,13 @@
 package com.android.mySwissDorm.ui.profile
 
+import android.content.res.Configuration
+import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
@@ -41,6 +46,7 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 
 /**
  * High-level Profile screen entry point.
@@ -65,6 +71,8 @@ fun ProfileScreen(
   // Collect VM state (initial ensures preview/first composition has data)
   val state by viewModel.uiState.collectAsState(initial = ProfileUiState())
   val context = LocalContext.current
+  var restartPopUpIsDisplayed by remember { mutableStateOf(false) }
+  var newLanguage by remember { mutableStateOf(state.language) }
 
   LaunchedEffect(Unit) { viewModel.loadProfile(context) }
 
@@ -73,16 +81,9 @@ fun ProfileScreen(
       onFirstNameChange = viewModel::onFirstNameChange,
       onLastNameChange = viewModel::onLastNameChange,
       onLanguageChange = {
-        val oldLanguage = state.language
-        viewModel.onLanguageChange(it)
-        if (oldLanguage != it) {
-          val lang =
-              when (it) {
-                "English" -> "en"
-                "Français" -> "fr"
-                else -> "en"
-              }
-          onLanguageChange(lang)
+        if (state.language != it) {
+          newLanguage = it
+          restartPopUpIsDisplayed = true
         }
       },
       onResidenceChange = viewModel::onResidenceChange,
@@ -92,6 +93,21 @@ fun ProfileScreen(
       onViewBookmarks = onViewBookmarks,
       onToggleEditing = viewModel::toggleEditing,
       onSave = { viewModel.saveProfile(context) })
+
+  if (restartPopUpIsDisplayed && !state.isSaving) {
+    RestartDialog(
+        onDismissRequest = { restartPopUpIsDisplayed = false },
+        onRestart = {
+          viewModel.onLanguageChange(newLanguage)
+          val langCode =
+              when (newLanguage) {
+                Language.ENGLISH.displayLanguage -> Language.ENGLISH.codeLanguage
+                Language.FRENCH.displayLanguage -> Language.FRENCH.codeLanguage
+                else -> Language.ENGLISH.codeLanguage
+              }
+          viewModel.saveProfile(context, { onLanguageChange(langCode) })
+        })
+  }
 }
 
 /**
@@ -282,7 +298,7 @@ private fun ProfileScreenContent(
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = BackGroundColor, contentColor = MainColor),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MainColor)) {
+                    border = BorderStroke(1.dp, MainColor)) {
                       Text(
                           text = stringResource(R.string.profile_view_bookmarks), color = MainColor)
                     }
@@ -453,6 +469,50 @@ private fun DropdownField(
               }
             }
       }
+}
+
+@Composable
+private fun RestartDialog(onDismissRequest: () -> Unit, onRestart: () -> Unit) {
+  Dialog(onDismissRequest = { onDismissRequest() }) {
+    Card(
+        modifier =
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(BackGroundColor),
+        elevation = CardDefaults.cardElevation(8.dp),
+    ) {
+      Column(
+          modifier = Modifier.fillMaxWidth().padding(8.dp),
+          horizontalAlignment = Alignment.CenterHorizontally,
+          verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.profile_must_restart_pop_up), textAlign = TextAlign.Center)
+            Row(
+                modifier = Modifier.fillMaxWidth(1f),
+            ) {
+              RestartPopUpButton(
+                  textId = R.string.cancel,
+                  onClick = { onDismissRequest() },
+                  modifier = Modifier.weight(1f))
+              RestartPopUpButton(
+                  textId = R.string.restart,
+                  onClick = { onRestart() },
+                  modifier = Modifier.weight(1f))
+            }
+          }
+    }
+  }
+}
+
+@Composable
+private fun RestartPopUpButton(@StringRes textId: Int, onClick: () -> Unit, modifier: Modifier) {
+  Row(modifier = modifier.padding(horizontal = 8.dp), horizontalArrangement = Arrangement.Center) {
+    Button(
+        onClick = { onClick() },
+        modifier = Modifier.fillMaxWidth(),
+        colors =
+            ButtonDefaults.filledTonalButtonColors(
+                containerColor = MainColor, contentColor = White)) {
+          Text(text = stringResource(textId))
+        }
+  }
 }
 
 /**

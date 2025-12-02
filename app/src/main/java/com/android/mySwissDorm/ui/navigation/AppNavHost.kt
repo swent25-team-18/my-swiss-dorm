@@ -136,9 +136,6 @@ fun AppNavHost(
     // --- Bottom bar destinations ---
 
     composable(Screen.Homepage.route) {
-      if (startDestination == Screen.Profile.route) {
-        navActions.navigateTo(Screen.Profile)
-      }
       HomePageScreen(
           onSelectLocation = { location -> navActions.navigateTo(Screen.BrowseOverview(location)) },
           credentialManager = credentialManager,
@@ -576,10 +573,7 @@ fun AppNavHost(
                       Toast.LENGTH_SHORT)
                   .show()
             },
-            onLanguageChange = {
-              activity?.updateLanguage(it)
-              navigationViewModel.determineInitialDestination(Screen.Profile.route)
-            },
+            onLanguageChange = { activity?.updateLanguage(it) },
             onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
       }
     }

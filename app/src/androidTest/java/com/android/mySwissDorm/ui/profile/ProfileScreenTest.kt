@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasClickAction
@@ -20,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -27,6 +29,7 @@ import java.net.URL
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -274,13 +277,56 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     // Back to view mode (wait until logout button reappears)
     compose.waitUntil(5_000) {
       compose
-          .onAllNodesWithTag("profile_logout_button", useUnmergedTree = true)
+          .onAllNodesWithTag(C.ProfileScreenTags.RESTART_DIALOG)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
-    compose.waitForIdle()
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_RESTART_BUTTON).assertIsDisplayed()
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_RESTART_BUTTON).performClick()
+
+    compose.waitUntil(5_000) { languageChanged }
 
     assertTrue(languageChanged)
+  }
+
+  @Test
+  fun onLanguageIsNotCalledWhenUserCancelModifyLanguage() {
+    var languageChanged = false
+
+    compose.setContent {
+      ProfileScreen(
+          onLogout = {},
+          onChangeProfilePicture = {},
+          onBack = {},
+          onLanguageChange = { languageChanged = true })
+    }
+    waitForProfileScreenReady()
+
+    compose.onNodeWithTag("profile_edit_toggle").performClick()
+
+    val languagePick = "Français"
+    compose.onNodeWithTag("field_language").performClick()
+    compose.onNodeWithText(languagePick, useUnmergedTree = true).performClick()
+
+    compose.onNodeWithTag("profile_save_button").assertIsDisplayed()
+    compose.onNodeWithTag("profile_save_button").performClick()
+
+    // Back to view mode (wait until logout button reappears)
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.ProfileScreenTags.RESTART_DIALOG)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_CANCEL_BUTTON).assertIsDisplayed()
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_CANCEL_BUTTON).performClick()
+
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG).assertIsNotDisplayed()
+
+    assertFalse(languageChanged)
   }
 }

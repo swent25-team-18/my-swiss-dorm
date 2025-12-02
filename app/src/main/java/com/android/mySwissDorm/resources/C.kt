@@ -94,6 +94,12 @@ object C {
     const val LOADING = "view_user_profile_loading"
   }
 
+  object ProfileScreenTags {
+    const val RESTART_DIALOG = "profileRestartDialog"
+    const val RESTART_DIALOG_CANCEL_BUTTON = "profileRestartDialogCancel"
+    const val RESTART_DIALOG_RESTART_BUTTON = "profileRestartDialogRestart"
+  }
+
   object BrowseCityTags {
     const val ROOT = "browseCityRoot"
     const val BACK_BUTTON = "browseCityBackButton"

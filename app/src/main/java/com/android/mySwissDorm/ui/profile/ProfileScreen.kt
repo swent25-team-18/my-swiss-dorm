@@ -476,7 +476,10 @@ private fun RestartDialog(onDismissRequest: () -> Unit, onRestart: () -> Unit) {
   Dialog(onDismissRequest = { onDismissRequest() }) {
     Card(
         modifier =
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(BackGroundColor),
+            Modifier.testTag(C.ProfileScreenTags.RESTART_DIALOG)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(BackGroundColor),
         elevation = CardDefaults.cardElevation(8.dp),
     ) {
       Column(
@@ -490,11 +493,14 @@ private fun RestartDialog(onDismissRequest: () -> Unit, onRestart: () -> Unit) {
               RestartPopUpButton(
                   textId = R.string.cancel,
                   onClick = { onDismissRequest() },
-                  modifier = Modifier.weight(1f))
+                  modifier =
+                      Modifier.weight(1f).testTag(C.ProfileScreenTags.RESTART_DIALOG_CANCEL_BUTTON))
               RestartPopUpButton(
                   textId = R.string.restart,
                   onClick = { onRestart() },
-                  modifier = Modifier.weight(1f))
+                  modifier =
+                      Modifier.weight(1f)
+                          .testTag(C.ProfileScreenTags.RESTART_DIALOG_RESTART_BUTTON))
             }
           }
     }

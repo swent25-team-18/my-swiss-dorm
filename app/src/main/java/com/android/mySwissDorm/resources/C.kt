@@ -322,4 +322,11 @@ object C {
 
     fun getResidencyTag(residencyName: String) = "sanitizedResidencyDropdown_$residencyName"
   }
+
+  object ProfileTags {
+    fun profilePictureTag(uri: Uri) = "profileScreenProfilePictureTag$uri"
+
+    const val SAVE_BUTTON = "profile_save_button"
+    const val DELETE_PP_BUTTON = "profilePictureDeleteButton"
+  }
 }

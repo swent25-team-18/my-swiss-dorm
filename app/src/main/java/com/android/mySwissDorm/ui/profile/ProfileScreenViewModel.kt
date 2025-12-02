@@ -149,6 +149,7 @@ class ProfileScreenViewModel(
       }
       if (photo != null) {
         photoManager.addPhoto(photo)
+        Log.d("ProfileScreenViewModel", "New photo set")
       }
       _uiState.value = _uiState.value.copy(profilePicture = photo, errorMsg = null)
     }

@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryFirestore
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
@@ -23,6 +24,8 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -632,5 +635,68 @@ class RequestedMessagesScreenTest : FirestoreTest() {
     compose
         .onNodeWithText(context.getString(R.string.view_user_profile_not_signed_in))
         .assertIsDisplayed()
+  }
+
+  @Test
+  fun requestedMessagesScreen_approveMessage_showsSuccessMessage() = runTest {
+    // Create a message from another user
+    switchToUser(FakeUser.FakeUser2)
+    val fromUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return@runTest
+
+    // Create profile for user2
+    val profile2 = profile2.copy(ownerId = fromUserId)
+    profileRepo.createProfile(profile2)
+
+    // Create a requested message
+    val message =
+        messageTest.copy(
+            id = requestedMessageRepo.getNewUid(),
+            fromUserId = fromUserId,
+            toUserId = currentUserId)
+
+    requestedMessageRepo.createRequestedMessage(message)
+
+    // Switch back to user1
+    switchToUser(FakeUser.FakeUser1)
+
+    val vm = makeViewModel()
+    compose.setContent {
+      MySwissDormAppTheme {
+        RequestedMessagesScreen(
+            onBackClick = {},
+            onApprove = { messageId -> vm.approveMessage(messageId, context) },
+            onReject = {},
+            viewModel = vm)
+      }
+    }
+
+    // Wait for message to load
+    compose.waitUntil(timeoutMillis = 10_000) {
+      compose.onAllNodesWithText("Alice Queen").fetchSemanticsNodes().isNotEmpty()
+    }
+
+    // Click approve
+    compose.waitUntil(timeoutMillis = 5_000) {
+      compose.onAllNodesWithContentDescription("Approve").fetchSemanticsNodes().isNotEmpty()
+    }
+
+    compose.onNodeWithContentDescription("Approve").performClick()
+
+    // Wait for success message to appear (covers Stream Chat connection and channel creation)
+    compose.waitUntil(timeoutMillis = 10_000) {
+      vm.uiState.value.successMessage != null
+    }
+
+    // Verify success message is set
+    val successMessage = vm.uiState.value.successMessage
+    assertNotNull("Success message should be set", successMessage)
+    assertTrue(
+        "Success message should indicate channel creation or manual chat",
+        successMessage!!.contains(context.getString(R.string.requested_messages_approved_channel_created)) ||
+        successMessage.contains(context.getString(R.string.requested_messages_approved_manual_chat)))
+
+    // Verify message status is updated to APPROVED
+    val updatedMessage = requestedMessageRepo.getRequestedMessage(message.id)
+    assertEquals("Message status should be APPROVED", MessageStatus.APPROVED, updatedMessage?.status)
   }
 }

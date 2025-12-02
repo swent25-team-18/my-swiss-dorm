@@ -111,24 +111,24 @@ fun RequestedMessagesScreen(
       }) { paddingValues ->
         when {
           uiState.isLoading -> {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
-                contentAlignment = Alignment.Center) {
-                  CircularProgressIndicator(color = MainColor)
-                }
+          Box(
+              modifier = Modifier.fillMaxSize().padding(paddingValues),
+              contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MainColor)
+              }
           }
           uiState.messages.isEmpty() -> {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
-                contentAlignment = Alignment.Center) {
-                  Text(
+          Box(
+              modifier = Modifier.fillMaxSize().padding(paddingValues),
+              contentAlignment = Alignment.Center) {
+                Text(
                       text = stringResource(R.string.no_requested_messages),
-                      style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge,
                       color = LightGray0)
-                }
+              }
           }
           else -> {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+          LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
               items(uiState.messages) { enrichedMessage ->
                 RequestedMessageItem(
                     message = enrichedMessage.message,
@@ -188,36 +188,36 @@ fun RequestedMessageItem(
       colors = CardDefaults.cardColors(containerColor = BackGroundColor)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically) {
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically) {
               // Left side: Name (clickable) and listing title
-              Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = fromUserName,
-                    style = MaterialTheme.typography.titleMedium,
+                Column(modifier = Modifier.weight(1f)) {
+                  Text(
+                      text = fromUserName,
+                      style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable(onClick = onViewProfile),
                     color = MainColor)
-                Text(
-                    text = "About: ${message.listingTitle}",
-                    style = MaterialTheme.typography.bodySmall,
+                  Text(
+                      text = "About: ${message.listingTitle}",
+                      style = MaterialTheme.typography.bodySmall,
                     color = LightGray0)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = message.message.ifBlank { stringResource(R.string.no_message_provided) },
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextColor)
-              }
+                }
 
               // Right side: Action buttons aligned with name
               Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onApprove, modifier = Modifier.size(40.dp)) {
+                  IconButton(onClick = onApprove, modifier = Modifier.size(40.dp)) {
                   Icon(Icons.Default.Check, contentDescription = "Approve", tint = Color.Green)
-                }
-                IconButton(onClick = onReject, modifier = Modifier.size(40.dp)) {
+                  }
+                  IconButton(onClick = onReject, modifier = Modifier.size(40.dp)) {
                   Icon(Icons.Default.Close, contentDescription = "Reject", tint = MainColor)
                 }
-              }
-            }
+          }
+        }
       }
 }

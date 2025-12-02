@@ -40,7 +40,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -465,30 +464,31 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       s.listing.title.isNotBlank() || s.listing.uid == ownerListing.uid
     }
 
-    // Now set hasExistingMessage to true using reflection
-    val uiStateField = ViewListingViewModel::class.java.getDeclaredField("_uiState")
-    uiStateField.isAccessible = true
-    val mutableUiState =
-        uiStateField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<ViewListingUIState>
+    // Verify we're not the owner before setting hasExistingMessage
+    compose.waitUntil(3_000) { !vm.uiState.value.isOwner && !vm.uiState.value.isGuest }
 
-    // Set hasExistingMessage to true
-    mutableUiState.update { it.copy(hasExistingMessage = true) }
+    // Now set hasExistingMessage to true using reflection, using runOnIdle to ensure composition
+    compose.runOnIdle {
+      val uiStateField = ViewListingViewModel::class.java.getDeclaredField("_uiState")
+      uiStateField.isAccessible = true
+      val mutableUiState =
+          requireNotNull(
+              uiStateField.get(vm) as? kotlinx.coroutines.flow.MutableStateFlow<ViewListingUIState>
+          ) { "Failed to cast _uiState to MutableStateFlow<ViewListingUIState>" }
 
-    // Wait for composition to complete and state to be updated
-    compose.waitForIdle()
+      // Set hasExistingMessage to true
+      mutableUiState.update { it.copy(hasExistingMessage = true) }
+    }
 
-    // Verify state is set correctly
-    assertTrue("hasExistingMessage should be true", vm.uiState.value.hasExistingMessage)
-    assertFalse("isOwner should be false", vm.uiState.value.isOwner)
-    assertFalse("isGuest should be false", vm.uiState.value.isGuest)
-
-    // Wait for the UI elements to appear (wait for the text to be displayed)
+    // Wait for state to propagate and UI to recompose
     compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithText(
-              context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+      vm.uiState.value.hasExistingMessage &&
+          compose
+              .onAllNodesWithText(
+                  context.getString(R.string.view_listing_message_already_sent),
+                  useUnmergedTree = true)
+              .fetchSemanticsNodes()
+              .isNotEmpty()
     }
 
     // Scroll to and verify the "message already sent" text is displayed

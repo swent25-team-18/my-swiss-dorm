@@ -50,6 +50,7 @@ object C {
     const val ROOT = "viewListingRoot"
     const val TITLE = "viewListingTitle"
     const val POSTED_BY = "viewListingPostedBy"
+    const val POSTED_BY_NAME = "viewListingPostedByName"
     const val BULLETS = "viewListingBullets"
     const val DESCRIPTION = "viewListingDescription"
     const val PHOTOS = "viewListingPhotos"
@@ -67,6 +68,7 @@ object C {
     const val ROOT = "viewReviewRoot"
     const val TITLE = "viewReviewTitle"
     const val POSTED_BY = "viewReviewPostedBy"
+    const val POSTED_BY_NAME = "viewReviewPostedByName"
     const val BULLETS = "viewReviewBullets"
     const val FILLED_STAR = "viewReviewFilledStar"
     const val EMPTY_STAR = "viewReviewEmptyStar"
@@ -247,6 +249,8 @@ object C {
     const val DESC_FIELD = "descField"
     const val CONFIRM_BUTTON = "confirmButton"
     const val CUSTOM_LOCATION_BUTTON = "customLocationButton"
+    const val ERROR_MESSAGE = "addListingErrorMessage"
+    const val RESIDENCY_DROPDOWN = "addListingResidencyDropdown"
   }
 
   object EditListingScreenTags {

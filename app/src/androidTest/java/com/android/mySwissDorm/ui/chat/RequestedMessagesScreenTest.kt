@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.chat
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -10,8 +11,6 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
-import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
-import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryFirestore
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
@@ -112,7 +111,7 @@ class RequestedMessagesScreenTest : FirestoreTest() {
       compose
           .onAllNodesWithText(context.getString(R.string.requested_messages))
           .fetchSemanticsNodes()
-          .isNotEmpty() || compose.onAllNodesWithText("Back").fetchSemanticsNodes().isNotEmpty()
+          .isNotEmpty() || compose.onNodeWithContentDescription("Back").isDisplayed()
     }
 
     // Verify the screen title is displayed
@@ -165,15 +164,10 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     // Create a requested message
     val message =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId,
-            toUserId = currentUserId,
-            listingId = "listing1",
-            listingTitle = "Test Listing",
-            message = "I'm interested in this listing",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            toUserId = currentUserId)
 
     requestedMessageRepo.createRequestedMessage(message)
 
@@ -217,15 +211,10 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     // Create a requested message
     val message =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId,
-            toUserId = currentUserId,
-            listingId = "listing1",
-            listingTitle = "Test Listing",
-            message = "Test message",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            toUserId = currentUserId)
 
     requestedMessageRepo.createRequestedMessage(message)
 
@@ -263,15 +252,11 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     // Create a requested message
     val message =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId,
             toUserId = currentUserId,
-            listingId = "listing1",
-            listingTitle = "Beautiful Studio",
-            message = messageText,
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            message = messageText)
 
     requestedMessageRepo.createRequestedMessage(message)
 
@@ -324,15 +309,10 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     // Create a requested message
     val message =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId,
-            toUserId = currentUserId,
-            listingId = "listing1",
-            listingTitle = "Test Listing",
-            message = "Test message",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            toUserId = currentUserId)
 
     requestedMessageRepo.createRequestedMessage(message)
 
@@ -379,15 +359,10 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     // Create a requested message
     val message =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId,
-            toUserId = currentUserId,
-            listingId = "listing1",
-            listingTitle = "Test Listing",
-            message = "Test message",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            toUserId = currentUserId)
 
     requestedMessageRepo.createRequestedMessage(message)
 
@@ -434,15 +409,10 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     // Create a requested message
     val message =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId,
-            toUserId = currentUserId,
-            listingId = "listing1",
-            listingTitle = "Test Listing",
-            message = "Test message",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            toUserId = currentUserId)
 
     requestedMessageRepo.createRequestedMessage(message)
 
@@ -486,30 +456,24 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     // Create first message
     val message1 =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId1,
             toUserId = currentUserId,
-            listingId = "listing1",
-            listingTitle = "First Listing",
-            message = "First message",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            listingTitle = "First Listing")
 
     requestedMessageRepo.createRequestedMessage(message1)
 
     // Create a third user for second message
     // We'll use the same user but create a second message
     val message2 =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId1,
             toUserId = currentUserId,
             listingId = "listing2",
             listingTitle = "Second Listing",
-            message = "Second message",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            message = "Second message")
 
     requestedMessageRepo.createRequestedMessage(message2)
 
@@ -547,15 +511,10 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     // Create a requested message
     val message =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId,
-            toUserId = currentUserId,
-            listingId = "listing1",
-            listingTitle = "Test Listing",
-            message = "Test message",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            toUserId = currentUserId)
 
     requestedMessageRepo.createRequestedMessage(message)
 
@@ -623,15 +582,10 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     // Create a requested message
     val message =
-        RequestedMessage(
+        messageTest.copy(
             id = requestedMessageRepo.getNewUid(),
             fromUserId = fromUserId,
-            toUserId = currentUserId,
-            listingId = "listing1",
-            listingTitle = "Test Listing",
-            message = "Test message",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
+            toUserId = currentUserId)
 
     requestedMessageRepo.createRequestedMessage(message)
 

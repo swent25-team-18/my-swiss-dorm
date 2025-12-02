@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -28,6 +27,7 @@ import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -63,23 +63,30 @@ fun AddReviewScreen(
         Surface(shadowElevation = 8.dp) {
           Column(Modifier.padding(16.dp)) {
             val ui = reviewUIState
+            val isButtonEnabled =
+                ui.isFormValid &&
+                    !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) &&
+                    !ui.isSubmitting
             Button(
                 onClick = { addReviewViewModel.submitReviewForm(onConfirm) },
-                enabled =
-                    ui.isFormValid &&
-                        !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true),
+                enabled = isButtonEnabled,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
-                  Text(stringResource(R.string.add_review_submit), color = White)
+                  if (ui.isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp), color = White, strokeWidth = 2.dp)
+                  } else {
+                    Text(stringResource(R.string.add_review_submit), color = White)
+                  }
                 }
             Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
                   stringResource(R.string.add_review_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant)
+                  color = DarkGray)
             }
           }
         }
@@ -189,9 +196,9 @@ fun AddReviewScreen(
                         onCheckedChange = { addReviewViewModel.setIsAnonymous(it) },
                         colors =
                             SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
+                                checkedThumbColor = White,
                                 checkedTrackColor = MainColor,
-                                uncheckedThumbColor = Color.White,
+                                uncheckedThumbColor = White,
                                 uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
                   }
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)

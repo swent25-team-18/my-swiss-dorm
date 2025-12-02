@@ -37,8 +37,8 @@ import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.LightGray
+import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import com.android.mySwissDorm.ui.theme.Red0
 import java.util.UUID
 
 /**
@@ -103,8 +103,8 @@ fun DefaultCameraButton(
     colors: ButtonColors =
         ButtonColors(
             containerColor = LightGray,
-            contentColor = Red0,
-            disabledContentColor = Red0,
+            contentColor = MainColor,
+            disabledContentColor = MainColor,
             disabledContainerColor = Gray),
     elevation: ButtonElevation? = ButtonDefaults.buttonElevation(),
     border: BorderStroke? = null,
@@ -124,7 +124,7 @@ fun DefaultCameraButton(
       border = border,
       contentPadding = contentPadding,
       interactionSource = interactionSource) {
-        Icon(Icons.Default.AddAPhoto, null, tint = Red0)
+        Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
         Spacer(Modifier.width(8.dp))
         Text(text = stringResource(R.string.camera_button_default_text))
       }

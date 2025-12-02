@@ -19,7 +19,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -33,6 +32,7 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.Typography
+import com.android.mySwissDorm.ui.theme.White
 
 /**
  * This compose element represents the Sign In screen of the application
@@ -83,7 +83,7 @@ fun SignInScreen(
               colors =
                   ButtonColors(
                       containerColor = MainColor,
-                      contentColor = Color.White,
+                      contentColor = White,
                       disabledContainerColor = BackGroundColor,
                       disabledContentColor = BackGroundColor),
               modifier = Modifier.testTag(C.Tag.SIGN_IN_LOG_IN_BUTTON)) {
@@ -103,7 +103,7 @@ fun SignInScreen(
           Spacer(modifier = Modifier.height(225.dp))
           TextButton(
               onClick = onSignUp, modifier = Modifier.testTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON)) {
-                Text(text = stringResource(R.string.create_account_text), color = Color.Gray)
+                Text(text = stringResource(R.string.create_account_text), color = Gray)
               }
         }
   }

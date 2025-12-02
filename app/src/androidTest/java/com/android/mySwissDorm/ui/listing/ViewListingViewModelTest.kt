@@ -3,6 +3,7 @@ package com.android.mySwissDorm.ui.listing
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
@@ -449,5 +450,128 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     assertEquals(
         "Contact message should be updated", message, viewModel.uiState.value.contactMessage)
+  }
+
+  @Test
+  fun submitContactMessage_alreadyExists() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+
+    // Create a mock repository that returns true for hasExistingMessage
+    val mockRepository =
+        object : RequestedMessageRepository {
+          override suspend fun createRequestedMessage(requestedMessage: RequestedMessage) {
+            // Should not be called
+          }
+
+          override suspend fun getPendingMessagesForUser(userId: String): List<RequestedMessage> =
+              emptyList()
+
+          override suspend fun getRequestedMessage(messageId: String): RequestedMessage? = null
+
+          override suspend fun updateMessageStatus(messageId: String, status: MessageStatus) {}
+
+          override suspend fun getPendingMessageCount(userId: String): Int = 0
+
+          override suspend fun deleteRequestedMessage(messageId: String) {}
+
+          override fun getNewUid(): String = "test-id"
+
+          override suspend fun hasExistingMessage(
+              fromUserId: String,
+              toUserId: String,
+              listingId: String
+          ): Boolean = true // Return true to simulate existing message
+        }
+
+    val viewModel =
+        ViewListingViewModel(
+            rentalListingRepository = rentalListingRepository,
+            profileRepository = profileRepository,
+            residenciesRepository = residenciesRepository,
+            requestedMessageRepository = mockRepository)
+
+    // Set listing and message
+    val uiStateField = ViewListingViewModel::class.java.getDeclaredField("_uiState")
+    uiStateField.isAccessible = true
+    val mutableUiState =
+        uiStateField.get(viewModel) as kotlinx.coroutines.flow.MutableStateFlow<ViewListingUIState>
+    mutableUiState.update { it.copy(listing = listing, contactMessage = "Test message") }
+
+    // Submit the message
+    val result = viewModel.submitContactMessage(context)
+
+    // Should return true (the check happens in coroutine)
+    assertTrue("Should return true even if message already exists", result)
+
+    // Advance coroutines to let the check complete
+    advanceUntilIdle()
+
+    // Verify error message is set
+    val errorMsg = viewModel.uiState.value.errorMsg
+    assertNotNull("Error message should be set", errorMsg)
+    assertTrue(
+        "Error message should contain 'already sent'",
+        errorMsg!!.contains(context.getString(R.string.view_listing_message_already_sent)))
+    assertTrue(
+        "Error message should contain 'wait for response'",
+        errorMsg.contains(context.getString(R.string.view_listing_please_wait_for_response)))
+
+    // Verify that hasExistingMessage is still false (not updated since we returned early)
+    assertFalse(
+        "hasExistingMessage should remain false since we returned early",
+        viewModel.uiState.value.hasExistingMessage)
+  }
+
+  @Test
+  fun toggleBookmark_exceptionHandling() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Create a mock repository that throws an exception when toggling bookmark
+    val mockProfileRepository =
+        object : ProfileRepository by profileRepository {
+          override suspend fun addBookmark(ownerId: String, listingId: String) {
+            throw Exception("Test bookmark exception")
+          }
+
+          override suspend fun removeBookmark(ownerId: String, listingId: String) {
+            throw Exception("Test bookmark exception")
+          }
+        }
+
+    val viewModel =
+        ViewListingViewModel(
+            rentalListingRepository = rentalListingRepository,
+            profileRepository = mockProfileRepository,
+            residenciesRepository = residenciesRepository,
+            requestedMessageRepository = requestedMessageRepository)
+
+    // Load the listing first to set up state
+    viewModel.loadListing(listing.uid, context)
+    advanceUntilIdle()
+
+    // Verify initial bookmark state
+    val initialBookmarkState = viewModel.uiState.value.isBookmarked
+
+    // Toggle bookmark - should throw exception
+    viewModel.toggleBookmark(listing.uid, context)
+
+    // Advance coroutines to let the exception be caught
+    advanceUntilIdle()
+
+    // Verify error message is set
+    val errorMsg = viewModel.uiState.value.errorMsg
+    assertNotNull("Error message should be set", errorMsg)
+    assertTrue(
+        "Error message should contain 'failed to toggle bookmark'",
+        errorMsg!!.contains(context.getString(R.string.view_listing_failed_to_toggle_bookmark)))
+    assertTrue(
+        "Error message should contain exception message",
+        errorMsg.contains("Test bookmark exception"))
+
+    // Verify bookmark state hasn't changed (since exception was thrown)
+    assertEquals(
+        "Bookmark state should remain unchanged",
+        initialBookmarkState,
+        viewModel.uiState.value.isBookmarked)
   }
 }

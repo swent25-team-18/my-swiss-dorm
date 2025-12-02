@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -16,6 +17,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
@@ -34,9 +36,11 @@ import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -442,5 +446,65 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     vm.loadListing(listing.uid, context)
     compose.waitForIdle()
     assertEquals(1, fakeCloudRepo.retrieveCount)
+  }
+
+  @Test
+  fun hasExistingMessage_showsMessageAndHidesContactField() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
+    }
+    waitForScreenRoot()
+
+    // Wait for listing to load - check for listing title or any meaningful field
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.title.isNotBlank() || s.listing.uid == ownerListing.uid
+    }
+
+    // Now set hasExistingMessage to true using reflection
+    val uiStateField = ViewListingViewModel::class.java.getDeclaredField("_uiState")
+    uiStateField.isAccessible = true
+    val mutableUiState =
+        uiStateField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<ViewListingUIState>
+    
+    // Set hasExistingMessage to true
+    mutableUiState.update { it.copy(hasExistingMessage = true) }
+
+    // Wait for composition to complete and state to be updated
+    compose.waitForIdle()
+    
+    // Verify state is set correctly
+    assertTrue("hasExistingMessage should be true", vm.uiState.value.hasExistingMessage)
+    assertFalse("isOwner should be false", vm.uiState.value.isOwner)
+    assertFalse("isGuest should be false", vm.uiState.value.isGuest)
+
+    // Wait for the UI elements to appear (wait for the text to be displayed)
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithText(context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Scroll to and verify the "message already sent" text is displayed
+    compose
+        .onNodeWithText(context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // Verify the "please wait for response" text is displayed
+    compose
+        .onNodeWithText(context.getString(R.string.view_listing_please_wait_for_response))
+        .assertIsDisplayed()
+
+    // Verify CONTACT_FIELD is not displayed
+    compose.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).assertDoesNotExist()
+
+    // Verify APPLY_BTN is not displayed
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
   }
 }

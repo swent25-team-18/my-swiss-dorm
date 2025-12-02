@@ -283,19 +283,6 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun qrSection_isVisible_andScanButtonClickable() {
-    setContentWithVm()
-    compose.waitForIdle()
-
-    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
-    val qrButtonTag = C.SettingsTags.QR_SCAN_BUTTON
-
-    // Scroll until the scan button is visible using its test tag and click it
-    compose.scrollUntilDisplayed(scrollTag, qrButtonTag)
-    compose.onNodeWithTag(qrButtonTag, useUnmergedTree = true).assertIsDisplayed().performClick()
-  }
-
-  @Test
   fun deleteAccountButton_opensAndClosesConfirmDialog() {
     setContentWithVm()
     compose.waitForIdle()

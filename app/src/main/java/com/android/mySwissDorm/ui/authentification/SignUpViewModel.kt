@@ -5,19 +5,23 @@ import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
+import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.model.university.University
+import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,12 +42,24 @@ data class SignUpState(
     val errMsg: String? = null,
     val user: FirebaseUser? = null,
     val universities: List<University> = emptyList(),
-    val residencies: List<Residency> = emptyList()
+    // These will be used for the user's preferences
+    val residencies: List<Residency> = emptyList(),
+    val selectedLocation: Location? = null,
+    val locationQuery: String = "",
+    val locationSuggestions: List<Location> = emptyList(),
+    val showLocationDialog: Boolean = false,
+    val minPrice: Double? = null,
+    val maxPrice: Double? = null,
+    val selectedRoomTypes: Set<RoomType> = emptySet(),
+    val minSize: Int? = null,
+    val maxSize: Int? = null
 )
 
 class SignUpViewModel(
     private val authRepository: AuthRepository = AuthRepositoryProvider.repository,
-) : ViewModel() {
+    override val locationRepository: LocationRepository = LocationRepositoryProvider.repository
+) : BaseLocationSearchViewModel() {
+  override val logTag = "SignUpViewModel"
   private val _uiState = MutableStateFlow(SignUpState())
   val uiState: StateFlow<SignUpState> = _uiState.asStateFlow()
 
@@ -104,6 +120,42 @@ class SignUpViewModel(
     _uiState.update { it.copy(universityName = universityName) }
   }
 
+  fun updatePriceRange(min: Double?, max: Double?) {
+    _uiState.update { it.copy(minPrice = min, maxPrice = max) }
+  }
+
+  fun updateSizeRange(min: Int?, max: Int?) {
+    _uiState.update { it.copy(minSize = min, maxSize = max) }
+  }
+
+  fun toggleRoomType(type: RoomType) {
+    _uiState.update { state ->
+      val current = state.selectedRoomTypes.toMutableSet()
+      if (current.contains(type)) current.remove(type) else current.add(type)
+      state.copy(selectedRoomTypes = current)
+    }
+  }
+  // Setters for location
+  override fun updateStateWithQuery(query: String) {
+    _uiState.update { it.copy(locationQuery = query) }
+  }
+
+  override fun updateStateWithSuggestions(suggestions: List<Location>) {
+    _uiState.update { it.copy(locationSuggestions = suggestions) }
+  }
+
+  override fun updateStateWithLocation(location: Location) {
+    _uiState.update { it.copy(selectedLocation = location, locationQuery = location.name) }
+  }
+
+  override fun updateStateShowDialog(currentLocation: Location?) {
+    _uiState.update { it.copy(showLocationDialog = true) }
+  }
+
+  override fun updateStateDismissDialog() {
+    _uiState.update { it.copy(showLocationDialog = false, locationSuggestions = emptyList()) }
+  }
+
   fun signUp(context: Context, credentialManager: CredentialManager) {
     Log.d("SignUpViewModel", "Sign up triggered")
     if (_uiState.value.isLoading || !isFormValid) return
@@ -133,9 +185,13 @@ class SignUpViewModel(
                                     email = user.email ?: "",
                                     phoneNumber = "+41" + _uiState.value.phoneNumber,
                                     universityName = _uiState.value.universityName,
-                                    location =
-                                        null, // TODO must allow user to enter directly its location
-                                    residencyName = _uiState.value.residencyName),
+                                    location = _uiState.value.selectedLocation,
+                                    residencyName = _uiState.value.residencyName,
+                                    minPrice = _uiState.value.minPrice,
+                                    maxPrice = _uiState.value.maxPrice,
+                                    minSize = _uiState.value.minSize,
+                                    maxSize = _uiState.value.maxSize,
+                                    preferredRoomTypes = _uiState.value.selectedRoomTypes.toList()),
                             userSettings = UserSettings()))
                     Log.d("SignUpViewModel", "Profile created")
                   } finally {

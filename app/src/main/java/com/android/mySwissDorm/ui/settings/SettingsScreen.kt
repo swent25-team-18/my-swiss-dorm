@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -42,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
@@ -230,7 +232,23 @@ fun SettingsScreenContent(
                                             .clip(CircleShape)
                                             .background(MainColor.copy(alpha = 0.16f)),
                                     contentAlignment = Alignment.Center) {
-                                      Text(initial, fontWeight = FontWeight.Bold, color = MainColor)
+                                      if (ui.profilePicture != null) {
+                                        AsyncImage(
+                                            model = ui.profilePicture.image,
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier =
+                                                Modifier.testTag(
+                                                    C.SettingsTags.avatarTag(
+                                                        ui.profilePicture.image)))
+                                      } else {
+                                        Text(
+                                            text = initial,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MainColor,
+                                            modifier =
+                                                Modifier.testTag(C.SettingsTags.avatarTag(null)))
+                                      }
                                     }
 
                                 Column(modifier = Modifier.weight(1f)) {

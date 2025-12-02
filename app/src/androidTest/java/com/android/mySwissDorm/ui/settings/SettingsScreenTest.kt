@@ -7,21 +7,30 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.firestore.FieldValue
+import io.mockk.unmockkAll
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 /**
  * UI tests for SettingsScreen. We pass an explicit SettingsViewModel built on the emulators to
@@ -85,7 +94,13 @@ class SettingsScreenTest : FirestoreTest() {
         .document(uid)
         .set(seededProfile)
         .await()
-  } //
+  }
+
+  @After
+  override fun tearDown() {
+    unmockkAll()
+    super.tearDown()
+  }
   //
   // ---------- small helpers ----------
 
@@ -516,6 +531,41 @@ class SettingsScreenTest : FirestoreTest() {
     compose.waitForIdle()
     assert(!contributionClicked) {
       "Contributions click callback should not be triggered in guest mode"
+    }
+  }
+
+  @Test
+  fun photoIsDisplayedInSettings() {
+    val cloudRepo = FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, true)
+    val fakeProfileRepo: ProfileRepository = mock()
+    runBlocking { whenever(fakeProfileRepo.getProfile(any())) }
+        .thenReturn(
+            profile1.copy(userInfo = profile1.userInfo.copy(profilePicture = photo.fileName)))
+    val vm = SettingsViewModel(photoRepositoryCloud = cloudRepo, profiles = fakeProfileRepo)
+    compose.setContent { SettingsScreen(vm = vm) }
+    compose.waitForIdle()
+
+    compose.waitUntil("The profile picture is not displayed in the settings", 5_000) {
+      compose
+          .onNodeWithTag(C.SettingsTags.avatarTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+  }
+
+  @Test
+  fun defaultAvatarIsDisplayedWhenNoPP() {
+    Assume.assumeTrue(
+        "The profile picture of the tested profile is not null as assumed by this test",
+        profile2.userInfo.profilePicture == null)
+    val cloudRepo = FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, true)
+    val fakeProfileRepo: ProfileRepository = mock()
+    runBlocking { whenever(fakeProfileRepo.getProfile(any())) }.thenReturn(profile2)
+    val vm = SettingsViewModel(photoRepositoryCloud = cloudRepo, profiles = fakeProfileRepo)
+    compose.setContent { SettingsScreen(vm = vm) }
+    compose.waitForIdle()
+
+    compose.waitUntil("The profile picture is not displayed in the settings", 5_000) {
+      compose.onNodeWithTag(C.SettingsTags.avatarTag(null), useUnmergedTree = true).isDisplayed()
     }
   }
 }

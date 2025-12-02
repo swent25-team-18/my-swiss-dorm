@@ -288,6 +288,8 @@ object C {
     const val BOTTOM_BAR = "bottom_nav"
     const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
 
+    fun avatarTag(uri: Uri?) = "SettingsAvatarTag$uri"
+
     fun switch(label: String): String = "SettingSwitch_$label"
   }
 
@@ -324,7 +326,7 @@ object C {
   }
 
   object ProfileTags {
-    fun profilePictureTag(uri: Uri) = "profileScreenProfilePictureTag$uri"
+    fun profilePictureTag(uri: Uri?) = "profileScreenProfilePictureTag$uri"
 
     const val SAVE_BUTTON = "profile_save_button"
     const val DELETE_PP_BUTTON = "profilePictureDeleteButton"

@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.profile
 
-import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -227,8 +226,7 @@ private fun ProfileScreenContent(
                             imageVector = Icons.Default.Person,
                             contentDescription = null,
                             modifier =
-                                Modifier.size(40.dp)
-                                    .testTag(C.ProfileTags.profilePictureTag(Uri.EMPTY)),
+                                Modifier.size(40.dp).testTag(C.ProfileTags.profilePictureTag(null)),
                             tint = MainColor)
                       }
                     }

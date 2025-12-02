@@ -1,9 +1,13 @@
 package com.android.mySwissDorm.ui.settings
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -28,7 +32,8 @@ data class SettingsUiState(
     val isDeleting: Boolean = false,
     val errorMsg: String? = null,
     val blockedContacts: List<BlockedContact> = emptyList(),
-    val isGuest: Boolean = false
+    val isGuest: Boolean = false,
+    val profilePicture: Photo? = null
 )
 
 /**
@@ -38,6 +43,8 @@ data class SettingsUiState(
 class SettingsViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val profiles: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
 
   private val _ui = MutableStateFlow(SettingsUiState())
@@ -57,15 +64,28 @@ class SettingsViewModel(
       }
 
       // Try repository first
+      val p =
+          try {
+            profiles.getProfile(user.uid)
+          } catch (_: NoSuchElementException) {
+            Log.d("SettingsViewModel", "Failed to get the profile of ${user.uid}")
+            null
+          }
       val nameFromRepo =
-          runCatching {
-                val p = profiles.getProfile(user.uid)
-                "${p.userInfo.name} ${p.userInfo.lastName}".trim()
-              }
-              .getOrNull()
+          p?.let { profile -> "${profile.userInfo.name} ${profile.userInfo.lastName}".trim() }
+      val photo =
+          p?.userInfo?.profilePicture?.let { profilePicture ->
+            try {
+              photoRepositoryCloud.retrievePhoto(profilePicture)
+            } catch (_: NoSuchElementException) {
+              Log.d("SettingsViewModel", "Failed to retrieve the image: $profilePicture")
+              null
+            }
+          }
 
       val userName = nameFromRepo?.takeIf { it.isNotBlank() } ?: (user.displayName ?: "User")
-      _ui.value = _ui.value.copy(userName = userName, email = user.email ?: "")
+      _ui.value =
+          _ui.value.copy(userName = userName, email = user.email ?: "", profilePicture = photo)
 
       // Load blocked user IDs from Firestore and map to display names
       val blockedContacts =

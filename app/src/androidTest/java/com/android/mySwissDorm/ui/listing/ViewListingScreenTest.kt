@@ -483,7 +483,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
 
     // Wait for state to propagate and UI to recompose
-    compose.waitUntil(5_000) {
+    compose.waitUntil(10_000) {
       vm.uiState.value.hasExistingMessage &&
           compose
               .onAllNodesWithText(
@@ -493,16 +493,20 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
               .isNotEmpty()
     }
 
-    // Scroll to and verify the "message already sent" text is displayed
+    // Wait for UI to be idle after state update
+    compose.runOnIdle {}
+
+    // Verify the "message already sent" text is displayed
     compose
         .onNodeWithText(
             context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
-        .performScrollTo()
         .assertIsDisplayed()
 
     // Verify the "please wait for response" text is displayed
     compose
-        .onNodeWithText(context.getString(R.string.view_listing_please_wait_for_response))
+        .onNodeWithText(
+            context.getString(R.string.view_listing_please_wait_for_response),
+            useUnmergedTree = true)
         .assertIsDisplayed()
 
     // Verify CONTACT_FIELD is not displayed

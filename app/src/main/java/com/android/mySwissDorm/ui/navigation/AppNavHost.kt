@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -240,6 +241,10 @@ fun AppNavHost(
             } else {
               navActions.navigateTo(Screen.ProfileContributions)
             }
+          },
+          onQrNavigate = { scannedUrl ->
+            handleScannedQrUrl(
+                scannedUrl = scannedUrl, navigationActions = navActions, context = context)
           },
       )
     }
@@ -756,6 +761,44 @@ fun AppNavHost(
             }
           })
     }
+  }
+}
+
+private fun handleScannedQrUrl(
+    scannedUrl: String,
+    navigationActions: NavigationActions,
+    context: Context
+) {
+  try {
+    val uri = scannedUrl.toUri()
+    val segments = uri.pathSegments
+
+    if (segments.size < 2) {
+      Toast.makeText(context, context.getString(R.string.unexpected_error), Toast.LENGTH_SHORT)
+          .show()
+      return
+    }
+
+    val type = segments[0].lowercase()
+    val id = segments[1]
+
+    when (type) {
+      "listing" -> {
+        // my-swiss-dorm.web.app/listing/<listingUid>
+        navigationActions.navigateTo(Screen.ListingOverview(id))
+      }
+      "review" -> {
+        // my-swiss-dorm.web.app/review/<reviewUid>
+        navigationActions.navigateTo(Screen.ReviewOverview(id))
+      }
+      else -> {
+        Toast.makeText(context, context.getString(R.string.unexpected_error), Toast.LENGTH_SHORT)
+            .show()
+      }
+    }
+  } catch (e: Exception) {
+    Log.e("AppNavHost", "Failed to handle scanned QR URL: $scannedUrl", e)
+    Toast.makeText(context, context.getString(R.string.unexpected_error), Toast.LENGTH_SHORT).show()
   }
 }
 

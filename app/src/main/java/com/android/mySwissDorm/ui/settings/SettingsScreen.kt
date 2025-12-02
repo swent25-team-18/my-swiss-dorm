@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.settings
 
 import android.content.res.Configuration
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -41,12 +42,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
+import com.android.mySwissDorm.ui.qr.MyQrCaptureActivity
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -55,6 +58,8 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.theme.rememberDarkModePreference
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 
 // Documentation was made with the help of AI
 /**
@@ -97,7 +102,8 @@ fun SettingsScreen(
     vm: SettingsViewModel = viewModel(),
     isAdmin: Boolean = false,
     onAdminClick: () -> Unit = {},
-    onContributionClick: () -> Unit = {}
+    onContributionClick: () -> Unit = {},
+    onQrNavigate: (String) -> Unit = {}
 ) {
   val ui by vm.uiState.collectAsState()
   vm.setIsGuest()
@@ -119,7 +125,8 @@ fun SettingsScreen(
       onUnblockUser = { uid -> vm.unblockUser(uid, context) },
       navigationActions = navigationActions,
       isAdmin = isAdmin,
-      onAdminClick = onAdminClick)
+      onAdminClick = onAdminClick,
+      onQrNavigate = onQrNavigate)
 }
 
 private val previewUiState =
@@ -156,7 +163,8 @@ fun SettingsScreenContent(
     onUnblockUser: (String) -> Unit = {},
     navigationActions: NavigationActions? = null,
     isAdmin: Boolean = false,
-    onAdminClick: () -> Unit = {}
+    onAdminClick: () -> Unit = {},
+    onQrNavigate: (String) -> Unit = {}
 ) {
   // Independent toggle states
   var notificationsMessages by remember { mutableStateOf(true) }
@@ -172,6 +180,33 @@ fun SettingsScreenContent(
   val blockedContacts = ui.blockedContacts
   val focusManager = LocalFocusManager.current
   var showDeleteConfirm by remember { mutableStateOf(false) }
+
+  val context = LocalContext.current
+
+  // Launcher for ZXing QR scan
+  val qrScanLauncher =
+      rememberLauncherForActivityResult(ScanContract()) { result ->
+        val contents = result.contents
+        if (contents.isNullOrBlank()) {
+          Toast.makeText(
+                  context,
+                  context.getString(R.string.settings_qr_scan_cancelled),
+                  Toast.LENGTH_SHORT)
+              .show()
+        } else {
+          val uri = runCatching { contents.toUri() }.getOrNull()
+          if (uri == null || uri.host != "my-swiss-dorm.web.app") {
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_qr_invalid_domain),
+                    Toast.LENGTH_SHORT)
+                .show()
+          } else {
+            // Valid MySwissDorm link – bubble up so navigation layer can handle it
+            onQrNavigate(contents)
+          }
+        }
+      }
 
   Scaffold(
       containerColor = BackGroundColor,
@@ -410,6 +445,34 @@ fun SettingsScreenContent(
                               label = stringResource(R.string.settings_dark_mode),
                               checked = nightShift,
                               onCheckedChange = { enabled -> setDarkModePreference(enabled) })
+                        }
+                        // ---- MySwissDorm QR --------------------------------------------------
+                        SectionLabel(stringResource(R.string.settings_qr_section_title))
+                        CardBlock {
+                          Text(
+                              text = stringResource(R.string.settings_qr_section_subtitle),
+                              style = MaterialTheme.typography.bodyMedium,
+                              color = TextColor,
+                              modifier = Modifier.padding(bottom = 12.dp))
+
+                          Button(
+                              onClick = {
+                                val options =
+                                    ScanOptions().apply {
+                                      setDesiredBarcodeFormats(ScanOptions.QR_CODE) // QR only
+                                      setBeepEnabled(true)
+                                      setPrompt(context.getString(R.string.settings_qr_prompt))
+                                      setCaptureActivity(MyQrCaptureActivity::class.java)
+                                    }
+                                qrScanLauncher.launch(options)
+                              },
+                              modifier = Modifier.fillMaxWidth().testTag("SETTINGS_SCAN_QR_BUTTON"),
+                              shape = RoundedCornerShape(16.dp),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = MainColor, contentColor = White)) {
+                                Text(stringResource(R.string.settings_qr_button))
+                              }
                         }
 
                         // ---- Admin ------------------------------------------------------------

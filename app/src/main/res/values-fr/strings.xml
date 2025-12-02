@@ -457,6 +457,16 @@
     <string name="no_message_provided">Acun message fourni</string>
     <string name="failed_to_create_chat">Échec de la création de la conversation</string>
 
+    <!-- QR -->
+    <string name="settings_qr_section_title">Liens et codes QR</string>
+    <string name="settings_qr_section_subtitle">
+    Scannez un code QR MySwissDorm pour ouvrir directement une annonce ou un avis dans l\'application.
+</string>
+    <string name="settings_qr_button">Scanner un code QR MySwissDorm</string>
+    <string name="settings_qr_prompt">Pointez la caméra vers un code QR MySwissDorm</string>
+    <string name="settings_qr_scan_cancelled">Scan annulé</string>
+    <string name="settings_qr_invalid_domain">Ce n\'est pas un lien MySwissDorm.</string>
+
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

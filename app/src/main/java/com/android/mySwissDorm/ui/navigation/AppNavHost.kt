@@ -582,13 +582,6 @@ fun AppNavHost(
               AuthRepositoryProvider.repository.signOut()
               navigationViewModel.determineInitialDestination()
             },
-            onChangeProfilePicture = {
-              Toast.makeText(
-                      context,
-                      context.getString(R.string.app_nav_host_not_implemented_yet),
-                      Toast.LENGTH_SHORT)
-                  .show()
-            },
             onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) },
             onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
       }

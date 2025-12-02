@@ -49,6 +49,7 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -255,9 +256,7 @@ fun SignUpScreen(
                   colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                   modifier = Modifier.fillMaxWidth().height(52.dp).testTag(C.Tag.SIGN_UP_BUTTON),
                   shape = RoundedCornerShape(16.dp)) {
-                    Text(
-                        text = stringResource(R.string.continue_with_preferences),
-                        color = Color.White)
+                    Text(text = stringResource(R.string.continue_with_preferences), color = White)
                   }
               Spacer(Modifier.height(8.dp))
               if (!signUpViewModel.isFormValid) {

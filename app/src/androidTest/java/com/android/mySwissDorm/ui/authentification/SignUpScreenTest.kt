@@ -426,40 +426,6 @@ class SignUpScreenTest : FirestoreTest() {
     assertTrue("Expected onContinue to be called", onContinueCalled.value)
   }
 
-  //  @Test
-  //  fun canSignUpOnTheDatabase() = runTest {
-  //    val fakeGoogleIdToken =
-  //        FakeJwtGenerator.createFakeGoogleIdToken("fakeIdToken", email =
-  // FakeUser.FakeUser1.email)
-  //    val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
-  //    val connected = mutableStateOf(false)
-  //    composeTestRule.setContent {
-  //      SignUpScreen(
-  //          credentialManager = fakeCredentialManager, onSignedUp = { connected.value = true })
-  //    }
-  //    ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
-  //      signUpNameField.performTextInput(fakeName)
-  //      signUpLastNameField.performTextInput(fakeLastName)
-  //      signUpPhoneNumberField.performTextInput(fakePhoneNumber)
-  //      signUpButton.performScrollTo()
-  //      signUpButton.performClick()
-  //    }
-  //    composeTestRule.waitForIdle()
-  //    composeTestRule.waitUntil(5_000) { connected.value }
-  //    val userId = FirebaseEmulator.auth.uid ?: throw NoSuchElementException()
-  //    val expectedProfile =
-  //        Profile(
-  //            ownerId = userId,
-  //            userInfo =
-  //                UserInfo(
-  //                    name = fakeName,
-  //                    lastName = fakeLastName,
-  //                    phoneNumber = "+41$fakePhoneNumber",
-  //                    email = FakeUser.FakeUser1.email),
-  //            userSettings = UserSettings())
-  //    assertEquals(expectedProfile, ProfileRepositoryProvider.repository.getProfile(userId))
-  //  }
-
   @Test
   fun checkBackButtonWorkCorrectly() {
     val backed = mutableStateOf(false)
@@ -472,52 +438,6 @@ class SignUpScreenTest : FirestoreTest() {
       assertTrue(backed.value)
     }
   }
-
-  //  @Test
-  //  fun cannotSignUpTwoTimes() = runTest {
-  //    val fakeGoogleIdToken =
-  //        FakeJwtGenerator.createFakeGoogleIdToken("fakeIdToken", email =
-  // FakeUser.FakeUser1.email)
-  //    val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
-  //    val connected = mutableStateOf(false)
-  //    composeTestRule.setContent {
-  //      SignUpScreen(
-  //          credentialManager = fakeCredentialManager, onSignedUp = { connected.value = true })
-  //    }
-  //    ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
-  //      signUpNameField.performTextInput(fakeName)
-  //      signUpLastNameField.performTextInput(fakeLastName)
-  //      signUpPhoneNumberField.performTextInput(fakePhoneNumber)
-  //      signUpButton.performScrollTo()
-  //      signUpButton.performClick()
-  //    }
-  //    composeTestRule.waitForIdle()
-  //    composeTestRule.waitUntil(10_000) { connected.value }
-  //    connected.value = false
-  //
-  //    ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
-  //      signUpNameField.performScrollTo()
-  //      signUpNameField.performTextReplacement(fakeName2)
-  //      signUpLastNameField.performTextReplacement(fakeLastName2)
-  //      signUpPhoneNumberField.performTextReplacement(fakePhoneNumber2)
-  //      signUpButton.performScrollTo()
-  //      signUpButton.performClick()
-  //    }
-  //    composeTestRule.waitForIdle()
-  //    composeTestRule.waitUntil(10_000) { connected.value }
-  //    val userId = FirebaseEmulator.auth.uid ?: throw NoSuchElementException()
-  //    val expectedProfile =
-  //        Profile(
-  //            ownerId = userId,
-  //            userInfo =
-  //                UserInfo(
-  //                    name = fakeName,
-  //                    lastName = fakeLastName,
-  //                    phoneNumber = "+41$fakePhoneNumber",
-  //                    email = FakeUser.FakeUser1.email),
-  //            userSettings = UserSettings())
-  //    assertEquals(expectedProfile, ProfileRepositoryProvider.repository.getProfile(userId))
-  //  }
 
   @After
   override fun tearDown() {

@@ -15,6 +15,7 @@ import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.resources.C.FilterTestTags.BUDGET
+import com.android.mySwissDorm.resources.C.FilterTestTags.LOCATION_PREFERENCE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
@@ -66,7 +67,7 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
     composeTestRule.onNodeWithTag(PREFERRED_SIZE).performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithTag(PREFERRED_ROOM_TYPE).performScrollTo().assertIsDisplayed()
     composeTestRule
-        .onNodeWithTag("locationField")
+        .onNodeWithTag(LOCATION_PREFERENCE)
         .performScrollTo()
         .assertIsDisplayed()
         .assertHasClickAction()
@@ -87,7 +88,7 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onBack = {},
           onSignedUp = {})
     }
-    composeTestRule.onNodeWithTag("locationField").performClick()
+    composeTestRule.onNodeWithTag(LOCATION_PREFERENCE).performClick()
     composeTestRule.waitForIdle()
   }
 

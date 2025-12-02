@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.android.mySwissDorm.R
-import com.android.mySwissDorm.ui.authentification.ListingPreferencesContent
+import com.android.mySwissDorm.ui.utils.ListingPreferencesContent
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 
 @Composable

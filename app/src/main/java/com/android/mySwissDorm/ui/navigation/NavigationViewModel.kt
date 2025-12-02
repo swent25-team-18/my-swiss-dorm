@@ -10,7 +10,6 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -51,13 +50,7 @@ class NavigationViewModel(
   }
 
   /** Determines the initial destination based on authentication and profile state. */
-  fun determineInitialDestination(forcedDestination: String? = null) {
-    if (forcedDestination != null) {
-      _navigationState.update {
-        _navigationState.value.copy(initialDestination = forcedDestination)
-      }
-      return
-    }
+  fun determineInitialDestination() {
     viewModelScope.launch {
       try {
         val currentUser = auth.currentUser

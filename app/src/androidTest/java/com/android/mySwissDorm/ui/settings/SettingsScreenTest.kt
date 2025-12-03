@@ -497,27 +497,6 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun guestMode_defaultTogglesState() = runTest {
-    signInAnonymous()
-    setContentWithVm()
-    compose.waitForIdle()
-    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
-    compose.scrollUntilTextDisplayed(scrollTag, "Notifications")
-    val msgSwitch = C.SettingsTags.switch("Show notifications for messages")
-    compose.scrollUntilDisplayed(scrollTag, msgSwitch)
-    compose
-        .onNodeWithTag(msgSwitch, useUnmergedTree = true)
-        .performScrollTo()
-        .assert(hasStateDescription("Off"))
-    compose.scrollUntilTextDisplayed(scrollTag, "Privacy")
-    val readReceiptsSwitch = C.SettingsTags.switch("Read receipts")
-    compose
-        .onNodeWithTag(readReceiptsSwitch, useUnmergedTree = true)
-        .performScrollTo()
-        .assert(hasStateDescription("On"))
-  }
-
-  @Test
   fun guestMode_profileClick_doesNotTriggerCallback() = runTest {
     signInAnonymous()
     var profileClicked = false

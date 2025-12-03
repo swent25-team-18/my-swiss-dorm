@@ -252,7 +252,7 @@ fun AppNavHost(
                     navActions.navigateTo(Screen.ProfileContributions)
                   }
                 },
-            )
+                onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
           }
 
           // --- Secondary destinations ---
@@ -605,8 +605,7 @@ fun AppNavHost(
                             Toast.LENGTH_SHORT)
                         .show()
                   },
-                  onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) },
-                  onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
+                  onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
             }
           }
 

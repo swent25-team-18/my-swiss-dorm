@@ -457,6 +457,11 @@
     <string name="no_message_provided">Acun message fourni</string>
     <string name="failed_to_create_chat">Échec de la création de la conversation</string>
 
+    <!-- Offline Banner -->
+    <string name="offline_banner_you_are_offline">Vous êtes hors ligne</string>
+    <string name="offline_banner_last_updated">Dernière mise à jour %1$s</string>
+    <string name="offline_banner_no_sync">Aucune donnée de synchronisation disponible</string>
+    <string name="offline_banner_icon_description">Icône hors ligne</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

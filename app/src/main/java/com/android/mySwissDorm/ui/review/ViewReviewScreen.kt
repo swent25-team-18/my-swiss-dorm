@@ -39,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +54,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
+import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Gray
@@ -93,6 +93,14 @@ fun ViewReviewScreen(
       Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
       viewReviewViewModel.clearErrorMsg()
     }
+  }
+
+  if (uiState.showFullScreenImages) {
+    FullScreenImageViewer(
+        imageUris = uiState.images.map { it.image },
+        onDismiss = { viewReviewViewModel.dismissFullScreenImages() },
+        initialIndex = uiState.fullScreenImagesIndex)
+    return
   }
 
   Scaffold(
@@ -175,6 +183,7 @@ fun ViewReviewScreen(
               ImageGrid(
                   imageUris = uiState.images.map { it.image }.toSet(),
                   isEditingMode = false,
+                  onImageClick = { viewReviewViewModel.onClickImage(it) },
                   onRemove = {},
                   modifier = Modifier.testTag(C.ViewReviewTags.PHOTOS))
 

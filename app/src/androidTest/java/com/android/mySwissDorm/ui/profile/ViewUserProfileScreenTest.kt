@@ -1,4 +1,4 @@
-package com.android.mySwissDorm.profile
+package com.android.mySwissDorm.ui.profile
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
@@ -12,13 +12,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
-import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.github.se.bootcamp.ui.profile.ViewProfileScreenViewModel
-import com.github.se.bootcamp.ui.profile.ViewProfileUiState
+import java.util.UUID
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +43,10 @@ class ViewUserProfileScreenTest : FirestoreTest() {
       switchToUser(FakeUser.FakeUser1)
       ownerUid = FirebaseEmulator.auth.currentUser!!.uid
       // profile1 fixture comes from FirestoreTest
-      profileRepo.createProfile(profile1.copy(ownerId = ownerUid))
+      profileRepo.createProfile(
+          profile1.copy(
+              ownerId = ownerUid,
+              userInfo = profile1.userInfo.copy(profilePicture = photo.fileName)))
     }
   }
 
@@ -116,6 +119,8 @@ class ViewUserProfileScreenTest : FirestoreTest() {
     }
     compose.onNodeWithTag(T.ROOT).performScrollToNode(hasTestTag(T.SEND_MESSAGE))
     compose.onNodeWithTag(T.SEND_MESSAGE).assertIsDisplayed()
+
+    compose.onNodeWithTag(T.PROFILE_PICTURE).assertIsDisplayed()
   }
 
   @Test
@@ -275,7 +280,7 @@ class ViewUserProfileScreenTest : FirestoreTest() {
 
   @Test
   fun retry_withoutFix_keepsError() = runTest {
-    val missingId = "missing-" + java.util.UUID.randomUUID().toString()
+    val missingId = "missing-" + UUID.randomUUID().toString()
 
     compose.setContent {
       val vm = ViewProfileScreenViewModel(repo = profileRepo, auth = FirebaseEmulator.auth)
@@ -305,5 +310,21 @@ class ViewUserProfileScreenTest : FirestoreTest() {
           .isNotEmpty()
     }
     compose.onNodeWithTag(T.ERROR_TEXT).assertIsDisplayed()
+  }
+
+  @Test
+  fun profile_picture_displayed() {
+    val cloudRepo = FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, true)
+    val vm = ViewProfileScreenViewModel(photoRepositoryCloud = cloudRepo, repo = profileRepo)
+    compose.setContent {
+      ViewUserProfileScreen(viewModel = vm, ownerId = ownerUid, onBack = {}, onSendMessage = {})
+    }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(T.PROFILE_PICTURE, useUnmergedTree = true).assertIsDisplayed()
+    compose.waitUntil("Profile picture is null", 5_000) { vm.uiState.value.profilePicture != null }
+    assertTrue(
+        "Incorrect photo displayed instead of the profile picture",
+        vm.uiState.value.profilePicture!!.fileName == photo.fileName)
   }
 }

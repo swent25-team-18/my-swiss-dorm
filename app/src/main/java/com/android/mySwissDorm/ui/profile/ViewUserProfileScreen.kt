@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -28,7 +29,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -37,8 +40,6 @@ import com.android.mySwissDorm.ui.theme.Red
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
-import com.github.se.bootcamp.ui.profile.ViewProfileScreenViewModel
-import com.github.se.bootcamp.ui.profile.ViewProfileUiState
 import com.google.firebase.auth.FirebaseAuth
 
 /**
@@ -148,15 +149,28 @@ fun ViewUserProfileScreen(
                                 .testTag(T.AVATAR_BOX)) {
                           Box(
                               modifier =
-                                  Modifier.size(150.dp)
+                                  Modifier.fillMaxSize()
                                       .clip(CircleShape)
                                       .background(BackGroundColor),
                               contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Person,
-                                    contentDescription = "Profile picture",
-                                    tint = MainColor,
-                                    modifier = Modifier.size(64.dp))
+                                if (!ui.isBlocked && ui.profilePicture != null) {
+                                  AsyncImage(
+                                      model = ui.profilePicture.image,
+                                      contentDescription = "Profile picture",
+                                      contentScale = ContentScale.Crop,
+                                      modifier =
+                                          Modifier.fillMaxSize()
+                                              .testTag(C.ViewUserProfileTags.PROFILE_PICTURE),
+                                  )
+                                } else {
+                                  Icon(
+                                      imageVector = Icons.Outlined.Person,
+                                      contentDescription = "Profile picture",
+                                      tint = MainColor,
+                                      modifier =
+                                          Modifier.size(64.dp)
+                                              .testTag(C.ViewUserProfileTags.PROFILE_PICTURE))
+                                }
                               }
                         }
                   }

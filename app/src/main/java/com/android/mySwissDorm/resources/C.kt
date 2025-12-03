@@ -94,6 +94,7 @@ object C {
     const val RETRY_BTN = "view_user_profile_retry"
     const val ERROR_TEXT = "view_user_profile_error"
     const val LOADING = "view_user_profile_loading"
+    const val PROFILE_PICTURE = "view_user_profile_picture"
   }
 
   object BrowseCityTags {

@@ -37,7 +37,9 @@ import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepos
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
 import com.android.mySwissDorm.ui.authentification.SignInScreen
+import com.android.mySwissDorm.ui.authentification.SignUpPreferencesScreen
 import com.android.mySwissDorm.ui.authentification.SignUpScreen
+import com.android.mySwissDorm.ui.authentification.SignUpViewModel
 import com.android.mySwissDorm.ui.chat.ChannelsScreen
 import com.android.mySwissDorm.ui.chat.MyChatScreen
 import com.android.mySwissDorm.ui.chat.RequestedMessagesScreen
@@ -52,9 +54,11 @@ import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.overview.ListingCardUI
 import com.android.mySwissDorm.ui.overview.MapOverviewScreen
 import com.android.mySwissDorm.ui.profile.ContributionType
+import com.android.mySwissDorm.ui.profile.EditPreferencesScreen
 import com.android.mySwissDorm.ui.profile.ProfileContributionsScreen
 import com.android.mySwissDorm.ui.profile.ProfileContributionsViewModel
 import com.android.mySwissDorm.ui.profile.ProfileScreen
+import com.android.mySwissDorm.ui.profile.ProfileScreenViewModel
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewScreen
@@ -65,7 +69,9 @@ import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.utils.SignInPopUp
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun AppNavHost(
@@ -124,11 +130,23 @@ fun AppNavHost(
       )
     }
 
-    composable(Screen.SignUp.route) {
+    composable(Screen.SignUp.route) { backStackEntry ->
+      val viewModel = viewModel<SignUpViewModel>(backStackEntry)
       SignUpScreen(
+          signUpViewModel = viewModel,
+          onBack = { navActions.goBack() },
+          onContinue = { navActions.navigateTo(Screen.SignUpPreferences) })
+    }
+
+    composable(Screen.SignUpPreferences.route) { backStackEntry ->
+      val parentEntry =
+          remember(backStackEntry) { navController.getBackStackEntry(Screen.SignUp.route) }
+      val viewModel = viewModel<SignUpViewModel>(parentEntry)
+      SignUpPreferencesScreen(
+          signUpViewModel = viewModel,
           credentialManager = credentialManager,
-          onSignedUp = { navigationViewModel.determineInitialDestination() },
-          onBack = { navActions.goBack() })
+          onBack = { navActions.goBack() },
+          onSignedUp = { navigationViewModel.determineInitialDestination() })
     }
 
     // --- Bottom bar destinations ---
@@ -223,7 +241,7 @@ fun AppNavHost(
               navActions.navigateTo(Screen.ProfileContributions)
             }
           },
-      )
+          onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
     }
 
     // --- Secondary destinations ---
@@ -571,7 +589,7 @@ fun AppNavHost(
                       Toast.LENGTH_SHORT)
                   .show()
             },
-            onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
+            onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
       }
     }
 
@@ -581,6 +599,12 @@ fun AppNavHost(
           onSelectListing = { listing ->
             navActions.navigateTo(Screen.ListingOverview(listing.listingUid))
           })
+    }
+    composable(Screen.EditPreferences.route) {
+      val viewModel: ProfileScreenViewModel = viewModel()
+      LaunchedEffect(Unit) { viewModel.loadProfile(context) }
+
+      EditPreferencesScreen(viewModel = viewModel, onBack = { navActions.goBack() })
     }
 
     composable(Screen.ChatChannel.route) { entry ->
@@ -620,11 +644,14 @@ fun AppNavHost(
                       if (!StreamChatProvider.isInitialized()) {
                         Log.w(
                             "AppNavHost", "Stream Chat not initialized, skipping channel creation")
-                        Toast.makeText(
-                                context,
-                                "Message approved. You can start a chat manually from the inbox.",
-                                Toast.LENGTH_SHORT)
-                            .show()
+                        // Ensure Toast is shown on main thread
+                        withContext(Dispatchers.Main) {
+                          Toast.makeText(
+                                  context,
+                                  "Message approved. You can start a chat manually from the inbox.",
+                                  Toast.LENGTH_SHORT)
+                              .show()
+                        }
                         return@launch
                       }
 
@@ -660,34 +687,42 @@ fun AppNavHost(
                           extraData = mapOf("name" to "Chat"))
 
                       // Show success message and stay on requested messages screen
-                      Toast.makeText(
-                              context,
-                              "Message approved and chat channel created.",
-                              Toast.LENGTH_SHORT)
-                          .show()
+                      withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                                context,
+                                "Message approved and chat channel created.",
+                                Toast.LENGTH_SHORT)
+                            .show()
+                      }
                     } catch (channelError: Exception) {
                       // Channel creation failed, but message is already approved
                       Log.e("AppNavHost", "Error creating channel", channelError)
-                      Toast.makeText(
-                              context,
-                              "Message approved. You can start a chat manually from the inbox.",
-                              Toast.LENGTH_SHORT)
-                          .show()
+                      withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                                context,
+                                "Message approved. You can start a chat manually from the inbox.",
+                                Toast.LENGTH_SHORT)
+                            .show()
+                      }
                     }
                   } else {
                     // User is anonymous or not logged in
-                    Toast.makeText(
-                            context,
-                            "Message approved. Sign in to start chatting.",
-                            Toast.LENGTH_SHORT)
-                        .show()
+                    withContext(Dispatchers.Main) {
+                      Toast.makeText(
+                              context,
+                              "Message approved. Sign in to start chatting.",
+                              Toast.LENGTH_SHORT)
+                          .show()
+                    }
                   }
                 }
               } catch (e: Exception) {
                 Log.e("AppNavHost", "Error approving requested message", e)
-                Toast.makeText(
-                        context, "Failed to approve message: ${e.message}", Toast.LENGTH_SHORT)
-                    .show()
+                withContext(Dispatchers.Main) {
+                  Toast.makeText(
+                          context, "Failed to approve message: ${e.message}", Toast.LENGTH_SHORT)
+                      .show()
+                }
               }
             }
           },
@@ -711,9 +746,11 @@ fun AppNavHost(
                 onSuccess()
               } catch (e: Exception) {
                 Log.e("AppNavHost", "Error rejecting requested message", e)
-                Toast.makeText(
-                        context, "Failed to reject message: ${e.message}", Toast.LENGTH_SHORT)
-                    .show()
+                withContext(Dispatchers.Main) {
+                  Toast.makeText(
+                          context, "Failed to reject message: ${e.message}", Toast.LENGTH_SHORT)
+                      .show()
+                }
               }
             }
           })

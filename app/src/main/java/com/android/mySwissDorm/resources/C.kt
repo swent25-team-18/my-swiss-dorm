@@ -50,6 +50,7 @@ object C {
     const val ROOT = "viewListingRoot"
     const val TITLE = "viewListingTitle"
     const val POSTED_BY = "viewListingPostedBy"
+    const val POSTED_BY_NAME = "viewListingPostedByName"
     const val BULLETS = "viewListingBullets"
     const val DESCRIPTION = "viewListingDescription"
     const val PHOTOS = "viewListingPhotos"
@@ -67,6 +68,7 @@ object C {
     const val ROOT = "viewReviewRoot"
     const val TITLE = "viewReviewTitle"
     const val POSTED_BY = "viewReviewPostedBy"
+    const val POSTED_BY_NAME = "viewReviewPostedByName"
     const val BULLETS = "viewReviewBullets"
     const val FILLED_STAR = "viewReviewFilledStar"
     const val EMPTY_STAR = "viewReviewEmptyStar"
@@ -247,6 +249,8 @@ object C {
     const val DESC_FIELD = "descField"
     const val CONFIRM_BUTTON = "confirmButton"
     const val CUSTOM_LOCATION_BUTTON = "customLocationButton"
+    const val ERROR_MESSAGE = "addListingErrorMessage"
+    const val RESIDENCY_DROPDOWN = "addListingResidencyDropdown"
   }
 
   object EditListingScreenTags {
@@ -285,6 +289,7 @@ object C {
     const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
     const val BOTTOM_BAR = "bottom_nav"
     const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
+    const val BOOKMARKS_BUTTON = "BookmarksButton"
 
     fun switch(label: String): String = "SettingSwitch_$label"
   }
@@ -319,6 +324,20 @@ object C {
     const val PRIVATE_ACCOMMODATION = "privateAccommodation"
 
     fun getResidencyTag(residencyName: String) = "sanitizedResidencyDropdown_$residencyName"
+  }
+
+  object FilterTestTags {
+    const val MIN_PRICE = "price_min_text"
+    const val MAX_PRICE = "price_max_text"
+    const val SLIDER_PRICE = "price_slider"
+    const val MAX_SIZE = "size_max_text"
+    const val MIN_SIZE = "size_min_text"
+    const val SLIDER_SIZE = "size_slider"
+    const val BUDGET = "budget"
+    const val PREFERRED_SIZE = "preferred_size"
+    const val PREFERRED_ROOM_TYPE = "preferred_room_type"
+    const val SIGN_UP_WITH_PREFERENCES = "sign_up_with_preferences"
+    const val LOCATION_PREFERENCE = "locationField"
   }
 
   object ShareLinkDialogTags {

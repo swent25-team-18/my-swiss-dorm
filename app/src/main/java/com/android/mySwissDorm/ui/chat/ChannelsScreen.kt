@@ -37,6 +37,7 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.Transparent
 import com.android.mySwissDorm.ui.theme.White
 import com.google.firebase.auth.FirebaseAuth
 import io.getstream.chat.android.client.api.models.QueryChannelsRequest
@@ -283,9 +284,9 @@ fun ChannelsScreen(
           singleLine = true,
           colors =
               TextFieldDefaults.colors(
-                  focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                  unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                  disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                  focusedIndicatorColor = Transparent,
+                  unfocusedIndicatorColor = Transparent,
+                  disabledIndicatorColor = Transparent,
                   focusedContainerColor =
                       MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                   unfocusedContainerColor =

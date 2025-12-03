@@ -20,7 +20,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -34,8 +33,10 @@ import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.Red
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.github.se.bootcamp.ui.profile.ViewProfileScreenViewModel
 import com.github.se.bootcamp.ui.profile.ViewProfileUiState
 import com.google.firebase.auth.FirebaseAuth
@@ -216,8 +217,8 @@ fun ViewUserProfileScreen(
                   item {
                     Spacer(Modifier.height(12.dp))
                     val isBlocked = ui.isBlocked
-                    val buttonColor = if (isBlocked) MainColor else Color(0xFFFF4444)
-                    val textColor = if (isBlocked) BackGroundColor else Color.White
+                    val buttonColor = if (isBlocked) MainColor else Red
+                    val textColor = if (isBlocked) BackGroundColor else White
                     val iconColor = textColor
                     val buttonText =
                         if (isBlocked) stringResource(R.string.view_user_profile_unblock_user)

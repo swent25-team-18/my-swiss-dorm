@@ -52,6 +52,8 @@ import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
+import com.android.mySwissDorm.ui.utils.PriceFilterContent
+import com.android.mySwissDorm.ui.utils.SizeFilterContent
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 import com.google.firebase.Timestamp
 
@@ -700,66 +702,6 @@ private fun RoomTypeFilterContent(
                 colors = CheckboxDefaults.colors(checkedColor = MainColor))
           }
     }
-  }
-}
-
-/** Price filter content with range slider. */
-@Composable
-private fun PriceFilterContent(
-    priceRange: Pair<Double?, Double?>,
-    onRangeChange: (Double?, Double?) -> Unit
-) {
-  var minPrice by remember(priceRange) { mutableFloatStateOf((priceRange.first ?: 0.0).toFloat()) }
-  var maxPrice by
-      remember(priceRange) { mutableFloatStateOf((priceRange.second ?: 2000.0).toFloat()) }
-
-  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-      Text("${stringResource(R.string.min)}: ${minPrice.toInt()} CHF", color = TextColor)
-      Text("${stringResource(R.string.max)}: ${maxPrice.toInt()} CHF", color = TextColor)
-    }
-    RangeSlider(
-        value = minPrice..maxPrice,
-        onValueChange = { range ->
-          minPrice = range.start
-          maxPrice = range.endInclusive
-          onRangeChange(minPrice.toDouble(), maxPrice.toDouble())
-        },
-        valueRange = 0f..5000f,
-        steps = 49,
-        colors =
-            SliderDefaults.colors(
-                thumbColor = MainColor,
-                activeTrackColor = MainColor,
-                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
-  }
-}
-
-/** Size filter content with range slider. */
-@Composable
-private fun SizeFilterContent(sizeRange: Pair<Int?, Int?>, onRangeChange: (Int?, Int?) -> Unit) {
-  var minSize by remember(sizeRange) { mutableFloatStateOf((sizeRange.first ?: 0).toFloat()) }
-  var maxSize by remember(sizeRange) { mutableFloatStateOf((sizeRange.second ?: 100).toFloat()) }
-
-  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-      Text("${stringResource(R.string.min)}: ${minSize.toInt()} m²", color = TextColor)
-      Text("${stringResource(R.string.max)}: ${maxSize.toInt()} m²", color = TextColor)
-    }
-    RangeSlider(
-        value = minSize..maxSize,
-        onValueChange = { range ->
-          minSize = range.start
-          maxSize = range.endInclusive
-          onRangeChange(minSize.toInt(), maxSize.toInt())
-        },
-        valueRange = 0f..200f,
-        steps = 39,
-        colors =
-            SliderDefaults.colors(
-                thumbColor = MainColor,
-                activeTrackColor = MainColor,
-                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
   }
 }
 

@@ -57,7 +57,7 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onChangeProfilePicture: (Photo) -> Unit,
     onBack: () -> Unit,
-    onViewBookmarks: () -> Unit = {},
+    onEditPreferencesClick: () -> Unit,
     viewModel: ProfileScreenViewModel = viewModel()
 ) {
   // Collect VM state (initial ensures preview/first composition has data)
@@ -75,9 +75,9 @@ fun ProfileScreen(
       onLogout = onLogout,
       onChangeProfilePicture = onChangeProfilePicture,
       onBack = onBack,
-      onViewBookmarks = onViewBookmarks,
       onToggleEditing = viewModel::toggleEditing,
-      onSave = { viewModel.saveProfile(context) })
+      onSave = { viewModel.saveProfile(context) },
+      onEditPreferencesClick = onEditPreferencesClick)
 }
 
 /**
@@ -115,9 +115,9 @@ private fun ProfileScreenContent(
     onLogout: () -> Unit,
     onChangeProfilePicture: (Photo) -> Unit,
     onBack: () -> Unit,
-    onViewBookmarks: () -> Unit = {},
     onToggleEditing: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onEditPreferencesClick: () -> Unit
 ) {
   // Local editable buffers used ONLY in edit mode (remembered across recompositions)
   var firstLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.firstName) }
@@ -255,25 +255,20 @@ private fun ProfileScreenContent(
                   tag = "field_residence",
                   options = state.allResidencies.map { it.name })
 
-              // View bookmarked listings button (only in view mode)
-              if (!state.isEditing) {
-                Button(
-                    onClick = onViewBookmarks,
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .padding(top = 16.dp)
-                            .height(52.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .testTag("profile_bookmarks_button"),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = BackGroundColor, contentColor = MainColor),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MainColor)) {
-                      Text(
-                          text = stringResource(R.string.profile_view_bookmarks), color = MainColor)
-                    }
-              }
-
+              Spacer(Modifier.height(10.dp))
+              Button(
+                  onClick = onEditPreferencesClick,
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .padding(top = 16.dp)
+                          .height(52.dp)
+                          .clip(RoundedCornerShape(12.dp)),
+                  colors =
+                      ButtonDefaults.buttonColors(
+                          containerColor = BackGroundColor, contentColor = MainColor),
+                  border = androidx.compose.foundation.BorderStroke(1.dp, MainColor)) {
+                    Text(stringResource(R.string.listing_preferences), color = MainColor)
+                  }
               // Bottom action area: Save (edit mode) or Logout (view mode)
               if (state.isEditing) {
                 Button(
@@ -483,6 +478,7 @@ private fun Preview_Profile_Interactive() {
         onChangeProfilePicture = {},
         onBack = {},
         onToggleEditing = { isEditing = !isEditing },
-        onSave = { isEditing = false })
+        onSave = { isEditing = false },
+        onEditPreferencesClick = {})
   }
 }

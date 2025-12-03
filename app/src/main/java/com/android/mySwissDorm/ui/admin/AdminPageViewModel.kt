@@ -236,7 +236,7 @@ class AdminPageViewModel(
                     name = uiState.name.trim(),
                     description = uiState.description.trim(),
                     location = location,
-                    imageId = uiState.imageId.trim().toIntOrNull() ?: 0)
+                    imageId = uiState.imageId)
             citiesRepo.addCity(city)
           }
           EntityType.RESIDENCY -> {

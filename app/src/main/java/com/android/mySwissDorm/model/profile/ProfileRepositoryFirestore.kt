@@ -2,6 +2,7 @@ package com.android.mySwissDorm.model.profile
 
 import android.util.Log
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.rental.RoomType
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -100,6 +101,17 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
                     latitude = (map2["latitude"] as? Number ?: return null).toDouble(),
                     longitude = (map2["longitude"] as? Number ?: return null).toDouble())
               }
+          val rawRoomTypes = mapNotNull["preferredRoomTypes"] as? List<*>
+          val roomTypes =
+              rawRoomTypes?.mapNotNull { item ->
+                (item as? String)?.let { typeName ->
+                  try {
+                    RoomType.valueOf(typeName)
+                  } catch (e: IllegalArgumentException) {
+                    null // Skip invalid/renamed enum values to avoid crash
+                  }
+                }
+              } ?: emptyList()
           UserInfo(
               name = map["name"] as? String ?: return null,
               lastName = map["lastName"] as? String ?: return null,
@@ -128,7 +140,11 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
                       }
                     }
                   },
-          )
+              minPrice = (mapNotNull["minPrice"] as? Number)?.toDouble(),
+              maxPrice = (mapNotNull["maxPrice"] as? Number)?.toDouble(),
+              minSize = (mapNotNull["minSize"] as? Number)?.toInt(),
+              maxSize = (mapNotNull["maxSize"] as? Number)?.toInt(),
+              preferredRoomTypes = roomTypes)
         }
     return userInfo
   }

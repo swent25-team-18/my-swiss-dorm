@@ -292,6 +292,7 @@ object C {
     const val QR_SECTION_TITLE = "SettingsQrSectionTitle"
     const val QR_SECTION_SUBTITLE = "SettingsQrSectionSubtitle"
     const val QR_SCAN_BUTTON = "SettingsScanQrButton"
+    const val BOOKMARKS_BUTTON = "BookmarksButton"
 
     fun switch(label: String): String = "SettingSwitch_$label"
   }

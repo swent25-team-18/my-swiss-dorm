@@ -242,6 +242,7 @@ fun AppNavHost(
               navActions.navigateTo(Screen.ProfileContributions)
             }
           },
+          onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) },
           onQrNavigate = { scannedUrl ->
             handleScannedQrUrl(
                 scannedUrl = scannedUrl, navigationActions = navActions, context = context)
@@ -594,8 +595,7 @@ fun AppNavHost(
                       Toast.LENGTH_SHORT)
                   .show()
             },
-            onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) },
-            onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
+            onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
       }
     }
 

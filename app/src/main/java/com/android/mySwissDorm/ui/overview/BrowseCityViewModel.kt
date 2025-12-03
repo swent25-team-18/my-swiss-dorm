@@ -292,12 +292,11 @@ class BrowseCityViewModel(
           return true
         }
         // Sort by most recent if enabled and recommended (always)
-        val sorted =
-            filtered.sortedWith(
-                compareByDescending<RentalListing> { isRecommended(it) }
-                    .thenByDescending {
-                      if (state.filterState.sortByMostRecent) it.postedAt.seconds else 0L
-                    })
+        var comparator = compareByDescending<RentalListing> { isRecommended(it) }
+        if (state.filterState.sortByMostRecent) {
+          comparator = comparator.thenByDescending { it.postedAt }
+        }
+        val sorted = filtered.sortedWith(comparator)
 
         // Load bookmarked listing IDs
         val bookmarkedIds =

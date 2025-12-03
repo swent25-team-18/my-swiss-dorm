@@ -62,7 +62,6 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onBack: () -> Unit,
     onEditPreferencesClick: () -> Unit,
-    onViewBookmarks: () -> Unit = {},
     viewModel: ProfileScreenViewModel = viewModel()
 ) {
   // Collect VM state (initial ensures preview/first composition has data)
@@ -80,7 +79,6 @@ fun ProfileScreen(
       onLogout = onLogout,
       onChangeProfilePicture = { viewModel.onProfilePictureChange(it) },
       onBack = onBack,
-      onViewBookmarks = onViewBookmarks,
       onToggleEditing = viewModel::toggleEditing,
       onSave = { viewModel.saveProfile(context) },
       onEditPreferencesClick = onEditPreferencesClick)
@@ -121,7 +119,6 @@ private fun ProfileScreenContent(
     onLogout: () -> Unit,
     onChangeProfilePicture: (Photo?) -> Unit,
     onBack: () -> Unit,
-    onViewBookmarks: () -> Unit = {},
     onToggleEditing: () -> Unit,
     onSave: () -> Unit,
     onEditPreferencesClick: () -> Unit
@@ -296,25 +293,6 @@ private fun ProfileScreenContent(
                   modifier = Modifier.fillMaxWidth(),
                   tag = "field_residence",
                   options = state.allResidencies.map { it.name })
-
-              // View bookmarked listings button (only in view mode)
-              if (!state.isEditing) {
-                Button(
-                    onClick = onViewBookmarks,
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .padding(top = 16.dp)
-                            .height(52.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .testTag("profile_bookmarks_button"),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = BackGroundColor, contentColor = MainColor),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MainColor)) {
-                      Text(
-                          text = stringResource(R.string.profile_view_bookmarks), color = MainColor)
-                    }
-              }
 
               Spacer(Modifier.height(10.dp))
               Button(

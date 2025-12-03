@@ -290,6 +290,7 @@ object C {
     const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
     const val BOTTOM_BAR = "bottom_nav"
     const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
+    const val BOOKMARKS_BUTTON = "BookmarksButton"
 
     fun avatarTag(uri: Uri?) = "SettingsAvatarTag$uri"
 

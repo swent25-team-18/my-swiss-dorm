@@ -11,13 +11,24 @@ import kotlinx.coroutines.tasks.await
 /** The directory in which the photo are stored in storage */
 const val DIR = "photos"
 
-/** This is an implementation of a [PhotoRepositoryCloud] using the storage service of Firebase. */
+/**
+ * This is an implementation of a [PhotoRepositoryCloud] using the storage service of Firebase.
+ *
+ * @param photoSubDir this specify in which subdirectory the operations should be done. This must
+ *   respect this format: "path/to/subdirectory/"
+ */
 class PhotoRepositoryStorage(
     storageRef: StorageReference = Firebase.storage.reference,
-    localRepository: PhotoRepository = PhotoRepositoryProvider.local_repository
+    localRepository: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    photoSubDir: String = ""
 ) : PhotoRepositoryCloud(localRepository) {
 
-  private val dirRef = storageRef.child("$DIR/")
+  init {
+    require(photoSubDir.firstOrNull()?.isLetter() ?: true)
+    require(photoSubDir.isEmpty() || photoSubDir.last() == '/')
+  }
+
+  private val dirRef = storageRef.child("$DIR/$photoSubDir")
 
   override suspend fun retrievePhoto(uid: String): Photo {
     try {

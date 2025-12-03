@@ -241,7 +241,7 @@ fun AppNavHost(
               navActions.navigateTo(Screen.ProfileContributions)
             }
           },
-      )
+          onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
     }
 
     // --- Secondary destinations ---
@@ -582,8 +582,7 @@ fun AppNavHost(
               AuthRepositoryProvider.repository.signOut()
               navigationViewModel.determineInitialDestination()
             },
-            onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) },
-            onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
+            onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
       }
     }
 

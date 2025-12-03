@@ -467,7 +467,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     // Verify we're not the owner before setting hasExistingMessage
     compose.waitUntil(3_000) { !vm.uiState.value.isOwner && !vm.uiState.value.isGuest }
 
-    // Now set hasExistingMessage to true using reflection, using runOnIdle to ensure composition
+    // Set hasExistingMessage to true using reflection
     compose.runOnIdle {
       val uiStateField = ViewListingViewModel::class.java.getDeclaredField("_uiState")
       uiStateField.isAccessible = true
@@ -477,56 +477,19 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
                   as? kotlinx.coroutines.flow.MutableStateFlow<ViewListingUIState>) {
                 "Failed to cast _uiState to MutableStateFlow<ViewListingUIState>"
               }
-
-      // Set hasExistingMessage to true
       mutableUiState.update { it.copy(hasExistingMessage = true) }
     }
 
-    // Wait for state to be set in ViewModel
-    compose.waitUntil(5_000) { vm.uiState.value.hasExistingMessage }
-
-    // Wait for UI to recompose and show both text messages
-    // We wait for both to ensure the UI has fully updated
+    // Wait for UI to show the message already sent text
     compose.waitUntil(10_000) {
-      val messageSentNodes =
-          compose
-              .onAllNodesWithText(
-                  context.getString(R.string.view_listing_message_already_sent),
-                  useUnmergedTree = true)
-              .fetchSemanticsNodes()
-      val waitResponseNodes =
-          compose
-              .onAllNodesWithText(
-                  context.getString(R.string.view_listing_please_wait_for_response),
-                  useUnmergedTree = true)
-              .fetchSemanticsNodes()
-
-      if (messageSentNodes.isNotEmpty() && waitResponseNodes.isNotEmpty()) {
-        try {
-          // Try to assert both are displayed - if either fails, return false to keep waiting
-          compose
-              .onNodeWithText(
-                  context.getString(R.string.view_listing_message_already_sent),
-                  useUnmergedTree = true)
-              .assertIsDisplayed()
-          compose
-              .onNodeWithText(
-                  context.getString(R.string.view_listing_please_wait_for_response),
-                  useUnmergedTree = true)
-              .assertIsDisplayed()
-          true
-        } catch (e: AssertionError) {
-          false
-        }
-      } else {
-        false
-      }
+      compose
+          .onAllNodesWithText(
+              context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
-    // Wait for UI to be fully idle after state update
-    compose.runOnIdle {}
-
-    // Final assertions - these should pass since we waited for them above
+    // Verify the texts are displayed
     compose
         .onNodeWithText(
             context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)

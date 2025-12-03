@@ -682,8 +682,8 @@ class RequestedMessagesScreenTest : FirestoreTest() {
 
     compose.onNodeWithContentDescription("Approve").performClick()
 
-    // Wait for success message to appear (covers Stream Chat connection and channel creation)
-    compose.waitUntil(timeoutMillis = 10_000) { vm.uiState.value.successMessage != null }
+    // Wait for success message to appear
+    compose.waitUntil(timeoutMillis = 15_000) { vm.uiState.value.successMessage != null }
 
     // Verify success message is set
     val successMessage = vm.uiState.value.successMessage

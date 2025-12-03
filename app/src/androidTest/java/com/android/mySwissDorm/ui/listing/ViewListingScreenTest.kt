@@ -482,27 +482,56 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       mutableUiState.update { it.copy(hasExistingMessage = true) }
     }
 
-    // Wait for state to propagate and UI to recompose
+    // Wait for state to be set in ViewModel
+    compose.waitUntil(5_000) { vm.uiState.value.hasExistingMessage }
+
+    // Wait for UI to recompose and show both text messages
+    // We wait for both to ensure the UI has fully updated
     compose.waitUntil(10_000) {
-      vm.uiState.value.hasExistingMessage &&
+      val messageSentNodes =
           compose
               .onAllNodesWithText(
                   context.getString(R.string.view_listing_message_already_sent),
                   useUnmergedTree = true)
               .fetchSemanticsNodes()
-              .isNotEmpty()
+      val waitResponseNodes =
+          compose
+              .onAllNodesWithText(
+                  context.getString(R.string.view_listing_please_wait_for_response),
+                  useUnmergedTree = true)
+              .fetchSemanticsNodes()
+
+      if (messageSentNodes.isNotEmpty() && waitResponseNodes.isNotEmpty()) {
+        try {
+          // Try to assert both are displayed - if either fails, return false to keep waiting
+          compose
+              .onNodeWithText(
+                  context.getString(R.string.view_listing_message_already_sent),
+                  useUnmergedTree = true)
+              .assertIsDisplayed()
+          compose
+              .onNodeWithText(
+                  context.getString(R.string.view_listing_please_wait_for_response),
+                  useUnmergedTree = true)
+              .assertIsDisplayed()
+          true
+        } catch (e: AssertionError) {
+          false
+        }
+      } else {
+        false
+      }
     }
 
-    // Wait for UI to be idle after state update
+    // Wait for UI to be fully idle after state update
     compose.runOnIdle {}
 
-    // Verify the "message already sent" text is displayed
+    // Final assertions - these should pass since we waited for them above
     compose
         .onNodeWithText(
             context.getString(R.string.view_listing_message_already_sent), useUnmergedTree = true)
         .assertIsDisplayed()
 
-    // Verify the "please wait for response" text is displayed
     compose
         .onNodeWithText(
             context.getString(R.string.view_listing_please_wait_for_response),

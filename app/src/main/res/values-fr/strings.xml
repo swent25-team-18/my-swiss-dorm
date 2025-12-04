@@ -300,8 +300,6 @@
     <string name="profile_vm_not_signed_in">Non connecté.</string>
     <string name="profile_vm_failed_to_save">Échec de l’enregistrement :</string>
 
-    <!-- RequestDetailScreen -->
-    <string name="request_detail_title">Demande reçue</string>
 
     <!-- ViewUserProfileScreen -->
     <string name="view_user_profile_send_message">Envoyer un message</string>

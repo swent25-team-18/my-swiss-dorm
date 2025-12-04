@@ -29,7 +29,7 @@ class CitiesRepositoryFirestoreTest : FirestoreTest() {
             name = "Lausanne",
             description = "Description of Lausanne",
             location = Location("Lausanne", 1.0, 2.0),
-            imageId = 0)
+            imageId = "")
     repo.addCity(cityToAdd)
     val returnedCity = repo.getCity("Lausanne")
     assertEquals(cityToAdd, returnedCity)
@@ -43,13 +43,13 @@ class CitiesRepositoryFirestoreTest : FirestoreTest() {
             name = "Lausanne",
             description = "Description of Lausanne",
             location = Location("Lausanne", 1.0, 2.0),
-            imageId = 0)
+            imageId = "")
     val city2 =
         City(
             name = "Geneva",
             description = "Description of Geneva",
             location = Location("Geneva", 2.0, 1.0),
-            imageId = 1)
+            imageId = "")
     val allCitiesToAdd = listOf(city1, city2)
     allCitiesToAdd.forEach { repo.addCity(it) }
     assertEquals(allCitiesToAdd.toSet(), repo.getAllCities().toSet())

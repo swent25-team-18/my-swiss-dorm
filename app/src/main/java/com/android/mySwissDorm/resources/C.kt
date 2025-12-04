@@ -118,6 +118,7 @@ object C {
     const val FABMENULISTING = "fab_menu_listing"
 
     const val FABSCRIM = "fab_scrim"
+    const val RECOMMENDED = "recommendedText"
 
     fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
 
@@ -289,6 +290,7 @@ object C {
     const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
     const val BOTTOM_BAR = "bottom_nav"
     const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
+    const val BOOKMARKS_BUTTON = "BookmarksButton"
 
     fun switch(label: String): String = "SettingSwitch_$label"
   }
@@ -323,5 +325,28 @@ object C {
     const val PRIVATE_ACCOMMODATION = "privateAccommodation"
 
     fun getResidencyTag(residencyName: String) = "sanitizedResidencyDropdown_$residencyName"
+  }
+
+  object FilterTestTags {
+    const val MIN_PRICE = "price_min_text"
+    const val MAX_PRICE = "price_max_text"
+    const val SLIDER_PRICE = "price_slider"
+    const val MAX_SIZE = "size_max_text"
+    const val MIN_SIZE = "size_min_text"
+    const val SLIDER_SIZE = "size_slider"
+    const val BUDGET = "budget"
+    const val PREFERRED_SIZE = "preferred_size"
+    const val PREFERRED_ROOM_TYPE = "preferred_room_type"
+    const val SIGN_UP_WITH_PREFERENCES = "sign_up_with_preferences"
+    const val LOCATION_PREFERENCE = "locationField"
+  }
+
+  object ShareLinkDialogTags {
+    const val SHARE_BTN = "shareButton"
+    const val DIALOG_TITLE = "shareLinkDialogTitle"
+    const val QR_CODE = "shareLinkDialogQrCode"
+    const val QR_ERROR = "shareLinkDialogQrError"
+    const val COPY_LINK_BUTTON = "shareLinkDialogCopyLinkButton"
+    const val CANCEL_TEXT = "shareLinkDialogCancelText"
   }
 }

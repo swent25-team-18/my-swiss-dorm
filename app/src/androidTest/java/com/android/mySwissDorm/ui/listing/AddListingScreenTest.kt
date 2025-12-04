@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -21,6 +22,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.utils.FakePhotoRepository
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -563,5 +565,49 @@ class AddListingScreenTest : FirestoreTest() {
     composeRule
         .onNodeWithTag(C.AddListingScreenTags.CONFIRM_BUTTON, useUnmergedTree = true)
         .assertIsNotEnabled()
+  }
+
+  @Test
+  fun fullScreenIsPresent() {
+    val vm =
+        AddListingViewModel(
+            photoRepositoryLocal =
+                FakePhotoRepository.commonLocalRepo(
+                    onRetrieve = { photo }, onUpload = {}, onDelete = true))
+    vm.addPhoto(photo)
+    composeRule.setContent {
+      AddListingScreen(onConfirm = {}, onBack = {}, addListingViewModel = vm)
+    }
+    composeRule.waitForIdle()
+
+    // Go to the photo preview
+    composeRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).performScrollTo()
+    composeRule.waitUntil("The last added image is not shown", 5_000) {
+      composeRule
+          .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+    // Click on a photo to display in full screen
+    composeRule
+        .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
+
+    composeRule.waitForIdle()
+    // Check image is shown in full screen
+    composeRule.waitUntil("The clicked image is not shown in full screen", 5_000) {
+      composeRule
+          .onNodeWithTag(C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+
+    // Check that go back to the add listing page
+    composeRule
+        .onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitUntil(
+        "The listing page is not shown after leaving the full screen mode", 5_000) {
+          composeRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).isDisplayed()
+        }
   }
 }

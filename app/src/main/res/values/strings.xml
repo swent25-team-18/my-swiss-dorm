@@ -443,6 +443,7 @@
     <!-- Translator -->
     <string name="translator_translating">Translating…</string>
     <string name="translator_error_translating">Error during translation.</string>
+    <string name="translator_could_not_determine_language">Couldn\'t determine the language.</string>
 
     <!-- Map-->
     <string name="map_view">Listings map</string>

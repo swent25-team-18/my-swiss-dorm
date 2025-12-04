@@ -35,7 +35,8 @@ class Translator {
             .identifyLanguage(text)
             .addOnSuccessListener { languageCode ->
               if (languageCode == LanguageIdentifier.UNDETERMINED_LANGUAGE_TAG) {
-                continuation.resume(context.getString(R.string.translator_translating))
+                continuation.resume(
+                    context.getString(R.string.translator_could_not_determine_language))
                 return@addOnSuccessListener
               }
 

@@ -447,6 +447,7 @@
     <!-- Translator -->
     <string name="translator_translating">Traduction…</string>
     <string name="translator_error_translating">Erreur lors de la traduction.</string>
+    <string name="translator_could_not_determine_language">N\'a pas pu déterminer le langage</string>
 
     <!-- Map -->
     <string name="map_view">Carte d\'annonces</string>

@@ -59,7 +59,8 @@ class EditListingViewModel(
                 mapLng = listingLocation.longitude,
                 customLocation = if (isPrivateAccommodation) listingLocation else null,
                 customLocationQuery = if (isPrivateAccommodation) listingLocation.name else "",
-                errorMsg = null)
+                errorMsg = null,
+                ownerName = listing.ownerName)
       } catch (e: Exception) {
         Log.e(logTag, "Error loading listing by ID: $rentalPostID", e)
         setErrorMsg(
@@ -85,6 +86,7 @@ class EditListingViewModel(
         RentalListing(
             uid = id,
             ownerId = uid,
+            ownerName = state.ownerName,
             postedAt = Timestamp.now(),
             residencyName = state.residencyName,
             title = state.title,

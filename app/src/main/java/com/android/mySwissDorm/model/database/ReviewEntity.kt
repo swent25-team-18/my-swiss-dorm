@@ -15,6 +15,8 @@ import com.google.firebase.Timestamp
  *
  * @property uid Unique identifier of the review.
  * @property ownerId Identifier of the user who created the review.
+ * @property ownerName Display name of the user who created the review (stored locally for offline
+ *   access).
  * @property postedAt Timestamp indicating when the review was created.
  * @property title Short textual title summarizing the review.
  * @property reviewText Full textual content of the review.
@@ -35,6 +37,7 @@ import com.google.firebase.Timestamp
 data class ReviewEntity(
     @PrimaryKey val uid: String,
     val ownerId: String,
+    val ownerName: String? = null,
     val postedAt: Timestamp,
     val title: String,
     val reviewText: String,
@@ -57,6 +60,7 @@ data class ReviewEntity(
     return Review(
         uid = uid,
         ownerId = ownerId,
+        ownerName = ownerName,
         postedAt = postedAt,
         title = title,
         reviewText = reviewText,
@@ -82,6 +86,7 @@ data class ReviewEntity(
       return ReviewEntity(
           uid = review.uid,
           ownerId = review.ownerId,
+          ownerName = review.ownerName,
           postedAt = review.postedAt,
           title = review.title,
           reviewText = review.reviewText,

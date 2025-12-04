@@ -35,6 +35,7 @@ val defaultReview =
     Review(
         uid = "",
         ownerId = "",
+        ownerName = null,
         postedAt = Timestamp.now(),
         title = "",
         reviewText = "",
@@ -130,15 +131,8 @@ class ViewReviewViewModel(
             if (review.isAnonymous) {
               context.getString(R.string.anonymous)
             } else {
-              try {
-                val ownerUserInfo = profilesRepository.getProfile(review.ownerId).userInfo
-                ownerUserInfo.name + " " + ownerUserInfo.lastName
-              } catch (e: Exception) {
-                Log.w("ViewReviewViewModel", "Could not fetch profile for review owner", e)
-                setErrorMsg(
-                    "${context.getString(R.string.view_review_failed_to_load_review)}: ${e.message}")
-                context.getString(R.string.unknown)
-              }
+              // Use stored ownerName from review, fallback to "Unknown Owner" if null
+              review.ownerName ?: context.getString(R.string.unknown_owner_name)
             }
         val isOwner = currentUserId == review.ownerId
 

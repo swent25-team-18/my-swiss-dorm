@@ -71,6 +71,7 @@ class RentalListingRepositoryFirestore(
         mapOf(
             "uid" to rentalPost.uid,
             "ownerId" to rentalPost.ownerId,
+            "ownerName" to (rentalPost.ownerName ?: ""),
             "postedAt" to rentalPost.postedAt,
             "residencyName" to rentalPost.residencyName,
             "title" to rentalPost.title,
@@ -98,6 +99,7 @@ class RentalListingRepositoryFirestore(
         mapOf(
             "uid" to newValue.uid,
             "ownerId" to newValue.ownerId,
+            "ownerName" to (newValue.ownerName ?: ""),
             "postedAt" to newValue.postedAt,
             "residencyName" to newValue.residencyName,
             "title" to newValue.title,
@@ -147,6 +149,7 @@ class RentalListingRepositoryFirestore(
       val status =
           RentalStatus.entries.first { it.name == statusString || it.toString() == statusString }
       val ownerId = document.getString("ownerId") ?: return null
+      val ownerName = document.getString("ownerName")?.takeIf { it.isNotEmpty() }
       val imageUrls =
           (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
       val residencyName = document.getString("residencyName") ?: return null
@@ -174,6 +177,7 @@ class RentalListingRepositoryFirestore(
       RentalListing(
           uid = uid,
           ownerId = ownerId,
+          ownerName = ownerName,
           postedAt = postedAt,
           residencyName = residencyName,
           title = title,

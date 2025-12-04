@@ -484,11 +484,13 @@
     <string name="settings_qr_scan_cancelled">Scan annulé</string>
     <string name="settings_qr_invalid_domain">Ce n\'est pas un lien MySwissDorm.</string>
 
-    <!-- Offline Banner -->
+    <!-- Offline -->
     <string name="offline_banner_you_are_offline">Vous êtes hors ligne</string>
     <string name="offline_banner_last_updated">Dernière mise à jour %1$s</string>
     <string name="offline_banner_no_sync">Aucune donnée de synchronisation disponible</string>
     <string name="offline_banner_icon_description">Icône hors ligne</string>
+    <string name="unknown_owner_name">Propriétaire inconnu</string>
+    <string name="profile_offline_message">Vous devez être en ligne pour voir le profil d\'un autre utilisateur</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

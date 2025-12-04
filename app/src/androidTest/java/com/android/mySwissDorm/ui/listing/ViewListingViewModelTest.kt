@@ -94,6 +94,7 @@ class ViewListingViewModelTest : FirestoreTest() {
         RentalListing(
             uid = rentalListingRepository.getNewUid(),
             ownerId = ownerId,
+            ownerName = ownerProfile.userInfo.name + " " + ownerProfile.userInfo.lastName,
             postedAt = Timestamp.now(),
             title = "Test Listing",
             roomType = RoomType.STUDIO,

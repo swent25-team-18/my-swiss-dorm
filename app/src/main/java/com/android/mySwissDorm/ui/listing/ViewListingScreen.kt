@@ -46,6 +46,7 @@ import com.android.mySwissDorm.ui.theme.Violet
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
+import com.android.mySwissDorm.utils.NetworkUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -209,7 +210,16 @@ fun ViewListingScreen(
                               baseTextStyle.copy(fontWeight = FontWeight.Bold, color = MainColor),
                           modifier =
                               Modifier.testTag(C.ViewListingTags.POSTED_BY_NAME).clickable {
-                                onViewProfile(listing.ownerId)
+                                // Allow navigation if online or if it's the current user's profile
+                                if (NetworkUtils.isNetworkAvailable(context) || isOwner) {
+                                  onViewProfile(listing.ownerId)
+                                } else {
+                                  Toast.makeText(
+                                          context,
+                                          context.getString(R.string.profile_offline_message),
+                                          Toast.LENGTH_SHORT)
+                                      .show()
+                                }
                               })
                       Text(
                           text = " ${formatRelative(listing.postedAt, context = context)}",

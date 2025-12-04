@@ -136,6 +136,7 @@ class ReviewEntityTest {
     return Review(
         uid = "review-1",
         ownerId = "user-1",
+        ownerName = null,
         postedAt = Timestamp(1000, 500000),
         title = "Great place",
         reviewText = "I really enjoyed my stay here.",

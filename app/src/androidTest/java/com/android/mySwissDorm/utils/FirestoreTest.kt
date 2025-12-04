@@ -261,6 +261,7 @@ abstract class FirestoreTest : TestCase() {
       RentalListing(
           uid = "rental1",
           ownerId = "",
+          ownerName = null,
           postedAt = Timestamp.now(),
           residencyName = "Vortex",
           title = "title1",
@@ -276,6 +277,7 @@ abstract class FirestoreTest : TestCase() {
       RentalListing(
           uid = "rental2",
           ownerId = "",
+          ownerName = null,
           postedAt = Timestamp.now(),
           residencyName = "Vortex",
           title = "title2",
@@ -291,6 +293,7 @@ abstract class FirestoreTest : TestCase() {
       RentalListing(
           uid = "rental3",
           ownerId = "",
+          ownerName = null,
           postedAt = Timestamp.now(),
           residencyName = "Vortex",
           title = "title3",
@@ -307,6 +310,7 @@ abstract class FirestoreTest : TestCase() {
       Review(
           uid = "reviewVortex1",
           ownerId = "",
+          ownerName = null,
           postedAt = Timestamp.now(),
           title = "Vortex Review 1",
           reviewText = "First review",

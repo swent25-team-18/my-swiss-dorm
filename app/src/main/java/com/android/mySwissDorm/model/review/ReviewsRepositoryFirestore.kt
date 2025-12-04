@@ -112,6 +112,7 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
   private fun reviewToFirestoreMap(review: Review): Map<String, Any?> {
     return mapOf(
         "ownerId" to review.ownerId,
+        "ownerName" to (review.ownerName ?: ""),
         "postedAt" to review.postedAt,
         "title" to review.title,
         "reviewText" to review.reviewText,
@@ -258,6 +259,7 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
     return try {
       val uid = document.id
       val ownerId = document.getString("ownerId") ?: return null
+      val ownerName = document.getString("ownerName")?.takeIf { it.isNotEmpty() }
       val postedAt = document.getTimestamp("postedAt") ?: return null
       val title = document.getString("title") ?: return null
       val reviewText = document.getString("reviewText") ?: return null
@@ -286,6 +288,7 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
       return Review(
           uid = uid,
           ownerId = ownerId,
+          ownerName = ownerName,
           postedAt = postedAt,
           title = title,
           reviewText = reviewText,

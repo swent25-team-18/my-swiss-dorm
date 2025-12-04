@@ -166,6 +166,7 @@ class ReviewsRepositoryLocalTest {
     return Review(
         uid = uid,
         ownerId = ownerId,
+        ownerName = null,
         postedAt = fixedTimestamp,
         title = title,
         reviewText = "Test text",

@@ -159,7 +159,11 @@ class ProfileScreenViewModel(
     _uiState.value = _uiState.value.copy(residence = value, errorMsg = null)
   }
 
-  /** Update the profile picture in the UI and clear any transient error. */
+  /**
+   * Update the profile picture in the UI and clear any transient error.
+   *
+   * @param photo the new profile picture, or `null` if the user prefer to have no profile picture
+   */
   fun onProfilePictureChange(photo: Photo?) {
     val currentPhotoUri: Uri? = _uiState.value.profilePicture?.image
     viewModelScope.launch {

@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,6 +75,11 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+// Shared state for refreshing channels when returning from RequestedMessagesScreen
+private object ChannelsRefreshState {
+  val refreshKey = mutableIntStateOf(0)
+}
 
 @Composable
 fun AppNavHost(
@@ -170,6 +176,8 @@ fun AppNavHost(
           composable(Screen.Inbox.route) {
             var requestedMessagesCount by remember { mutableStateOf(0) }
             val currentRoute = navController.currentDestination?.route
+            // Track refresh key for channels - observe the shared state
+            val channelsRefreshKey by ChannelsRefreshState.refreshKey
 
             // Refresh count whenever the Inbox screen is visible
             // Use a key that only changes when we actually navigate to Inbox
@@ -201,6 +209,7 @@ fun AppNavHost(
                         navActions.navigateTo(Screen.RequestedMessages)
                       },
                       requestedMessagesCount = requestedMessagesCount,
+                      refreshKey = channelsRefreshKey,
                       modifier = Modifier.padding(paddingValues))
                 }
           }
@@ -640,7 +649,11 @@ fun AppNavHost(
 
           composable(Screen.RequestedMessages.route) {
             RequestedMessagesScreen(
-                onBackClick = { navActions.goBack() },
+                onBackClick = {
+                  // Increment refresh key to trigger channels refresh
+                  ChannelsRefreshState.refreshKey.value++
+                  navActions.goBack()
+                },
                 onViewProfile = { userId -> navActions.navigateTo(Screen.ViewUserProfile(userId)) },
                 onApprove = { messageId, onSuccess ->
                   coroutineScope.launch {

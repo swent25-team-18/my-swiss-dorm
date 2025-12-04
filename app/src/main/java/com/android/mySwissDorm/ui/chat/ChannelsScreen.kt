@@ -8,13 +8,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +52,10 @@ import io.getstream.chat.android.models.Filters
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 
 /**
  * Channels screen displaying a WhatsApp-like interface for browsing and searching chat channels.
@@ -56,7 +66,7 @@ import kotlinx.coroutines.delay
  * - A list of channels showing the other user's avatar, name, last message preview, and timestamp
  * - A requested messages button in the top bar with an optional badge showing pending count
  * - Automatic connection to Stream Chat if the user is not already connected
- * - Automatic creation of a test channel if no channels exist (for development/testing)
+ * - Pull-to-refresh functionality to manually reload channels
  *
  * ## Features
  * - **Search**: Real-time filtering of channels by user name or last message content
@@ -71,8 +81,8 @@ import kotlinx.coroutines.delay
  * - Requires the user to be signed in via Firebase Auth. Shows a sign-in prompt if not
  *   authenticated.
  * - Automatically queries Stream Chat for channels where the current user is a member.
- * - If no channels exist and no test channel has been created, automatically creates a test
- *   self-chat channel for development purposes.
+ * - Refreshes channels when [refreshKey] changes (e.g., when returning from RequestedMessagesScreen).
+ * - Supports pull-to-refresh to manually reload channels.
  * - Filters channels in real-time as the user types in the search bar.
  * - Each channel item is clickable and navigates to the chat screen via [onChannelClick].
  *
@@ -83,14 +93,17 @@ import kotlinx.coroutines.delay
  *   This should navigate to the requested messages screen.
  * @param requestedMessagesCount The number of pending requested messages to display as a badge on
  *   the requested messages button. If 0, no badge is shown. If greater than 99, displays "99+".
+ * @param refreshKey A key that triggers a refresh when changed. Increment this to force a reload of
+ *   channels (e.g., when returning from RequestedMessagesScreen after approving a message).
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun ChannelsScreen(
     modifier: Modifier = Modifier,
     onChannelClick: (String) -> Unit,
     onRequestedMessagesClick: () -> Unit,
     requestedMessagesCount: Int = 0,
+    refreshKey: Int = 0,
 ) {
   val currentUser = FirebaseAuth.getInstance().currentUser
 
@@ -104,103 +117,148 @@ fun ChannelsScreen(
   // Get channels from Stream Chat client
   var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
   var isLoading by remember { mutableStateOf(true) }
-  var hasCreatedTestChannel by remember { mutableStateOf(false) }
+  val coroutineScope = rememberCoroutineScope()
+  var isLoadInProgress by remember { mutableStateOf(false) }
 
-  // Load channels
-  LaunchedEffect(Unit) {
+  // Extract channel loading logic into a reusable function
+  suspend fun loadChannels() {
+    if (isLoadInProgress) {
+      Log.d("ChannelsScreen", "loadChannels already in progress, skipping")
+      return
+    }
+    isLoadInProgress = true
     isLoading = true
+    Log.d("ChannelsScreen", "Starting loadChannels")
     try {
+      // Check if Stream Chat is initialized
+      if (!StreamChatProvider.isInitialized()) {
+        Log.e("ChannelsScreen", "Stream Chat not initialized")
+        isLoading = false
+        isLoadInProgress = false
+        channels = emptyList()
+        return
+      }
+
       val chatClient = StreamChatProvider.getClient()
 
       // Check if user is connected to Stream Chat
       var isConnected = chatClient.clientState.user.value != null
       if (!isConnected) {
         Log.w("ChannelsScreen", "User not connected to Stream Chat, attempting to connect...")
-        // Try to connect the user
+        // Try to connect the user with timeout
         try {
-          val profile = ProfileRepositoryProvider.repository.getProfile(currentUser.uid)
-          StreamChatProvider.connectUser(
-              firebaseUserId = currentUser.uid,
-              displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
-              imageUrl = "")
-          // Wait a bit and verify connection
-          delay(500)
-          isConnected = chatClient.clientState.user.value != null
+          // Load profile with timeout
+          val profile = withContext(Dispatchers.IO) {
+            withTimeout(5000) {
+              ProfileRepositoryProvider.repository.getProfile(currentUser.uid)
+            }
+          }
+          
+          // Connect user with timeout
+          withContext(Dispatchers.IO) {
+            withTimeout(10000) {
+              StreamChatProvider.connectUser(
+                  firebaseUserId = currentUser.uid,
+                  displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
+                  imageUrl = "")
+            }
+          }
+          
+          // Wait a bit longer and verify connection (with retries)
+          var retries = 3
+          while (retries > 0 && !isConnected) {
+            delay(1000) // Wait 1 second
+            isConnected = chatClient.clientState.user.value != null
+            retries--
+          }
+          
           if (!isConnected) {
             Log.e(
                 "ChannelsScreen", "Connection failed - user still not connected after connectUser")
             isLoading = false
-            return@LaunchedEffect
+            isLoadInProgress = false
+            channels = emptyList()
+            return
           }
           Log.d("ChannelsScreen", "User successfully connected to Stream Chat")
+        } catch (e: TimeoutCancellationException) {
+          Log.e("ChannelsScreen", "Connection timeout", e)
+          isLoading = false
+          isLoadInProgress = false
+          channels = emptyList()
+          return
         } catch (e: Exception) {
           Log.e("ChannelsScreen", "Failed to connect user to Stream Chat", e)
           isLoading = false
-          return@LaunchedEffect
+          isLoadInProgress = false
+          channels = emptyList()
+          return
         }
       }
 
-      // Query channels where current user is a member
-      val filter =
-          Filters.and(
-              Filters.eq("type", "messaging"), Filters.`in`("members", listOf(currentUser.uid)))
-      val request = QueryChannelsRequest(filter = filter, offset = 0, limit = 20)
-      val result = chatClient.queryChannels(request).await()
-      // Stream Chat returns Result<List<Channel>>, extract the list
-      channels = result.getOrNull() ?: emptyList()
-      if (result.isFailure) {
-        // Try to get error message from result
-        try {
-          result.getOrThrow()
-        } catch (e: Exception) {
-          Log.e("ChannelsScreen", "Error querying channels: ${e.message}", e)
-        }
-      } else {
-        Log.d("ChannelsScreen", "Successfully loaded ${channels.size} channels")
-      }
-
-      // If no channels exist, automatically create a test self-chat
-      if (channels.isEmpty() && !hasCreatedTestChannel) {
-        hasCreatedTestChannel = true
-        try {
-          val testChannelCid =
-              StreamChatProvider.createChannel(
-                  channelType = "messaging",
-                  channelId = "test-self-${currentUser.uid}",
-                  memberIds = listOf(currentUser.uid),
-                  extraData = mapOf("name" to "Test Chat"))
-          Log.d("ChannelsScreen", "Created test channel: $testChannelCid")
-          // Wait a bit for channel to be created, then reload
-          delay(1000)
-          // Reload channels
-          val reloadResult = chatClient.queryChannels(request).await()
-          val reloadedChannels = reloadResult.getOrNull() ?: emptyList()
-          if (reloadResult.isFailure) {
-            // Try to get error message from result
-            try {
-              reloadResult.getOrThrow()
-            } catch (e: Exception) {
-              Log.e("ChannelsScreen", "Error reloading channels after creation: ${e.message}", e)
-            }
-          } else {
-            Log.d(
-                "ChannelsScreen",
-                "Successfully reloaded ${reloadedChannels.size} channels after creating test channel")
+      // Query channels where current user is a member (with timeout)
+      try {
+        val filter =
+            Filters.and(
+                Filters.eq("type", "messaging"), Filters.`in`("members", listOf(currentUser.uid)))
+        val request = QueryChannelsRequest(filter = filter, offset = 0, limit = 20)
+        
+        val result = withContext(Dispatchers.IO) {
+          withTimeout(15000) { // 15 second timeout for query
+            chatClient.queryChannels(request).await()
           }
-          channels = reloadedChannels
-        } catch (e: Exception) {
-          Log.e("ChannelsScreen", "Failed to create test channel", e)
-          // Don't show error to user, just continue with empty list
         }
+        
+        // Stream Chat returns Result<List<Channel>>, extract the list
+        channels = result.getOrNull() ?: emptyList()
+        if (result.isFailure) {
+          // Try to get error message from result
+          try {
+            result.getOrThrow()
+          } catch (e: Exception) {
+            Log.e("ChannelsScreen", "Error querying channels: ${e.message}", e)
+          }
+        } else {
+          Log.d("ChannelsScreen", "Successfully loaded ${channels.size} channels")
+        }
+      } catch (e: TimeoutCancellationException) {
+        Log.e("ChannelsScreen", "Query channels timeout", e)
+        channels = emptyList()
+      } catch (e: Exception) {
+        Log.e("ChannelsScreen", "Error querying channels", e)
+        channels = emptyList()
       }
 
       // Show channels after everything is done
       isLoading = false
+      isLoadInProgress = false
+      Log.d("ChannelsScreen", "loadChannels completed successfully")
     } catch (e: Exception) {
       Log.e("ChannelsScreen", "Error loading channels", e)
       isLoading = false
+      isLoadInProgress = false
+      // Ensure channels is set even on error to show empty state
+      channels = emptyList()
     }
   }
+
+  // Load channels when refreshKey changes (including initial load)
+  LaunchedEffect(refreshKey) {
+    Log.d("ChannelsScreen", "LaunchedEffect triggered with refreshKey: $refreshKey")
+    loadChannels()
+  }
+
+  // Pull-to-refresh state
+  var isRefreshing by remember { mutableStateOf(false) }
+  val pullRefreshState = rememberPullRefreshState(
+      refreshing = isRefreshing,
+      onRefresh = {
+        isRefreshing = true
+        coroutineScope.launch {
+          loadChannels()
+          isRefreshing = false
+        }
+      })
 
   // Search state
   var searchQuery by remember { mutableStateOf("") }
@@ -219,7 +277,8 @@ fun ChannelsScreen(
         }
       }
 
-  Column(modifier = modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.ROOT)) {
+  Box(modifier = modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
+    Column(modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.ROOT)) {
     // Top bar with Requested Messages button
     TopAppBar(
         title = {
@@ -298,7 +357,8 @@ fun ChannelsScreen(
     }
 
     // Channel list
-    if (isLoading) {
+    if (isLoading && !isRefreshing) {
+      // Don't show loading indicator during pull-to-refresh (SwipeRefresh handles that)
       Box(
           modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.LOADING_INDICATOR),
           contentAlignment = Alignment.Center) {
@@ -328,6 +388,13 @@ fun ChannelsScreen(
         }
       }
     }
+    }
+    
+    // Pull-to-refresh indicator
+    PullRefreshIndicator(
+        refreshing = isRefreshing,
+        state = pullRefreshState,
+        modifier = Modifier.align(Alignment.TopCenter))
   }
 }
 

@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -442,5 +443,46 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     vm.loadListing(listing.uid, context)
     compose.waitForIdle()
     assertEquals(1, fakeCloudRepo.retrieveCount)
+  }
+
+  @Test
+  fun fullScreenModeWorks() = runTest {
+    val listing =
+        rentalListing3.copy(
+            ownerId = FirebaseEmulator.auth.currentUser!!.uid, imageUrls = listOf(photo.fileName))
+    listingsRepo.addRentalListing(listing)
+    val vm =
+        ViewListingViewModel(
+            photoRepositoryCloud =
+                FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, onDelete = true))
+    compose.setContent { ViewListingScreen(listingUid = listing.uid, viewListingViewModel = vm) }
+    compose.waitForIdle()
+
+    compose.waitUntil("The image is not shown", 5_000) {
+      compose
+          .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+    // Click on a photo to display in full screen
+    compose
+        .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
+
+    compose.waitForIdle()
+    // Check image is shown in full screen
+    compose.waitUntil("The clicked image is not shown in full screen", 5_000) {
+      compose
+          .onNodeWithTag(C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+
+    // Check that go back to the view listing page
+    compose
+        .onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON, useUnmergedTree = true)
+        .performClick()
+    compose.waitUntil("The listing page is not shown after leaving the full screen mode", 5_000) {
+      compose.onNodeWithTag(C.ImageGridTags.imageTag(photo.image)).isDisplayed()
+    }
   }
 }

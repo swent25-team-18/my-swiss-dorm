@@ -27,6 +27,7 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
+import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -83,7 +84,13 @@ fun EditListingScreen(
   val scrollState = rememberScrollState()
   var showDatePicker by remember { mutableStateOf(false) }
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, editListingViewModel)
-
+  if (listingUIState.showFullScreenImages) {
+    FullScreenImageViewer(
+        imageUris = listingUIState.pickedImages.map { it.image },
+        onDismiss = { editListingViewModel.dismissFullScreenImages() },
+        initialIndex = listingUIState.fullScreenImagesIndex)
+    return
+  }
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
@@ -287,7 +294,8 @@ fun EditListingScreen(
                     ImageGrid(
                         imageUris = ui.pickedImages.map { it.image }.toSet(),
                         isEditingMode = true,
-                        onRemove = { editListingViewModel.removePhoto(it, false) })
+                        onRemove = { editListingViewModel.removePhoto(it, false) },
+                        onImageClick = { editListingViewModel.onClickImage(it) })
                   }
             }
 

@@ -350,6 +350,14 @@
     <!-- ViewReviewViewModel -->
     <string name="view_review_failed_to_load_review">Failed to load Review</string>
 
+    <!-- Share Dialog -->
+    <string name="share">Share</string>
+    <string name="share_dialog_title">Share</string>
+    <string name="share_dialog_copy_link">Copy link</string>
+    <string name="share_dialog_link_copied">Link copied to clipboard</string>
+    <string name="share_dialog_qr_content_desc">QR code containing the share link</string>
+    <string name="share_dialog_qr_error">Unable to generate QR code. You can still copy the link below.</string>
+
     <!-- SettingsScreen -->
     <string name="settings_title">Settings</string>
     <string name="settings_view_profile">View profile</string>
@@ -459,6 +467,12 @@
     <string name="no_requested_messages">No requested messages</string>
     <string name="no_message_provided">No message provided</string>
     <string name="failed_to_create_chat">Failed to create chat</string>
+
+    <!-- Offline Banner -->
+    <string name="offline_banner_you_are_offline">You\'re offline</string>
+    <string name="offline_banner_last_updated">Last updated %1$s</string>
+    <string name="offline_banner_no_sync">No sync data available</string>
+    <string name="offline_banner_icon_description">Offline icon</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

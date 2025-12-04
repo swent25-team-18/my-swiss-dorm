@@ -42,13 +42,17 @@ class SettingsScreenTest : FirestoreTest() {
   /** Set content with our explicit VM. */
   private fun setContentWithVm(
       onContributionClick: () -> Unit = {},
-      onProfileClick: () -> Unit = {}
+      onProfileClick: () -> Unit = {},
+      onViewBookmarks: () -> Unit = {}
   ) {
     val vm = makeVm()
     compose.setContent {
       MySwissDormAppTheme {
         SettingsScreen(
-            vm = vm, onContributionClick = onContributionClick, onProfileClick = onProfileClick)
+            vm = vm,
+            onContributionClick = onContributionClick,
+            onProfileClick = onProfileClick,
+            onViewBookmarks = onViewBookmarks)
       }
     }
   }
@@ -268,6 +272,21 @@ class SettingsScreenTest : FirestoreTest() {
 
     val scrollTag = C.SettingsTags.SETTINGS_SCROLL
     val buttonTag = C.SettingsTags.CONTRIBUTIONS_BUTTON
+
+    compose.scrollUntilDisplayed(scrollTag, buttonTag)
+    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    assert(clicked)
+  }
+
+  @Test
+  fun bookmarksButton_triggersCallback() = runTest {
+    var clicked = false
+    setContentWithVm(onViewBookmarks = { clicked = true })
+    compose.waitForIdle()
+
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val buttonTag = C.SettingsTags.BOOKMARKS_BUTTON
 
     compose.scrollUntilDisplayed(scrollTag, buttonTag)
     compose.onNodeWithTag(buttonTag, useUnmergedTree = true).performClick()

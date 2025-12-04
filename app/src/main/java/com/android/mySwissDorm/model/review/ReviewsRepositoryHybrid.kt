@@ -3,6 +3,7 @@ package com.android.mySwissDorm.model.review
 import android.content.Context
 import android.util.Log
 import com.android.mySwissDorm.model.HybridRepositoryBase
+import com.android.mySwissDorm.utils.LastSyncTracker
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -120,7 +121,8 @@ class ReviewsRepositoryHybrid(
    * Syncs reviews to the local database for offline access.
    *
    * This method is called after successful remote operations to ensure data is available offline.
-   * Uses the existing [ReviewsRepositoryLocal.addReview] method which handles syncing.
+   * Uses the existing [ReviewsRepositoryLocal.addReview] method which handles syncing. Also records
+   * the sync timestamp for the offline banner.
    *
    * @param reviews The reviews to sync to local storage.
    */
@@ -136,6 +138,8 @@ class ReviewsRepositoryHybrid(
           // Continue with other reviews even if one fails
         }
       }
+      // Record successful sync timestamp
+      LastSyncTracker.recordSync(context)
     } catch (e: Exception) {
       Log.w(TAG, "Error syncing reviews to local", e)
       // Don't throw - syncing is best effort

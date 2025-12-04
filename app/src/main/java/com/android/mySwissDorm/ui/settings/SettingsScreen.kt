@@ -86,6 +86,7 @@ import com.android.mySwissDorm.ui.theme.rememberDarkModePreference
  * @param isAdmin Whether the current user has admin access. If true, displays Admin section.
  * @param onAdminClick Callback invoked when the admin page button is clicked.
  * @param onContributionClick Callback invoked when the contributions button is clicked.
+ * @param onViewBookmarks Callback invoked when the bookmarks button is clicked.
  * @see SettingsViewModel for state management and user data handling
  * @see SettingsScreenContent for the actual UI implementation
  */
@@ -97,7 +98,8 @@ fun SettingsScreen(
     vm: SettingsViewModel = viewModel(),
     isAdmin: Boolean = false,
     onAdminClick: () -> Unit = {},
-    onContributionClick: () -> Unit = {}
+    onContributionClick: () -> Unit = {},
+    onViewBookmarks: () -> Unit = {}
 ) {
   val ui by vm.uiState.collectAsState()
   vm.setIsGuest()
@@ -116,6 +118,7 @@ fun SettingsScreen(
       onProfileClick = onProfileClick,
       onDeleteAccount = { vm.deleteAccount({ _, _ -> }, context) },
       onContributionClick = onContributionClick,
+      onViewBookmarks = onViewBookmarks,
       onUnblockUser = { uid -> vm.unblockUser(uid, context) },
       navigationActions = navigationActions,
       isAdmin = isAdmin,
@@ -141,6 +144,7 @@ private val previewUiState =
  * @param onProfileClick Callback invoked when the profile button is clicked.
  * @param onDeleteAccount Callback invoked when the delete account button is confirmed.
  * @param onContributionClick Callback invoked when the contributions button is clicked.
+ * @param onViewBookmarks Callback invoked when the bookmarks button is clicked.
  * @param onUnblockUser Callback invoked when a blocked user is unblocked.
  * @param navigationActions Optional [NavigationActions] for bottom bar navigation.
  * @param isAdmin Whether to display the Admin section.
@@ -153,6 +157,7 @@ fun SettingsScreenContent(
     onProfileClick: () -> Unit = {},
     onDeleteAccount: () -> Unit = {},
     onContributionClick: () -> Unit = {},
+    onViewBookmarks: () -> Unit = {},
     onUnblockUser: (String) -> Unit = {},
     navigationActions: NavigationActions? = null,
     isAdmin: Boolean = false,
@@ -307,6 +312,17 @@ fun SettingsScreenContent(
                                   ButtonDefaults.buttonColors(
                                       containerColor = MainColor, contentColor = White)) {
                                 Text(stringResource(R.string.settings_view_contributions))
+                              }
+                          Spacer(Modifier.height(12.dp))
+                          Button(
+                              onClick = onViewBookmarks,
+                              modifier =
+                                  Modifier.fillMaxWidth().testTag(C.SettingsTags.BOOKMARKS_BUTTON),
+                              shape = RoundedCornerShape(16.dp),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = MainColor, contentColor = White)) {
+                                Text(stringResource(R.string.profile_view_bookmarks))
                               }
                         }
 

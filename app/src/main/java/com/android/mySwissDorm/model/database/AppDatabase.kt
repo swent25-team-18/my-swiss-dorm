@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
  * Main Room database for the application.
@@ -40,14 +42,30 @@ abstract class AppDatabase : RoomDatabase() {
     @Volatile private var INSTANCE: AppDatabase? = null
 
     /**
+     * Migration from version 1 to 2.
+     *
+     * Adds the `ownerName` column to both `reviews` and `rental_listings` tables. The column is
+     * nullable, so existing data will have null values which is acceptable.
+     */
+    private val MIGRATION_1_2 =
+        object : Migration(1, 2) {
+          override fun migrate(database: SupportSQLiteDatabase) {
+            // Add ownerName column to reviews table
+            database.execSQL("ALTER TABLE reviews ADD COLUMN ownerName TEXT")
+            // Add ownerName column to rental_listings table
+            database.execSQL("ALTER TABLE rental_listings ADD COLUMN ownerName TEXT")
+          }
+        }
+
+    /**
      * Gets the singleton instance of the database.
      *
      * This method uses double-checked locking to ensure thread-safe singleton creation. The
      * database is created with the name "app_database" and uses the application context to prevent
      * memory leaks.
      *
-     * Uses `fallbackToDestructiveMigration()` for development - this will automatically recreate
-     * the database when the schema changes, wiping existing data.
+     * For first-time users: Room will create a new database at version 2, and no migration will
+     * run. For existing users: The migration from version 1 to 2 will run, adding the new columns.
      *
      * @param context The application context.
      * @return The [AppDatabase] instance.
@@ -58,7 +76,7 @@ abstract class AppDatabase : RoomDatabase() {
             val instance =
                 Room.databaseBuilder(
                         context.applicationContext, AppDatabase::class.java, "app_database")
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_1_2)
                     .build()
             INSTANCE = instance
             instance

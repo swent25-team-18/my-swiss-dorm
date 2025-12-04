@@ -22,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.net.toUri
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -63,6 +62,8 @@ import com.android.mySwissDorm.ui.profile.ProfileContributionsViewModel
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreenViewModel
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
+import com.android.mySwissDorm.ui.qr.MySwissDormQrResult
+import com.android.mySwissDorm.ui.qr.parseMySwissDormQr
 import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewViewModel
@@ -794,28 +795,16 @@ private fun handleScannedQrUrl(
     context: Context
 ) {
   try {
-    val uri = scannedUrl.toUri()
-    val segments = uri.pathSegments
-
-    if (segments.size < 2) {
-      Toast.makeText(context, context.getString(R.string.unexpected_error), Toast.LENGTH_SHORT)
-          .show()
-      return
-    }
-
-    val type = segments[0].lowercase()
-    val id = segments[1]
-
-    when (type) {
-      "listing" -> {
+    when (val result = parseMySwissDormQr(scannedUrl)) {
+      is MySwissDormQrResult.Listing -> {
         // my-swiss-dorm.web.app/listing/<listingUid>
-        navigationActions.navigateTo(Screen.ListingOverview(id))
+        navigationActions.navigateTo(Screen.ListingOverview(result.id))
       }
-      "review" -> {
+      is MySwissDormQrResult.Review -> {
         // my-swiss-dorm.web.app/review/<reviewUid>
-        navigationActions.navigateTo(Screen.ReviewOverview(id))
+        navigationActions.navigateTo(Screen.ReviewOverview(result.id))
       }
-      else -> {
+      is MySwissDormQrResult.Invalid -> {
         Toast.makeText(context, context.getString(R.string.unexpected_error), Toast.LENGTH_SHORT)
             .show()
       }

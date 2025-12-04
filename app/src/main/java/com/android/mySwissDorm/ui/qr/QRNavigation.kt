@@ -5,40 +5,52 @@ import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 
+sealed class MySwissDormQrResult {
+  data class Listing(val id: String) : MySwissDormQrResult()
+
+  data class Review(val id: String) : MySwissDormQrResult()
+
+  data class Invalid(val reason: String) : MySwissDormQrResult()
+}
+
+fun parseMySwissDormQr(scannedText: String): MySwissDormQrResult {
+  val uri =
+      runCatching { scannedText.toUri() }.getOrNull()
+          ?: return MySwissDormQrResult.Invalid("Invalid QR code")
+
+  if (uri.scheme != "https" || uri.host != "my-swiss-dorm.web.app") {
+    return MySwissDormQrResult.Invalid("Not a MySwissDorm QR code")
+  }
+
+  val segments = uri.pathSegments
+  if (segments.size < 2) {
+    return MySwissDormQrResult.Invalid("Invalid MySwissDorm link")
+  }
+
+  val type = segments[0].lowercase()
+  val id = segments[1]
+
+  return when (type) {
+    "listing" -> MySwissDormQrResult.Listing(id)
+    "review" -> MySwissDormQrResult.Review(id)
+    else -> MySwissDormQrResult.Invalid("Unknown link type: $type")
+  }
+}
+
 fun handleMySwissDormQr(
     scannedText: String,
     navController: NavController,
     context: Context,
 ) {
-  val uri = runCatching { scannedText.toUri() }.getOrNull()
-  if (uri == null) {
-    Toast.makeText(context, "Invalid QR code", Toast.LENGTH_SHORT).show()
-    return
-  }
-
-  if (uri.scheme != "https" || uri.host != "my-swiss-dorm.web.app") {
-    Toast.makeText(context, "Not a MySwissDorm QR code", Toast.LENGTH_SHORT).show()
-    return
-  }
-
-  val segments = uri.pathSegments
-  if (segments.size < 2) {
-    Toast.makeText(context, "Invalid MySwissDorm link", Toast.LENGTH_SHORT).show()
-    return
-  }
-
-  val type = segments[0] // "listing" or "review"
-  val id = segments[1] // the UID
-
-  when (type) {
-    "listing" -> {
-      navController.navigate("listingOverview/$id")
+  when (val result = parseMySwissDormQr(scannedText)) {
+    is MySwissDormQrResult.Listing -> {
+      navController.navigate("listingOverview/${result.id}")
     }
-    "review" -> {
-      navController.navigate("reviewOverview/$id")
+    is MySwissDormQrResult.Review -> {
+      navController.navigate("reviewOverview/${result.id}")
     }
-    else -> {
-      Toast.makeText(context, "Unknown link type: $type", Toast.LENGTH_SHORT).show()
+    is MySwissDormQrResult.Invalid -> {
+      Toast.makeText(context, result.reason, Toast.LENGTH_SHORT).show()
     }
   }
 }

@@ -167,6 +167,8 @@
     <string name="add_listing_invalid_form_text">Please complete all required fields (valid size, price, and starting date) or Sign-in if you\'re a guest.</string>
     <string name="add_listing_invalid_size_text">Enter 1.0–1000.0 with one decimal (e.g., 18.5).</string>
     <string name="add_listing_invalid_price_text">Enter an integer between 1 and 10\'000.</string>
+    <!-- ListingCard -->
+    <string name="recommended">Recommended</string>
 
     <!-- AddListingViewModel-->
     <string name="add_listing_vm_guests_cannot_create_listings">Guest users cannot create listings</string>
@@ -348,6 +350,14 @@
     <!-- ViewReviewViewModel -->
     <string name="view_review_failed_to_load_review">Failed to load Review</string>
 
+    <!-- Share Dialog -->
+    <string name="share">Share</string>
+    <string name="share_dialog_title">Share</string>
+    <string name="share_dialog_copy_link">Copy link</string>
+    <string name="share_dialog_link_copied">Link copied to clipboard</string>
+    <string name="share_dialog_qr_content_desc">QR code containing the share link</string>
+    <string name="share_dialog_qr_error">Unable to generate QR code. You can still copy the link below.</string>
+
     <!-- SettingsScreen -->
     <string name="settings_title">Settings</string>
     <string name="settings_view_profile">View profile</string>
@@ -462,6 +472,12 @@
     <string name="settings_qr_scan_cancelled">Scan cancelled</string>
     <string name="settings_qr_invalid_domain">This is not a MySwissDorm link.</string>
 
+
+    <!-- Offline Banner -->
+    <string name="offline_banner_you_are_offline">You\'re offline</string>
+    <string name="offline_banner_last_updated">Last updated %1$s</string>
+    <string name="offline_banner_no_sync">No sync data available</string>
+    <string name="offline_banner_icon_description">Offline icon</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

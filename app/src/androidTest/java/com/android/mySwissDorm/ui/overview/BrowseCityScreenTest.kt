@@ -26,6 +26,8 @@ import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.BrowseCityTags.RECOMMENDED
+import com.android.mySwissDorm.ui.listing.ListingCard
 import com.android.mySwissDorm.utils.FakePhotoRepository
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
@@ -41,6 +43,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.*
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.runner.RunWith
 
@@ -1068,5 +1071,93 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val locationGroup =
         grouped[Pair(listingLaus1.location.latitude, listingLaus1.location.longitude)]
     assertEquals(3, locationGroup?.size)
+  }
+
+  @Test
+  fun listingCard_displaysRecommendedBadge_whenRecommended() {
+    val recommendedListing =
+        ListingCardUI(
+            title = "Some Room",
+            leftBullets = listOf("Studio"),
+            rightBullets = listOf("Now"),
+            listingUid = "123",
+            location = resTest.location,
+            isRecommended = true)
+
+    compose.setContent { ListingCard(data = recommendedListing, onClick = {}) }
+    compose.onNodeWithTag(RECOMMENDED, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun listingCard_hidesRecommendedBadge_whenNotRecommended() {
+    val standardListing =
+        ListingCardUI(
+            title = "Standard Room",
+            leftBullets = listOf("Studio"),
+            rightBullets = listOf("Now"),
+            listingUid = "456",
+            location = resTest.location,
+            isRecommended = false)
+
+    compose.setContent { ListingCard(data = standardListing, onClick = {}) }
+    compose.onNodeWithTag(RECOMMENDED, useUnmergedTree = true).assertIsNotDisplayed()
+  }
+
+  @Test
+  fun recommendations_logic_works_and_sorts_correctly() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val currentProfile = profileRepo.getProfile(ownerUid)
+    val updatedUserInfo =
+        currentProfile.userInfo.copy(
+            maxPrice = 1500.0, minSize = 0, preferredRoomTypes = emptyList())
+    profileRepo.editProfile(currentProfile.copy(userInfo = updatedUserInfo))
+    val expensiveListing =
+        listingLaus1.copy(
+            uid = "expensive_listing", title = "Expensive Penthouse", pricePerMonth = 2000.0)
+    listingsRepo.addRentalListing(expensiveListing)
+    vm.loadListings(lausanneLocation, context)
+    compose.waitUntil(5_000) {
+      vm.uiState.value.listings.items.any { it.listingUid == expensiveListing.uid }
+    }
+
+    val items = vm.uiState.value.listings.items
+    val recommendedItem = items.find { it.listingUid == listingLaus1.uid }
+    val nonRecommendedItem = items.find { it.listingUid == expensiveListing.uid }
+    assertTrue("Recommended listing (Laus1) should be present", recommendedItem != null)
+    assertTrue("Non-recommended listing (Expensive) should be present", nonRecommendedItem != null)
+    assertTrue(
+        "Listing with price 1200 should be recommended (Max Pref: 1500)",
+        recommendedItem!!.isRecommended)
+    assertTrue(
+        "Listing with price 2000 should NOT be recommended (Max Pref: 1500)",
+        !nonRecommendedItem!!.isRecommended)
+    val indexRecommended = items.indexOf(recommendedItem)
+    val indexNonRecommended = items.indexOf(nonRecommendedItem)
+
+    assertTrue(
+        "Recommended listings should be sorted to the top", indexRecommended < indexNonRecommended)
+  }
+
+  @Test
+  fun recommendations_logic_respects_size_and_room_type() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val currentProfile = profileRepo.getProfile(ownerUid)
+    val updatedUserInfo =
+        currentProfile.userInfo.copy(minSize = 30, preferredRoomTypes = listOf(RoomType.STUDIO))
+    profileRepo.editProfile(currentProfile.copy(userInfo = updatedUserInfo))
+    val smallStudio = listingLaus1.copy(uid = "small", areaInM2 = 20, roomType = RoomType.STUDIO)
+    val bigRoom =
+        listingLaus1.copy(uid = "wrongType", areaInM2 = 40, roomType = RoomType.COLOCATION)
+    val perfectMatch = listingLaus1.copy(uid = "perfect", areaInM2 = 40, roomType = RoomType.STUDIO)
+    listingsRepo.addRentalListing(smallStudio)
+    listingsRepo.addRentalListing(bigRoom)
+    listingsRepo.addRentalListing(perfectMatch)
+
+    vm.loadListings(lausanneLocation, context)
+    compose.waitUntil(5_000) { vm.uiState.value.listings.items.size >= 3 }
+    val items = vm.uiState.value.listings.items
+    assertTrue(items.find { it.listingUid == "perfect" }!!.isRecommended)
+    assertFalse(items.find { it.listingUid == "small" }!!.isRecommended)
+    assertFalse(items.find { it.listingUid == "wrongType" }!!.isRecommended)
   }
 }

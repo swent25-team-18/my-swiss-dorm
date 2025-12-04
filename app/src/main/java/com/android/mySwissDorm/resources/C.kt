@@ -118,6 +118,7 @@ object C {
     const val FABMENULISTING = "fab_menu_listing"
 
     const val FABSCRIM = "fab_scrim"
+    const val RECOMMENDED = "recommendedText"
 
     fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
 
@@ -341,5 +342,14 @@ object C {
     const val PREFERRED_ROOM_TYPE = "preferred_room_type"
     const val SIGN_UP_WITH_PREFERENCES = "sign_up_with_preferences"
     const val LOCATION_PREFERENCE = "locationField"
+  }
+
+  object ShareLinkDialogTags {
+    const val SHARE_BTN = "shareButton"
+    const val DIALOG_TITLE = "shareLinkDialogTitle"
+    const val QR_CODE = "shareLinkDialogQrCode"
+    const val QR_ERROR = "shareLinkDialogQrError"
+    const val COPY_LINK_BUTTON = "shareLinkDialogCopyLinkButton"
+    const val CANCEL_TEXT = "shareLinkDialogCancelText"
   }
 }

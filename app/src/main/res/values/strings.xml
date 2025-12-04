@@ -454,12 +454,13 @@
     <string name="no_message_provided">No message provided</string>
     <string name="failed_to_create_chat">Failed to create chat</string>
 
-    <!-- Offline Banner -->
+    <!-- Offline -->
     <string name="offline_banner_you_are_offline">You\'re offline</string>
     <string name="offline_banner_last_updated">Last updated %1$s</string>
     <string name="offline_banner_no_sync">No sync data available</string>
     <string name="offline_banner_icon_description">Offline icon</string>
     <string name="unknown_owner_name">Unknown Owner</string>
+    <string name="profile_offline_message">You need to be online to view other user\'s profile</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

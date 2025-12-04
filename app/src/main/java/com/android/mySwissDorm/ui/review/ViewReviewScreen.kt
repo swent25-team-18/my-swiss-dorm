@@ -62,6 +62,7 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
+import com.android.mySwissDorm.utils.NetworkUtils
 import kotlin.math.floor
 
 // This screen looks a lot like the ViewListingScreen,
@@ -142,14 +143,18 @@ fun ViewReviewScreen(
                                 else "",
                         style = baseTextStyle.copy(fontWeight = FontWeight.Bold, color = MainColor),
                         modifier =
-                            Modifier.testTag(C.ViewReviewTags.POSTED_BY_NAME)
-                                .then(
-                                    // Only make clickable if review is not anonymous (privacy)
-                                    if (!review.isAnonymous) {
-                                      Modifier.clickable { onViewProfile(review.ownerId) }
-                                    } else {
-                                      Modifier
-                                    }))
+                            Modifier.testTag(C.ViewReviewTags.POSTED_BY_NAME).clickable {
+                              // Allow navigation if online or if it's the current user's profile
+                              if (NetworkUtils.isNetworkAvailable(context) || isOwner) {
+                                onViewProfile(review.ownerId)
+                              } else {
+                                Toast.makeText(
+                                        context,
+                                        context.getString(R.string.profile_offline_message),
+                                        Toast.LENGTH_SHORT)
+                                    .show()
+                              }
+                            })
                     Text(
                         text = " ${formatRelative(review.postedAt, context = context)}",
                         style = baseTextStyle,

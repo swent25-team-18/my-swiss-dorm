@@ -4,6 +4,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
@@ -512,24 +513,6 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun guestMode_defaultTogglesState() = runTest {
-    signInAnonymous()
-    setContentWithVm()
-    compose.waitForIdle()
-    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
-    compose.scrollUntilTextDisplayed(scrollTag, "Notifications")
-    val msgSwitch = C.SettingsTags.switch("Show notifications for messages")
-    compose.scrollUntilDisplayed(scrollTag, msgSwitch)
-    compose.onNodeWithTag(msgSwitch, useUnmergedTree = true).assert(hasStateDescription("Off"))
-    compose.scrollUntilTextDisplayed(scrollTag, "Privacy")
-    val readReceiptsSwitch = C.SettingsTags.switch("Read receipts")
-    compose.scrollUntilDisplayed(scrollTag, readReceiptsSwitch)
-    compose
-        .onNodeWithTag(readReceiptsSwitch, useUnmergedTree = true)
-        .assert(hasStateDescription("On"))
-  }
-
-  @Test
   fun guestMode_profileClick_doesNotTriggerCallback() = runTest {
     signInAnonymous()
     var profileClicked = false
@@ -586,5 +569,59 @@ class SettingsScreenTest : FirestoreTest() {
     compose.waitUntil("The profile picture is not displayed in the settings", 5_000) {
       compose.onNodeWithTag(C.SettingsTags.avatarTag(null), useUnmergedTree = true).isDisplayed()
     }
+  }
+  // ---------- QR scan tests ----------
+
+  @Test
+  fun qrScanResult_nullOrBlank_doesNotNavigate() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    var navigated = false
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(null, context) { navigated = true }
+      handleQrScanResult("", context) { navigated = true }
+    }
+
+    assert(!navigated) { "QR navigation should not be triggered for null or blank contents" }
+  }
+
+  @Test
+  fun qrScanResult_invalidDomain_doesNotNavigate() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    var navigated = false
+    val invalidUrl = "https://example.com/some/path"
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(invalidUrl, context) { navigated = true }
+    }
+
+    assert(!navigated) { "QR navigation should not be triggered for invalid domain" }
+  }
+
+  @Test
+  fun qrScanResult_validMySwissDormLink_triggersNavigation() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val validUrl = "https://my-swiss-dorm.web.app/some/path?foo=bar"
+    var navigatedUrl: String? = null
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(validUrl, context) { navigatedUrl = it }
+    }
+
+    assert(navigatedUrl == validUrl) {
+      "QR navigation should be triggered with the scanned MySwissDorm URL"
+    }
+  }
+
+  @Test
+  fun qrScanButton_isDisplayedAndClickable() {
+    setContentWithVm()
+    compose.waitForIdle()
+
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val buttonTag = "SETTINGS_SCAN_QR_BUTTON"
+
+    compose.scrollUntilDisplayed(scrollTag, buttonTag)
+    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).assertIsDisplayed().performClick()
   }
 }

@@ -17,5 +17,6 @@ data class UserInfo(
     val maxPrice: Double? = null,
     val minSize: Int? = null,
     val maxSize: Int? = null,
-    val preferredRoomTypes: List<RoomType> = emptyList()
+    val preferredRoomTypes: List<RoomType> = emptyList(),
+    val bookmarkedListingIds: List<String> = emptyList(),
 )

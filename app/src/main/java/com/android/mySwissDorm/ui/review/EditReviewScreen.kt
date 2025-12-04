@@ -26,6 +26,7 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
+import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.DarkGray
@@ -80,7 +81,13 @@ fun EditReviewScreen(
   val editReviewUIState by editReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
   var showDeleteConfirm by remember { mutableStateOf(false) }
-
+  if (editReviewUIState.showFullScreenImages) {
+    FullScreenImageViewer(
+        imageUris = editReviewUIState.images.map { it.image },
+        onDismiss = { editReviewViewModel.dismissFullScreenImages() },
+        initialIndex = editReviewUIState.fullScreenImagesIndex)
+    return
+  }
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
@@ -260,6 +267,7 @@ fun EditReviewScreen(
                     ImageGrid(
                         imageUris = ui.images.map { it.image }.toSet(),
                         isEditingMode = true,
+                        onImageClick = { editReviewViewModel.onClickImage(it) },
                         onRemove = { editReviewViewModel.removePhoto(it) },
                         modifier = Modifier.testTag(C.EditReviewTags.PHOTOS))
                   }

@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
-import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.Red
 
 @Composable
@@ -140,7 +139,7 @@ fun FullScreenImageViewer(
                 IconButton(
                     onClick = { currentIndex = Math.floorMod(currentIndex - 1, imageUris.size) },
                     modifier =
-                        Modifier.background(color = MainColor)
+                        Modifier.background(color = buttonBackGroundColor)
                             .testTag(C.FullScreenImageViewerTags.LEFT_ARROW_BUTTON)) {
                       Icon(
                           imageVector = Icons.AutoMirrored.Filled.ArrowBack,

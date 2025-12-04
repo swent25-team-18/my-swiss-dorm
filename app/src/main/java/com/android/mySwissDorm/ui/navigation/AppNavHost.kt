@@ -62,6 +62,8 @@ import com.android.mySwissDorm.ui.profile.ProfileContributionsViewModel
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreenViewModel
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
+import com.android.mySwissDorm.ui.qr.MySwissDormQrResult
+import com.android.mySwissDorm.ui.qr.parseMySwissDormQr
 import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewViewModel
@@ -252,7 +254,11 @@ fun AppNavHost(
                     navActions.navigateTo(Screen.ProfileContributions)
                   }
                 },
-                onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
+                onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) },
+                onQrNavigate = { scannedUrl ->
+                  handleScannedQrUrl(
+                      scannedUrl = scannedUrl, navigationActions = navActions, context = context)
+                })
           }
 
           // --- Secondary destinations ---
@@ -772,6 +778,32 @@ fun AppNavHost(
                 })
           }
         }
+  }
+}
+
+private fun handleScannedQrUrl(
+    scannedUrl: String,
+    navigationActions: NavigationActions,
+    context: Context
+) {
+  try {
+    when (val result = parseMySwissDormQr(scannedUrl)) {
+      is MySwissDormQrResult.Listing -> {
+        // my-swiss-dorm.web.app/listing/<listingUid>
+        navigationActions.navigateTo(Screen.ListingOverview(result.id))
+      }
+      is MySwissDormQrResult.Review -> {
+        // my-swiss-dorm.web.app/review/<reviewUid>
+        navigationActions.navigateTo(Screen.ReviewOverview(result.id))
+      }
+      is MySwissDormQrResult.Invalid -> {
+        Toast.makeText(context, context.getString(R.string.unexpected_error), Toast.LENGTH_SHORT)
+            .show()
+      }
+    }
+  } catch (e: Exception) {
+    Log.e("AppNavHost", "Failed to handle scanned QR URL: $scannedUrl", e)
+    Toast.makeText(context, context.getString(R.string.unexpected_error), Toast.LENGTH_SHORT).show()
   }
 }
 

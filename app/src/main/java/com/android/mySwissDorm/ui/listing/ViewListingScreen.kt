@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
+import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.share.ShareLinkDialog
 import com.android.mySwissDorm.ui.theme.AlmostWhite
@@ -86,6 +87,14 @@ fun ViewListingScreen(
       Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
       viewListingViewModel.clearErrorMsg()
     }
+  }
+
+  if (listingUIState.showFullScreenImages) {
+    FullScreenImageViewer(
+        imageUris = listingUIState.images.map { it.image },
+        onDismiss = { viewListingViewModel.dismissFullScreenImages() },
+        initialIndex = listingUIState.fullScreenImagesIndex)
+    return
   }
 
   Scaffold(
@@ -227,6 +236,7 @@ fun ViewListingScreen(
                 ImageGrid(
                     imageUris = listingUIState.images.map { it.image }.toSet(),
                     isEditingMode = false,
+                    onImageClick = { viewListingViewModel.onClickImage(it) },
                     onRemove = {})
 
                 // Location placeholder

@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.review
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -53,7 +54,9 @@ data class ViewReviewUIState(
     val locationOfReview: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
     val netScore: Int = 0,
     val userVote: VoteType = VoteType.NONE,
-    val images: List<Photo> = emptyList()
+    val images: List<Photo> = emptyList(),
+    val showFullScreenImages: Boolean = false,
+    val fullScreenImagesIndex: Int = 0,
 )
 
 class ViewReviewViewModel(
@@ -71,6 +74,16 @@ class ViewReviewViewModel(
   private val photoManager =
       PhotoManager(
           photoRepositoryLocal = photoRepositoryLocal, photoRepositoryCloud = photoRepositoryCloud)
+
+  fun dismissFullScreenImages() {
+    _uiState.value = _uiState.value.copy(showFullScreenImages = false)
+  }
+
+  fun onClickImage(uri: Uri) {
+    val index = _uiState.value.images.map { it.image }.indexOf(uri)
+    require(index >= 0)
+    _uiState.value = _uiState.value.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
+  }
 
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {

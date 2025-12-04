@@ -13,15 +13,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.BrowseCityTags.RECOMMENDED
 import com.android.mySwissDorm.ui.overview.ListingCardUI
 import com.android.mySwissDorm.ui.theme.ListingCardColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 
 /**
  * A card component that displays information about a rental listing.
@@ -63,6 +68,21 @@ fun ListingCard(
                           contentDescription = null,
                           modifier = Modifier.fillMaxSize(),
                           contentScale = ContentScale.Crop)
+                      if (data.isRecommended) {
+                        Surface(
+                            color = MainColor,
+                            shape = RoundedCornerShape(topStart = 12.dp, bottomEnd = 8.dp),
+                            modifier = Modifier.align(Alignment.TopStart)) {
+                              Text(
+                                  text = stringResource(R.string.recommended),
+                                  color = White,
+                                  style = MaterialTheme.typography.labelSmall,
+                                  modifier =
+                                      Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                          .testTag(RECOMMENDED),
+                                  fontSize = 10.sp)
+                            }
+                      }
                     }
 
                 Spacer(Modifier.width(12.dp))

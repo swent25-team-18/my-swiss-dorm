@@ -171,7 +171,8 @@
     <string name="add_listing_invalid_form_text">Veuillez compléter tous les champs requis (taille, prix et date de début valides) ou connectez-vous si vous êtes invité.</string>
     <string name="add_listing_invalid_size_text">Entrez 1.0–1000.0 avec un seul décimal (ex : 18.5).</string>
     <string name="add_listing_invalid_price_text">Entrez un entier entre 1 et 10’000.</string>
-
+    <!-- ListingCard -->
+    <string name="recommended">Recommandé</string>
     <!-- AddListingViewModel -->
     <string name="add_listing_vm_guests_cannot_create_listings">Les invités ne peuvent pas créer d’annonces</string>
     <string name="add_listing_vm_at_least_one_field_not_valid">Au moins un champ n’est pas valide</string>
@@ -467,6 +468,11 @@
     <string name="requested_messages_rejected">Message rejeté.</string>
     <string name="requested_messages_reject_failed">Échec du rejet du message :</string>
 
+    <!-- Offline Banner -->
+    <string name="offline_banner_you_are_offline">Vous êtes hors ligne</string>
+    <string name="offline_banner_last_updated">Dernière mise à jour %1$s</string>
+    <string name="offline_banner_no_sync">Aucune donnée de synchronisation disponible</string>
+    <string name="offline_banner_icon_description">Icône hors ligne</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

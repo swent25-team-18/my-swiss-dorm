@@ -118,6 +118,7 @@ object C {
     const val FABMENULISTING = "fab_menu_listing"
 
     const val FABSCRIM = "fab_scrim"
+    const val RECOMMENDED = "recommendedText"
 
     fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
 

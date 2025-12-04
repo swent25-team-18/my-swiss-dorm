@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.android.mySwissDorm.model.HybridRepositoryBase
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.utils.LastSyncTracker
 
 /**
  * Hybrid implementation of [RentalListingRepository] that combines remote (Firestore) and local
@@ -83,6 +84,7 @@ class RentalListingRepositoryHybrid(
    *
    * This method is called after successful remote operations to ensure data is available offline.
    * Uses the existing [RentalListingRepositoryLocal.addRentalListing] method which handles syncing.
+   * Also records the sync timestamp for the offline banner.
    *
    * @param listings The rental listings to sync to local storage.
    */
@@ -98,6 +100,8 @@ class RentalListingRepositoryHybrid(
           // Continue with other listings even if one fails
         }
       }
+      // Record successful sync timestamp
+      LastSyncTracker.recordSync(context)
     } catch (e: Exception) {
       Log.w(TAG, "Error syncing listings to local", e)
       // Don't throw - syncing is best effort

@@ -5,6 +5,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,6 +49,7 @@ import com.android.mySwissDorm.ui.listing.EditListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingViewModel
 import com.android.mySwissDorm.ui.map.MapScreen
+import com.android.mySwissDorm.ui.offline.OfflineBanner
 import com.android.mySwissDorm.ui.overview.BrowseCityScreen
 import com.android.mySwissDorm.ui.overview.ListingCardUI
 import com.android.mySwissDorm.ui.overview.MapOverviewScreen
@@ -118,526 +120,544 @@ fun AppNavHost(
 
   val startDestination = navigationState.initialDestination ?: Screen.SignIn.route
 
-  NavHost(navController = navController, startDestination = startDestination, modifier = modifier) {
-    // --- Auth flow ---
-    composable(Screen.SignIn.route) {
-      SignInScreen(
-          credentialManager = credentialManager,
-          onSignedIn = { navigationViewModel.determineInitialDestination() },
-          onSignUp = { navActions.navigateTo(Screen.SignUp) },
-      )
-    }
-
-    composable(Screen.SignUp.route) { backStackEntry ->
-      val viewModel = viewModel<SignUpViewModel>(backStackEntry)
-      SignUpScreen(
-          signUpViewModel = viewModel,
-          onBack = { navActions.goBack() },
-          onContinue = { navActions.navigateTo(Screen.SignUpPreferences) })
-    }
-
-    composable(Screen.SignUpPreferences.route) { backStackEntry ->
-      val parentEntry =
-          remember(backStackEntry) { navController.getBackStackEntry(Screen.SignUp.route) }
-      val viewModel = viewModel<SignUpViewModel>(parentEntry)
-      SignUpPreferencesScreen(
-          signUpViewModel = viewModel,
-          credentialManager = credentialManager,
-          onBack = { navActions.goBack() },
-          onSignedUp = { navigationViewModel.determineInitialDestination() })
-    }
-
-    // --- Bottom bar destinations ---
-
-    composable(Screen.Homepage.route) {
-      HomePageScreen(
-          onSelectLocation = { location -> navActions.navigateTo(Screen.BrowseOverview(location)) },
-          credentialManager = credentialManager,
-          navigationActions = navActions)
-    }
-
-    composable(Screen.Inbox.route) {
-      var requestedMessagesCount by remember { mutableStateOf(0) }
-      val currentRoute = navController.currentDestination?.route
-
-      // Refresh count whenever the Inbox screen is visible
-      // Use a key that only changes when we actually navigate to Inbox
-      LaunchedEffect(currentRoute == Screen.Inbox.route) {
-        if (currentRoute == Screen.Inbox.route) {
-          val currentUser = FirebaseAuth.getInstance().currentUser
-          if (currentUser != null) {
-            try {
-              requestedMessagesCount =
-                  RequestedMessageRepositoryProvider.repository.getPendingMessageCount(
-                      currentUser.uid)
-            } catch (e: Exception) {
-              android.util.Log.e("AppNavHost", "Error loading requested messages count", e)
-            }
+  Column(modifier = modifier) {
+    OfflineBanner()
+    NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        modifier = Modifier.weight(1f)) {
+          // --- Auth flow ---
+          composable(Screen.SignIn.route) {
+            SignInScreen(
+                credentialManager = credentialManager,
+                onSignedIn = { navigationViewModel.determineInitialDestination() },
+                onSignUp = { navActions.navigateTo(Screen.SignUp) },
+            )
           }
-        }
-      }
 
-      Scaffold(
-          bottomBar = {
-            BottomNavigationMenu(
-                selectedScreen = Screen.Inbox, onTabSelected = { navActions.navigateTo(it) })
-          }) { paddingValues ->
-            ChannelsScreen(
-                onChannelClick = { channelId ->
-                  navActions.navigateTo(Screen.ChatChannel(channelId))
+          composable(Screen.SignUp.route) { backStackEntry ->
+            val viewModel = viewModel<SignUpViewModel>(backStackEntry)
+            SignUpScreen(
+                signUpViewModel = viewModel,
+                onBack = { navActions.goBack() },
+                onContinue = { navActions.navigateTo(Screen.SignUpPreferences) })
+          }
+
+          composable(Screen.SignUpPreferences.route) { backStackEntry ->
+            val parentEntry =
+                remember(backStackEntry) { navController.getBackStackEntry(Screen.SignUp.route) }
+            val viewModel = viewModel<SignUpViewModel>(parentEntry)
+            SignUpPreferencesScreen(
+                signUpViewModel = viewModel,
+                credentialManager = credentialManager,
+                onBack = { navActions.goBack() },
+                onSignedUp = { navigationViewModel.determineInitialDestination() })
+          }
+
+          // --- Bottom bar destinations ---
+
+          composable(Screen.Homepage.route) {
+            HomePageScreen(
+                onSelectLocation = { location ->
+                  navActions.navigateTo(Screen.BrowseOverview(location))
                 },
-                onRequestedMessagesClick = { navActions.navigateTo(Screen.RequestedMessages) },
-                requestedMessagesCount = requestedMessagesCount,
-                modifier = Modifier.padding(paddingValues))
+                credentialManager = credentialManager,
+                navigationActions = navActions)
           }
-    }
 
-    composable(Screen.Settings.route) {
-      val adminRepo = remember { AdminRepository() }
-      var isAdmin by remember { mutableStateOf(false) }
-      val currentUser = FirebaseAuth.getInstance().currentUser
-      val userAnonymous = currentUser != null && currentUser.isAnonymous
+          composable(Screen.Inbox.route) {
+            var requestedMessagesCount by remember { mutableStateOf(0) }
+            val currentRoute = navController.currentDestination?.route
 
-      LaunchedEffect(Unit) {
-        isAdmin =
-            try {
-              if (currentUser != null && !currentUser.isAnonymous) {
-                adminRepo.isCurrentUserAdmin()
-              } else {
-                false
-              }
-            } catch (e: Exception) {
-              Log.e("AppNavHost", "Admin check failed", e)
-              false
-            }
-      }
-      SettingsScreen(
-          onProfileClick = {
-            if (userAnonymous) {
-              Toast.makeText(
-                      context,
-                      context.getString(R.string.app_nav_host_sign_in_to_create_profile),
-                      Toast.LENGTH_SHORT)
-                  .show()
-              navActions.navigateTo(Screen.Profile)
-            } else {
-              navActions.navigateTo(Screen.Profile)
-            }
-          },
-          navigationActions = navActions,
-          onAdminClick = { navActions.navigateTo(Screen.Admin) },
-          isAdmin = isAdmin,
-          onContributionClick = {
-            if (userAnonymous) {
-              Toast.makeText(
-                      context,
-                      context.getString(R.string.app_nav_host_sign_in_to_see_contributions),
-                      Toast.LENGTH_SHORT)
-                  .show()
-              navActions.navigateTo(Screen.ProfileContributions)
-            } else {
-              navActions.navigateTo(Screen.ProfileContributions)
-            }
-          },
-          onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
-    }
-
-    // --- Secondary destinations ---
-
-    composable(Screen.AddListing.route) {
-      AddListingScreen(
-          onBack = { navActions.goBack() },
-          onConfirm = { created ->
-            navController.navigate(Screen.ListingOverview(created.uid).route) {
-              // Remove AddListing so back from overview goes to whatever was before it (Homepage
-              // here)
-              popUpTo(Screen.AddListing.route) { inclusive = true }
-              launchSingleTop = true
-            }
-          })
-    }
-
-    composable(
-        route = Screen.Map.route,
-        arguments =
-            listOf(
-                navArgument("lat") { type = NavType.FloatType },
-                navArgument("lng") { type = NavType.FloatType },
-                navArgument("title") { type = NavType.StringType },
-                navArgument("name") { type = NavType.IntType })) { backStackEntry ->
-          MapScreen(
-              latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
-              longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
-              title =
-                  backStackEntry.arguments?.getString("title")
-                      ?: context.getString(R.string.location),
-              nameId = backStackEntry.arguments?.getInt("name") ?: R.string.location,
-              onGoBack = { navController.popBackStack() })
-        }
-
-    composable(Screen.BrowseOverview.route) { navBackStackEntry ->
-      val name = navBackStackEntry.arguments?.getString("name")
-      val latString = navBackStackEntry.arguments?.getString("lat")
-      val lngString = navBackStackEntry.arguments?.getString("lng")
-      val startTabString = navBackStackEntry.arguments?.getString("startTab")
-      val startTab = startTabString?.toIntOrNull() ?: 1 // Default to 1 (Listings) if not provided
-
-      val latitude = latString?.toDoubleOrNull()
-      val longitude = lngString?.toDoubleOrNull()
-
-      if (name != null && latitude != null && longitude != null) {
-        val location = Location(name, latitude, longitude)
-
-        BrowseCityScreen(
-            location = location,
-            onSelectListing = {
-              navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
-            },
-            onSelectResidency = {
-              navActions.navigateTo(Screen.ReviewsByResidencyOverview(it.title))
-            },
-            onLocationChange = { newLocation ->
-              navActions.navigateTo(Screen.BrowseOverview(newLocation))
-            },
-            navigationActions = navActions,
-            startTab = startTab,
-            onMapClick = { listings ->
-              MapNavigationData.currentListings = listings
-              MapNavigationData.browseLocation = location
-              navActions.navigateTo(Screen.CityMapOverview)
-            })
-      }
-    }
-    composable(Screen.CityMapOverview.route) {
-      MapOverviewScreen(
-          listings = MapNavigationData.currentListings,
-          onGoBack = { navActions.goBack() },
-          centerLocation = MapNavigationData.browseLocation,
-          onListingClick = { listingUid ->
-            navActions.navigateTo(Screen.ListingOverview(listingUid))
-          })
-    }
-
-    composable(Screen.AddReview.route) {
-      AddReviewScreen(
-          onBack = { navActions.goBack() },
-          onConfirm = { created ->
-            navController.navigate(Screen.ReviewOverview(created.uid).route) {
-              // Remove AddReview so back from overview goes to whatever was before it (Homepage
-              // here)
-              popUpTo(Screen.AddReview.route) { inclusive = true }
-              launchSingleTop = true
-            }
-          })
-    }
-
-    composable(Screen.ProfileContributions.route) {
-      val vm: ProfileContributionsViewModel = viewModel()
-      val ui by vm.ui.collectAsState()
-      LaunchedEffect(Unit) { vm.load(force = true, context) }
-      val currentUser = FirebaseAuth.getInstance().currentUser
-      if (currentUser != null && currentUser.isAnonymous) {
-        SignInPopUp(
-            onSignInClick = { navActions.navigateTo(Screen.SignIn) },
-            onBack = { navActions.goBack() },
-            title = stringResource(R.string.app_nav_host_my_contributions))
-      } else {
-        ProfileContributionsScreen(
-            contributions = ui.items,
-            onBackClick = { navActions.goBack() },
-            onContributionClick = { contribution ->
-              when (contribution.type) {
-                ContributionType.LISTING ->
-                    contribution.referenceId?.let {
-                      navActions.navigateTo(Screen.ListingOverview(it))
-                    }
-                ContributionType.REVIEW ->
-                    contribution.referenceId?.let {
-                      navActions.navigateTo(Screen.ReviewOverview(it))
-                    }
-              }
-            })
-      }
-    }
-
-    composable(Screen.ReviewsByResidencyOverview.route) { navBackStackEntry ->
-      val residencyName = navBackStackEntry.arguments?.getString("residencyName")
-
-      residencyName?.let {
-        ReviewsByResidencyScreen(
-            residencyName = residencyName,
-            onGoBack = { navActions.goBack() },
-            onSelectReview = { navActions.navigateTo(Screen.ReviewOverview(it.reviewUid)) })
-      }
-          ?: run {
-            Log.e("AppNavHost", "residencyName is null")
-            Toast.makeText(
-                    context,
-                    context.getString(R.string.app_nav_host_residency_name_is_null),
-                    Toast.LENGTH_SHORT)
-                .show()
-          }
-    }
-
-    composable(Screen.ListingOverview.route) { navBackStackEntry ->
-      val listingUid = navBackStackEntry.arguments?.getString("listingUid")
-
-      listingUid?.let {
-        val viewListingViewModel: ViewListingViewModel = viewModel()
-        ViewListingScreen(
-            viewListingViewModel = viewListingViewModel,
-            listingUid = it,
-            onGoBack = { navActions.goBack() },
-            onApply = {
-              coroutineScope.launch {
-                val success = viewListingViewModel.submitContactMessage(context)
-                if (success) {
-                  // Wait for the ViewModel to update the state (message creation is async)
-                  // The ViewModel will set hasExistingMessage = true when message is successfully
-                  // created
-                  // Use withTimeoutOrNull to avoid waiting indefinitely
-                  val messageSent =
-                      withTimeoutOrNull(3000) {
-                        viewListingViewModel.uiState.first {
-                          it.hasExistingMessage || it.errorMsg != null
-                        }
-                        viewListingViewModel.uiState.value.hasExistingMessage
-                      } ?: false
-
-                  // Check if message was actually sent (not blocked by duplicate check)
-                  if (messageSent) {
-                    Toast.makeText(
-                            context,
-                            context.getString(R.string.view_listing_message_sent),
-                            Toast.LENGTH_LONG)
-                        .show()
-                    navActions.goBack()
+            // Refresh count whenever the Inbox screen is visible
+            // Use a key that only changes when we actually navigate to Inbox
+            LaunchedEffect(currentRoute == Screen.Inbox.route) {
+              if (currentRoute == Screen.Inbox.route) {
+                val currentUser = FirebaseAuth.getInstance().currentUser
+                if (currentUser != null) {
+                  try {
+                    requestedMessagesCount =
+                        RequestedMessageRepositoryProvider.repository.getPendingMessageCount(
+                            currentUser.uid)
+                  } catch (e: Exception) {
+                    Log.e("AppNavHost", "Error loading requested messages count", e)
                   }
                 }
               }
-            },
-            onEdit = { navActions.navigateTo(Screen.EditListing(it)) },
-            onViewProfile = { ownerId ->
-              val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-              if (ownerId == currentUserId) {
-                navActions.navigateTo(Screen.Profile)
-              } else {
-                navActions.navigateTo(Screen.ViewUserProfile(ownerId))
-              }
-            },
-            onViewMap = { lat, lng, title, name ->
-              navController.navigate(Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
-            })
-      }
-          ?: run {
-            Log.e("AppNavHost", "listingUid is null")
-            Toast.makeText(
-                    context,
-                    context.getString(R.string.app_nav_host_listing_uid_is_null),
-                    Toast.LENGTH_SHORT)
-                .show()
-          }
-    }
-
-    composable(Screen.ReviewOverview.route) { navBackStackEntry ->
-      val reviewUid = navBackStackEntry.arguments?.getString("reviewUid")
-
-      reviewUid?.let {
-        ViewReviewScreen(
-            reviewUid = it,
-            onGoBack = { navActions.goBack() },
-            onEdit = { navActions.navigateTo(Screen.EditReview(it)) },
-            onViewProfile = { ownerId ->
-              val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-              if (ownerId == currentUserId) {
-                // It's the current user, go to their editable profile
-                navActions.navigateTo(Screen.Profile)
-              } else {
-                // It's another user, go to the read-only profile screen
-                navActions.navigateTo(Screen.ViewUserProfile(ownerId))
-              }
-            },
-            onViewMap = { lat, lng, title, name ->
-              navController.navigate(Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
-            })
-      }
-          ?: run {
-            Log.e("AppNavHost", "reviewUid is null")
-            Toast.makeText(
-                    context,
-                    context.getString(R.string.app_nav_host_review_uid_is_null),
-                    Toast.LENGTH_SHORT)
-                .show()
-          }
-    }
-
-    composable(Screen.EditReview.route) { entry ->
-      val id = requireNotNull(entry.arguments?.getString("reviewUid"))
-      val editReviewViewModel: EditReviewViewModel = viewModel {
-        EditReviewViewModel(reviewId = id)
-      }
-
-      EditReviewScreen(
-          reviewID = id,
-          editReviewViewModel = editReviewViewModel,
-          onBack = navActions::goBack,
-          onConfirm = {
-            navActions.navigateTo(Screen.ReviewOverview(id))
-            navController.popBackStack(Screen.EditReview.route, inclusive = true)
-            Toast.makeText(
-                    context,
-                    context.getString(R.string.app_nav_host_review_saved),
-                    Toast.LENGTH_SHORT)
-                .show()
-          },
-          onDelete = { residencyName ->
-            // Pop EditReview from backstack
-            navController.popBackStack(Screen.EditReview.route, inclusive = true)
-
-            // Check if we're now on ReviewOverview and pop it too (since the review is deleted)
-            var currentRoute = navController.currentDestination?.route
-            if (currentRoute?.startsWith("reviewOverview/") == true) {
-              navController.popBackStack()
-              // Update currentRoute after popping ReviewOverview
-              currentRoute = navController.currentDestination?.route
             }
 
-            // Navigate back based on where we are now
-            // If we're already at ReviewsByResidencyOverview or ProfileContributions, stay there
-            // Otherwise, navigate to ReviewsByResidencyOverview (using residencyName) or fallback
-            // to ProfileContributions
-            if (currentRoute?.startsWith("reviewsByResidencyOverview/") != true &&
-                currentRoute != Screen.ProfileContributions.route) {
-              try {
-                navActions.navigateTo(Screen.ReviewsByResidencyOverview(residencyName))
-              } catch (e: Exception) {
-                // If navigation fails, try ProfileContributions as fallback
-                navActions.navigateTo(Screen.ProfileContributions)
-              }
-            }
-            Toast.makeText(
-                    context,
-                    context.getString(R.string.app_nav_host_review_deleted),
-                    Toast.LENGTH_SHORT)
-                .show()
-          })
-    }
-
-    composable(Screen.ViewUserProfile.route) { navBackStackEntry ->
-      // Extract the userId argument from the route
-      val userId = navBackStackEntry.arguments?.getString("userId")
-
-      userId?.let {
-        ViewUserProfileScreen(
-            ownerId = it,
-            onBack = { navActions.goBack() },
-            onSendMessage = {
-              Toast.makeText(
-                      context,
-                      context.getString(R.string.app_nav_host_not_implemented_yet),
-                      Toast.LENGTH_SHORT)
-                  .show()
-            })
-      }
-          ?: run {
-            // Handle error if userId is missing
-            Log.e("AppNavHost", "User ID is null for ViewUserProfile route")
-            Toast.makeText(
-                    context,
-                    context.getString(R.string.app_nav_host_could_not_load_profile),
-                    Toast.LENGTH_SHORT)
-                .show()
-            navActions.goBack()
+            Scaffold(
+                bottomBar = {
+                  BottomNavigationMenu(
+                      selectedScreen = Screen.Inbox, onTabSelected = { navActions.navigateTo(it) })
+                }) { paddingValues ->
+                  ChannelsScreen(
+                      onChannelClick = { channelId ->
+                        navActions.navigateTo(Screen.ChatChannel(channelId))
+                      },
+                      onRequestedMessagesClick = {
+                        navActions.navigateTo(Screen.RequestedMessages)
+                      },
+                      requestedMessagesCount = requestedMessagesCount,
+                      modifier = Modifier.padding(paddingValues))
+                }
           }
-    }
 
-    composable(Screen.EditListing.route) { entry ->
-      val id = requireNotNull(entry.arguments?.getString("listingUid"))
+          composable(Screen.Settings.route) {
+            val adminRepo = remember { AdminRepository() }
+            var isAdmin by remember { mutableStateOf(false) }
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            val userAnonymous = currentUser != null && currentUser.isAnonymous
 
-      EditListingScreen(
-          rentalListingID = id,
-          onBack = navActions::goBack,
-          onConfirm = {
-            navActions.navigateTo(Screen.ListingOverview(id))
-            navController.popBackStack(Screen.EditListing.route, inclusive = true)
-            Toast.makeText(
-                    context,
-                    context.getString(R.string.app_nav_host_listing_saved),
-                    Toast.LENGTH_SHORT)
-                .show()
-          },
-          onDelete = {
-            navActions.navigateTo(Screen.Homepage)
-            navController.popBackStack(Screen.EditListing.route, inclusive = true)
-            Toast.makeText(
-                    context,
-                    context.getString(R.string.app_nav_host_listing_deleted),
-                    Toast.LENGTH_SHORT)
-                .show()
-          })
-    }
+            LaunchedEffect(Unit) {
+              isAdmin =
+                  try {
+                    if (currentUser != null && !currentUser.isAnonymous) {
+                      adminRepo.isCurrentUserAdmin()
+                    } else {
+                      false
+                    }
+                  } catch (e: Exception) {
+                    Log.e("AppNavHost", "Admin check failed", e)
+                    false
+                  }
+            }
+            SettingsScreen(
+                onProfileClick = {
+                  if (userAnonymous) {
+                    Toast.makeText(
+                            context,
+                            context.getString(R.string.app_nav_host_sign_in_to_create_profile),
+                            Toast.LENGTH_SHORT)
+                        .show()
+                    navActions.navigateTo(Screen.Profile)
+                  } else {
+                    navActions.navigateTo(Screen.Profile)
+                  }
+                },
+                navigationActions = navActions,
+                onAdminClick = { navActions.navigateTo(Screen.Admin) },
+                isAdmin = isAdmin,
+                onContributionClick = {
+                  if (userAnonymous) {
+                    Toast.makeText(
+                            context,
+                            context.getString(R.string.app_nav_host_sign_in_to_see_contributions),
+                            Toast.LENGTH_SHORT)
+                        .show()
+                    navActions.navigateTo(Screen.ProfileContributions)
+                  } else {
+                    navActions.navigateTo(Screen.ProfileContributions)
+                  }
+                },
+                onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
+          }
 
-    composable(Screen.Admin.route) {
-      AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })
-    }
+          // --- Secondary destinations ---
 
-    composable(Screen.Profile.route) {
-      val currentUser = FirebaseAuth.getInstance().currentUser
-      if (currentUser != null && currentUser.isAnonymous) {
-        SignInPopUp(
-            onSignInClick = { navActions.navigateTo(Screen.SignIn) },
-            onBack = { navActions.goBack() },
-            title = stringResource(R.string.app_nav_host_profile))
-      } else {
-        ProfileScreen(
-            onBack = { navActions.goBack() },
-            onLogout = {
-              AuthRepositoryProvider.repository.signOut()
-              navigationViewModel.determineInitialDestination()
-            },
-            onChangeProfilePicture = {
-              Toast.makeText(
-                      context,
-                      context.getString(R.string.app_nav_host_not_implemented_yet),
-                      Toast.LENGTH_SHORT)
-                  .show()
-            },
-            onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
-      }
-    }
+          composable(Screen.AddListing.route) {
+            AddListingScreen(
+                onBack = { navActions.goBack() },
+                onConfirm = { created ->
+                  navController.navigate(Screen.ListingOverview(created.uid).route) {
+                    // Remove AddListing so back from overview goes to whatever was before it
+                    // (Homepage here)
+                    popUpTo(Screen.AddListing.route) { inclusive = true }
+                    launchSingleTop = true
+                  }
+                })
+          }
 
-    composable(Screen.BookmarkedListings.route) {
-      BookmarkedListingsScreen(
-          onGoBack = { navActions.goBack() },
-          onSelectListing = { listing ->
-            navActions.navigateTo(Screen.ListingOverview(listing.listingUid))
-          })
-    }
-    composable(Screen.EditPreferences.route) {
-      val viewModel: ProfileScreenViewModel = viewModel()
-      LaunchedEffect(Unit) { viewModel.loadProfile(context) }
+          composable(
+              route = Screen.Map.route,
+              arguments =
+                  listOf(
+                      navArgument("lat") { type = NavType.FloatType },
+                      navArgument("lng") { type = NavType.FloatType },
+                      navArgument("title") { type = NavType.StringType },
+                      navArgument("name") { type = NavType.IntType })) { backStackEntry ->
+                MapScreen(
+                    latitude = backStackEntry.arguments?.getFloat("lat")?.toDouble() ?: 0.0,
+                    longitude = backStackEntry.arguments?.getFloat("lng")?.toDouble() ?: 0.0,
+                    title =
+                        backStackEntry.arguments?.getString("title")
+                            ?: context.getString(R.string.location),
+                    nameId = backStackEntry.arguments?.getInt("name") ?: R.string.location,
+                    onGoBack = { navController.popBackStack() })
+              }
 
-      EditPreferencesScreen(viewModel = viewModel, onBack = { navActions.goBack() })
-    }
+          composable(Screen.BrowseOverview.route) { navBackStackEntry ->
+            val name = navBackStackEntry.arguments?.getString("name")
+            val latString = navBackStackEntry.arguments?.getString("lat")
+            val lngString = navBackStackEntry.arguments?.getString("lng")
+            val startTabString = navBackStackEntry.arguments?.getString("startTab")
+            val startTab =
+                startTabString?.toIntOrNull() ?: 1 // Default to 1 (Listings) if not provided
 
-    composable(Screen.ChatChannel.route) { entry ->
-      val channelId = requireNotNull(entry.arguments?.getString("channelId"))
-      // URL decode the channelId in case it contains special characters
-      val decodedChannelId = java.net.URLDecoder.decode(channelId, "UTF-8")
-      MyChatScreen(channelId = decodedChannelId, onBackClick = navActions::goBack)
-    }
+            val latitude = latString?.toDoubleOrNull()
+            val longitude = lngString?.toDoubleOrNull()
 
-    composable(Screen.SelectUserToChat.route) {
-      SelectUserToChatScreen(
-          onBackClick = { navActions.goBack() },
-          onUserSelected = { channelCid -> navActions.navigateTo(Screen.ChatChannel(channelCid)) })
-    }
+            if (name != null && latitude != null && longitude != null) {
+              val location = Location(name, latitude, longitude)
 
-    composable(Screen.RequestedMessages.route) {
-      RequestedMessagesScreen(
-          onBackClick = { navActions.goBack() },
-          onViewProfile = { userId -> navActions.navigateTo(Screen.ViewUserProfile(userId)) })
-    }
+              BrowseCityScreen(
+                  location = location,
+                  onSelectListing = {
+                    navActions.navigateTo(Screen.ListingOverview(listingUid = it.listingUid))
+                  },
+                  onSelectResidency = {
+                    navActions.navigateTo(Screen.ReviewsByResidencyOverview(it.title))
+                  },
+                  onLocationChange = { newLocation ->
+                    navActions.navigateTo(Screen.BrowseOverview(newLocation))
+                  },
+                  navigationActions = navActions,
+                  startTab = startTab,
+                  onMapClick = { listings ->
+                    MapNavigationData.currentListings = listings
+                    MapNavigationData.browseLocation = location
+                    navActions.navigateTo(Screen.CityMapOverview)
+                  })
+            }
+          }
+          composable(Screen.CityMapOverview.route) {
+            MapOverviewScreen(
+                listings = MapNavigationData.currentListings,
+                onGoBack = { navActions.goBack() },
+                centerLocation = MapNavigationData.browseLocation,
+                onListingClick = { listingUid ->
+                  navActions.navigateTo(Screen.ListingOverview(listingUid))
+                })
+          }
+
+          composable(Screen.AddReview.route) {
+            AddReviewScreen(
+                onBack = { navActions.goBack() },
+                onConfirm = { created ->
+                  navController.navigate(Screen.ReviewOverview(created.uid).route) {
+                    // Remove AddReview so back from overview goes to whatever was before it
+                    // (Homepage here)
+                    popUpTo(Screen.AddReview.route) { inclusive = true }
+                    launchSingleTop = true
+                  }
+                })
+          }
+
+          composable(Screen.ProfileContributions.route) {
+            val vm: ProfileContributionsViewModel = viewModel()
+            val ui by vm.ui.collectAsState()
+            LaunchedEffect(Unit) { vm.load(force = true, context) }
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            if (currentUser != null && currentUser.isAnonymous) {
+              SignInPopUp(
+                  onSignInClick = { navActions.navigateTo(Screen.SignIn) },
+                  onBack = { navActions.goBack() },
+                  title = stringResource(R.string.app_nav_host_my_contributions))
+            } else {
+              ProfileContributionsScreen(
+                  contributions = ui.items,
+                  onBackClick = { navActions.goBack() },
+                  onContributionClick = { contribution ->
+                    when (contribution.type) {
+                      ContributionType.LISTING ->
+                          contribution.referenceId?.let {
+                            navActions.navigateTo(Screen.ListingOverview(it))
+                          }
+                      ContributionType.REVIEW ->
+                          contribution.referenceId?.let {
+                            navActions.navigateTo(Screen.ReviewOverview(it))
+                          }
+                    }
+                  })
+            }
+          }
+
+          composable(Screen.ReviewsByResidencyOverview.route) { navBackStackEntry ->
+            val residencyName = navBackStackEntry.arguments?.getString("residencyName")
+
+            residencyName?.let {
+              ReviewsByResidencyScreen(
+                  residencyName = residencyName,
+                  onGoBack = { navActions.goBack() },
+                  onSelectReview = { navActions.navigateTo(Screen.ReviewOverview(it.reviewUid)) })
+            }
+                ?: run {
+                  Log.e("AppNavHost", "residencyName is null")
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_residency_name_is_null),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                }
+          }
+
+          composable(Screen.ListingOverview.route) { navBackStackEntry ->
+            val listingUid = navBackStackEntry.arguments?.getString("listingUid")
+
+            listingUid?.let {
+              val viewListingViewModel: ViewListingViewModel = viewModel()
+              ViewListingScreen(
+                  viewListingViewModel = viewListingViewModel,
+                  listingUid = it,
+                  onGoBack = { navActions.goBack() },
+                  onApply = {
+                    coroutineScope.launch {
+                      val success = viewListingViewModel.submitContactMessage(context)
+                      if (success) {
+                        // Wait for the ViewModel to update the state (message creation is async)
+                        // The ViewModel will set hasExistingMessage = true when message is
+                        // successfully
+                        // created
+                        // Use withTimeoutOrNull to avoid waiting indefinitely
+                        val messageSent =
+                            withTimeoutOrNull(3000) {
+                              viewListingViewModel.uiState.first {
+                                it.hasExistingMessage || it.errorMsg != null
+                              }
+                              viewListingViewModel.uiState.value.hasExistingMessage
+                            } ?: false
+
+                        // Check if message was actually sent (not blocked by duplicate check)
+                        if (messageSent) {
+                          Toast.makeText(
+                                  context,
+                                  context.getString(R.string.view_listing_message_sent),
+                                  Toast.LENGTH_LONG)
+                              .show()
+                          navActions.goBack()
+                        }
+                      }
+                    }
+                  },
+                  onEdit = { navActions.navigateTo(Screen.EditListing(it)) },
+                  onViewProfile = { ownerId ->
+                    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                    if (ownerId == currentUserId) {
+                      navActions.navigateTo(Screen.Profile)
+                    } else {
+                      navActions.navigateTo(Screen.ViewUserProfile(ownerId))
+                    }
+                  },
+                  onViewMap = { lat, lng, title, name ->
+                    navController.navigate(
+                        Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
+                  })
+            }
+                ?: run {
+                  Log.e("AppNavHost", "listingUid is null")
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_listing_uid_is_null),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                }
+          }
+
+          composable(Screen.ReviewOverview.route) { navBackStackEntry ->
+            val reviewUid = navBackStackEntry.arguments?.getString("reviewUid")
+
+            reviewUid?.let {
+              ViewReviewScreen(
+                  reviewUid = it,
+                  onGoBack = { navActions.goBack() },
+                  onEdit = { navActions.navigateTo(Screen.EditReview(it)) },
+                  onViewProfile = { ownerId ->
+                    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                    if (ownerId == currentUserId) {
+                      // It's the current user, go to their editable profile
+                      navActions.navigateTo(Screen.Profile)
+                    } else {
+                      // It's another user, go to the read-only profile screen
+                      navActions.navigateTo(Screen.ViewUserProfile(ownerId))
+                    }
+                  },
+                  onViewMap = { lat, lng, title, name ->
+                    navController.navigate(
+                        Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
+                  })
+            }
+                ?: run {
+                  Log.e("AppNavHost", "reviewUid is null")
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_review_uid_is_null),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                }
+          }
+
+          composable(Screen.EditReview.route) { entry ->
+            val id = requireNotNull(entry.arguments?.getString("reviewUid"))
+            val editReviewViewModel: EditReviewViewModel = viewModel {
+              EditReviewViewModel(reviewId = id)
+            }
+
+            EditReviewScreen(
+                reviewID = id,
+                editReviewViewModel = editReviewViewModel,
+                onBack = navActions::goBack,
+                onConfirm = {
+                  navActions.navigateTo(Screen.ReviewOverview(id))
+                  navController.popBackStack(Screen.EditReview.route, inclusive = true)
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_review_saved),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                },
+                onDelete = { residencyName ->
+                  // Pop EditReview from backstack
+                  navController.popBackStack(Screen.EditReview.route, inclusive = true)
+
+                  // Check if we're now on ReviewOverview and pop it too (since the review is
+                  // deleted)
+                  var currentRoute = navController.currentDestination?.route
+                  if (currentRoute?.startsWith("reviewOverview/") == true) {
+                    navController.popBackStack()
+                    // Update currentRoute after popping ReviewOverview
+                    currentRoute = navController.currentDestination?.route
+                  }
+
+                  // Navigate back based on where we are now
+                  // If we're already at ReviewsByResidencyOverview or ProfileContributions,
+                  // stay there
+                  // Otherwise, navigate to ReviewsByResidencyOverview (using residencyName) or
+                  // fallback to ProfileContributions
+                  if (currentRoute?.startsWith("reviewsByResidencyOverview/") != true &&
+                      currentRoute != Screen.ProfileContributions.route) {
+                    try {
+                      navActions.navigateTo(Screen.ReviewsByResidencyOverview(residencyName))
+                    } catch (_: Exception) {
+                      // If navigation fails, try ProfileContributions as fallback
+                      navActions.navigateTo(Screen.ProfileContributions)
+                    }
+                  }
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_review_deleted),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                })
+          }
+
+          composable(Screen.ViewUserProfile.route) { navBackStackEntry ->
+            // Extract the userId argument from the route
+            val userId = navBackStackEntry.arguments?.getString("userId")
+
+            userId?.let {
+              ViewUserProfileScreen(
+                  ownerId = it,
+                  onBack = { navActions.goBack() },
+                  onSendMessage = {
+                    Toast.makeText(
+                            context,
+                            context.getString(R.string.app_nav_host_not_implemented_yet),
+                            Toast.LENGTH_SHORT)
+                        .show()
+                  })
+            }
+                ?: run {
+                  // Handle error if userId is missing
+                  Log.e("AppNavHost", "User ID is null for ViewUserProfile route")
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_could_not_load_profile),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                  navActions.goBack()
+                }
+          }
+
+          composable(Screen.EditListing.route) { entry ->
+            val id = requireNotNull(entry.arguments?.getString("listingUid"))
+
+            EditListingScreen(
+                rentalListingID = id,
+                onBack = navActions::goBack,
+                onConfirm = {
+                  navActions.navigateTo(Screen.ListingOverview(id))
+                  navController.popBackStack(Screen.EditListing.route, inclusive = true)
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_listing_saved),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                },
+                onDelete = {
+                  navActions.navigateTo(Screen.Homepage)
+                  navController.popBackStack(Screen.EditListing.route, inclusive = true)
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_listing_deleted),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                })
+          }
+
+          composable(Screen.Admin.route) {
+            AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })
+          }
+
+          composable(Screen.Profile.route) {
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            if (currentUser != null && currentUser.isAnonymous) {
+              SignInPopUp(
+                  onSignInClick = { navActions.navigateTo(Screen.SignIn) },
+                  onBack = { navActions.goBack() },
+                  title = stringResource(R.string.app_nav_host_profile))
+            } else {
+              ProfileScreen(
+                  onBack = { navActions.goBack() },
+                  onLogout = {
+                    AuthRepositoryProvider.repository.signOut()
+                    navigationViewModel.determineInitialDestination()
+                  },
+                  onChangeProfilePicture = {
+                    Toast.makeText(
+                            context,
+                            context.getString(R.string.app_nav_host_not_implemented_yet),
+                            Toast.LENGTH_SHORT)
+                        .show()
+                  },
+                  onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
+            }
+          }
+
+          composable(Screen.BookmarkedListings.route) {
+            BookmarkedListingsScreen(
+                onGoBack = { navActions.goBack() },
+                onSelectListing = { listing ->
+                  navActions.navigateTo(Screen.ListingOverview(listing.listingUid))
+                })
+          }
+          composable(Screen.EditPreferences.route) {
+            val viewModel: ProfileScreenViewModel = viewModel()
+            LaunchedEffect(Unit) { viewModel.loadProfile(context) }
+
+            EditPreferencesScreen(viewModel = viewModel, onBack = { navActions.goBack() })
+          }
+
+          composable(Screen.ChatChannel.route) { entry ->
+            val channelId = requireNotNull(entry.arguments?.getString("channelId"))
+            // URL decode the channelId in case it contains special characters
+            val decodedChannelId = java.net.URLDecoder.decode(channelId, "UTF-8")
+            MyChatScreen(channelId = decodedChannelId, onBackClick = navActions::goBack)
+          }
+
+          composable(Screen.SelectUserToChat.route) {
+            SelectUserToChatScreen(
+                onBackClick = { navActions.goBack() },
+                onUserSelected = { channelCid ->
+                  navActions.navigateTo(Screen.ChatChannel(channelCid))
+                })
+          }
+
+          composable(Screen.RequestedMessages.route) {
+            RequestedMessagesScreen(
+                onBackClick = { navActions.goBack() },
+                onViewProfile = { userId -> navActions.navigateTo(Screen.ViewUserProfile(userId)) })
+          }
+        }
   }
 }
 

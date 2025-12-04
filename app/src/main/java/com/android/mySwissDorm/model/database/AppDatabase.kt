@@ -19,7 +19,7 @@ import androidx.room.TypeConverters
  * Use [getDatabase] to obtain the database instance.
  */
 @Database(
-    entities = [ReviewEntity::class, RentalListingEntity::class], version = 1, exportSchema = false)
+    entities = [ReviewEntity::class, RentalListingEntity::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
   /**
@@ -46,6 +46,9 @@ abstract class AppDatabase : RoomDatabase() {
      * database is created with the name "app_database" and uses the application context to prevent
      * memory leaks.
      *
+     * Uses `fallbackToDestructiveMigration()` for development - this will automatically recreate
+     * the database when the schema changes, wiping existing data.
+     *
      * @param context The application context.
      * @return The [AppDatabase] instance.
      */
@@ -55,6 +58,7 @@ abstract class AppDatabase : RoomDatabase() {
             val instance =
                 Room.databaseBuilder(
                         context.applicationContext, AppDatabase::class.java, "app_database")
+                    .fallbackToDestructiveMigration()
                     .build()
             INSTANCE = instance
             instance

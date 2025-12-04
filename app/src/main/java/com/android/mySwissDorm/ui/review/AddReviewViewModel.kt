@@ -7,6 +7,7 @@ import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -161,27 +162,40 @@ class AddReviewViewModel(
     if ((FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true)) {
       return
     }
-    val reviewToAdd =
-        Review(
-            uid = reviewRepository.getNewUid(),
-            ownerId = Firebase.auth.currentUser?.uid ?: "User not logged in",
-            postedAt = state.postedAt,
-            title = titleRes.value!!,
-            reviewText = reviewRes.value!!,
-            grade = state.grade,
-            residencyName = residencyNameRes.value!!,
-            roomType = state.roomType,
-            pricePerMonth = priceRes.value!!.toDouble(),
-            areaInM2 = areaRes.value!!.roundToInt(),
-            imageUrls = state.images.map { it.fileName },
-            isAnonymous = state.isAnonymous,
-        )
+    // At this point, we know user is logged in and not anonymous (checked above)
+    val currentUserId = Firebase.auth.currentUser!!.uid
 
     // Mark as submitting
     _uiState.value = _uiState.value.copy(isSubmitting = true)
 
     viewModelScope.launch {
       try {
+        // Fetch owner name from profile
+        val ownerName =
+            try {
+              val profile = ProfileRepositoryProvider.repository.getProfile(currentUserId)
+              "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+            } catch (e: Exception) {
+              null // If profile fetch fails, ownerName will be null
+            }
+
+        val reviewToAdd =
+            Review(
+                uid = reviewRepository.getNewUid(),
+                ownerId = currentUserId,
+                ownerName = ownerName,
+                postedAt = state.postedAt,
+                title = titleRes.value!!,
+                reviewText = reviewRes.value!!,
+                grade = state.grade,
+                residencyName = residencyNameRes.value!!,
+                roomType = state.roomType,
+                pricePerMonth = priceRes.value!!.toDouble(),
+                areaInM2 = areaRes.value!!.roundToInt(),
+                imageUrls = state.images.map { it.fileName },
+                isAnonymous = state.isAnonymous,
+            )
+
         reviewRepository.addReview(reviewToAdd)
         photoManager.commitChanges()
         onConfirm(reviewToAdd)

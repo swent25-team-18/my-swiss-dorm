@@ -2,7 +2,9 @@ package com.android.mySwissDorm.model.review
 
 import android.content.Context
 import android.util.Log
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.HybridRepositoryBase
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.utils.LastSyncTracker
 import kotlinx.coroutines.withTimeout
 
@@ -121,8 +123,9 @@ class ReviewsRepositoryHybrid(
    * Syncs reviews to the local database for offline access.
    *
    * This method is called after successful remote operations to ensure data is available offline.
-   * Uses the existing [ReviewsRepositoryLocal.addReview] method which handles syncing. Also records
-   * the sync timestamp for the offline banner.
+   * Fetches owner names for reviews that don't have them, then uses the existing
+   * [ReviewsRepositoryLocal.addReview] method which handles syncing. Also records the sync
+   * timestamp for the offline banner.
    *
    * @param reviews The reviews to sync to local storage.
    */
@@ -132,7 +135,25 @@ class ReviewsRepositoryHybrid(
     try {
       reviews.forEach { review ->
         try {
-          localRepository.addReview(review)
+          // Fetch owner name if missing
+          val reviewWithOwnerName =
+              if (review.ownerName == null) {
+                try {
+                  val profile = ProfileRepositoryProvider.repository.getProfile(review.ownerId)
+                  val ownerName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                  review.copy(
+                      ownerName =
+                          ownerName.takeIf { it.isNotEmpty() }
+                              ?: context.getString(R.string.unknown_owner_name))
+                } catch (e: Exception) {
+                  Log.w(TAG, "Error fetching owner name for review ${review.uid}", e)
+                  review.copy(ownerName = context.getString(R.string.unknown_owner_name))
+                }
+              } else {
+                review
+              }
+
+          localRepository.addReview(reviewWithOwnerName)
         } catch (e: Exception) {
           Log.w(TAG, "Error syncing review ${review.uid} to local", e)
           // Continue with other reviews even if one fails

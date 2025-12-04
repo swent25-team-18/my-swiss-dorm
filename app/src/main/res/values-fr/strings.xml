@@ -463,6 +463,7 @@
     <string name="offline_banner_last_updated">Dernière mise à jour %1$s</string>
     <string name="offline_banner_no_sync">Aucune donnée de synchronisation disponible</string>
     <string name="offline_banner_icon_description">Icône hors ligne</string>
+    <string name="unknown_owner_name">Propriétaire inconnu</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

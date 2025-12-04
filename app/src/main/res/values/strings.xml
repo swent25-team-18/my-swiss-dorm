@@ -459,6 +459,7 @@
     <string name="offline_banner_last_updated">Last updated %1$s</string>
     <string name="offline_banner_no_sync">No sync data available</string>
     <string name="offline_banner_icon_description">Offline icon</string>
+    <string name="unknown_owner_name">Unknown Owner</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

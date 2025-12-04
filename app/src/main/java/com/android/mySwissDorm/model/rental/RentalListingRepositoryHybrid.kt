@@ -2,8 +2,10 @@ package com.android.mySwissDorm.model.rental
 
 import android.content.Context
 import android.util.Log
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.HybridRepositoryBase
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.utils.LastSyncTracker
 
 /**
@@ -83,8 +85,9 @@ class RentalListingRepositoryHybrid(
    * Syncs rental listings to the local database for offline access.
    *
    * This method is called after successful remote operations to ensure data is available offline.
-   * Uses the existing [RentalListingRepositoryLocal.addRentalListing] method which handles syncing.
-   * Also records the sync timestamp for the offline banner.
+   * Fetches owner names for listings that don't have them, then uses the existing
+   * [RentalListingRepositoryLocal.addRentalListing] method which handles syncing. Also records the
+   * sync timestamp for the offline banner.
    *
    * @param listings The rental listings to sync to local storage.
    */
@@ -94,7 +97,25 @@ class RentalListingRepositoryHybrid(
     try {
       listings.forEach { listing ->
         try {
-          localRepository.addRentalListing(listing)
+          // Fetch owner name if missing
+          val listingWithOwnerName =
+              if (listing.ownerName == null) {
+                try {
+                  val profile = ProfileRepositoryProvider.repository.getProfile(listing.ownerId)
+                  val ownerName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                  listing.copy(
+                      ownerName =
+                          ownerName.takeIf { it.isNotEmpty() }
+                              ?: context.getString(R.string.unknown_owner_name))
+                } catch (e: Exception) {
+                  Log.w(TAG, "Error fetching owner name for listing ${listing.uid}", e)
+                  listing.copy(ownerName = context.getString(R.string.unknown_owner_name))
+                }
+              } else {
+                listing
+              }
+
+          localRepository.addRentalListing(listingWithOwnerName)
         } catch (e: Exception) {
           Log.w(TAG, "Error syncing listing ${listing.uid} to local", e)
           // Continue with other listings even if one fails

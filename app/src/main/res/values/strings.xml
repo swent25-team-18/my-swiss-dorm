@@ -90,10 +90,6 @@
     <string name="admin_page_confirm_add_admin">Confirm you want to add %1$s as an admin</string>
     <string name="admin_page_ok">OK</string>
     <string name="admin_page_website_url">%1$s URL</string>
-    <string name="admin_page_poi_data_seeder">POI Data Seeder</string>
-    <string name="admin_page_poi_data_seeder_description">Add sample Points of Interest (universities, supermarkets) to Firestore for testing. This will add EPFL, Migros, and Denner locations near Lausanne.</string>
-    <string name="admin_page_seed_poi_data">Seed POI Data</string>
-    <string name="admin_page_poi_data_seeded_successfully">POI data seeded successfully! Added EPFL, Migros, and Denner locations.</string>
 
     <!-- AdminPageViewModel -->
     <string name="admin_page_vm_name_required">Name is required.</string>

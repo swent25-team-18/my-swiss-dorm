@@ -92,8 +92,6 @@
     <string name="admin_page_confirm_add_admin">Confirmez que vous souhaitez ajouter %1$s en tant qu\'administrateur</string>
     <string name="admin_page_ok">OK</string>
     <string name="admin_page_website_url">%1$s URL</string>
-    <string name="admin_page_seed_poi_data">Générer les données POI</string>
-    <string name="admin_page_poi_data_seeded_successfully">Données POI générées avec succès ! Ajout de EPFL, Migros et Denner.</string>
 
     <!-- AdminPageViewModel -->
     <string name="admin_page_vm_name_required">Le nom est requis.</string>

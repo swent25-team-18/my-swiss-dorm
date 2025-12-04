@@ -205,6 +205,10 @@
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Impossible de charger l\'annonce :</string>
     <string name="view_listing_failed_to_toggle_bookmark">Échec du basculement du signet :</string>
+    <string name="view_listing_message_already_sent">Vous avez déjà envoyé un message pour cette annonce.</string>
+    <string name="view_listing_please_wait_for_response">Veuillez attendre une réponse du propriétaire.</string>
+    <string name="view_listing_failed_to_submit_message">Échec de l\'envoi du message :</string>
+    <string name="view_listing_message_sent">Message envoyé ! Le propriétaire sera notifié.</string>
 
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Pas encore implémenté</string>
@@ -455,7 +459,7 @@
 
     <!-- Chat -->
     <string name="new_chat">Nouvelle Conversation</string>
-    <string name="search_users">Rechercher des utilisateurs...</string>
+    <string name="search_users">Rechercher des utilisateurs…</string>
     <string name="no_users_found">Aucun utilisateur trouvé</string>
     <string name="no_users_match_your_search">Aucun utilisateur ne correspond à votre recherche</string>
     <string name="chat_created">Conversation créée!</string>
@@ -463,6 +467,12 @@
     <string name="no_requested_messages">Acun message demandé</string>
     <string name="no_message_provided">Acun message fourni</string>
     <string name="failed_to_create_chat">Échec de la création de la conversation</string>
+    <string name="requested_messages_approved_channel_created">Message approuvé et canal de discussion créé.</string>
+    <string name="requested_messages_approved_manual_chat">Message approuvé. Vous pouvez démarrer une discussion manuellement depuis la boîte de réception.</string>
+    <string name="requested_messages_approved_sign_in">Message approuvé. Connectez-vous pour commencer à discuter.</string>
+    <string name="requested_messages_approve_failed">Échec de l\'approbation du message :</string>
+    <string name="requested_messages_rejected">Message rejeté.</string>
+    <string name="requested_messages_reject_failed">Échec du rejet du message :</string>
 
     <!-- QR -->
     <string name="settings_qr_section_title">Liens et codes QR</string>

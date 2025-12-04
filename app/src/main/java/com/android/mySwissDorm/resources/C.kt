@@ -124,6 +124,7 @@ object C {
     const val FABMENULISTING = "fab_menu_listing"
 
     const val FABSCRIM = "fab_scrim"
+    const val RECOMMENDED = "recommendedText"
 
     fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
 
@@ -295,6 +296,7 @@ object C {
     const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
     const val BOTTOM_BAR = "bottom_nav"
     const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
+    const val BOOKMARKS_BUTTON = "BookmarksButton"
 
     fun switch(label: String): String = "SettingSwitch_$label"
   }

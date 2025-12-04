@@ -168,6 +168,8 @@
     <string name="add_listing_invalid_form_text">Please complete all required fields (valid size, price, and starting date) or Sign-in if you\'re a guest.</string>
     <string name="add_listing_invalid_size_text">Enter 1.0–1000.0 with one decimal (e.g., 18.5).</string>
     <string name="add_listing_invalid_price_text">Enter an integer between 1 and 10\'000.</string>
+    <!-- ListingCard -->
+    <string name="recommended">Recommended</string>
 
     <!-- AddListingViewModel-->
     <string name="add_listing_vm_guests_cannot_create_listings">Guest users cannot create listings</string>

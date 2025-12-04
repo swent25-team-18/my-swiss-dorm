@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.homepage
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.model.city.CitiesRepository
@@ -8,6 +9,8 @@ import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryStorage
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
@@ -29,6 +32,7 @@ import kotlinx.coroutines.launch
  */
 data class HomePageUIState(
     val cities: List<City> = emptyList(),
+    val cityImageMap: Map<City, Uri> = emptyMap(),
     val errorMsg: String? = null,
     val customLocationQuery: String = "",
     val customLocation: Location? = null,
@@ -49,7 +53,9 @@ class HomePageViewModel(
     private val citiesRepository: CitiesRepository = CitiesRepositoryProvider.repository,
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryStorage(photoSubDir = "cities/")
 ) : BaseLocationSearchViewModel() {
   override val logTag = "HomePageViewModel"
   private val _uiState = MutableStateFlow(HomePageUIState())
@@ -64,7 +70,19 @@ class HomePageViewModel(
     viewModelScope.launch {
       try {
         val cities = citiesRepository.getAllCities()
-        _uiState.value = _uiState.value.copy(cities = cities)
+        val map =
+            cities
+                .mapNotNull { city ->
+                  Log.d(logTag, "Try to load the image: ${city.imageId}")
+                  try {
+                    city to photoRepositoryCloud.retrievePhoto(city.imageId)
+                  } catch (_: NoSuchElementException) {
+                    Log.d(logTag, "Cannot retrieve the image: ${city.imageId}")
+                    null
+                  }
+                }
+                .associate { cityPairPhoto -> cityPairPhoto.first to cityPairPhoto.second.image }
+        _uiState.value = _uiState.value.copy(cities = cities, cityImageMap = map)
       } catch (e: Exception) {
         _uiState.value = _uiState.value.copy(errorMsg = e.message)
       }

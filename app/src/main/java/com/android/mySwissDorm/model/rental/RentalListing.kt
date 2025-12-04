@@ -28,7 +28,7 @@ import com.google.firebase.Timestamp
 data class RentalListing(
     val uid: String,
     val ownerId: String,
-    val ownerName: String? = null,
+    val ownerName: String?,
     val postedAt: Timestamp,
     val residencyName: String,
     val title: String,

@@ -33,7 +33,7 @@ import com.google.firebase.Timestamp
 data class Review(
     val uid: String,
     val ownerId: String,
-    val ownerName: String? = null,
+    val ownerName: String?,
     val postedAt: Timestamp,
     val title: String,
     val reviewText: String,

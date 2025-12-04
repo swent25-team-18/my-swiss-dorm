@@ -27,6 +27,7 @@ data class ListingFormState(
     val showCustomLocationDialog: Boolean = false,
     val requireResidencyName: Boolean = false,
     val isSubmitting: Boolean = false,
+    val ownerName: String? = null,
 ) {
   val isFormValid: Boolean
     get() {

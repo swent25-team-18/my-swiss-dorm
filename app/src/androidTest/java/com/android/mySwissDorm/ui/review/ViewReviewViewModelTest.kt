@@ -3,6 +3,7 @@ package com.android.mySwissDorm.ui.review
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RoomType
@@ -23,7 +24,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,6 +64,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
           Review(
               uid = reviewsRepo.getNewUid(),
               ownerId = ownerId,
+              ownerName = profile1.userInfo.name + " " + profile1.userInfo.lastName,
               postedAt = Timestamp.now(),
               title = "First Title",
               reviewText = "My first review",
@@ -278,36 +279,27 @@ class ViewReviewViewModelTest : FirestoreTest() {
   }
 
   @Test
-  fun loadReview_setsErrorMsg_whenProfileNotFound() = runBlocking {
+  fun loadReview_usesStoredOwnerName_whenOwnerNameIsNull() = runBlocking {
     switchToUser(FakeUser.FakeUser1)
-    // Create a review with a valid user first
-    val reviewWithValidUser = review1.copy(uid = reviewsRepo.getNewUid())
-    reviewsRepo.addReview(reviewWithValidUser)
-    delay(200)
-
-    // Now delete the profile so the review exists but profile doesn't
-    profilesRepo.deleteProfile(reviewWithValidUser.ownerId)
+    // Create a review with null ownerName (simulating old data or missing name)
+    val reviewWithNullOwnerName = review1.copy(uid = reviewsRepo.getNewUid(), ownerName = null)
+    reviewsRepo.addReview(reviewWithNullOwnerName)
     delay(200)
 
     val vm = freshVM()
-    vm.loadReview(reviewWithValidUser.uid, context)
+    vm.loadReview(reviewWithNullOwnerName.uid, context)
 
-    // Wait for error to be set
+    // Wait for review to load
     var tries = 0
-    while (tries < 200 && vm.uiState.value.errorMsg == null) {
+    while (tries < 200 && vm.uiState.value.review.uid != reviewWithNullOwnerName.uid) {
       delay(100)
       tries++
     }
 
-    // If still no error, wait a bit more
-    if (vm.uiState.value.errorMsg == null) {
-      delay(1000)
-    }
-
-    assertNotNull(
-        "Error message should be set when profile is not found", vm.uiState.value.errorMsg)
-    assertTrue(
-        "Error message should contain 'Failed to load Review'",
-        vm.uiState.value.errorMsg!!.contains("Failed to load Review"))
+    // Should use "Unknown Owner" fallback when ownerName is null
+    assertEquals(
+        "Full name should be 'Unknown Owner' when ownerName is null",
+        context.getString(R.string.unknown_owner_name),
+        vm.uiState.value.fullNameOfPoster)
   }
 }

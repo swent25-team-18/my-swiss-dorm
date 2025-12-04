@@ -18,12 +18,15 @@ import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryFirestore
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.model.rental.RentalStatus
+import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.Review
@@ -636,17 +639,18 @@ class AppNavHostTest : FirestoreTest() {
         RentalListing(
             uid = RentalListingRepositoryProvider.repository.getNewUid(),
             ownerId = ownerId,
+            ownerName = ownerProfile.userInfo.name + " " + ownerProfile.userInfo.lastName,
             postedAt = Timestamp.now(),
             residencyName = "Test Residency",
             title = "Test Listing",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             startDate = Timestamp.now(),
             description = "Test description",
             imageUrls = emptyList(),
-            status = com.android.mySwissDorm.model.rental.RentalStatus.POSTED,
-            location = com.android.mySwissDorm.model.map.Location("Test City", 0.0, 0.0))
+            status = RentalStatus.POSTED,
+            location = Location("Test City", 0.0, 0.0))
     RentalListingRepositoryProvider.repository.addRentalListing(listing)
     delay(500)
 
@@ -679,17 +683,18 @@ class AppNavHostTest : FirestoreTest() {
         RentalListing(
             uid = RentalListingRepositoryProvider.repository.getNewUid(),
             ownerId = ownerId,
+            ownerName = ownerProfile.userInfo.name + " " + ownerProfile.userInfo.lastName,
             postedAt = Timestamp.now(),
             residencyName = "Test Residency",
             title = "Test Listing",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             startDate = Timestamp.now(),
             description = "Test description",
             imageUrls = emptyList(),
-            status = com.android.mySwissDorm.model.rental.RentalStatus.POSTED,
-            location = com.android.mySwissDorm.model.map.Location("Test City", 0.0, 0.0))
+            status = RentalStatus.POSTED,
+            location = Location("Test City", 0.0, 0.0))
     RentalListingRepositoryProvider.repository.addRentalListing(listing)
     delay(500)
 
@@ -751,17 +756,18 @@ class AppNavHostTest : FirestoreTest() {
         RentalListing(
             uid = RentalListingRepositoryProvider.repository.getNewUid(),
             ownerId = ownerId,
+            ownerName = ownerProfile.userInfo.name + " " + ownerProfile.userInfo.lastName,
             postedAt = Timestamp.now(),
             residencyName = "Test Residency",
             title = "Test Listing",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             startDate = Timestamp.now(),
             description = "Test description",
             imageUrls = emptyList(),
-            status = com.android.mySwissDorm.model.rental.RentalStatus.POSTED,
-            location = com.android.mySwissDorm.model.map.Location("Test City", 0.0, 0.0))
+            status = RentalStatus.POSTED,
+            location = Location("Test City", 0.0, 0.0))
     RentalListingRepositoryProvider.repository.addRentalListing(listing)
     delay(500)
 
@@ -799,12 +805,13 @@ class AppNavHostTest : FirestoreTest() {
         Review(
             uid = ReviewsRepositoryProvider.repository.getNewUid(),
             ownerId = userId,
+            ownerName = profile.userInfo.name + " " + profile.userInfo.lastName,
             postedAt = Timestamp.now(),
             title = "Test Review",
             reviewText = "Test description",
             grade = 4.5,
             residencyName = "Vortex",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             imageUrls = emptyList(),
@@ -839,12 +846,13 @@ class AppNavHostTest : FirestoreTest() {
         Review(
             uid = ReviewsRepositoryProvider.repository.getNewUid(),
             ownerId = userId,
+            ownerName = profile.userInfo.name + " " + profile.userInfo.lastName,
             postedAt = Timestamp.now(),
             title = "Great Review",
             reviewText = "Great place",
             grade = 5.0,
             residencyName = "Vortex",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             imageUrls = emptyList(),
@@ -880,12 +888,13 @@ class AppNavHostTest : FirestoreTest() {
         Review(
             uid = ReviewsRepositoryProvider.repository.getNewUid(),
             ownerId = userId,
+            ownerName = profile.userInfo.name + " " + profile.userInfo.lastName,
             postedAt = Timestamp.now(),
             title = "Test Review",
             reviewText = "Test description",
             grade = 4.5,
             residencyName = "Vortex",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             imageUrls = emptyList(),
@@ -921,12 +930,13 @@ class AppNavHostTest : FirestoreTest() {
         Review(
             uid = ReviewsRepositoryProvider.repository.getNewUid(),
             ownerId = userId,
+            ownerName = profile.userInfo.name + " " + profile.userInfo.lastName,
             postedAt = Timestamp.now(),
             title = "Great Review",
             reviewText = "Great place",
             grade = 5.0,
             residencyName = "Vortex",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             imageUrls = emptyList(),
@@ -957,12 +967,13 @@ class AppNavHostTest : FirestoreTest() {
         Review(
             uid = ReviewsRepositoryProvider.repository.getNewUid(),
             ownerId = userId,
+            ownerName = profile.userInfo.name + " " + profile.userInfo.lastName,
             postedAt = Timestamp.now(),
             title = "Great Review",
             reviewText = "Great place",
             grade = 5.0,
             residencyName = "Vortex",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             imageUrls = emptyList(),
@@ -1039,17 +1050,18 @@ class AppNavHostTest : FirestoreTest() {
         RentalListing(
             uid = RentalListingRepositoryProvider.repository.getNewUid(),
             ownerId = ownerId,
+            ownerName = ownerProfile.userInfo.name + " " + ownerProfile.userInfo.lastName,
             postedAt = Timestamp.now(),
             residencyName = "Test Residency",
             title = "Test Listing",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             startDate = Timestamp.now(),
             description = "Test description",
             imageUrls = emptyList(),
-            status = com.android.mySwissDorm.model.rental.RentalStatus.POSTED,
-            location = com.android.mySwissDorm.model.map.Location("Test City", 0.0, 0.0))
+            status = RentalStatus.POSTED,
+            location = Location("Test City", 0.0, 0.0))
     RentalListingRepositoryProvider.repository.addRentalListing(listing)
     delay(500)
 
@@ -1075,18 +1087,19 @@ class AppNavHostTest : FirestoreTest() {
     val listing =
         RentalListing(
             uid = RentalListingRepositoryProvider.repository.getNewUid(),
+            ownerName = ownerProfile.userInfo.name + " " + ownerProfile.userInfo.lastName,
             ownerId = ownerId,
             postedAt = Timestamp.now(),
             residencyName = "Test Residency",
             title = "Test Listing",
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO,
+            roomType = RoomType.STUDIO,
             pricePerMonth = 1000.0,
             areaInM2 = 25,
             startDate = Timestamp.now(),
             description = "Test description",
             imageUrls = emptyList(),
-            status = com.android.mySwissDorm.model.rental.RentalStatus.POSTED,
-            location = com.android.mySwissDorm.model.map.Location("Test City", 0.0, 0.0))
+            status = RentalStatus.POSTED,
+            location = Location("Test City", 0.0, 0.0))
     RentalListingRepositoryProvider.repository.addRentalListing(listing)
     delay(500)
 

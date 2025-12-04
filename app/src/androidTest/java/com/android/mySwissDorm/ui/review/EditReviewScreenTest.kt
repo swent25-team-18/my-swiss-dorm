@@ -100,6 +100,7 @@ class EditReviewScreenTest : FirestoreTest() {
         Review(
             uid = id,
             ownerId = Firebase.auth.currentUser!!.uid,
+            ownerName = null,
             postedAt = Timestamp.now(),
             title = title,
             reviewText = reviewText,
@@ -178,6 +179,7 @@ class EditReviewScreenTest : FirestoreTest() {
           Review(
               uid = "review1",
               ownerId = Firebase.auth.currentUser!!.uid,
+              ownerName = null,
               postedAt = Timestamp.now(),
               title = "title1",
               reviewText = "review text 1",
@@ -197,6 +199,7 @@ class EditReviewScreenTest : FirestoreTest() {
           Review(
               uid = "review2",
               ownerId = Firebase.auth.currentUser!!.uid,
+              ownerName = null,
               postedAt = Timestamp.now(),
               title = "title2",
               reviewText = "review text 2",

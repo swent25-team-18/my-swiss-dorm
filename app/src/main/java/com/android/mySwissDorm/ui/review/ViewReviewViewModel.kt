@@ -34,6 +34,7 @@ val defaultReview =
     Review(
         uid = "",
         ownerId = "",
+        ownerName = null,
         postedAt = Timestamp.now(),
         title = "",
         reviewText = "",

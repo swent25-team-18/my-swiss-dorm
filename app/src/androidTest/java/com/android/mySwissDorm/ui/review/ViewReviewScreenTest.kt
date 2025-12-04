@@ -33,9 +33,14 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.Timestamp
+import io.mockk.every
+import io.mockk.mockkObject
+import io.mockk.unmockkAll
 import java.util.Date
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -98,6 +103,7 @@ class ViewReviewScreenTest : FirestoreTest() {
           Review(
               uid = reviewsRepo.getNewUid(),
               ownerId = ownerId,
+              ownerName = profile1.userInfo.name + " " + profile1.userInfo.lastName,
               postedAt = Timestamp.now(),
               title = "First Title",
               reviewText = "My first review",
@@ -113,6 +119,7 @@ class ViewReviewScreenTest : FirestoreTest() {
           Review(
               uid = reviewsRepo.getNewUid(),
               ownerId = otherId,
+              ownerName = profile2.userInfo.name + " " + profile2.userInfo.lastName,
               postedAt = Timestamp(Date(1678886400000L)),
               title = "Second Title",
               reviewText = "My second review",
@@ -142,6 +149,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
   @After
   override fun tearDown() {
+    unmockkAll()
     runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
     super.tearDown()
   }
@@ -704,5 +712,69 @@ class ViewReviewScreenTest : FirestoreTest() {
     assertTrue(
         "Should contain user name",
         nameText.contains("Bob", ignoreCase = true) || nameText.contains("King", ignoreCase = true))
+  }
+
+  @Test
+  fun clickingPosterName_offline_showsToast() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(any()) } returns false
+
+    var navigatedToId: String? = null
+
+    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = testVm,
+          reviewUid = review2.uid, // viewing other user's review (not owner)
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == review2.uid &&
+          testVm.uiState.value.fullNameOfPoster.isNotEmpty()
+    }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    // Verify navigation did NOT happen (since we're offline and it's not our profile)
+    compose.waitForIdle()
+    assertNull("Navigation should not happen when offline for non-owner", navigatedToId)
+  }
+
+  @Test
+  fun clickingPosterName_online_navigates() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(any()) } returns true
+
+    var navigatedToId: String? = null
+
+    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = testVm,
+          reviewUid = review2.uid, // viewing other user's review (not owner)
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == review2.uid &&
+          testVm.uiState.value.fullNameOfPoster.isNotEmpty()
+    }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    assertEquals("Navigation should happen when online", otherId, navigatedToId)
   }
 }

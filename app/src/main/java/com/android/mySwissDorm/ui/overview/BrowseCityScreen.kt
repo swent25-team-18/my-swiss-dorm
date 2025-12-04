@@ -28,13 +28,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RoomType
-import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.listing.ListingCard
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
@@ -46,7 +44,6 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.ListingCardColor
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
@@ -917,92 +914,3 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
             }
       }
 }
-
-// BulletColumn has been moved to com.android.mySwissDorm.ui.listing.ListingCard for reuse
-
-/**
- * Preview composable for the BrowseCityScreen UI.
- *
- * Displays a preview of the browse city screen with sample listing data for design and testing
- * purposes.
- */
-@Preview(showBackground = true, widthDp = 420)
-@Composable
-private fun BrowseCityScreen_Preview() {
-  val sampleListingUi =
-      ListingsState(
-          loading = false,
-          items =
-              listOf(
-                  ListingCardUI(
-                      title = "Subletting my room",
-                      leftBullets = listOf("Room in flatshare", "600.-/month", "19m²"),
-                      rightBullets = listOf("Starting 15/09/2025", "Vortex"),
-                      listingUid = "preview1",
-                      location = Location("Lausanne", 46.5197, 6.6323)),
-                  ListingCardUI(
-                      title = "Bright studio near EPFL",
-                      leftBullets = listOf("Studio", "1’150.-/month", "24m²"),
-                      rightBullets = listOf("Starting 30/09/2025", "Private Accommodation"),
-                      listingUid = "preview2",
-                      location = Location("Lausanne", 46.5197, 6.6323)),
-              ))
-
-  val sampleReview =
-      Review(
-          uid = "",
-          ownerId = "",
-          postedAt = Timestamp.now(),
-          title = "",
-          reviewText = "This is an example review, I can write anything here",
-          grade = 4.0,
-          residencyName = "Vortex",
-          roomType = RoomType.STUDIO,
-          pricePerMonth = 1000.0,
-          areaInM2 = 44,
-          imageUrls = emptyList())
-
-  val sampleResidencyUi =
-      ResidenciesState(
-          loading = false,
-          items =
-              listOf(
-                  ResidencyCardUI(
-                      title = "Vortex",
-                      meanGrade = 4.5,
-                      location = "Rte de Praz Véguey 29, 1022 Chavannes-près-Renens",
-                      latestReview = sampleReview,
-                      fullNameOfPoster = "John Doe"),
-                  ResidencyCardUI(
-                      title = "Atrium",
-                      meanGrade = 2.0,
-                      location = "Rte Louis Favre 4, 1024 Ecublens",
-                      latestReview = sampleReview,
-                      fullNameOfPoster = "Doe John"),
-              ),
-      )
-  val sampleFilterState = FilterState()
-
-  MySwissDormAppTheme {
-    BrowseCityScreenUI(
-        listingsState = sampleListingUi,
-        residenciesState = sampleResidencyUi,
-        filterState = sampleFilterState,
-        onSelectListing = {},
-        onSelectResidency = {},
-        location = Location("Lausanne", 46.5197, 6.6323),
-        onLocationClick = {},
-        onFilterClick = {},
-        onApplyFilter = {},
-        onClearFilter = {},
-        onSetRoomTypeFilter = {},
-        onSetPriceFilter = { _, _ -> },
-        onSetSizeFilter = { _, _ -> },
-        onSetStartDateFilter = { _, _ -> },
-        onSetSortByMostRecent = {},
-        onToggleMostRecent = {},
-        onDismissFilterSheet = {},
-        isGuest = false)
-  }
-}
-//

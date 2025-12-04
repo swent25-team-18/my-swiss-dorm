@@ -60,6 +60,7 @@ data class EditReviewUiState(
     val areaInM2: String = "",
     val images: List<Photo> = emptyList(),
     val isAnonymous: Boolean = false,
+    val ownerName: String? = null,
 ) {
   /**
    * Indicates whether all form fields are valid and the form can be submitted.
@@ -245,7 +246,8 @@ class EditReviewViewModel(
                 pricePerMonth = review.pricePerMonth.toString(),
                 areaInM2 = review.areaInM2.toString(),
                 images = photoManager.photoLoaded,
-                isAnonymous = review.isAnonymous)
+                isAnonymous = review.isAnonymous,
+                ownerName = review.ownerName)
         // If residencies haven't been loaded yet, load them now
         if (currentResidencies.isEmpty()) {
           loadResidencies()
@@ -340,6 +342,7 @@ class EditReviewViewModel(
             Review(
                 uid = reviewId,
                 ownerId = uid,
+                ownerName = state.ownerName,
                 postedAt = state.postedAt,
                 title = state.title,
                 reviewText = state.reviewText,

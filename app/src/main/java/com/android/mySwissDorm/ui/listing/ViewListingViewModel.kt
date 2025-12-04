@@ -37,6 +37,7 @@ private val defaultListing =
     RentalListing(
         uid = "",
         ownerId = "",
+        ownerName = null,
         postedAt = Timestamp.now(),
         title = "",
         roomType = RoomType.STUDIO,

@@ -377,6 +377,65 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     }
   }
 
+  @Test
+  fun canCancelProfilePictureDeletion() {
+    val localRepo = FakePhotoRepository.commonLocalRepo({ photo }, {}, true)
+    val cloudRepo = FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, true)
+    val fakeProfileRepo: ProfileRepository = mock()
+    runBlocking { whenever(fakeProfileRepo.getProfile(any())) }.thenReturn(profile1)
+    runBlocking { whenever(fakeProfileRepo.editProfile(any())) }.thenReturn(Unit)
+    val vm =
+        ProfileScreenViewModel(
+            photoRepositoryLocal = localRepo,
+            photoRepositoryCloud = cloudRepo,
+            profileRepo = fakeProfileRepo)
+    compose.setContent {
+      ProfileScreen(onLogout = {}, onBack = {}, viewModel = vm, onEditPreferencesClick = {})
+    }
+
+    waitForProfileScreenReady()
+
+    // Check can go on edit mode
+    compose
+        .onNodeWithTag("profile_picture_box")
+        .assertIsDisplayed()
+        .assertIsNotEnabled()
+        .assert(hasClickAction())
+    compose.onNodeWithTag("profile_edit_toggle").performClick()
+    compose.waitForIdle()
+
+    // Check image is displayed
+    compose.waitUntil("The last set profile picture is not shown", 5_000) {
+      compose
+          .onNodeWithTag(C.ProfileTags.profilePictureTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+
+    // Can delete the pp
+    compose
+        .onNodeWithTag(C.ProfileTags.DELETE_PP_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    // Check image is not shown anymore
+    compose.waitUntil("The last set profile picture is not shown", 5_000) {
+      compose
+          .onNodeWithTag(C.ProfileTags.profilePictureTag(photo.image), useUnmergedTree = true)
+          .isNotDisplayed()
+    }
+
+    // Cancel the deletion
+    compose.onNodeWithTag("profile_edit_toggle").performClick()
+
+    // See the profile picture
+    compose.waitUntil("The profile picture deletion is not cancelled", 5_000) {
+      compose
+          .onNodeWithTag(C.ProfileTags.profilePictureTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+  }
+
+  @Test
   fun preferences_button_is_displayed_and_navigates() {
     var clicked = false
     compose.setContent {

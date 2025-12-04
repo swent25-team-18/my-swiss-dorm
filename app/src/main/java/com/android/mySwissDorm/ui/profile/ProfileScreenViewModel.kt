@@ -174,9 +174,31 @@ class ProfileScreenViewModel(
     }
   }
 
+  private fun cancelProfilePictureChange() {
+    if (photoManager.deletedPhotos.isNotEmpty()) {
+      // The photo should still be on the local repository
+      viewModelScope.launch {
+        try {
+          _uiState.value =
+              _uiState.value.copy(
+                  profilePicture =
+                      photoRepositoryCloud.retrievePhoto(photoManager.deletedPhotos.first()),
+                  errorMsg = null)
+        } catch (_: NoSuchElementException) {
+          _uiState.value =
+              _uiState.value.copy(errorMsg = "The previous profile picture could not be retrieved")
+        }
+      }
+    }
+  }
+
   /** Flip between view and edit modes; clears any transient error on toggle. */
   fun toggleEditing() {
     _uiState.value = _uiState.value.copy(isEditing = !_uiState.value.isEditing, errorMsg = null)
+    // Cancel profile picture changes if not saved
+    if (!_uiState.value.isEditing) {
+      cancelProfilePictureChange()
+    }
   }
 
   fun onPriceRangeChange(min: Double?, max: Double?) {

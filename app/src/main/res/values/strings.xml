@@ -202,6 +202,10 @@
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Failed to load listing:</string>
     <string name="view_listing_failed_to_toggle_bookmark">Failed to toggle bookmark:</string>
+    <string name="view_listing_message_already_sent">You have already sent a message for this listing.</string>
+    <string name="view_listing_please_wait_for_response">Please wait for a response from the owner.</string>
+    <string name="view_listing_failed_to_submit_message">Failed to submit message:</string>
+    <string name="view_listing_message_sent">Message sent! The owner will be notified.</string>
 
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Not implemented yet</string>
@@ -459,6 +463,12 @@
     <string name="no_requested_messages">No requested messages</string>
     <string name="no_message_provided">No message provided</string>
     <string name="failed_to_create_chat">Failed to create chat</string>
+    <string name="requested_messages_approved_channel_created">Message approved and chat channel created.</string>
+    <string name="requested_messages_approved_manual_chat">Message approved. You can start a chat manually from the inbox.</string>
+    <string name="requested_messages_approved_sign_in">Message approved. Sign in to start chatting.</string>
+    <string name="requested_messages_approve_failed">Failed to approve message:</string>
+    <string name="requested_messages_rejected">Message rejected.</string>
+    <string name="requested_messages_reject_failed">Failed to reject message:</string>
 
     <!-- QR -->
     <string name="settings_qr_section_title">Links &amp; QR codes</string>

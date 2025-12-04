@@ -3,6 +3,8 @@ package com.android.mySwissDorm.utils
 import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.city.CITIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
@@ -353,4 +355,15 @@ abstract class FirestoreTest : TestCase() {
           imageId = "fribourg.png")
 
   val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
+
+  val messageTest =
+      RequestedMessage(
+          id = "testUid",
+          fromUserId = "testFromUserID",
+          toUserId = "testToUserID",
+          listingId = "listing1",
+          listingTitle = "Test Listing",
+          message = "I'm interested in this listing",
+          timestamp = System.currentTimeMillis(),
+          status = MessageStatus.PENDING)
 }

@@ -239,6 +239,10 @@ dependencies {
     // Stream Chat SDK
     implementation(libs.stream.chat.android.compose)
     implementation(libs.stream.chat.android.client)
+
+    // Translation
+    implementation("com.google.mlkit:translate:17.0.3")
+    implementation("com.google.mlkit:language-id:17.0.4")
 }
 
 tasks.withType<Test> {

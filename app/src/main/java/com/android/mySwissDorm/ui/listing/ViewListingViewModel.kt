@@ -112,8 +112,8 @@ class ViewListingViewModel(
     viewModelScope.launch {
       try {
         val listing = rentalListingRepository.getRentalListing(listingId)
-        val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
-        val fullNameOfPoster = ownerUserInfo.name + " " + ownerUserInfo.lastName
+        // Use stored ownerName from listing, fallback to "Unknown Owner" if null
+        val fullNameOfPoster = listing.ownerName ?: context.getString(R.string.unknown_owner_name)
         val currentUser = FirebaseAuth.getInstance().currentUser
         val currentUserId = currentUser?.uid
         val isOwner = currentUserId == listing.ownerId

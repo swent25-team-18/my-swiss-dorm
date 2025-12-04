@@ -2,7 +2,6 @@ package com.android.mySwissDorm.model.rental
 
 import android.content.Context
 import android.util.Log
-import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.HybridRepositoryBase
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -103,13 +102,10 @@ class RentalListingRepositoryHybrid(
                 try {
                   val profile = ProfileRepositoryProvider.repository.getProfile(listing.ownerId)
                   val ownerName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
-                  listing.copy(
-                      ownerName =
-                          ownerName.takeIf { it.isNotEmpty() }
-                              ?: context.getString(R.string.unknown_owner_name))
+                  listing.copy(ownerName = ownerName.takeIf { it.isNotEmpty() })
                 } catch (e: Exception) {
                   Log.w(TAG, "Error fetching owner name for listing ${listing.uid}", e)
-                  listing.copy(ownerName = context.getString(R.string.unknown_owner_name))
+                  listing // Store null if profile fetch fails - ViewModels will handle fallback
                 }
               } else {
                 listing

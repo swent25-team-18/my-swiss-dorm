@@ -6,6 +6,7 @@ import com.android.mySwissDorm.model.HybridRepositoryBase
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.utils.LastSyncTracker
+import com.android.mySwissDorm.utils.NetworkUtils
 
 /**
  * Hybrid implementation of [RentalListingRepository] that combines remote (Firestore) and local
@@ -96,9 +97,9 @@ class RentalListingRepositoryHybrid(
     try {
       listings.forEach { listing ->
         try {
-          // Fetch owner name if missing
+          // Fetch owner name if missing (only when online)
           val listingWithOwnerName =
-              if (listing.ownerName == null) {
+              if (listing.ownerName == null && NetworkUtils.isNetworkAvailable(context)) {
                 try {
                   val profile = ProfileRepositoryProvider.repository.getProfile(listing.ownerId)
                   val ownerName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()

@@ -5,6 +5,7 @@ import android.util.Log
 import com.android.mySwissDorm.model.HybridRepositoryBase
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.utils.LastSyncTracker
+import com.android.mySwissDorm.utils.NetworkUtils
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -134,9 +135,9 @@ class ReviewsRepositoryHybrid(
     try {
       reviews.forEach { review ->
         try {
-          // Fetch owner name if missing
+          // Fetch owner name if missing (only when online)
           val reviewWithOwnerName =
-              if (review.ownerName == null) {
+              if (review.ownerName == null && NetworkUtils.isNetworkAvailable(context)) {
                 try {
                   val profile = ProfileRepositoryProvider.repository.getProfile(review.ownerId)
                   val ownerName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()

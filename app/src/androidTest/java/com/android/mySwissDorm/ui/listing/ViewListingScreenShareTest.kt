@@ -91,7 +91,7 @@ class ViewListingScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.onNodeWithTag("share_btn").assertIsDisplayed()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).assertIsDisplayed()
   }
 
   @Test
@@ -104,7 +104,7 @@ class ViewListingScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.onNodeWithTag("share_btn").performClick()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {
       compose
@@ -126,7 +126,7 @@ class ViewListingScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.onNodeWithTag("share_btn").performClick()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {
       compose.onAllNodesWithTag(C.ShareLinkDialogTags.QR_CODE).fetchSemanticsNodes().isNotEmpty()
@@ -145,7 +145,7 @@ class ViewListingScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.onNodeWithTag("share_btn").performClick()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {
       compose
@@ -167,7 +167,7 @@ class ViewListingScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.onNodeWithTag("share_btn").performClick()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {
       compose
@@ -195,7 +195,7 @@ class ViewListingScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.onNodeWithTag("share_btn").performClick()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {
       compose
@@ -224,7 +224,7 @@ class ViewListingScreenShareTest : FirestoreTest() {
     waitForScreenRoot()
 
     compose
-        .onNodeWithTag("share_btn")
+        .onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN)
         .assertIsDisplayed()
         .assert(hasContentDescription(context.getString(R.string.share)))
   }
@@ -239,7 +239,7 @@ class ViewListingScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.onNodeWithTag("share_btn").performClick()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {
       compose.onAllNodesWithTag(C.ShareLinkDialogTags.QR_CODE).fetchSemanticsNodes().isNotEmpty()
@@ -263,8 +263,8 @@ class ViewListingScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.onNodeWithTag("share_btn").assertIsDisplayed()
-    compose.onNodeWithTag("share_btn").performClick()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).assertIsDisplayed()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {
       compose
@@ -289,8 +289,8 @@ class ViewListingScreenShareTest : FirestoreTest() {
 
     compose.waitUntil(5_000) { vm.uiState.value.isOwner }
 
-    compose.onNodeWithTag("share_btn").assertIsDisplayed()
-    compose.onNodeWithTag("share_btn").performClick()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).assertIsDisplayed()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {
       compose
@@ -312,7 +312,7 @@ class ViewListingScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.onNodeWithTag("share_btn").performClick()
+    compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {
       compose

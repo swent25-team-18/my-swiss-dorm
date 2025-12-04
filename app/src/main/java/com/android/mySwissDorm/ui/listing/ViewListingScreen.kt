@@ -104,7 +104,8 @@ fun ViewListingScreen(
             },
             actions = {
               IconButton(
-                  onClick = { showShareDialog = true }, modifier = Modifier.testTag("share_btn")) {
+                  onClick = { showShareDialog = true },
+                  modifier = Modifier.testTag(C.ShareLinkDialogTags.SHARE_BTN)) {
                     Icon(
                         imageVector = Icons.Outlined.Share,
                         contentDescription = stringResource(R.string.share),

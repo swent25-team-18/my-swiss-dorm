@@ -341,6 +341,7 @@ object C {
   }
 
   object ShareLinkDialogTags {
+    const val SHARE_BTN = "shareButton"
     const val DIALOG_TITLE = "shareLinkDialogTitle"
     const val QR_CODE = "shareLinkDialogQrCode"
     const val QR_ERROR = "shareLinkDialogQrError"

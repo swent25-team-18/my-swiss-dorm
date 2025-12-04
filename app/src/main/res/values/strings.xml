@@ -297,8 +297,6 @@
     <string name="profile_vm_not_signed_in">Not signed in.</string>
     <string name="profile_vm_failed_to_save">Failed to save:</string>
 
-    <!-- RequestDetailScreen -->
-    <string name="request_detail_title">Received request</string>
 
     <!-- ViewUserProfileScreen -->
     <string name="view_user_profile_send_message">Send a message</string>

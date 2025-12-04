@@ -145,7 +145,7 @@ class EditReviewViewModel(
 
   fun onClickImage(uri: Uri) {
     val index = _uiState.value.images.map { it.image }.indexOf(uri)
-    if (index < 0) throw IllegalArgumentException()
+    require(index >= 0)
     _uiState.value = _uiState.value.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
   }
 

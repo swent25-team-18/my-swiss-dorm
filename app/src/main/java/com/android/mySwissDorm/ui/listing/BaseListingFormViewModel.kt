@@ -144,7 +144,7 @@ abstract class BaseListingFormViewModel(
 
   fun onClickImage(uri: Uri) {
     val index = _uiState.value.pickedImages.map { it.image }.indexOf(uri)
-    if (index < 0) throw IllegalArgumentException()
+    require(index >= 0)
     _uiState.value = _uiState.value.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
   }
 

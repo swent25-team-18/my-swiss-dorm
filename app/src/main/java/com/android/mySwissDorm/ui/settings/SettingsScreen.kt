@@ -104,7 +104,7 @@ fun SettingsScreen(
   LaunchedEffect(Unit) { vm.refresh() }
 
   val context = LocalContext.current
-  LaunchedEffect(ui.errorMsg) {
+  LaunchedEffect(ui.errorMsg) { //
     ui.errorMsg?.let {
       Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
       vm.clearError()

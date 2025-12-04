@@ -580,23 +580,23 @@ fun AppNavHost(
                 })
           }
 
-    composable(Screen.Profile.route) {
-      val currentUser = FirebaseAuth.getInstance().currentUser
-      if (currentUser != null && currentUser.isAnonymous) {
-        SignInPopUp(
-            onSignInClick = { navActions.navigateTo(Screen.SignIn) },
-            onBack = { navActions.goBack() },
-            title = stringResource(R.string.app_nav_host_profile))
-      } else {
-        ProfileScreen(
-            onBack = { navActions.goBack() },
-            onLogout = {
-              AuthRepositoryProvider.repository.signOut()
-              navigationViewModel.determineInitialDestination()
-            },
-            onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
-      }
-    }
+          composable(Screen.Profile.route) {
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            if (currentUser != null && currentUser.isAnonymous) {
+              SignInPopUp(
+                  onSignInClick = { navActions.navigateTo(Screen.SignIn) },
+                  onBack = { navActions.goBack() },
+                  title = stringResource(R.string.app_nav_host_profile))
+            } else {
+              ProfileScreen(
+                  onBack = { navActions.goBack() },
+                  onLogout = {
+                    AuthRepositoryProvider.repository.signOut()
+                    navigationViewModel.determineInitialDestination()
+                  },
+                  onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
+            }
+          }
           composable(Screen.Admin.route) {
             AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })
           }

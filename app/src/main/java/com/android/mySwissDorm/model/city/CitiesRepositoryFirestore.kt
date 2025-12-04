@@ -51,7 +51,7 @@ class CitiesRepositoryFirestore(private val db: FirebaseFirestore) : CitiesRepos
                 latitude = it["latitude"] as? Double ?: return null,
                 longitude = it["longitude"] as? Double ?: return null)
           } ?: return null
-      val imageId = document.getLong("imageId")?.toInt() ?: return null
+      val imageId = document.get("imageId") as? String ?: return null
 
       City(name = name, description = description, location = location, imageId = imageId)
     } catch (e: Exception) {

@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -27,7 +26,9 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
+import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -45,7 +46,13 @@ fun AddReviewScreen(
 ) { //
   val reviewUIState by addReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
-
+  if (reviewUIState.showFullScreenImages) {
+    FullScreenImageViewer(
+        imageUris = reviewUIState.images.map { it.image },
+        onDismiss = { addReviewViewModel.dismissFullScreenImages() },
+        initialIndex = reviewUIState.fullScreenImagesIndex)
+    return
+  }
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
@@ -86,7 +93,7 @@ fun AddReviewScreen(
               Text(
                   stringResource(R.string.add_review_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant)
+                  color = DarkGray)
             }
           }
         }
@@ -196,9 +203,9 @@ fun AddReviewScreen(
                         onCheckedChange = { addReviewViewModel.setIsAnonymous(it) },
                         colors =
                             SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
+                                checkedThumbColor = White,
                                 checkedTrackColor = MainColor,
-                                uncheckedThumbColor = Color.White,
+                                uncheckedThumbColor = White,
                                 uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
                   }
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
@@ -210,6 +217,7 @@ fun AddReviewScreen(
                         imageUris = ui.images.map { it.image }.toSet(),
                         isEditingMode = true,
                         onRemove = { addReviewViewModel.removePhoto(it) },
+                        onImageClick = { addReviewViewModel.onClickImage(it) },
                         modifier = Modifier.testTag(C.AddReviewTags.PHOTOS))
                   }
             }

@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -28,10 +27,12 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
+import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
@@ -83,7 +84,13 @@ fun EditListingScreen(
   val scrollState = rememberScrollState()
   var showDatePicker by remember { mutableStateOf(false) }
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, editListingViewModel)
-
+  if (listingUIState.showFullScreenImages) {
+    FullScreenImageViewer(
+        imageUris = listingUIState.pickedImages.map { it.image },
+        onDismiss = { editListingViewModel.dismissFullScreenImages() },
+        initialIndex = listingUIState.fullScreenImagesIndex)
+    return
+  }
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
@@ -140,7 +147,7 @@ fun EditListingScreen(
                               .height(52.dp)
                               .testTag(C.EditListingScreenTags.SAVE_BUTTON),
                       shape = RoundedCornerShape(16.dp)) {
-                        Text(stringResource(R.string.save), color = Color.White)
+                        Text(stringResource(R.string.save), color = White)
                       }
                 }
             Spacer(Modifier.height(8.dp))
@@ -287,7 +294,8 @@ fun EditListingScreen(
                     ImageGrid(
                         imageUris = ui.pickedImages.map { it.image }.toSet(),
                         isEditingMode = true,
-                        onRemove = { editListingViewModel.removePhoto(it, false) })
+                        onRemove = { editListingViewModel.removePhoto(it, false) },
+                        onImageClick = { editListingViewModel.onClickImage(it) })
                   }
             }
 

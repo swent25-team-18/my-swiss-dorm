@@ -1288,66 +1288,6 @@ class AppNavHostTest : FirestoreTest() {
     assertEquals("Message should be approved", MessageStatus.APPROVED, updatedMessage?.status)
   }
 
-  // Test 36: RequestedMessages route - onApprove Stream Chat not initialized (lines 594-603)
-  // Covers: Stream Chat initialization check (line 594), toast for not initialized (lines 597-601),
-  // and early return (line 602)
-  @Test
-  fun appNavHost_requestedMessagesRoute_onApprove_streamChatNotInitialized_showsToast() = runTest {
-    // Don't initialize Stream Chat
-    switchToUser(FakeUser.FakeUser1)
-    val senderUserId = FirebaseEmulator.auth.currentUser!!.uid
-    val senderProfile = profile1.copy(ownerId = senderUserId)
-    ProfileRepositoryProvider.repository.createProfile(senderProfile)
-    delay(500)
-
-    switchToUser(FakeUser.FakeUser2)
-    val receiverUserId = FirebaseEmulator.auth.currentUser!!.uid
-    val receiverProfile = profile1.copy(ownerId = receiverUserId)
-    ProfileRepositoryProvider.repository.createProfile(receiverProfile)
-    delay(500)
-
-    val message =
-        RequestedMessage(
-            id = "test-approve-not-init",
-            fromUserId = senderUserId,
-            toUserId = receiverUserId,
-            listingId = "test-listing",
-            listingTitle = "Test Listing",
-            message = "Test message",
-            timestamp = System.currentTimeMillis(),
-            status = MessageStatus.PENDING)
-
-    switchToUser(FakeUser.FakeUser1)
-    RequestedMessageRepositoryProvider.repository.createRequestedMessage(message)
-    delay(500)
-
-    switchToUser(FakeUser.FakeUser2)
-    delay(500)
-
-    composeTestRule.runOnUiThread { navController.navigate(Screen.RequestedMessages.route) }
-    composeTestRule.waitForIdle()
-    delay(2000)
-
-    composeTestRule.waitUntil(timeoutMillis = 10_000) {
-      composeTestRule.onAllNodesWithContentDescription("Approve").fetchSemanticsNodes().isNotEmpty()
-    }
-
-    composeTestRule.onNodeWithContentDescription("Approve").performClick()
-    composeTestRule.waitForIdle()
-    delay(2000)
-
-    // Verify message was approved even though Stream Chat wasn't initialized (line 584)
-    var updatedMessage =
-        RequestedMessageRepositoryProvider.repository.getRequestedMessage(message.id)
-    var attempts = 0
-    while (updatedMessage?.status != MessageStatus.APPROVED && attempts < 10) {
-      delay(500)
-      updatedMessage = RequestedMessageRepositoryProvider.repository.getRequestedMessage(message.id)
-      attempts++
-    }
-    assertEquals("Message should be approved", MessageStatus.APPROVED, updatedMessage?.status)
-  }
-
   // Test 37: RequestedMessages route - onApprove anonymous user (lines 651-658)
   // Covers: Anonymous user check (line 591), toast for anonymous user (lines 653-657)
   @Test

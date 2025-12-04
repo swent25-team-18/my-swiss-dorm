@@ -8,12 +8,14 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.core.net.toUri
@@ -715,5 +717,55 @@ class EditListingScreenTest : FirestoreTest() {
     vm.deleteRentalListing(rentalPostID = rentalListing3.uid, context)
     composeRule.waitForIdle()
     assertEquals(1, fakeCloudRepo.deleteCount)
+  }
+
+  @Test
+  fun fullScreenModeWorks() {
+    val vm =
+        EditListingViewModel(
+            photoRepositoryLocal =
+                FakePhotoRepository.commonLocalRepo(
+                    onRetrieve = { photo }, onUpload = {}, onDelete = true),
+            photoRepositoryCloud =
+                FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, onDelete = true))
+    composeRule.setContent {
+      EditListingScreen(
+          onConfirm = {},
+          onBack = {},
+          onDelete = {},
+          rentalListingID = rentalListing3.uid,
+          editListingViewModel = vm)
+    }
+    composeRule.waitForIdle()
+
+    // Go to the photo preview
+    composeRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).performScrollTo()
+    composeRule.waitUntil("The image is not shown", 5_000) {
+      composeRule
+          .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+    // Click on a photo to display in full screen
+    composeRule
+        .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
+
+    composeRule.waitForIdle()
+    // Check image is shown in full screen
+    composeRule.waitUntil("The clicked image is not shown in full screen", 5_000) {
+      composeRule
+          .onNodeWithTag(C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+
+    // Check that go back to the edit listing page
+    composeRule
+        .onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitUntil(
+        "The listing page is not shown after leaving the full screen mode", 5_000) {
+          composeRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).isDisplayed()
+        }
   }
 }

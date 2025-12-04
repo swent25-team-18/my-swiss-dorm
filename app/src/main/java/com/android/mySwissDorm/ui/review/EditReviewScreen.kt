@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -27,10 +26,14 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
+import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
 
 /**
@@ -78,7 +81,13 @@ fun EditReviewScreen(
   val editReviewUIState by editReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
   var showDeleteConfirm by remember { mutableStateOf(false) }
-
+  if (editReviewUIState.showFullScreenImages) {
+    FullScreenImageViewer(
+        imageUris = editReviewUIState.images.map { it.image },
+        onDismiss = { editReviewViewModel.dismissFullScreenImages() },
+        initialIndex = editReviewUIState.fullScreenImagesIndex)
+    return
+  }
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
@@ -127,9 +136,7 @@ fun EditReviewScreen(
                       modifier =
                           Modifier.weight(1f).height(52.dp).testTag("saveButton"), // ← add this
                       shape = RoundedCornerShape(16.dp)) {
-                        Text(
-                            stringResource(R.string.save),
-                            color = MaterialTheme.colorScheme.onPrimary)
+                        Text(stringResource(R.string.save), color = BackGroundColor)
                       }
                 }
             Spacer(Modifier.height(8.dp))
@@ -137,7 +144,7 @@ fun EditReviewScreen(
               Text(
                   stringResource(R.string.edit_review_invalid_form_text),
                   style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant)
+                  color = DarkGray)
             }
           }
         }
@@ -246,9 +253,9 @@ fun EditReviewScreen(
                         onCheckedChange = { editReviewViewModel.setIsAnonymous(it) },
                         colors =
                             SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
+                                checkedThumbColor = White,
                                 checkedTrackColor = MainColor,
-                                uncheckedThumbColor = Color.White,
+                                uncheckedThumbColor = White,
                                 uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
                   }
 
@@ -260,6 +267,7 @@ fun EditReviewScreen(
                     ImageGrid(
                         imageUris = ui.images.map { it.image }.toSet(),
                         isEditingMode = true,
+                        onImageClick = { editReviewViewModel.onClickImage(it) },
                         onRemove = { editReviewViewModel.removePhoto(it) },
                         modifier = Modifier.testTag(C.EditReviewTags.PHOTOS))
                   }

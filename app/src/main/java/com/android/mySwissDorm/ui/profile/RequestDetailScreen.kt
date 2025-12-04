@@ -8,7 +8,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -108,7 +107,7 @@ private fun FieldBlock(label: String, value: String, tag: String? = null) {
       tonalElevation = 0.dp,
       shape = MaterialTheme.shapes.large) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-          Text(label, color = Color(0xFF9AA0A6), style = MaterialTheme.typography.labelMedium)
+          Text(label, color = Gray, style = MaterialTheme.typography.labelMedium)
           Spacer(Modifier.height(4.dp))
           Text(
               value,

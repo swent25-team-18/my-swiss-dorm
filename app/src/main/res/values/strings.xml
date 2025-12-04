@@ -69,7 +69,7 @@
     <string name="admin_page_title">Admin Page</string>
     <string name="admin_page_image_id">Image ID</string>
     <string name="admin_page_select_location">Select Location</string>
-    
+
     <!-- AdminPageViewModel -->
     <string name="admin_page_email_required">Email is required for an Admin.</string>
     <string name="admin_page_email_invalid">Please enter a valid email address.</string>
@@ -133,7 +133,13 @@
     <string name="sign_up_last_name_help">Your last name should be less than 20 characters long</string>
     <string name="sign_up_email_help">You must enter a valid e-mail address</string>
     <string name="sign_up_phone_number_help">You must enter a valid phone number</string>
+    <string name="continue_with_preferences">Continue setting up your account</string>
 
+    <!-- SignUpPreferencesScreen -->
+    <string name="edit_preferences">Edit your preferences</string>
+    <string name="budget">Budget</string>
+    <string name="preferred_size">Preferred Size</string>
+    <string name="preferred_room_type">Preferred Room Type</string>
     <!-- SignUpViewModel -->
     <string name="sign_up_vm_auth_cancelled">Authentification cancelled</string>
     <string name="sign_up_vm_failed_to_get_credentials">Failed to get credentials:</string>
@@ -166,6 +172,8 @@
     <string name="add_listing_invalid_form_text">Please complete all required fields (valid size, price, and starting date) or Sign-in if you\'re a guest.</string>
     <string name="add_listing_invalid_size_text">Enter 1.0–1000.0 with one decimal (e.g., 18.5).</string>
     <string name="add_listing_invalid_price_text">Enter an integer between 1 and 10\'000.</string>
+    <!-- ListingCard -->
+    <string name="recommended">Recommended</string>
 
     <!-- AddListingViewModel-->
     <string name="add_listing_vm_guests_cannot_create_listings">Guest users cannot create listings</string>
@@ -276,7 +284,10 @@
     <string name="browse_city_vm_failed_to_load_listings">Failed to load listings</string>
     <string name="browse_city_vm_failed_to_load_residencies">Failed to load listings</string>
     <string name="browse_city_vm_price_per_month">.-/month</string>
-    
+    <!-- EditPreferencesScreen -->
+    <string name="listing_preferences">Listing Preferences</string>
+    <string name="save_preferences">Save Preferences</string>
+
     <!-- BookmarkedListingsScreen -->
     <string name="bookmarked_listings_title">Bookmarked Listings</string>
     <string name="bookmarked_listings_no_bookmarks_yet">No bookmarked listings yet.</string>
@@ -355,6 +366,14 @@
 
     <!-- ViewReviewViewModel -->
     <string name="view_review_failed_to_load_review">Failed to load Review</string>
+
+    <!-- Share Dialog -->
+    <string name="share">Share</string>
+    <string name="share_dialog_title">Share</string>
+    <string name="share_dialog_copy_link">Copy link</string>
+    <string name="share_dialog_link_copied">Link copied to clipboard</string>
+    <string name="share_dialog_qr_content_desc">QR code containing the share link</string>
+    <string name="share_dialog_qr_error">Unable to generate QR code. You can still copy the link below.</string>
 
     <!-- SettingsScreen -->
     <string name="settings_title">Settings</string>
@@ -459,6 +478,12 @@
     <string name="no_requested_messages">No requested messages</string>
     <string name="no_message_provided">No message provided</string>
     <string name="failed_to_create_chat">Failed to create chat</string>
+
+    <!-- Offline Banner -->
+    <string name="offline_banner_you_are_offline">You\'re offline</string>
+    <string name="offline_banner_last_updated">Last updated %1$s</string>
+    <string name="offline_banner_no_sync">No sync data available</string>
+    <string name="offline_banner_icon_description">Offline icon</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

@@ -49,7 +49,8 @@ data class ListingCardUI(
     val rightBullets: List<String>,
     val listingUid: String,
     val image: Uri? = null,
-    val location: Location
+    val location: Location,
+    val isRecommended: Boolean = false
 )
 
 /**
@@ -196,7 +197,15 @@ class BrowseCityViewModel(
         val all = listingsRepository.getAllRentalListings()
 
         val currentUid = auth.currentUser?.uid
-
+        val userInfo =
+            if (currentUid != null && !auth.currentUser!!.isAnonymous) {
+              try {
+                profileRepository.getProfile(currentUid).userInfo
+              } catch (e: Exception) {
+                Log.w("BrowseCityViewModel", "Failed to load user info for recommendations", e)
+                null
+              }
+            } else null
         val blockedCache = mutableMapOf<String, Boolean>()
 
         var filtered =
@@ -270,14 +279,24 @@ class BrowseCityViewModel(
                     (maxDate == null || listingStart <= maxDate)
               }
         }
+        fun isRecommended(listing: RentalListing): Boolean {
+          if (userInfo == null) return false
+          if (userInfo.preferredRoomTypes.isNotEmpty() &&
+              listing.roomType !in userInfo.preferredRoomTypes)
+              return false
+          if (userInfo.maxPrice != null && listing.pricePerMonth > userInfo.maxPrice) return false
+          if (userInfo.minPrice != null && listing.pricePerMonth < userInfo.minPrice) return false
+          if (userInfo.minSize != null && listing.areaInM2 < userInfo.minSize) return false
+          if (userInfo.maxSize != null && listing.areaInM2 > userInfo.maxSize) return false
 
-        // Sort by most recent if enabled
-        val sorted =
-            if (state.filterState.sortByMostRecent) {
-              filtered.sortedByDescending { it.postedAt }
-            } else {
-              filtered
-            }
+          return true
+        }
+        // Sort by most recent if enabled and recommended (always)
+        var comparator = compareByDescending<RentalListing> { isRecommended(it) }
+        if (state.filterState.sortByMostRecent) {
+          comparator = comparator.thenByDescending { it.postedAt }
+        }
+        val sorted = filtered.sortedWith(comparator)
 
         // Load bookmarked listing IDs
         val bookmarkedIds =
@@ -294,7 +313,8 @@ class BrowseCityViewModel(
 
         val mapped =
             sorted.map { listing ->
-              var listingCardUI = listing.toCardUI(context)
+              val recommended = isRecommended(listing)
+              var listingCardUI = listing.toCardUI(context, recommended)
               if (listing.imageUrls.isNotEmpty()) {
                 val fileName = listing.imageUrls.first()
                 try {
@@ -563,7 +583,7 @@ class BrowseCityViewModel(
 }
 
 // Mapping RentalListing to ListingCardUI
-private fun RentalListing.toCardUI(context: Context): ListingCardUI {
+private fun RentalListing.toCardUI(context: Context, isRecommended: Boolean): ListingCardUI {
   val price =
       String.format(
           Locale.getDefault(),
@@ -578,5 +598,6 @@ private fun RentalListing.toCardUI(context: Context): ListingCardUI {
       leftBullets = listOf(roomType.toString(), price, area),
       rightBullets = listOf(start, resName),
       listingUid = uid,
-      location = location)
+      location = location,
+      isRecommended = isRecommended)
 }

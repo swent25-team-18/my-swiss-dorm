@@ -56,10 +56,10 @@ import com.google.firebase.auth.FirebaseAuth
 fun RequestedMessagesScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit,
-    onApprove: (String) -> Unit = { messageId ->
+    onApprove: (String) -> Unit = { _ ->
       // Default implementation uses ViewModel - can be overridden for testing
     },
-    onReject: (String) -> Unit = { messageId ->
+    onReject: (String) -> Unit = { _ ->
       // Default implementation uses ViewModel - can be overridden for testing
     },
     onViewProfile: (String) -> Unit = {},

@@ -19,6 +19,7 @@ import com.android.mySwissDorm.model.residency.RESIDENCIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.review.REVIEWS_COLLECTION_PATH
 import com.android.mySwissDorm.model.review.Review
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.utils.FirebaseEmulator.auth
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
@@ -56,7 +57,10 @@ abstract class FirestoreTest : TestCase() {
 
   // Application initialization
   init {
-    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().targetContext)
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    PhotoRepositoryProvider.initialize(context)
+    RentalListingRepositoryProvider.initialize(context)
+    ReviewsRepositoryProvider.initialize(context)
     assert(FirebaseEmulator.isRunning) { "FirebaseEmulator must be running for these tests" }
   }
 

@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.listing
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -59,6 +60,8 @@ data class ViewListingUIState(
     val isBlockedByOwner: Boolean = false,
     val locationOfListing: Location = Location(name = "", latitude = 0.0, longitude = 0.0),
     val images: List<Photo> = emptyList(),
+    val showFullScreenImages: Boolean = false,
+    val fullScreenImagesIndex: Int = 0,
     val isGuest: Boolean = false,
     val isBookmarked: Boolean = false
 )
@@ -79,6 +82,16 @@ class ViewListingViewModel(
 
   val photoManager = PhotoManager(photoRepositoryCloud = photoRepositoryCloud)
   private val bookmarkHandler = BookmarkHandler(profileRepository)
+
+  fun dismissFullScreenImages() {
+    _uiState.value = _uiState.value.copy(showFullScreenImages = false)
+  }
+
+  fun onClickImage(uri: Uri) {
+    val index = _uiState.value.images.map { it.image }.indexOf(uri)
+    require(index >= 0)
+    _uiState.value = _uiState.value.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
+  }
 
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {

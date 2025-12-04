@@ -239,6 +239,10 @@ dependencies {
     // Stream Chat SDK
     implementation(libs.stream.chat.android.compose)
     implementation(libs.stream.chat.android.client)
+
+    // QR Code generation
+    implementation("com.google.zxing:core:3.5.2")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }
 
 tasks.withType<Test> {

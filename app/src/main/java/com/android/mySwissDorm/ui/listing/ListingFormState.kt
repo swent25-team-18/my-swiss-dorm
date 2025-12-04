@@ -25,6 +25,8 @@ data class ListingFormState(
     val customLocation: Location? = null,
     val locationSuggestions: List<Location> = emptyList(),
     val showCustomLocationDialog: Boolean = false,
+    val showFullScreenImages: Boolean = false,
+    val fullScreenImagesIndex: Int = 0,
     val requireResidencyName: Boolean = false,
     val isSubmitting: Boolean = false,
     val ownerName: String? = null,

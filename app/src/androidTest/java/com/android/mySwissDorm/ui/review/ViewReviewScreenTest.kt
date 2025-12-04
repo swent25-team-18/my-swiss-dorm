@@ -10,12 +10,14 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
@@ -30,6 +32,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -776,5 +779,42 @@ class ViewReviewScreenTest : FirestoreTest() {
         .performClick()
 
     assertEquals("Navigation should happen when online", otherId, navigatedToId)
+  }
+
+  @Test
+  fun fullScreenModeWorks() = runTest {
+    val vm =
+        ViewReviewViewModel(
+            photoRepositoryCloud =
+                FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, onDelete = true))
+    compose.setContent { ViewReviewScreen(viewReviewViewModel = vm, review1.uid) }
+    compose.waitForIdle()
+
+    compose.waitUntil("The image is not shown", 5_000) {
+      compose
+          .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+    // Click on a photo to display in full screen
+    compose
+        .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
+
+    compose.waitForIdle()
+    // Check image is shown in full screen
+    compose.waitUntil("The clicked image is not shown in full screen", 5_000) {
+      compose
+          .onNodeWithTag(C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+
+    // Check that go back to the view review page
+    compose
+        .onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON, useUnmergedTree = true)
+        .performClick()
+    compose.waitUntil("The listing page is not shown after leaving the full screen mode", 5_000) {
+      compose.onNodeWithTag(C.ImageGridTags.imageTag(photo.image)).isDisplayed()
+    }
   }
 }

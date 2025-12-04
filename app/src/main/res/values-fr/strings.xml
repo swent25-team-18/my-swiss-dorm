@@ -354,6 +354,14 @@
     <!-- ViewReviewViewModel -->
     <string name="view_review_failed_to_load_review">Impossible de charger l’avis</string>
 
+    <!-- Share dialog -->
+    <string name="share">Partager</string>
+    <string name="share_dialog_title">Partager</string>
+    <string name="share_dialog_copy_link">Copier le lien</string>
+    <string name="share_dialog_link_copied">Lien copié dans le presse-papiers</string>
+    <string name="share_dialog_qr_content_desc">Code QR contenant le lien de partage</string>
+    <string name="share_dialog_qr_error">Impossible de générer le code QR. Vous pouvez toujours copier le lien ci-dessous.</string>
+
     <!-- SettingsScreen -->
     <string name="settings_title">Paramètres</string>
     <string name="settings_view_profile">Voir le profil</string>

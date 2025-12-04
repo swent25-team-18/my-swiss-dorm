@@ -10,6 +10,7 @@ import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -1062,6 +1063,54 @@ class EditReviewScreenTest : FirestoreTest() {
     composeRule.waitForIdle()
 
     composeRule.onNodeWithTag(C.EditReviewTags.PHOTOS).assertIsNotDisplayed()
+  }
+
+  @Test
+  fun fullScreenModeWorks() = runTest {
+    val reviewId = seedReviewUpsert(imageUrls = listOf(photo.fileName))
+    val vm =
+        EditReviewViewModel(
+            photoRepositoryLocal =
+                FakePhotoRepository.commonLocalRepo(
+                    onRetrieve = { photo }, onUpload = {}, onDelete = true),
+            photoRepositoryCloud =
+                FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, onDelete = true),
+            reviewId = reviewId)
+    composeRule.setContent {
+      EditReviewScreen(
+          onConfirm = {}, onBack = {}, onDelete = {}, reviewID = reviewId, editReviewViewModel = vm)
+    }
+    composeRule.waitForIdle()
+
+    // Go to the photo preview
+    composeRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).performScrollTo()
+    composeRule.waitUntil("The image is not shown", 5_000) {
+      composeRule
+          .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+    // Click on a photo to display in full screen
+    composeRule
+        .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
+
+    composeRule.waitForIdle()
+    // Check image is shown in full screen
+    composeRule.waitUntil("The clicked image is not shown in full screen", 5_000) {
+      composeRule
+          .onNodeWithTag(C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+
+    // Check that go back to the edit review page
+    composeRule
+        .onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeRule.waitUntil(
+        "The listing page is not shown after leaving the full screen mode", 5_000) {
+          composeRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).isDisplayed()
+        }
   }
 }
 //

@@ -59,6 +59,8 @@ data class EditReviewUiState(
     val pricePerMonth: String = "",
     val areaInM2: String = "",
     val images: List<Photo> = emptyList(),
+    val showFullScreenImages: Boolean = false,
+    val fullScreenImagesIndex: Int = 0,
     val isAnonymous: Boolean = false,
     val ownerName: String? = null,
 ) {
@@ -136,6 +138,16 @@ class EditReviewViewModel(
       photoManager.removePhoto(uri, false)
       _uiState.value = _uiState.value.copy(images = photoManager.photoLoaded)
     }
+  }
+
+  fun dismissFullScreenImages() {
+    _uiState.value = _uiState.value.copy(showFullScreenImages = false)
+  }
+
+  fun onClickImage(uri: Uri) {
+    val index = _uiState.value.images.map { it.image }.indexOf(uri)
+    require(index >= 0)
+    _uiState.value = _uiState.value.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
   }
 
   /**

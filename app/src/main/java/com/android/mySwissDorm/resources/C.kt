@@ -346,4 +346,13 @@ object C {
     const val SIGN_UP_WITH_PREFERENCES = "sign_up_with_preferences"
     const val LOCATION_PREFERENCE = "locationField"
   }
+
+  object ShareLinkDialogTags {
+    const val SHARE_BTN = "shareButton"
+    const val DIALOG_TITLE = "shareLinkDialogTitle"
+    const val QR_CODE = "shareLinkDialogQrCode"
+    const val QR_ERROR = "shareLinkDialogQrError"
+    const val COPY_LINK_BUTTON = "shareLinkDialogCopyLinkButton"
+    const val CANCEL_TEXT = "shareLinkDialogCancelText"
+  }
 }

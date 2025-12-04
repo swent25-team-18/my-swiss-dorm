@@ -26,6 +26,7 @@ import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.listing.AddListingViewModel
+import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -50,7 +51,13 @@ fun AddListingScreen(
   var showDatePicker by remember { mutableStateOf(false) }
   val context = LocalContext.current
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, addListingViewModel)
-
+  if (listingUIState.showFullScreenImages) {
+    FullScreenImageViewer(
+        imageUris = listingUIState.pickedImages.map { it.image },
+        onDismiss = { addListingViewModel.dismissFullScreenImages() },
+        initialIndex = listingUIState.fullScreenImagesIndex)
+    return
+  }
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
@@ -108,7 +115,6 @@ fun AddListingScreen(
         val priceInvalid =
             ui.price.isNotBlank() &&
                 !InputSanitizers.validateFinal<Int>(FieldType.Price, ui.price).isValid
-
         Column(
             modifier
                 .fillMaxSize()
@@ -238,6 +244,7 @@ fun AddListingScreen(
                         imageUris = ui.pickedImages.map { it.image }.toSet(),
                         isEditingMode = true,
                         onRemove = { addListingViewModel.removePhoto(it, true) },
+                        onImageClick = { addListingViewModel.onClickImage(it) },
                         modifier = Modifier.testTag(C.AddReviewTags.PHOTOS))
                   }
             }

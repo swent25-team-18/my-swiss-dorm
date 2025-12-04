@@ -600,10 +600,6 @@ fun AppNavHost(
                 })
           }
 
-          composable(Screen.Admin.route) {
-            AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })
-          }
-
           composable(Screen.Profile.route) {
             val currentUser = FirebaseAuth.getInstance().currentUser
             if (currentUser != null && currentUser.isAnonymous) {
@@ -618,15 +614,11 @@ fun AppNavHost(
                     AuthRepositoryProvider.repository.signOut()
                     navigationViewModel.determineInitialDestination()
                   },
-                  onChangeProfilePicture = {
-                    Toast.makeText(
-                            context,
-                            context.getString(R.string.app_nav_host_not_implemented_yet),
-                            Toast.LENGTH_SHORT)
-                        .show()
-                  },
                   onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
             }
+          }
+          composable(Screen.Admin.route) {
+            AdminPageScreen(canAccess = true, onBack = { navActions.goBack() })
           }
 
           composable(Screen.BookmarkedListings.route) {

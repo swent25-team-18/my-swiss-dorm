@@ -157,6 +157,11 @@ abstract class FirestoreTest : TestCase() {
     }
   }
 
+  protected val photo =
+      Photo(
+          image = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri(),
+          fileName = "zurich.png")
+
   /** The ownerId must be updated before using it with Firestore */
   var profile1 =
       Profile(
@@ -168,6 +173,7 @@ abstract class FirestoreTest : TestCase() {
                   phoneNumber = "+41001112233",
                   universityName = "EPFL",
                   location = Location("Somewhere", 0.0, 0.0),
+                  profilePicture = photo.fileName,
                   residencyName = "Vortex"),
           userSettings =
               UserSettings(
@@ -349,11 +355,6 @@ abstract class FirestoreTest : TestCase() {
           imageId = "fribourg.png")
 
   val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
-
-  protected val photo =
-      Photo(
-          image = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri(),
-          fileName = "zurich.png")
 
   val messageTest =
       RequestedMessage(

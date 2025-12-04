@@ -1,10 +1,13 @@
-package com.github.se.bootcamp.ui.profile
+package com.android.mySwissDorm.ui.profile
 
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -27,7 +30,8 @@ data class ViewProfileUiState(
     val residence: String = "",
     val image: String? = null,
     val error: String? = null,
-    val isBlocked: Boolean = false
+    val isBlocked: Boolean = false,
+    val profilePicture: Photo? = null,
 )
 
 /**
@@ -44,7 +48,9 @@ data class ViewProfileUiState(
  */
 class ViewProfileScreenViewModel(
     private val repo: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
 
   // Backing mutable state; UI observes the exposed read-only StateFlow.
@@ -101,6 +107,20 @@ class ViewProfileScreenViewModel(
         } else {
           temp = profile.userInfo.residencyName
         }
+        val photo =
+            if (!isBlocked) {
+              profile.userInfo.profilePicture?.let { fileName ->
+                try {
+                  Log.d("ViewUserProfileViewModel", "Try to retrieve $fileName")
+                  photoRepositoryCloud.retrievePhoto(fileName)
+                } catch (_: NoSuchElementException) {
+                  Log.d("ViewUserProfileViewModel", "Failed to retrieve the image $fileName")
+                  null
+                }
+              }
+            } else {
+              null
+            }
 
         // Map domain model to UI state (kept simple & synchronous here).
         _ui.value =
@@ -109,6 +129,7 @@ class ViewProfileScreenViewModel(
                 residence = temp,
                 image = null,
                 error = null,
+                profilePicture = photo,
                 isBlocked = isBlocked)
       } catch (e: Exception) {
         Log.e("ViewUserProfileViewModel", "Error loading profile", e)

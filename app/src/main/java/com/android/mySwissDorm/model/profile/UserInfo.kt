@@ -12,6 +12,7 @@ data class UserInfo(
     val universityName: String? = null,
     val location: Location? = null,
     val residencyName: String? = null,
+    val profilePicture: String? = null,
     val minPrice: Double? = null,
     val maxPrice: Double? = null,
     val minSize: Int? = null,

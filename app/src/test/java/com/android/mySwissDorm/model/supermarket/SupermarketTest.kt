@@ -13,11 +13,11 @@ class SupermarketTest {
 
   @Test
   fun `Supermarket equality works correctly`() {
-    val s1 = Supermarket("Migros", location1, "Lausanne")
-    val s2 = Supermarket("Migros", location1, "Lausanne")
-    val s3 = Supermarket("Denner", location1, "Lausanne")
-    val s4 = Supermarket("Migros", location2, "Lausanne")
-    val s5 = Supermarket("Migros", location1, "Geneva")
+    val s1 = Supermarket("uid1", "Migros", location1)
+    val s2 = Supermarket("uid1", "Migros", location1)
+    val s3 = Supermarket("uid2", "Denner", location1)
+    val s4 = Supermarket("uid3", "Migros", location2)
+    val s5 = Supermarket("uid4", "Migros", location1)
 
     assertEquals(s1, s2)
     assertNotEquals(s1, s3)
@@ -27,9 +27,9 @@ class SupermarketTest {
 
   @Test
   fun `Supermarket hashCode works correctly`() {
-    val s1 = Supermarket("Migros", location1, "Lausanne")
-    val s2 = Supermarket("Migros", location1, "Lausanne")
-    val s3 = Supermarket("Denner", location1, "Lausanne")
+    val s1 = Supermarket("uid1", "Migros", location1)
+    val s2 = Supermarket("uid1", "Migros", location1)
+    val s3 = Supermarket("uid2", "Denner", location1)
 
     assertEquals(s1.hashCode(), s2.hashCode())
     assertNotEquals(s1.hashCode(), s3.hashCode())
@@ -37,19 +37,18 @@ class SupermarketTest {
 
   @Test
   fun `Supermarket toString works correctly`() {
-    val s = Supermarket("Migros EPFL", location1, "Lausanne")
+    val s = Supermarket("uid1", "Migros EPFL", location1)
     assertTrue(s.toString().contains("Migros EPFL"))
-    assertTrue(s.toString().contains("Lausanne"))
   }
 
   @Test
   fun `Supermarket copy functionality works`() {
-    val original = Supermarket("Migros", location1, "Lausanne")
-    val copied = original.copy(name = "Coop", city = "Geneva")
+    val original = Supermarket("uid1", "Migros", location1)
+    val copied = original.copy(name = "Coop", uid = "uid2")
 
     assertEquals("Coop", copied.name)
     assertEquals(location1, copied.location)
-    assertEquals("Geneva", copied.city)
+    assertEquals("uid2", copied.uid)
     assertNotEquals(original, copied)
   }
 }

@@ -36,9 +36,9 @@ class SupermarketsRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val supermarketToAdd =
         Supermarket(
+            uid = "migros_epfl_uid",
             name = "Migros EPFL",
-            location = Location("Migros EPFL", 46.5200, 6.6300),
-            city = "Lausanne")
+            location = Location("Migros EPFL", 46.5200, 6.6300))
     repo.addSupermarket(supermarketToAdd)
     val fetchedSupermarkets = repo.getAllSupermarkets()
     assertTrue(
@@ -50,14 +50,14 @@ class SupermarketsRepositoryFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val supermarket1 =
         Supermarket(
+            uid = "migros_epfl_uid",
             name = "Migros EPFL",
-            location = Location("Migros EPFL", 46.5200, 6.6300),
-            city = "Lausanne")
+            location = Location("Migros EPFL", 46.5200, 6.6300))
     val supermarket2 =
         Supermarket(
+            uid = "denner_ecublens_uid",
             name = "Denner Ecublens",
-            location = Location("Denner Ecublens", 46.5245, 6.6245),
-            city = "Ecublens")
+            location = Location("Denner Ecublens", 46.5245, 6.6245))
     val allSupermarkets = listOf(supermarket1, supermarket2)
     allSupermarkets.forEach { repo.addSupermarket(it) }
     assertEquals(allSupermarkets.toSet(), repo.getAllSupermarkets().toSet())
@@ -70,16 +70,16 @@ class SupermarketsRepositoryFirestoreTest : FirestoreTest() {
     // Add a valid supermarket
     val validSupermarket =
         Supermarket(
+            uid = "migros_valid_uid",
             name = "Migros Valid",
-            location = Location("Migros Valid", 46.0, 6.0),
-            city = "ValidCity")
+            location = Location("Migros Valid", 46.0, 6.0))
     repo.addSupermarket(validSupermarket)
 
     // Add an invalid document directly to Firestore (missing 'location' field)
     FirebaseEmulator.firestore
         .collection(SUPERMARKETS_COLLECTION_PATH)
         .document("invalid_supermarket")
-        .set(mapOf("name" to "Invalid", "city" to "InvalidCity"))
+        .set(mapOf("name" to "Invalid"))
         .await()
 
     val fetchedSupermarkets = repo.getAllSupermarkets()
@@ -90,23 +90,26 @@ class SupermarketsRepositoryFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun addSupermarket_duplicateName_overwritesExisting() = runTest {
+  fun addSupermarket_duplicateUid_overwritesExisting() = runTest {
     switchToUser(FakeUser.FakeUser1)
     val supermarket1 =
         Supermarket(
-            name = "Migros Test", location = Location("Migros Test", 46.0, 6.0), city = "Lausanne")
+            uid = "migros_test_uid",
+            name = "Migros Test",
+            location = Location("Migros Test", 46.0, 6.0))
     val supermarket2 =
         Supermarket(
-            name = "Migros Test", // Same name
-            location = Location("Migros Test Updated", 46.1, 6.1),
-            city = "Geneva") // Updated data
+            uid = "migros_test_uid", // Same UID
+            name = "Migros Test Updated",
+            location = Location("Migros Test Updated", 46.1, 6.1))
 
     repo.addSupermarket(supermarket1)
     repo.addSupermarket(supermarket2) // This should overwrite
 
     val fetchedSupermarkets = repo.getAllSupermarkets()
-    assertEquals("Should only have one supermarket with the same name", 1, fetchedSupermarkets.size)
-    assertEquals("Should have the updated data", "Geneva", fetchedSupermarkets.first().city)
+    assertEquals("Should only have one supermarket with the same UID", 1, fetchedSupermarkets.size)
+    assertEquals(
+        "Should have the updated name", "Migros Test Updated", fetchedSupermarkets.first().name)
     assertEquals(
         "Should have the updated location name",
         "Migros Test Updated",

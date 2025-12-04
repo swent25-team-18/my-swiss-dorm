@@ -2,6 +2,7 @@ package com.android.mySwissDorm.model.supermarket
 
 import android.util.Log
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.distanceTo
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -29,24 +30,34 @@ class SupermarketsRepositoryFirestore(private val db: FirebaseFirestore) : Super
     }
   }
 
+  override suspend fun getAllSupermarketsByLocation(
+      location: Location,
+      radius: Double
+  ): List<Supermarket> {
+    val all = getAllSupermarkets()
+    return all.filter { location.distanceTo(it.location) <= radius }
+  }
+
   override suspend fun addSupermarket(supermarket: Supermarket) {
     val supermarketData =
         mapOf(
+            "uid" to supermarket.uid,
             "name" to supermarket.name,
-            "city" to supermarket.city,
             "location" to
                 mapOf(
                     "name" to supermarket.location.name,
                     "latitude" to supermarket.location.latitude,
                     "longitude" to supermarket.location.longitude))
     db.collection(SUPERMARKETS_COLLECTION_PATH)
-        .document(supermarket.name.replace(" ", "_")) // Use name as document ID
+        .document(supermarket.uid) // Use UID as document ID
         .set(supermarketData)
         .await()
   }
 
   private fun documentToSupermarket(document: DocumentSnapshot): Supermarket? {
     return try {
+      val uid =
+          document.getString("uid") ?: document.id // Fallback to document ID if uid not present
       val name = document.getString("name") ?: return null
       val locationData = document.get("location") as? Map<*, *>
       val location =
@@ -56,9 +67,8 @@ class SupermarketsRepositoryFirestore(private val db: FirebaseFirestore) : Super
                 latitude = it["latitude"] as? Double ?: return null,
                 longitude = it["longitude"] as? Double ?: return null)
           } ?: return null
-      val city = document.getString("city") ?: return null
 
-      Supermarket(name = name, location = location, city = city)
+      Supermarket(uid = uid, name = name, location = location)
     } catch (e: Exception) {
       Log.e("SupermarketsRepositoryFirestore", "Error converting document to Supermarket", e)
       null

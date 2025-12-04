@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.model.poi
 
+import com.android.mySwissDorm.model.map.Location
+
 /** Represents a repository that manages PointOfInterest items. */
 interface PointsOfInterestRepository {
   /**
@@ -16,4 +18,16 @@ interface PointsOfInterestRepository {
    * @return A list of PointOfInterest items of the specified type.
    */
   suspend fun getPointsOfInterestByType(type: POIType): List<PointOfInterest>
+
+  /**
+   * Retrieves all PointOfInterest items located within a given radius from a specified location.
+   *
+   * @param location The reference location from which distances are calculated.
+   * @param radius The maximum distance (in kilometers) within which POIs should be included.
+   * @return A list of all PointOfInterest items located within the specified radius.
+   */
+  suspend fun getAllPointsOfInterestByLocation(
+      location: Location,
+      radius: Double
+  ): List<PointOfInterest>
 }

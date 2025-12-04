@@ -2,6 +2,7 @@ package com.android.mySwissDorm.model.poi
 
 import android.util.Log
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.distanceTo
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -40,6 +41,14 @@ class PointsOfInterestRepositoryFirestore(private val db: FirebaseFirestore) :
       Log.e("PointsOfInterestRepositoryFirestore", "Error fetching POIs by type: $type", e)
       return emptyList()
     }
+  }
+
+  override suspend fun getAllPointsOfInterestByLocation(
+      location: Location,
+      radius: Double
+  ): List<PointOfInterest> {
+    val all = getAllPointsOfInterest()
+    return all.filter { location.distanceTo(it.location) <= radius }
   }
 
   private fun documentToPointOfInterest(document: DocumentSnapshot): PointOfInterest? {

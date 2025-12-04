@@ -123,9 +123,34 @@ class ViewListingViewModel(
         val isOwner = currentUserId == listing.ownerId
         val isGuest = currentUser?.isAnonymous ?: false
 
-        val isBlockedByOwner = checkIfBlockedByOwner(listing, currentUserId, isOwner)
-        val isBookmarked = checkIfBookmarked(listingId, currentUserId, isGuest)
-        val photos = loadPhotos(listing)
+        // Check if the listing owner has blocked the current user
+        val isBlockedByOwner =
+            if (currentUserId != null && !isOwner) {
+              runCatching { profileRepository.getBlockedUserIds(listing.ownerId) }
+                  .onFailure { e ->
+                    Log.e("ViewListingViewModel", "Error checking blocked status", e)
+                  }
+                  .getOrDefault(emptyList())
+                  .contains(currentUserId)
+            } else {
+              false
+            }
+
+        // Check if the listing is bookmarked by the current user
+        val isBookmarked =
+            if (currentUserId != null && !isGuest) {
+              runCatching { profileRepository.getBookmarkedListingIds(currentUserId) }
+                  .onFailure { e ->
+                    Log.e("ViewListingViewModel", "Error checking bookmark status", e)
+                  }
+                  .getOrDefault(emptyList())
+                  .contains(listingId)
+            } else {
+              false
+            }
+
+        photoManager.initialize(listing.imageUrls)
+        val photos = photoManager.photoLoaded
         val userUniversityName = getUserUniversityName(currentUserId, isGuest)
         val poiDistances = calculatePOIDistances(listing, userUniversityName)
 
@@ -150,39 +175,6 @@ class ViewListingViewModel(
   private suspend fun loadOwnerInfo(listing: RentalListing): String {
     val ownerUserInfo = profileRepository.getProfile(listing.ownerId).userInfo
     return ownerUserInfo.name + " " + ownerUserInfo.lastName
-  }
-
-  private suspend fun checkIfBlockedByOwner(
-      listing: RentalListing,
-      currentUserId: String?,
-      isOwner: Boolean
-  ): Boolean {
-    if (currentUserId == null || isOwner) {
-      return false
-    }
-    return runCatching { profileRepository.getBlockedUserIds(listing.ownerId) }
-        .onFailure { e -> Log.e("ViewListingViewModel", "Error checking blocked status", e) }
-        .getOrDefault(emptyList())
-        .contains(currentUserId)
-  }
-
-  private suspend fun checkIfBookmarked(
-      listingId: String,
-      currentUserId: String?,
-      isGuest: Boolean
-  ): Boolean {
-    if (currentUserId == null || isGuest) {
-      return false
-    }
-    return runCatching { profileRepository.getBookmarkedListingIds(currentUserId) }
-        .onFailure { e -> Log.e("ViewListingViewModel", "Error checking bookmark status", e) }
-        .getOrDefault(emptyList())
-        .contains(listingId)
-  }
-
-  private suspend fun loadPhotos(listing: RentalListing): List<Photo> {
-    photoManager.initialize(listing.imageUrls)
-    return photoManager.photoLoaded
   }
 
   private suspend fun getUserUniversityName(currentUserId: String?, isGuest: Boolean): String? {
@@ -215,15 +207,7 @@ class ViewListingViewModel(
       val distances = distanceService.calculateDistancesToPOIs(listing.location, userUniversityName)
       Log.d(
           "ViewListingViewModel",
-          "Calculated ${distances.size} POI distances for listing ${listing.uid}")
-      Log.d(
-          "ViewListingViewModel",
-          "Listing location: lat=${listing.location.latitude}, lng=${listing.location.longitude}")
-      if (userUniversityName != null) {
-        Log.d("ViewListingViewModel", "User's university: $userUniversityName")
-      } else {
-        Log.d("ViewListingViewModel", "User has no university in profile - showing 2 nearest")
-      }
+          "Calculated ${distances.size} POI distances for listing ${listing.uid} at lat=${listing.location.latitude}, lng=${listing.location.longitude}${if (userUniversityName != null) " (user university: $userUniversityName)" else " (showing 2 nearest universities)"}")
       distances
     } catch (e: Exception) {
       Log.e("ViewListingViewModel", "Error calculating POI distances", e)

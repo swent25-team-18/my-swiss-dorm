@@ -27,6 +27,7 @@ class WalkingRouteService(private val client: OkHttpClient) {
     private const val TAG = "WalkingRouteService"
     private const val WALKING_SPEED_KMH = 5.0 // Average walking speed: 5 km/h
     private const val WALKING_SPEED_MS = WALKING_SPEED_KMH / 3.6 // Convert to m/s
+    private const val OPENROUTESERVICE_API_KEY = "" // TODO: Add your OpenRouteService API key here
   }
 
   /**
@@ -69,7 +70,7 @@ class WalkingRouteService(private val client: OkHttpClient) {
                   .addPathSegment("v2")
                   .addPathSegment("directions")
                   .addPathSegment("foot-walking")
-                  .addQueryParameter("api_key", "") // Empty API key works for basic usage
+                  .addQueryParameter("api_key", OPENROUTESERVICE_API_KEY)
                   .addQueryParameter(
                       "start", "${from.longitude},${from.latitude}") // Note: lon,lat order for ORS
                   .addQueryParameter("end", "${to.longitude},${to.latitude}")

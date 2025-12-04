@@ -92,8 +92,6 @@
     <string name="admin_page_confirm_add_admin">Confirmez que vous souhaitez ajouter %1$s en tant qu\'administrateur</string>
     <string name="admin_page_ok">OK</string>
     <string name="admin_page_website_url">%1$s URL</string>
-    <string name="admin_page_poi_data_seeder">Générateur de données POI</string>
-    <string name="admin_page_poi_data_seeder_description">Ajouter des points d\'intérêt d\'exemple (universités, supermarchés) à Firestore pour les tests. Cela ajoutera EPFL, Migros et Denner près de Lausanne.</string>
     <string name="admin_page_seed_poi_data">Générer les données POI</string>
     <string name="admin_page_poi_data_seeded_successfully">Données POI générées avec succès ! Ajout de EPFL, Migros et Denner.</string>
 
@@ -469,4 +467,5 @@
     <string name="title_activity_second">SecondActivity</string>
     <string name="default_web_client_id">587708119125-oqlivs13orms6lmp32pujt11ft3fat3h.apps.googleusercontent.com</string>
     <string name="of">de</string>
+    <string name="and">et</string>
 </resources>

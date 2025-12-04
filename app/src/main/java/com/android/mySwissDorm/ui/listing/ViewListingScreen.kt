@@ -234,12 +234,13 @@ fun ViewListingScreen(
                               } else {
                                 // Multiple POIs at the same time - combine them
                                 val poiNames = pois.map { it.poiName }
+                                val andString = stringResource(R.string.and)
                                 val combinedNames =
                                     when (poiNames.size) {
-                                      2 -> poiNames.joinToString(" and ")
+                                      2 -> poiNames.joinToString(" $andString ")
                                       else ->
                                           poiNames.dropLast(1).joinToString(", ") +
-                                              " and " +
+                                              " $andString " +
                                               poiNames.last()
                                     }
 

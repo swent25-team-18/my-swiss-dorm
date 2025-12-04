@@ -45,19 +45,19 @@ class DistanceServiceTest {
           websiteURL = URL("https://www.unil.ch"))
   private val migrosEPFL =
       Supermarket(
+          uid = "migros_epfl_uid",
           name = "Migros EPFL",
-          location = Location("Migros EPFL", 46.5200, 6.6300),
-          city = "Lausanne")
+          location = Location("Migros EPFL", 46.5200, 6.6300))
   private val dennerEPFL =
       Supermarket(
+          uid = "denner_epfl_uid",
           name = "Denner EPFL",
-          location = Location("Denner EPFL", 46.5205, 6.6305),
-          city = "Lausanne")
+          location = Location("Denner EPFL", 46.5205, 6.6305))
   private val migrosRenens =
       Supermarket(
+          uid = "migros_renens_uid",
           name = "Migros Renens",
-          location = Location("Migros Renens", 46.5400, 6.5900),
-          city = "Lausanne")
+          location = Location("Migros Renens", 46.5400, 6.5900))
 
   @Before
   fun setUp() {

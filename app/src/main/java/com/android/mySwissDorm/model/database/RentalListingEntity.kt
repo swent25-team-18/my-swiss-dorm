@@ -17,6 +17,8 @@ import com.google.firebase.Timestamp
  *
  * @property uid Unique identifier of the rental listing.
  * @property ownerId Identifier of the user who created the listing.
+ * @property ownerName Display name of the user who created the listing (stored locally for offline
+ *   access).
  * @property postedAt Timestamp indicating when the listing was created.
  * @property residencyName Name of the residency where the room is located.
  * @property title Short textual title of the listing.
@@ -34,6 +36,7 @@ import com.google.firebase.Timestamp
 data class RentalListingEntity(
     @PrimaryKey val uid: String,
     val ownerId: String,
+    val ownerName: String? = null,
     val postedAt: Timestamp,
     val residencyName: String,
     val title: String,
@@ -55,6 +58,7 @@ data class RentalListingEntity(
     return RentalListing(
         uid = uid,
         ownerId = ownerId,
+        ownerName = ownerName,
         postedAt = postedAt,
         residencyName = residencyName,
         title = title,
@@ -80,6 +84,7 @@ data class RentalListingEntity(
       return RentalListingEntity(
           uid = listing.uid,
           ownerId = listing.ownerId,
+          ownerName = listing.ownerName,
           postedAt = listing.postedAt,
           residencyName = listing.residencyName,
           title = listing.title,

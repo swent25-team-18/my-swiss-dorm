@@ -4,14 +4,21 @@ import android.content.Context
 import androidx.room.Room
 import com.android.mySwissDorm.model.database.AppDatabase
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.profile.Language
+import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.utils.NetworkUtils
+import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.unmockkObject
+import io.mockk.unmockkAll
 import java.io.IOException
 import java.net.UnknownHostException
 import kotlin.NoSuchElementException
@@ -31,23 +38,34 @@ class RentalListingRepositoryHybridTest {
   private lateinit var localRepository: RentalListingRepositoryLocal
   private lateinit var database: AppDatabase
   private lateinit var hybridRepository: RentalListingRepositoryHybrid
+  private lateinit var profileRepository: ProfileRepository
 
   @Before
   fun setUp() {
     context = RuntimeEnvironment.getApplication()
+    // Initialize Firebase before accessing ProfileRepositoryProvider to prevent initialization
+    // errors
+    try {
+      FirebaseApp.initializeApp(context)
+    } catch (e: IllegalStateException) {
+      // Firebase already initialized, ignore
+    }
     database =
         Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
     localRepository = RentalListingRepositoryLocal(database.rentalListingDao())
     remoteRepository = mockk(relaxed = true)
+    // Initialize ProfileRepositoryProvider with a mock to prevent NoClassDefFoundError
+    profileRepository = mockk(relaxed = true)
+    ProfileRepositoryProvider.repository = profileRepository
     hybridRepository = RentalListingRepositoryHybrid(context, remoteRepository, localRepository)
   }
 
   @After
   fun tearDown() {
     database.close()
-    unmockkObject(NetworkUtils)
+    unmockkAll()
   }
 
   @Test
@@ -422,16 +440,119 @@ class RentalListingRepositoryHybridTest {
     assertTrue(result.exceptionOrNull() is IllegalArgumentException)
   }
 
+  @Test
+  fun getAllRentalListings_online_fetchesOwnerNameWhenMissing() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val testProfileRepository = mockk<ProfileRepository>(relaxed = true)
+    ProfileRepositoryProvider.repository = testProfileRepository
+
+    val testProfile =
+        Profile(
+            userInfo = UserInfo("John", "Doe", "john@example.com", "", null, null, null),
+            userSettings = UserSettings(Language.ENGLISH, false),
+            ownerId = "user-1")
+
+    coEvery { testProfileRepository.getProfile("user-1") } returns testProfile
+
+    val listingWithoutName = createTestListing("listing-1", ownerId = "user-1", ownerName = null)
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listingWithoutName)
+
+    val result = hybridRepository.getAllRentalListings()
+
+    assertEquals(1, result.size)
+    coVerify { testProfileRepository.getProfile("user-1") }
+    // Verify the listing was stored with ownerName
+    val storedListing = localRepository.getRentalListing("listing-1")
+    assertEquals("John Doe", storedListing.ownerName)
+    // Restore original mock
+    ProfileRepositoryProvider.repository = profileRepository
+  }
+
+  @Test
+  fun getAllRentalListings_online_doesNotFetchOwnerNameWhenAlreadyPresent() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val listingWithName =
+        createTestListing("listing-1", ownerId = "user-1", ownerName = "Jane Smith")
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listingWithName)
+
+    val result = hybridRepository.getAllRentalListings()
+
+    assertEquals(1, result.size)
+    coVerify(exactly = 0) { profileRepository.getProfile(any()) }
+    // Verify the listing was stored with existing ownerName
+    val storedListing = localRepository.getRentalListing("listing-1")
+    assertEquals("Jane Smith", storedListing.ownerName)
+  }
+
+  @Test
+  fun getAllRentalListings_online_handlesProfileFetchFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val testProfileRepository = mockk<ProfileRepository>(relaxed = true)
+    ProfileRepositoryProvider.repository = testProfileRepository
+
+    coEvery { testProfileRepository.getProfile("user-1") } throws
+        NoSuchElementException("Profile not found")
+
+    val listingWithoutName = createTestListing("listing-1", ownerId = "user-1", ownerName = null)
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listingWithoutName)
+
+    val result = hybridRepository.getAllRentalListings()
+
+    assertEquals(1, result.size)
+    // Verify the listing was stored with null ownerName when profile fetch fails
+    val storedListing = localRepository.getRentalListing("listing-1")
+    assertNull(storedListing.ownerName)
+    // Restore original mock
+    ProfileRepositoryProvider.repository = profileRepository
+  }
+
+  @Test
+  fun getAllRentalListings_online_handlesEmptyOwnerName() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val testProfileRepository = mockk<ProfileRepository>(relaxed = true)
+    ProfileRepositoryProvider.repository = testProfileRepository
+
+    val testProfile =
+        Profile(
+            userInfo = UserInfo("", "", "john@example.com", "", null, null, null),
+            userSettings = UserSettings(Language.ENGLISH, false),
+            ownerId = "user-1")
+
+    coEvery { testProfileRepository.getProfile("user-1") } returns testProfile
+
+    val listingWithoutName = createTestListing("listing-1", ownerId = "user-1", ownerName = null)
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listingWithoutName)
+
+    val result = hybridRepository.getAllRentalListings()
+
+    assertEquals(1, result.size)
+    // Verify the listing was stored with null ownerName when name is empty
+    val storedListing = localRepository.getRentalListing("listing-1")
+    assertNull(storedListing.ownerName)
+    // Restore original mock
+    ProfileRepositoryProvider.repository = profileRepository
+  }
+
   private fun createTestListing(
       uid: String,
       ownerId: String = "user-1",
       title: String = "Test Listing",
-      residencyName: String = "Vortex"
+      residencyName: String = "Vortex",
+      ownerName: String? = null
   ): RentalListing {
     val fixedTimestamp = Timestamp(1000000L, 0)
     return RentalListing(
         uid = uid,
         ownerId = ownerId,
+        ownerName = ownerName,
         postedAt = fixedTimestamp,
         residencyName = residencyName,
         title = title,

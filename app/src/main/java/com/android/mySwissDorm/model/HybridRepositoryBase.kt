@@ -22,7 +22,7 @@ abstract class HybridRepositoryBase<T>(
     private val repositoryName: String
 ) {
   protected val TAG = "${repositoryName}Hybrid"
-  protected val TIMEOUT_MS = 5000L
+  protected val TIMEOUT_MS = 2000L
 
   /**
    * Performs a read operation with fast-fail and fallback logic.

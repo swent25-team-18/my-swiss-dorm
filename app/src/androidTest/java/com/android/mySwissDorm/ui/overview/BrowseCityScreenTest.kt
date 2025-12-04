@@ -124,6 +124,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         RentalListing(
             uid = "laus1",
             ownerId = ownerUid,
+            ownerName = profile1.userInfo.name + " " + profile1.userInfo.lastName,
             postedAt = Timestamp.now(),
             residencyName = resLaus.name,
             title = "Lausanne Studio 1",
@@ -149,6 +150,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         RentalListing(
             uid = "frib1",
             ownerId = ownerUid,
+            ownerName = profile1.userInfo.name + " " + profile1.userInfo.lastName,
             postedAt = Timestamp.now(),
             residencyName = resLaus.name,
             title = "Lausanne Studio 1",
@@ -943,6 +945,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         reviewVortex1.copy(
             uid = reviewsRepo.getNewUid(),
             ownerId = ownerUid,
+            ownerName = profile1.userInfo.name + " " + profile1.userInfo.lastName,
             postedAt = Timestamp(baseTime.seconds + 30, 0), // Definitely later than reviewVortex2
             isAnonymous = false)
     reviewsRepo.addReview(nonAnonymousReview)

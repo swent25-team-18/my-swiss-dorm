@@ -12,9 +12,11 @@ data class UserInfo(
     val universityName: String? = null,
     val location: Location? = null,
     val residencyName: String? = null,
+    val profilePicture: String? = null,
     val minPrice: Double? = null,
     val maxPrice: Double? = null,
     val minSize: Int? = null,
     val maxSize: Int? = null,
-    val preferredRoomTypes: List<RoomType> = emptyList()
+    val preferredRoomTypes: List<RoomType> = emptyList(),
+    val bookmarkedListingIds: List<String> = emptyList(),
 )

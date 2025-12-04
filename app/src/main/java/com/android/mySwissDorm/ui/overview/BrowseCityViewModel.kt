@@ -400,21 +400,10 @@ class BrowseCityViewModel(
                     if (latestReview.isAnonymous) {
                       context.getString(R.string.anonymous)
                     } else {
-                      // Only fetch and show the actual name if the review is NOT anonymous
-                      val ownerInfo =
-                          try {
-                            profileRepository.getProfile(latestReview.ownerId).userInfo
-                          } catch (e: Exception) {
-                            Log.w(
-                                "BrowseCiteViewModel",
-                                "Profile with ownerId ${latestReview.ownerId} not found",
-                                e)
-                            null
-                          }
-                      if (ownerInfo != null) "${ownerInfo.name} ${ownerInfo.lastName}"
-                      else context.getString(R.string.unknown)
+                      // Use stored ownerName from review, fallback to "Unknown Owner" if null
+                      latestReview.ownerName ?: context.getString(R.string.unknown_owner_name)
                     }
-                  } else context.getString(R.string.unknown)
+                  } else context.getString(R.string.unknown_owner_name)
               ResidencyCardUI(
                   title = it.name,
                   meanGrade = meanGrade,

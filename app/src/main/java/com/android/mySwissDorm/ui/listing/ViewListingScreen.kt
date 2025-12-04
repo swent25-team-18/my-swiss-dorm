@@ -46,6 +46,7 @@ import com.android.mySwissDorm.ui.theme.Violet
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
+import com.android.mySwissDorm.utils.NetworkUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,10 +72,11 @@ fun ViewListingScreen(
   val isOwner = listingUIState.isOwner
   val isBlockedByOwner = listingUIState.isBlockedByOwner
   val isBookmarked = listingUIState.isBookmarked
+  val hasExistingMessage = listingUIState.hasExistingMessage
   var showShareDialog by remember { mutableStateOf(false) }
 
-  // Button is enabled only if there's a message and user is not blocked
-  val canApply = hasMessage && !isBlockedByOwner
+  // Button is enabled only if there's a message, user is not blocked, and no existing message
+  val canApply = hasMessage && !isBlockedByOwner && !hasExistingMessage
   // Button color: violet if blocked, red (MainColor) if normal
   val buttonColor = if (isBlockedByOwner && hasMessage) Violet else MainColor
 
@@ -208,7 +210,16 @@ fun ViewListingScreen(
                               baseTextStyle.copy(fontWeight = FontWeight.Bold, color = MainColor),
                           modifier =
                               Modifier.testTag(C.ViewListingTags.POSTED_BY_NAME).clickable {
-                                onViewProfile(listing.ownerId)
+                                // Allow navigation if online or if it's the current user's profile
+                                if (NetworkUtils.isNetworkAvailable(context) || isOwner) {
+                                  onViewProfile(listing.ownerId)
+                                } else {
+                                  Toast.makeText(
+                                          context,
+                                          context.getString(R.string.profile_offline_message),
+                                          Toast.LENGTH_SHORT)
+                                      .show()
+                                }
                               })
                       Text(
                           text = " ${formatRelative(listing.postedAt, context = context)}",
@@ -292,45 +303,67 @@ fun ViewListingScreen(
                         }
                   }
                 } else {
-                  // Contact message
-                  OutlinedTextField(
-                      value = listingUIState.contactMessage,
-                      onValueChange = { viewListingViewModel.setContactMessage(it) },
-                      placeholder = {
-                        Text(stringResource(R.string.view_listing_contact_announcer))
-                      },
-                      modifier = Modifier.fillMaxWidth().testTag(C.ViewListingTags.CONTACT_FIELD),
-                      shape = RoundedCornerShape(16.dp),
-                      singleLine = false,
-                      minLines = 1,
-                      colors =
-                          OutlinedTextFieldDefaults.colors(
-                              focusedContainerColor = AlmostWhite,
-                              unfocusedContainerColor = AlmostWhite,
-                              disabledContainerColor = AlmostWhite,
-                              focusedBorderColor = OutlineColor,
-                              unfocusedBorderColor = OutlineColor))
-
-                  // Apply now button (centered, half width, rounded, red or violet)
-                  Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Button(
-                        onClick = onApply,
-                        enabled = canApply,
-                        modifier =
-                            Modifier.fillMaxWidth(0.55f)
-                                .height(52.dp)
-                                .testTag(C.ViewListingTags.APPLY_BTN),
-                        shape = RoundedCornerShape(16.dp),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = buttonColor,
-                                disabledContainerColor = PinkyWhite,
-                                disabledContentColor = White)) {
-                          Text(
-                              stringResource(R.string.view_listing_apply_now),
-                              color = White,
-                              style = MaterialTheme.typography.titleMedium)
+                  if (hasExistingMessage) {
+                    // Show message that user has already sent a message
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        contentAlignment = Alignment.Center) {
+                          Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = stringResource(R.string.view_listing_message_already_sent),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MainColor,
+                                fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text =
+                                    stringResource(R.string.view_listing_please_wait_for_response),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                          }
                         }
+                  } else {
+                    // Contact message
+                    OutlinedTextField(
+                        value = listingUIState.contactMessage,
+                        onValueChange = { viewListingViewModel.setContactMessage(it) },
+                        placeholder = {
+                          Text(stringResource(R.string.view_listing_contact_announcer))
+                        },
+                        modifier = Modifier.fillMaxWidth().testTag(C.ViewListingTags.CONTACT_FIELD),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = false,
+                        minLines = 1,
+                        colors =
+                            OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = AlmostWhite,
+                                unfocusedContainerColor = AlmostWhite,
+                                disabledContainerColor = AlmostWhite,
+                                focusedBorderColor = OutlineColor,
+                                unfocusedBorderColor = OutlineColor,
+                                cursorColor = TextColor))
+
+                    // Apply now button (centered, half width, rounded, red or violet)
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                      Button(
+                          onClick = onApply,
+                          enabled = canApply,
+                          modifier =
+                              Modifier.fillMaxWidth(0.55f)
+                                  .height(52.dp)
+                                  .testTag(C.ViewListingTags.APPLY_BTN),
+                          shape = RoundedCornerShape(16.dp),
+                          colors =
+                              ButtonDefaults.buttonColors(
+                                  containerColor = buttonColor,
+                                  disabledContainerColor = PinkyWhite,
+                                  disabledContentColor = White)) {
+                            Text(
+                                stringResource(R.string.view_listing_apply_now),
+                                color = White,
+                                style = MaterialTheme.typography.titleMedium)
+                          }
+                    }
                   }
                 }
               }

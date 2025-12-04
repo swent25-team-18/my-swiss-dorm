@@ -1,8 +1,7 @@
 package com.android.mySwissDorm.ui.profile
 
-import android.content.res.Configuration
+import android.util.Log
 import androidx.annotation.StringRes
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.profile.Language
@@ -44,6 +46,7 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.Red0
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 
@@ -61,7 +64,6 @@ import com.android.mySwissDorm.ui.theme.White
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
-    onChangeProfilePicture: (Photo) -> Unit,
     onLanguageChange: (String) -> Unit,
     onBack: () -> Unit,
     onEditPreferencesClick: () -> Unit,
@@ -87,7 +89,7 @@ fun ProfileScreen(
       },
       onResidenceChange = viewModel::onResidenceChange,
       onLogout = onLogout,
-      onChangeProfilePicture = onChangeProfilePicture,
+      onChangeProfilePicture = { viewModel.onProfilePictureChange(it) },
       onBack = onBack,
       onToggleEditing = viewModel::toggleEditing,
       onSave = { viewModel.saveProfile(context) },
@@ -142,7 +144,7 @@ private fun ProfileScreenContent(
     onLanguageChange: (String) -> Unit,
     onResidenceChange: (String) -> Unit,
     onLogout: () -> Unit,
-    onChangeProfilePicture: (Photo) -> Unit,
+    onChangeProfilePicture: (Photo?) -> Unit,
     onBack: () -> Unit,
     onToggleEditing: () -> Unit,
     onSave: () -> Unit,
@@ -217,25 +219,60 @@ private fun ProfileScreenContent(
 
               // Profile Picture (clickable only in edit mode; remains disabled in view mode but
               // keeps click semantics)
-              Box(
-                  modifier = Modifier.fillMaxWidth().height(150.dp),
-                  contentAlignment = Alignment.Center) {
-                    Box(
-                        modifier =
-                            Modifier.size(100.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, MainColor, CircleShape)
-                                .background(BackGroundColor)
-                                .clickable(enabled = state.isEditing) { displayPhotoDialog = true }
-                                .testTag("profile_picture_box"),
-                        contentAlignment = Alignment.Center) {
-                          Icon(
-                              imageVector = Icons.Default.Person,
-                              contentDescription = "Change profile picture",
-                              modifier = Modifier.size(40.dp),
-                              tint = MainColor)
-                        }
-                  }
+              Box(modifier = Modifier.height(100.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier =
+                        Modifier.size(100.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, MainColor, CircleShape)
+                            .background(BackGroundColor)
+                            .clickable(enabled = state.isEditing) { displayPhotoDialog = true }
+                            .testTag("profile_picture_box"),
+                    contentAlignment = Alignment.Center) {
+                      if (state.profilePicture != null) {
+                        AsyncImage(
+                            model = state.profilePicture.image,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier =
+                                Modifier.testTag(
+                                    C.ProfileTags.profilePictureTag(
+                                        uri = state.profilePicture.image)),
+                            onSuccess = {
+                              Log.d(
+                                  "ProfileScreen",
+                                  "Photo ${state.profilePicture.fileName} loaded successfully")
+                            },
+                            onLoading = {
+                              Log.d(
+                                  "ProfileScreen", "Photo ${state.profilePicture.fileName} loading")
+                            })
+                      } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier =
+                                Modifier.size(40.dp).testTag(C.ProfileTags.profilePictureTag(null)),
+                            tint = MainColor)
+                      }
+                    }
+                if (state.isEditing && state.profilePicture != null) {
+                  FloatingActionButton(
+                      onClick = { onChangeProfilePicture(null) },
+                      modifier =
+                          Modifier.size(32.dp)
+                              .align(Alignment.TopEnd)
+                              .offset(x = 6.dp, y = (-6).dp),
+                      containerColor = MaterialTheme.colorScheme.primary,
+                      contentColor = Red0) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp).testTag(C.ProfileTags.DELETE_PP_BUTTON),
+                            tint = Red0)
+                      }
+                }
+              }
 
               // Name row: First name | Last name (equal widths via weight)
               Row(
@@ -314,7 +351,7 @@ private fun ProfileScreenContent(
                             .padding(top = 16.dp)
                             .height(52.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .testTag("profile_save_button"),
+                            .testTag(C.ProfileTags.SAVE_BUTTON),
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = MainColor, contentColor = BackGroundColor),

@@ -3,6 +3,8 @@ package com.android.mySwissDorm.utils
 import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.city.CITIES_COLLECTION_PATH
 import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
@@ -155,6 +157,11 @@ abstract class FirestoreTest : TestCase() {
     }
   }
 
+  protected val photo =
+      Photo(
+          image = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri(),
+          fileName = "zurich.png")
+
   /** The ownerId must be updated before using it with Firestore */
   var profile1 =
       Profile(
@@ -166,6 +173,7 @@ abstract class FirestoreTest : TestCase() {
                   phoneNumber = "+41001112233",
                   universityName = "EPFL",
                   location = Location("Somewhere", 0.0, 0.0),
+                  profilePicture = photo.fileName,
                   residencyName = "Vortex"),
           userSettings =
               UserSettings(
@@ -253,6 +261,7 @@ abstract class FirestoreTest : TestCase() {
       RentalListing(
           uid = "rental1",
           ownerId = "",
+          ownerName = null,
           postedAt = Timestamp.now(),
           residencyName = "Vortex",
           title = "title1",
@@ -268,6 +277,7 @@ abstract class FirestoreTest : TestCase() {
       RentalListing(
           uid = "rental2",
           ownerId = "",
+          ownerName = null,
           postedAt = Timestamp.now(),
           residencyName = "Vortex",
           title = "title2",
@@ -283,6 +293,7 @@ abstract class FirestoreTest : TestCase() {
       RentalListing(
           uid = "rental3",
           ownerId = "",
+          ownerName = null,
           postedAt = Timestamp.now(),
           residencyName = "Vortex",
           title = "title3",
@@ -299,6 +310,7 @@ abstract class FirestoreTest : TestCase() {
       Review(
           uid = "reviewVortex1",
           ownerId = "",
+          ownerName = null,
           postedAt = Timestamp.now(),
           title = "Vortex Review 1",
           reviewText = "First review",
@@ -348,8 +360,14 @@ abstract class FirestoreTest : TestCase() {
 
   val cities = listOf(cityLausanne, cityGeneva, cityZurich, cityFribourg)
 
-  protected val photo =
-      Photo(
-          image = "android.resource://com.android.mySwissDorm/${R.drawable.zurich}".toUri(),
-          fileName = "zurich.png")
+  val messageTest =
+      RequestedMessage(
+          id = "testUid",
+          fromUserId = "testFromUserID",
+          toUserId = "testToUserID",
+          listingId = "listing1",
+          listingTitle = "Test Listing",
+          message = "I'm interested in this listing",
+          timestamp = System.currentTimeMillis(),
+          status = MessageStatus.PENDING)
 }

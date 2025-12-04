@@ -119,7 +119,7 @@ abstract class BaseListingFormViewModel(
     val norm = InputSanitizers.normalizeWhileTyping(FieldType.Description, description)
     _uiState.value = _uiState.value.copy(description = norm)
   }
-
+  // ---------- Photo operations ----------
   val photoManager =
       PhotoManager(
           photoRepositoryLocal = photoRepositoryLocal, photoRepositoryCloud = photoRepositoryCloud)
@@ -136,6 +136,16 @@ abstract class BaseListingFormViewModel(
       photoManager.removePhoto(uri, removeFromLocal)
       _uiState.value = _uiState.value.copy(pickedImages = photoManager.photoLoaded)
     }
+  }
+
+  fun dismissFullScreenImages() {
+    _uiState.value = _uiState.value.copy(showFullScreenImages = false)
+  }
+
+  fun onClickImage(uri: Uri) {
+    val index = _uiState.value.pickedImages.map { it.image }.indexOf(uri)
+    require(index >= 0)
+    _uiState.value = _uiState.value.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
   }
 
   // ---------- Location search / dialog (from BaseLocationSearchViewModel) ----------

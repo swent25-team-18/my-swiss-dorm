@@ -460,6 +460,17 @@
     <string name="no_message_provided">No message provided</string>
     <string name="failed_to_create_chat">Failed to create chat</string>
 
+    <!-- QR -->
+    <string name="settings_qr_section_title">Links &amp; QR codes</string>
+    <string name="settings_qr_section_subtitle">
+    Scan a MySwissDorm QR code to open a listing or review directly in the app.
+</string>
+    <string name="settings_qr_button">Scan MySwissDorm QR code</string>
+    <string name="settings_qr_prompt">Point the camera at a MySwissDorm QR code</string>
+    <string name="settings_qr_scan_cancelled">Scan cancelled</string>
+    <string name="settings_qr_invalid_domain">This is not a MySwissDorm link.</string>
+
+
     <!-- Offline Banner -->
     <string name="offline_banner_you_are_offline">You\'re offline</string>
     <string name="offline_banner_last_updated">Last updated %1$s</string>

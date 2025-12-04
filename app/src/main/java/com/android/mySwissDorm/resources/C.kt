@@ -290,6 +290,9 @@ object C {
     const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
     const val BOTTOM_BAR = "bottom_nav"
     const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
+    const val QR_SECTION_TITLE = "SettingsQrSectionTitle"
+    const val QR_SECTION_SUBTITLE = "SettingsQrSectionSubtitle"
+    const val QR_SCAN_BUTTON = "SettingsScanQrButton"
     const val BOOKMARKS_BUTTON = "BookmarksButton"
 
     fun switch(label: String): String = "SettingSwitch_$label"

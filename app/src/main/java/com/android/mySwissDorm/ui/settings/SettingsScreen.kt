@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.settings
 
+import android.content.Context
 import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -62,6 +63,30 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
 // Documentation was made with the help of AI
+
+/** Handles the result of a QR scan from the settings screen. */
+internal fun handleQrScanResult(
+    contents: String?,
+    context: Context,
+    onQrNavigate: (String) -> Unit
+) {
+  if (contents.isNullOrBlank()) {
+    Toast.makeText(
+            context, context.getString(R.string.settings_qr_scan_cancelled), Toast.LENGTH_SHORT)
+        .show()
+  } else {
+    val uri = runCatching { contents.toUri() }.getOrNull()
+    if (uri == null || uri.host != "my-swiss-dorm.web.app") {
+      Toast.makeText(
+              context, context.getString(R.string.settings_qr_invalid_domain), Toast.LENGTH_SHORT)
+          .show()
+    } else {
+      // Valid MySwissDorm link – bubble up so navigation layer can handle it
+      onQrNavigate(contents)
+    }
+  }
+}
+
 /**
  * Settings screen for user preferences and account management.
  *
@@ -191,26 +216,7 @@ fun SettingsScreenContent(
   // Launcher for ZXing QR scan
   val qrScanLauncher =
       rememberLauncherForActivityResult(ScanContract()) { result ->
-        val contents = result.contents
-        if (contents.isNullOrBlank()) {
-          Toast.makeText(
-                  context,
-                  context.getString(R.string.settings_qr_scan_cancelled),
-                  Toast.LENGTH_SHORT)
-              .show()
-        } else {
-          val uri = runCatching { contents.toUri() }.getOrNull()
-          if (uri == null || uri.host != "my-swiss-dorm.web.app") {
-            Toast.makeText(
-                    context,
-                    context.getString(R.string.settings_qr_invalid_domain),
-                    Toast.LENGTH_SHORT)
-                .show()
-          } else {
-            // Valid MySwissDorm link – bubble up so navigation layer can handle it
-            onQrNavigate(contents)
-          }
-        }
+        handleQrScanResult(result.contents, context, onQrNavigate)
       }
 
   Scaffold(

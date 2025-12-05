@@ -60,6 +60,7 @@
     <string name="unblock">Unblock</string>
     <string name="unexpected_error">Unexpected error</string>
     <string name="university">University</string>
+    <string name="supermarket">Supermarket</string>
     <string name="unknown">Unknown</string>
     <string name="user">User</string>
     <string name="website">Website</string>
@@ -203,6 +204,18 @@
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Failed to load listing:</string>
     <string name="view_listing_failed_to_toggle_bookmark">Failed to toggle bookmark:</string>
+    <string name="view_listing_nearby_points_of_interest">Nearby Points of Interest</string>
+    <string name="view_listing_distance_away_from">at %1$.1f km of %2$s</string>
+    <string name="view_listing_distance_university">at %1$.1f km of %2$s university</string>
+    <string name="view_listing_distance_supermarket">at %1$.1f km of %2$s</string>
+    <string name="view_listing_distance_from_nearest_supermarket">at %1$.1f km of nearest supermarket</string>
+    <string name="view_listing_distance_at_km_of_multiple">at %1$.1f km of %2$s %3$s</string>
+    <string name="view_listing_distance_at_km_of_no_type">at %1$.1f km of %2$s</string>
+    <string name="view_listing_walking_time_university">%1$d minutes from %2$s university</string>
+    <string name="view_listing_walking_time_supermarket">%1$d minutes from %2$s</string>
+    <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes from %2$s %3$s</string>
+    <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes from %2$s</string>
+    <string name="view_listing_no_points_of_interest">No nearby points of interest available</string>
     <string name="view_listing_message_already_sent">You have already sent a message for this listing.</string>
     <string name="view_listing_please_wait_for_response">Please wait for a response from the owner.</string>
     <string name="view_listing_failed_to_submit_message">Failed to submit message:</string>
@@ -502,4 +515,5 @@
     <string name="title_activity_second">SecondActivity</string>
     <string name="default_web_client_id">587708119125-oqlivs13orms6lmp32pujt11ft3fat3h.apps.googleusercontent.com</string>
     <string name="of">of</string>
+    <string name="and">and</string>
 </resources>

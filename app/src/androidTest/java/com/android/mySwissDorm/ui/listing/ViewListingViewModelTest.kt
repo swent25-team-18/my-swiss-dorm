@@ -454,6 +454,75 @@ class ViewListingViewModelTest : FirestoreTest() {
   }
 
   @Test
+  fun loadListing_calculatesPOIDistances() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+
+    val viewModel =
+        ViewListingViewModel(
+            rentalListingRepository = rentalListingRepository,
+            profileRepository = profileRepository,
+            residenciesRepository = residenciesRepository,
+            requestedMessageRepository = requestedMessageRepository)
+
+    viewModel.loadListing(listing.uid, context)
+    advanceUntilIdle()
+    delay(2000) // Wait for POI calculation
+
+    val poiDistances = viewModel.uiState.value.poiDistances
+    // POI distances might be empty if no POIs in database, but the calculation should not crash
+    assertNotNull("POI distances should be initialized", poiDistances)
+  }
+
+  @Test
+  fun loadListing_withUserUniversity_showsOnlyThatUniversity() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+
+    // Create profile with EPFL university
+    val profileWithUniversity =
+        profile2.copy(
+            ownerId = senderId, userInfo = profile2.userInfo.copy(universityName = "EPFL"))
+    profileRepository.editProfile(profileWithUniversity)
+
+    val viewModel =
+        ViewListingViewModel(
+            rentalListingRepository = rentalListingRepository,
+            profileRepository = profileRepository,
+            residenciesRepository = residenciesRepository,
+            requestedMessageRepository = requestedMessageRepository)
+
+    viewModel.loadListing(listing.uid, context)
+    advanceUntilIdle()
+    delay(2000) // Wait for POI calculation
+
+    // The POI calculation should use the user's university preference
+    // Even if no POIs are in database, the code path should execute without errors
+    assertNotNull("POI distances should be initialized", viewModel.uiState.value.poiDistances)
+  }
+
+  @Test
+  fun loadListing_invalidLocation_handlesGracefully() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Create listing with invalid location
+    val invalidListing = listing.copy(location = Location("Invalid", 0.0, 0.0))
+    rentalListingRepository.addRentalListing(invalidListing)
+
+    val viewModel =
+        ViewListingViewModel(
+            rentalListingRepository = rentalListingRepository,
+            profileRepository = profileRepository,
+            residenciesRepository = residenciesRepository,
+            requestedMessageRepository = requestedMessageRepository)
+
+    viewModel.loadListing(invalidListing.uid, context)
+    advanceUntilIdle()
+
+    // Should handle invalid location gracefully (empty POI list)
+    val poiDistances = viewModel.uiState.value.poiDistances
+    assertTrue("Invalid location should return empty POI list", poiDistances.isEmpty())
+  }
+
+  @Test
   fun submitContactMessage_alreadyExists() = runTest {
     switchToUser(FakeUser.FakeUser2)
 

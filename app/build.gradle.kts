@@ -30,6 +30,7 @@ android {
     // Load the API key from local.properties (took it from bootcamp)
     val mapsApiKeyFromCi = project.findProperty("MAPS_API_KEY") as? String
     val streamApiKeyFromCi = project.findProperty("STREAM_API_KEY") as? String
+    val openRouteServiceApiKeyFromCi = project.findProperty("OPENROUTESERVICE_API_KEY") as? String
     val localProperties = Properties()
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
@@ -37,8 +38,10 @@ android {
     }
     val mapsApiKeyFromLocal = localProperties.getProperty("MAPS_API_KEY")
     val streamApiKeyFromLocal = localProperties.getProperty("STREAM_API_KEY")
+    val openRouteServiceApiKeyFromLocal = localProperties.getProperty("OPENROUTESERVICE_API_KEY")
     val mapsApiKey: String = mapsApiKeyFromCi ?: mapsApiKeyFromLocal ?: ""
     val streamApiKey: String = streamApiKeyFromCi ?: streamApiKeyFromLocal ?: ""
+    val openRouteServiceApiKey: String = openRouteServiceApiKeyFromCi ?: openRouteServiceApiKeyFromLocal ?: ""
 
     signingConfigs {
         create("release") {
@@ -61,6 +64,7 @@ android {
         }
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         manifestPlaceholders["STREAM_API_KEY"] = streamApiKey
+        buildConfigField("String", "OPENROUTESERVICE_API_KEY", "\"$openRouteServiceApiKey\"")
         val numShards = providers.gradleProperty("android.testInstrumentationRunnerArguments.numShards")
         if (numShards.isPresent) {
             testInstrumentationRunnerArguments["numShards"] = numShards.get()

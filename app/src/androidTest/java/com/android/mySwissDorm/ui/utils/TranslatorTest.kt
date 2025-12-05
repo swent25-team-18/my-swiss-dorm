@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.utils.Translator
 import com.google.mlkit.nl.translate.TranslateLanguage
 import kotlinx.coroutines.runBlocking
@@ -41,5 +42,21 @@ class TranslatorTest {
         translator.translateText("C'est un chien", TranslateLanguage.ENGLISH, context)
 
     assertEquals("It's a dog", translatedText)
+  }
+
+  @Test
+  fun translateText_WithUndeterminedLanguage_ReturnsErrorMessage() = runBlocking {
+    val translator = Translator()
+    val result = translator.translateText("azbycxdwevfu", TranslateLanguage.ENGLISH, context)
+
+    assertEquals(context.getString(R.string.translator_could_not_determine_language), result)
+  }
+
+  @Test
+  fun translateText_WithSameLanguage_ReturnsOriginalMessage() = runBlocking {
+    val translator = Translator()
+    val result = translator.translateText("C'est un chien", TranslateLanguage.FRENCH, context)
+
+    assertEquals("C'est un chien", result)
   }
 }

@@ -206,7 +206,6 @@ class ViewListingViewModel(
     }
   }
 
-
   private suspend fun getUserUniversityName(currentUserId: String?, isGuest: Boolean): String? {
     if (currentUserId == null || isGuest) {
       return null

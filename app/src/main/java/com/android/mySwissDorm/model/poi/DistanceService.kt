@@ -16,9 +16,14 @@ import kotlinx.coroutines.coroutineScope
  *
  * @param poiName The name of the point of interest
  * @param walkingTimeMinutes The walking time in minutes
- * @param poiType The type of POI
+ * @param poiType The type of POI ("university" or "supermarket")
  */
-data class POIDistance(val poiName: String, val walkingTimeMinutes: Int, val poiType: POIType)
+data class POIDistance(val poiName: String, val walkingTimeMinutes: Int, val poiType: String) {
+  companion object {
+    const val TYPE_UNIVERSITY = "university"
+    const val TYPE_SUPERMARKET = "supermarket"
+  }
+}
 
 /**
  * Service for calculating walking times to points of interest. Uses data from Firestore collections
@@ -96,7 +101,7 @@ class DistanceService(
                   POIDistance(
                       poiName = university.name,
                       walkingTimeMinutes = timeMinutes,
-                      poiType = POIType.UNIVERSITY)
+                      poiType = POIDistance.TYPE_UNIVERSITY)
                 } else null
               }
             }
@@ -160,7 +165,7 @@ class DistanceService(
               POIDistance(
                   poiName = supermarket.name,
                   walkingTimeMinutes = timeMinutes,
-                  poiType = POIType.SUPERMARKET)
+                  poiType = POIDistance.TYPE_SUPERMARKET)
             }
       }
 
@@ -183,7 +188,7 @@ class DistanceService(
         "Calculated ${allDistances.size} total POI walking times for location (${location.latitude}, ${location.longitude})")
     Log.d(
         "DistanceService",
-        "Breakdown: ${allDistances.count { it.poiType == POIType.UNIVERSITY }} universities, ${allDistances.count { it.poiType == POIType.SUPERMARKET }} supermarkets")
+        "Breakdown: ${allDistances.count { it.poiType == POIDistance.TYPE_UNIVERSITY }} universities, ${allDistances.count { it.poiType == POIDistance.TYPE_SUPERMARKET }} supermarkets")
   }
 
   private fun buildFinalResult(allDistances: List<POIDistance>): List<POIDistance> {
@@ -191,11 +196,13 @@ class DistanceService(
 
     val nearestMigros =
         sortedDistances.firstOrNull {
-          it.poiType == POIType.SUPERMARKET && it.poiName.contains("Migros", ignoreCase = true)
+          it.poiType == POIDistance.TYPE_SUPERMARKET &&
+              it.poiName.contains("Migros", ignoreCase = true)
         }
     val nearestDenner =
         sortedDistances.firstOrNull {
-          it.poiType == POIType.SUPERMARKET && it.poiName.contains("Denner", ignoreCase = true)
+          it.poiType == POIDistance.TYPE_SUPERMARKET &&
+              it.poiName.contains("Denner", ignoreCase = true)
         }
 
     val result = mutableListOf<POIDistance>()
@@ -215,7 +222,7 @@ class DistanceService(
     val finalResult = result.sortedBy { it.walkingTimeMinutes }
     Log.d(
         "DistanceService",
-        "Final POIs (${finalResult.size}): ${finalResult.map { "${it.poiName} (${it.poiType.name}) - ${it.walkingTimeMinutes} min" }.joinToString(", ")}")
+        "Final POIs (${finalResult.size}): ${finalResult.map { "${it.poiName} (${it.poiType}) - ${it.walkingTimeMinutes} min" }.joinToString(", ")}")
     return finalResult
   }
 
@@ -223,13 +230,13 @@ class DistanceService(
    * Finds the nearest point of interest of a specific type.
    *
    * @param location The location to calculate walking time from
-   * @param type The type of POI to find
+   * @param type The type of POI to find ("university" or "supermarket")
    * @param userUniversityName Optional university name from user's profile
    * @return The nearest POIDistance of the specified type, or null if none found
    */
   suspend fun findNearestPOIByType(
       location: Location,
-      type: POIType,
+      type: String,
       userUniversityName: String? = null
   ): POIDistance? {
     // Handle invalid coordinates

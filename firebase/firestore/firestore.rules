@@ -33,9 +33,6 @@ service cloud.firestore {
     match /markets/{marketId} {
         allow read, write: if true;
     }
-    match /pointsOfInterest/{poiId} {
-        allow read, write: if true;
-    }
     match /admins/{email} {
        allow read: if true;
        allow write: if true;

@@ -86,7 +86,8 @@ class DistanceServiceTest {
 
     assertEquals("Should show 2 universities", 2, result.size)
     assertTrue(
-        "All results should be universities", result.all { it.poiType == POIType.UNIVERSITY })
+        "All results should be universities",
+        result.all { it.poiType == POIDistance.TYPE_UNIVERSITY })
     verify(walkingRouteService, times(2)).calculateWalkingTimeMinutes(eq(testLocation), any())
   }
 
@@ -100,7 +101,7 @@ class DistanceServiceTest {
 
     assertEquals("Should show only EPFL", 1, result.size)
     assertEquals("Should be EPFL", "EPFL", result.first().poiName)
-    assertEquals("Should be university type", POIType.UNIVERSITY, result.first().poiType)
+    assertEquals("Should be university type", POIDistance.TYPE_UNIVERSITY, result.first().poiType)
     verify(walkingRouteService, times(1))
         .calculateWalkingTimeMinutes(eq(testLocation), eq(epfl.location))
   }
@@ -115,7 +116,8 @@ class DistanceServiceTest {
 
     assertEquals("Should show 2 nearest universities", 2, result.size)
     assertTrue(
-        "All results should be universities", result.all { it.poiType == POIType.UNIVERSITY })
+        "All results should be universities",
+        result.all { it.poiType == POIDistance.TYPE_UNIVERSITY })
   }
 
   @Test
@@ -210,7 +212,9 @@ class DistanceServiceTest {
     // Should have: 2 supermarkets + up to 3 other POIs = max 5 total
     assertTrue("Should have at most 5 POIs (2 supermarkets + 3 others)", result.size <= 5)
     assertEquals(
-        "Should have 2 supermarkets", 2, result.count { it.poiType == POIType.SUPERMARKET })
+        "Should have 2 supermarkets",
+        2,
+        result.count { it.poiType == POIDistance.TYPE_SUPERMARKET })
   }
 
   @Test
@@ -222,7 +226,8 @@ class DistanceServiceTest {
     whenever(walkingRouteService.calculateWalkingTimeMinutes(eq(testLocation), eq(unil.location)))
         .thenReturn(10)
 
-    val result = distanceService.findNearestPOIByType(testLocation, POIType.UNIVERSITY, null)
+    val result =
+        distanceService.findNearestPOIByType(testLocation, POIDistance.TYPE_UNIVERSITY, null)
 
     assertNotNull("Should find nearest university", result)
     assertEquals("Should be EPFL (nearest)", "EPFL", result!!.poiName)
@@ -232,7 +237,8 @@ class DistanceServiceTest {
   @Test
   fun findNearestPOIByType_invalidCoordinates_returnsNull() = runTest {
     val invalidLocation = Location("Invalid", 0.0, 0.0)
-    val result = distanceService.findNearestPOIByType(invalidLocation, POIType.UNIVERSITY, null)
+    val result =
+        distanceService.findNearestPOIByType(invalidLocation, POIDistance.TYPE_UNIVERSITY, null)
 
     assertNull("Should return null for invalid coordinates", result)
   }

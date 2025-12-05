@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
-import com.android.mySwissDorm.model.poi.POIType
+import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
@@ -253,16 +253,17 @@ fun ViewListingScreen(
                                 val poiDistance = pois.first()
                                 val timeText =
                                     when (poiDistance.poiType) {
-                                      POIType.UNIVERSITY ->
+                                      POIDistance.TYPE_UNIVERSITY ->
                                           stringResource(
                                               R.string.view_listing_walking_time_university,
                                               poiDistance.walkingTimeMinutes,
                                               poiDistance.poiName)
-                                      POIType.SUPERMARKET ->
+                                      POIDistance.TYPE_SUPERMARKET ->
                                           stringResource(
                                               R.string.view_listing_walking_time_supermarket,
                                               poiDistance.walkingTimeMinutes,
                                               poiDistance.poiName)
+                                      else -> "" // Should not happen
                                     }
                                 Text(
                                     timeText,
@@ -287,9 +288,9 @@ fun ViewListingScreen(
                                 // Determine the type label (university or supermarket)
                                 val typeLabel =
                                     when {
-                                      pois.all { it.poiType == POIType.UNIVERSITY } ->
+                                      pois.all { it.poiType == POIDistance.TYPE_UNIVERSITY } ->
                                           stringResource(R.string.university)
-                                      pois.all { it.poiType == POIType.SUPERMARKET } ->
+                                      pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } ->
                                           "" // Supermarkets don't need a type label
                                       else -> "" // Mixed types, no label
                                     }

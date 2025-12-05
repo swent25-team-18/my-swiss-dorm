@@ -11,8 +11,9 @@ import okhttp3.Request
 import org.json.JSONObject
 
 /**
- * Service for calculating walking routes and times between two locations. Uses OpenRouteService API
- * (free, no API key required for basic usage).
+ * Service for calculating walking routes and times between two locations. Uses OpenRouteService
+ * API. Requires an API key configured in BuildConfig.OPENROUTESERVICE_API_KEY or falls back to
+ * Haversine calculation.
  */
 class WalkingRouteService(private val client: OkHttpClient) {
   private val cache =
@@ -27,7 +28,10 @@ class WalkingRouteService(private val client: OkHttpClient) {
     private const val TAG = "WalkingRouteService"
     private const val WALKING_SPEED_KMH = 5.0 // Average walking speed: 5 km/h
     private const val WALKING_SPEED_MS = WALKING_SPEED_KMH / 3.6 // Convert to m/s
-    private const val OPENROUTESERVICE_API_KEY = "" // TODO: Add your OpenRouteService API key here
+    // OpenRouteService API key - can be empty for basic usage, but for production use a valid key
+    private val OPENROUTESERVICE_API_KEY: String =
+        com.android.mySwissDorm.BuildConfig.OPENROUTESERVICE_API_KEY?.takeIf { it.isNotBlank() }
+            ?: ""
   }
 
   /**
@@ -63,6 +67,13 @@ class WalkingRouteService(private val client: OkHttpClient) {
           }
 
           // Call OpenRouteService API
+          // Note: OpenRouteService requires an API key. If not provided, fallback to Haversine
+          // calculation.
+          if (OPENROUTESERVICE_API_KEY.isBlank()) {
+            Log.w(TAG, "OpenRouteService API key not configured, using fallback calculation")
+            return@withContext calculateFallbackTime(from, to)
+          }
+
           val url =
               HttpUrl.Builder()
                   .scheme("https")

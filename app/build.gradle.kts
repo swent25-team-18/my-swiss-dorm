@@ -240,6 +240,10 @@ dependencies {
     implementation(libs.stream.chat.android.compose)
     implementation(libs.stream.chat.android.client)
 
+    // Translation
+    implementation("com.google.mlkit:translate:17.0.3")
+    implementation("com.google.mlkit:language-id:17.0.4")
+
     // QR Code generation
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")

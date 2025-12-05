@@ -455,6 +455,12 @@
     <string name="sanitized_text_fields_price_required">Le prix est requis</string>
     <string name="sanitized_text_fields_price_leading_zero">Aucun zéro initial</string>
     <string name="sanitized_text_fields_price_range">Le prix doit être entre 1 et 10’000 CHF</string>
+
+    <!-- Translator -->
+    <string name="translator_translating">Traduction…</string>
+    <string name="translator_error_translating">Erreur lors de la traduction.</string>
+    <string name="translator_could_not_determine_language">N\'a pas pu déterminer le langage</string>
+
     <!-- Map -->
     <string name="map_view">Carte d\'annonces</string>
     <string name="Map_Screen">Écran de carte</string>

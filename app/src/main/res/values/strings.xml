@@ -451,6 +451,12 @@
     <string name="sanitized_text_fields_price_required">Price is required</string>
     <string name="sanitized_text_fields_price_leading_zero">No leading zero</string>
     <string name="sanitized_text_fields_price_range">Price must be 1–10000 CHF</string>
+
+    <!-- Translator -->
+    <string name="translator_translating">Translating…</string>
+    <string name="translator_error_translating">Error during translation.</string>
+    <string name="translator_could_not_determine_language">Couldn\'t determine the language.</string>
+
     <!-- Map-->
     <string name="map_view">Listings map</string>
     <string name="Map_Screen">Map Screen</string>

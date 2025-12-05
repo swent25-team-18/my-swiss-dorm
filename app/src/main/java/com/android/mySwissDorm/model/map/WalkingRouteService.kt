@@ -15,7 +15,12 @@ import org.json.JSONObject
  * API. Requires an API key configured in BuildConfig.OPENROUTESERVICE_API_KEY or falls back to
  * Haversine calculation.
  */
-class WalkingRouteService(private val client: OkHttpClient) {
+class WalkingRouteService(
+    private val client: OkHttpClient,
+    private val apiKey: String =
+        com.android.mySwissDorm.BuildConfig.OPENROUTESERVICE_API_KEY?.takeIf { it.isNotBlank() }
+            ?: ""
+) {
   private val cache =
       mutableMapOf<
           String, Pair<Double, Long>>() // Cache: routeKey -> (distance in meters, timestamp)
@@ -28,10 +33,6 @@ class WalkingRouteService(private val client: OkHttpClient) {
     private const val TAG = "WalkingRouteService"
     private const val WALKING_SPEED_KMH = 5.0 // Average walking speed: 5 km/h
     private const val WALKING_SPEED_MS = WALKING_SPEED_KMH / 3.6 // Convert to m/s
-    // OpenRouteService API key - can be empty for basic usage, but for production use a valid key
-    private val OPENROUTESERVICE_API_KEY: String =
-        com.android.mySwissDorm.BuildConfig.OPENROUTESERVICE_API_KEY?.takeIf { it.isNotBlank() }
-            ?: ""
   }
 
   /**
@@ -69,7 +70,7 @@ class WalkingRouteService(private val client: OkHttpClient) {
           // Call OpenRouteService API
           // Note: OpenRouteService requires an API key. If not provided, fallback to Haversine
           // calculation.
-          if (OPENROUTESERVICE_API_KEY.isBlank()) {
+          if (apiKey.isBlank()) {
             Log.w(TAG, "OpenRouteService API key not configured, using fallback calculation")
             return@withContext calculateFallbackTime(from, to)
           }
@@ -81,7 +82,7 @@ class WalkingRouteService(private val client: OkHttpClient) {
                   .addPathSegment("v2")
                   .addPathSegment("directions")
                   .addPathSegment("foot-walking")
-                  .addQueryParameter("api_key", OPENROUTESERVICE_API_KEY)
+                  .addQueryParameter("api_key", apiKey)
                   .addQueryParameter(
                       "start", "${from.longitude},${from.latitude}") // Note: lon,lat order for ORS
                   .addQueryParameter("end", "${to.longitude},${to.latitude}")

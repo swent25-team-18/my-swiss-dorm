@@ -23,7 +23,8 @@ class WalkingRouteServiceTest {
     server = MockWebServer().apply { start() }
     client =
         OkHttpClient.Builder().addInterceptor(TestUrlRewriteInterceptor(server.url("/"))).build()
-    service = WalkingRouteService(client)
+    // Use a test API key so the service doesn't fall back to Haversine calculation
+    service = WalkingRouteService(client, apiKey = "test-api-key")
   }
 
   @After

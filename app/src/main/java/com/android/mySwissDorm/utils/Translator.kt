@@ -9,15 +9,13 @@ import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.TranslatorOptions
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Utility class used to translate text. It automatically detects the source language of the text
  * and translates it into the given language.
  */
 class Translator {
-  private val langIdentifier by lazy { LanguageIdentification.getClient() }
-
   private val logTag = "Translator"
 
   /**
@@ -30,18 +28,26 @@ class Translator {
    * @return The translated text, or a status/error message if an error occurs.
    */
   suspend fun translateText(text: String, targetLanguageCode: String, context: Context): String =
-      suspendCoroutine { continuation ->
+      suspendCancellableCoroutine { continuation ->
+        val langIdentifier = LanguageIdentification.getClient()
+        continuation.invokeOnCancellation {
+          Log.d(logTag, "Coroutine cancelled, closing language identifier.")
+          langIdentifier.close()
+        }
+
         langIdentifier
             .identifyLanguage(text)
             .addOnSuccessListener { languageCode ->
               if (languageCode == LanguageIdentifier.UNDETERMINED_LANGUAGE_TAG) {
                 continuation.resume(
                     context.getString(R.string.translator_could_not_determine_language))
+                langIdentifier.close()
                 return@addOnSuccessListener
               }
 
               if (languageCode == targetLanguageCode) {
                 continuation.resume(text)
+                langIdentifier.close()
                 return@addOnSuccessListener
               }
 
@@ -53,6 +59,13 @@ class Translator {
 
               val translator = Translation.getClient(options)
 
+              langIdentifier.close()
+
+              continuation.invokeOnCancellation {
+                Log.d(logTag, "Coroutine cancelled, closing translator.")
+                translator.close()
+              }
+
               translator
                   .downloadModelIfNeeded()
                   .addOnSuccessListener {
@@ -60,21 +73,25 @@ class Translator {
                         .translate(text)
                         .addOnSuccessListener { translatedText ->
                           continuation.resume(translatedText)
+                          translator.close()
                         }
                         .addOnFailureListener { exception ->
                           Log.w(logTag, "Error translating the string: $text", exception)
                           continuation.resume(
                               context.getString(R.string.translator_error_translating))
+                          translator.close()
                         }
                   }
                   .addOnFailureListener { exception ->
                     Log.w(logTag, "Error downloading the model", exception)
                     continuation.resume(context.getString(R.string.translator_error_translating))
+                    translator.close()
                   }
             }
             .addOnFailureListener { exception ->
               Log.w(logTag, "Error detecting the language of the string: $text", exception)
               continuation.resume(context.getString(R.string.translator_error_translating))
+              langIdentifier.close()
             }
       }
 

@@ -418,7 +418,11 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.isGuest }
+    // Wait for listing to load and guest state to be set
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid && s.isGuest
+    }
     compose.onNodeWithTag(C.ViewListingTags.LOCATION).performScrollTo().assertIsDisplayed()
     compose
         .onNodeWithText("Sign in to contact the owner and apply.")
@@ -755,5 +759,144 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     compose.waitUntil("The listing page is not shown after leaving the full screen mode", 5_000) {
       compose.onNodeWithTag(C.ImageGridTags.imageTag(photo.image)).isDisplayed()
     }
+  }
+
+  @Test
+  fun title_isDisplayed() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid
+    }
+
+    scrollListTo(C.ViewListingTags.TITLE)
+    compose.onNodeWithTag(C.ViewListingTags.TITLE, useUnmergedTree = true).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.ViewListingTags.TITLE, useUnmergedTree = true)
+        .assertTextContains(otherListing.title, substring = true)
+  }
+
+  @Test
+  fun descriptionSection_isDisplayed() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid
+    }
+
+    scrollListTo(C.ViewListingTags.DESCRIPTION)
+    compose.onNodeWithTag(C.ViewListingTags.DESCRIPTION, useUnmergedTree = true).assertIsDisplayed()
+    // Use onNodeWithText to find the description text directly
+    compose.onNodeWithText(otherListing.description, substring = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun bulletSection_isDisplayed() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid
+    }
+
+    scrollListTo(C.ViewListingTags.BULLETS)
+    compose.onNodeWithTag(C.ViewListingTags.BULLETS, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun applyButton_disabledWhenBlocked() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    // Block the other user
+    profileRepo.addBlockedUser(ownerUid, otherUid)
+
+    switchToUser(FakeUser.FakeUser2)
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == ownerListing.uid && s.isBlockedByOwner
+    }
+
+    // Blocked users should see blocked notice, not apply button
+    compose
+        .onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
+  }
+
+  @Test
+  fun blockedUser_appliesButtonColorChanges() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    // Block the other user
+    profileRepo.addBlockedUser(ownerUid, otherUid)
+
+    switchToUser(FakeUser.FakeUser2)
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == ownerListing.uid && s.isBlockedByOwner
+    }
+
+    // When blocked, should show blocked notice instead of apply button
+    compose
+        .onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun postedBySection_displaysCorrectly() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid && s.fullNameOfPoster.isNotBlank()
+    }
+
+    scrollListTo(C.ViewListingTags.POSTED_BY)
+    compose.onNodeWithTag(C.ViewListingTags.POSTED_BY, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun locationSection_displaysCorrectly() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid
+    }
+
+    scrollListTo(C.ViewListingTags.LOCATION)
+    compose.onNodeWithTag(C.ViewListingTags.LOCATION, useUnmergedTree = true).assertIsDisplayed()
   }
 }

@@ -115,4 +115,93 @@ class SupermarketsRepositoryFirestoreTest : FirestoreTest() {
         "Migros Test Updated",
         fetchedSupermarkets.first().location.name)
   }
+
+  @Test
+  fun getAllSupermarketsByLocation_returnsOnlySupermarketsWithinRadius() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Add supermarkets at different distances
+    val nearbySupermarket =
+        Supermarket(
+            uid = "migros_epfl_uid",
+            name = "Migros EPFL",
+            location = Location("Migros EPFL", 46.5200, 6.6300))
+    val farSupermarket =
+        Supermarket(
+            uid = "migros_zurich_uid",
+            name = "Migros Zurich",
+            location = Location("Migros Zurich", 47.3769, 8.5417))
+
+    repo.addSupermarket(nearbySupermarket)
+    repo.addSupermarket(farSupermarket)
+
+    // Search from EPFL location with small radius (should only get Migros EPFL)
+    val searchLocation = Location("Search", 46.5197, 6.6323)
+    val radiusKm = 5.0 // 5 km radius
+    val nearbySupermarkets = repo.getAllSupermarketsByLocation(searchLocation, radiusKm)
+
+    assertEquals("Should find nearby supermarket", 1, nearbySupermarkets.size)
+    assertEquals("Should be Migros EPFL", "Migros EPFL", nearbySupermarkets.first().name)
+  }
+
+  @Test
+  fun getAllSupermarketsByLocation_emptyResult_whenNoSupermarketsInRadius() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Add supermarket far away
+    val farSupermarket =
+        Supermarket(
+            uid = "migros_zurich_uid",
+            name = "Migros Zurich",
+            location = Location("Migros Zurich", 47.3769, 8.5417))
+    repo.addSupermarket(farSupermarket)
+
+    // Search from EPFL location with very small radius
+    val searchLocation = Location("Search", 46.5197, 6.6323)
+    val radiusKm = 0.1 // 0.1 km radius (very small)
+    val nearbySupermarkets = repo.getAllSupermarketsByLocation(searchLocation, radiusKm)
+
+    assertTrue(
+        "Should return empty list when no supermarkets in radius", nearbySupermarkets.isEmpty())
+  }
+
+  @Test
+  fun getAllSupermarketsByLocation_returnsMultipleSupermarketsWithinRadius() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Add multiple supermarkets near EPFL
+    val supermarket1 =
+        Supermarket(
+            uid = "migros_epfl_uid",
+            name = "Migros EPFL",
+            location = Location("Migros EPFL", 46.5200, 6.6300))
+    val supermarket2 =
+        Supermarket(
+            uid = "denner_epfl_uid",
+            name = "Denner EPFL",
+            location = Location("Denner EPFL", 46.5190, 6.6310))
+
+    repo.addSupermarket(supermarket1)
+    repo.addSupermarket(supermarket2)
+
+    // Search from EPFL location with larger radius
+    val searchLocation = Location("Search", 46.5197, 6.6323)
+    val radiusKm = 10.0 // 10 km radius
+    val nearbySupermarkets = repo.getAllSupermarketsByLocation(searchLocation, radiusKm)
+
+    assertEquals("Should find both nearby supermarkets", 2, nearbySupermarkets.size)
+    assertTrue("Should contain Migros EPFL", nearbySupermarkets.any { it.name == "Migros EPFL" })
+    assertTrue("Should contain Denner EPFL", nearbySupermarkets.any { it.name == "Denner EPFL" })
+  }
+
+  @Test
+  fun getAllSupermarketsByLocation_emptyCollection_returnsEmptyList() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    val searchLocation = Location("Search", 46.5197, 6.6323)
+    val radiusKm = 10.0
+    val result = repo.getAllSupermarketsByLocation(searchLocation, radiusKm)
+
+    assertTrue("Should return empty list when collection is empty", result.isEmpty())
+  }
 }

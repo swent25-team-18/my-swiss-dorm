@@ -169,6 +169,7 @@ class RentalListingEntityTest {
     return RentalListing(
         uid = "listing-1",
         ownerId = "user-1",
+        ownerName = null,
         postedAt = Timestamp(1000, 500000),
         residencyName = "EPFL Residency",
         title = "Nice Studio",

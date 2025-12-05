@@ -12,12 +12,12 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.profile.*
 import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
+import com.android.mySwissDorm.ui.profile.ViewProfileScreenViewModel
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.github.se.bootcamp.ui.profile.ViewProfileScreenViewModel
 import com.google.firebase.firestore.FieldValue
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue

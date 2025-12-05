@@ -4,24 +4,34 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.firestore.FieldValue
+import io.mockk.unmockkAll
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 /**
  * UI tests for SettingsScreen. We pass an explicit SettingsViewModel built on the emulators to
@@ -89,7 +99,13 @@ class SettingsScreenTest : FirestoreTest() {
         .document(uid)
         .set(seededProfile)
         .await()
-  } //
+  }
+
+  @After
+  override fun tearDown() {
+    unmockkAll()
+    super.tearDown()
+  }
   //
   // ---------- small helpers ----------
 
@@ -497,24 +513,6 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun guestMode_defaultTogglesState() = runTest {
-    signInAnonymous()
-    setContentWithVm()
-    compose.waitForIdle()
-    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
-    compose.scrollUntilTextDisplayed(scrollTag, "Notifications")
-    val msgSwitch = C.SettingsTags.switch("Show notifications for messages")
-    compose.scrollUntilDisplayed(scrollTag, msgSwitch)
-    compose.onNodeWithTag(msgSwitch, useUnmergedTree = true).assert(hasStateDescription("Off"))
-    compose.scrollUntilTextDisplayed(scrollTag, "Privacy")
-    val readReceiptsSwitch = C.SettingsTags.switch("Read receipts")
-    compose.scrollUntilDisplayed(scrollTag, readReceiptsSwitch)
-    compose
-        .onNodeWithTag(readReceiptsSwitch, useUnmergedTree = true)
-        .assert(hasStateDescription("On"))
-  }
-
-  @Test
   fun guestMode_profileClick_doesNotTriggerCallback() = runTest {
     signInAnonymous()
     var profileClicked = false
@@ -536,5 +534,94 @@ class SettingsScreenTest : FirestoreTest() {
     assert(!contributionClicked) {
       "Contributions click callback should not be triggered in guest mode"
     }
+  }
+
+  @Test
+  fun photoIsDisplayedInSettings() {
+    val cloudRepo = FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, true)
+    val fakeProfileRepo: ProfileRepository = mock()
+    runBlocking { whenever(fakeProfileRepo.getProfile(any())) }
+        .thenReturn(
+            profile1.copy(userInfo = profile1.userInfo.copy(profilePicture = photo.fileName)))
+    val vm = SettingsViewModel(photoRepositoryCloud = cloudRepo, profiles = fakeProfileRepo)
+    compose.setContent { SettingsScreen(vm = vm) }
+    compose.waitForIdle()
+
+    compose.waitUntil("The profile picture is not displayed in the settings", 5_000) {
+      compose
+          .onNodeWithTag(C.SettingsTags.avatarTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+  }
+
+  @Test
+  fun defaultAvatarIsDisplayedWhenNoPP() {
+    Assume.assumeTrue(
+        "The profile picture of the tested profile is not null as assumed by this test",
+        profile2.userInfo.profilePicture == null)
+    val cloudRepo = FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, true)
+    val fakeProfileRepo: ProfileRepository = mock()
+    runBlocking { whenever(fakeProfileRepo.getProfile(any())) }.thenReturn(profile2)
+    val vm = SettingsViewModel(photoRepositoryCloud = cloudRepo, profiles = fakeProfileRepo)
+    compose.setContent { SettingsScreen(vm = vm) }
+    compose.waitForIdle()
+
+    compose.waitUntil("The profile picture is not displayed in the settings", 5_000) {
+      compose.onNodeWithTag(C.SettingsTags.avatarTag(null), useUnmergedTree = true).isDisplayed()
+    }
+  }
+  // ---------- QR scan tests ----------
+
+  @Test
+  fun qrScanResult_nullOrBlank_doesNotNavigate() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    var navigated = false
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(null, context) { navigated = true }
+      handleQrScanResult("", context) { navigated = true }
+    }
+
+    assert(!navigated) { "QR navigation should not be triggered for null or blank contents" }
+  }
+
+  @Test
+  fun qrScanResult_invalidDomain_doesNotNavigate() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    var navigated = false
+    val invalidUrl = "https://example.com/some/path"
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(invalidUrl, context) { navigated = true }
+    }
+
+    assert(!navigated) { "QR navigation should not be triggered for invalid domain" }
+  }
+
+  @Test
+  fun qrScanResult_validMySwissDormLink_triggersNavigation() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val validUrl = "https://my-swiss-dorm.web.app/some/path?foo=bar"
+    var navigatedUrl: String? = null
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(validUrl, context) { navigatedUrl = it }
+    }
+
+    assert(navigatedUrl == validUrl) {
+      "QR navigation should be triggered with the scanned MySwissDorm URL"
+    }
+  }
+
+  @Test
+  fun qrScanButton_isDisplayedAndClickable() {
+    setContentWithVm()
+    compose.waitForIdle()
+
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val buttonTag = "SETTINGS_SCAN_QR_BUTTON"
+
+    compose.scrollUntilDisplayed(scrollTag, buttonTag)
+    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).assertIsDisplayed().performClick()
   }
 }

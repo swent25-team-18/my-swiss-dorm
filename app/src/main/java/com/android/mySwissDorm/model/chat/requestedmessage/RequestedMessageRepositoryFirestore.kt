@@ -93,6 +93,29 @@ class RequestedMessageRepositoryFirestore(private val db: FirebaseFirestore) :
     return db.collection(REQUESTED_MESSAGES_COLLECTION_PATH).document().id
   }
 
+  override suspend fun hasExistingMessage(
+      fromUserId: String,
+      toUserId: String,
+      listingId: String
+  ): Boolean {
+    try {
+      val snapshot =
+          db.collection(REQUESTED_MESSAGES_COLLECTION_PATH)
+              .whereEqualTo("fromUserId", fromUserId)
+              .whereEqualTo("toUserId", toUserId)
+              .whereEqualTo("listingId", listingId)
+              .limit(1)
+              .get()
+              .await()
+
+      return !snapshot.isEmpty
+    } catch (e: Exception) {
+      Log.e("RequestedMessageRepository", "Error checking for existing message", e)
+      // Return false on error to allow submission (fail open)
+      return false
+    }
+  }
+
   private fun documentToRequestedMessage(doc: DocumentSnapshot): RequestedMessage? {
     return try {
       val data = doc.data ?: return null

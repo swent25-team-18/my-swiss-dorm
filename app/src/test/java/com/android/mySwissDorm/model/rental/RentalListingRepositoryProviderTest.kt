@@ -113,6 +113,7 @@ class RentalListingRepositoryProviderTest {
     return RentalListing(
         uid = uid,
         ownerId = "user-1",
+        ownerName = null,
         postedAt = Timestamp(1000000L, 0),
         residencyName = "Vortex",
         title = "Test Listing",

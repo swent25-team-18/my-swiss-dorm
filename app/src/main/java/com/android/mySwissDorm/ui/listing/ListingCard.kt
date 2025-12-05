@@ -52,7 +52,7 @@ fun ListingCard(
       shape = RoundedCornerShape(16.dp),
       modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.listingCard(data.listingUid)),
       onClick = { onClick(data) }) {
-        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Box(modifier = Modifier.fillMaxWidth()) {
           Row(
               modifier = Modifier.fillMaxWidth().padding(end = if (!isGuest) 48.dp else 0.dp),
               verticalAlignment = Alignment.CenterVertically) {

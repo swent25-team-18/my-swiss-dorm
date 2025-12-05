@@ -12,7 +12,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
-import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.review.Review
@@ -23,7 +22,6 @@ import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.Timestamp
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -71,20 +69,9 @@ class ViewReviewScreenShareTest : FirestoreTest() {
 
       // Create test review
       testReview =
-          Review(
-              uid = reviewsRepo.getNewUid(),
+          reviewVortex1.copy(
               ownerId = ownerId,
-              postedAt = Timestamp.now(),
-              title = "Test Review",
-              reviewText = "This is a test review",
-              grade = 4.0,
-              residencyName = "Vortex",
-              roomType = RoomType.STUDIO,
-              pricePerMonth = 300.0,
-              areaInM2 = 64,
-              imageUrls = emptyList(),
-              upvotedBy = emptySet(),
-              downvotedBy = emptySet())
+              ownerName = profile1.userInfo.name + " " + profile1.userInfo.lastName)
 
       switchToUser(FakeUser.FakeUser1)
       reviewsRepo.addReview(testReview)

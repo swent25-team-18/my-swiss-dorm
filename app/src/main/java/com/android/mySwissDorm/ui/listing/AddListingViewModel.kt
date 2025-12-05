@@ -8,6 +8,7 @@ import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
@@ -70,27 +71,40 @@ class AddListingViewModel(
         InputSanitizers.validateFinal<String>(
             InputSanitizers.FieldType.Description, state.description)
 
-    val listingToAdd =
-        RentalListing(
-            uid = rentalListingRepository.getNewUid(),
-            ownerId = Firebase.auth.currentUser?.uid ?: "User not logged in",
-            postedAt = Timestamp.now(),
-            residencyName = state.residencyName,
-            title = titleRes.value!!,
-            roomType = state.housingType,
-            pricePerMonth = priceRes.value!!.toDouble(),
-            areaInM2 = sizeRes.value!!.roundToInt(),
-            startDate = state.startDate,
-            description = descRes.value!!,
-            imageUrls = state.pickedImages.map { it.fileName },
-            status = RentalStatus.POSTED,
-            location = location)
+    // At this point, we know user is logged in and not anonymous (checked above)
+    val currentUserId = Firebase.auth.currentUser!!.uid
 
     // Mark as submitting
     _uiState.value = _uiState.value.copy(isSubmitting = true)
 
     viewModelScope.launch {
       try {
+        // Fetch owner name from profile
+        val ownerName =
+            try {
+              val profile = ProfileRepositoryProvider.repository.getProfile(currentUserId)
+              "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+            } catch (_: Exception) {
+              null // If profile fetch fails, ownerName will be null
+            }
+
+        val listingToAdd =
+            RentalListing(
+                uid = rentalListingRepository.getNewUid(),
+                ownerId = currentUserId,
+                ownerName = ownerName,
+                postedAt = Timestamp.now(),
+                residencyName = state.residencyName,
+                title = titleRes.value!!,
+                roomType = state.housingType,
+                pricePerMonth = priceRes.value!!.toDouble(),
+                areaInM2 = sizeRes.value!!.roundToInt(),
+                startDate = state.startDate,
+                description = descRes.value!!,
+                imageUrls = state.pickedImages.map { it.fileName },
+                status = RentalStatus.POSTED,
+                location = location)
+
         rentalListingRepository.addRentalListing(listingToAdd)
         photoManager.commitChanges()
         clearErrorMsg()

@@ -29,6 +29,7 @@ data class ListingFormState(
     val fullScreenImagesIndex: Int = 0,
     val requireResidencyName: Boolean = false,
     val isSubmitting: Boolean = false,
+    val ownerName: String? = null,
 ) {
   val isFormValid: Boolean
     get() {

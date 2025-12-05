@@ -48,6 +48,7 @@
     <string name="request">Demande</string>
     <string name="requester">Demandeur</string>
     <string name="residency">Résidence</string>
+    <string name="restart">Redémarrer</string>
     <string name="retry">Réessayer</string>
     <string name="review">Avis</string>
     <string name="reviews">Avis</string>
@@ -218,6 +219,10 @@
     <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes de %2$s %3$s</string>
     <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes de %2$s</string>
     <string name="view_listing_no_points_of_interest">Aucun point d\'intérêt à proximité disponible</string>
+    <string name="view_listing_message_already_sent">Vous avez déjà envoyé un message pour cette annonce.</string>
+    <string name="view_listing_please_wait_for_response">Veuillez attendre une réponse du propriétaire.</string>
+    <string name="view_listing_failed_to_submit_message">Échec de l\'envoi du message :</string>
+    <string name="view_listing_message_sent">Message envoyé ! Le propriétaire sera notifié.</string>
 
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Pas encore implémenté</string>
@@ -308,13 +313,12 @@
     <string name="profile_save">ENREGISTRER</string>
     <string name="profile_logout">DÉCONNEXION</string>
     <string name="profile_view_bookmarks">Voir les annonces enregistrées</string>
+    <string name="profile_must_restart_pop_up">Vous devez redémarrer l\'application pour changer de langue</string>
 
     <!-- ProfileViewModel -->
     <string name="profile_vm_not_signed_in">Non connecté.</string>
     <string name="profile_vm_failed_to_save">Échec de l’enregistrement :</string>
 
-    <!-- RequestDetailScreen -->
-    <string name="request_detail_title">Demande reçue</string>
 
     <!-- ViewUserProfileScreen -->
     <string name="view_user_profile_send_message">Envoyer un message</string>
@@ -470,7 +474,7 @@
 
     <!-- Chat -->
     <string name="new_chat">Nouvelle Conversation</string>
-    <string name="search_users">Rechercher des utilisateurs...</string>
+    <string name="search_users">Rechercher des utilisateurs…</string>
     <string name="no_users_found">Aucun utilisateur trouvé</string>
     <string name="no_users_match_your_search">Aucun utilisateur ne correspond à votre recherche</string>
     <string name="chat_created">Conversation créée!</string>
@@ -478,12 +482,30 @@
     <string name="no_requested_messages">Acun message demandé</string>
     <string name="no_message_provided">Acun message fourni</string>
     <string name="failed_to_create_chat">Échec de la création de la conversation</string>
+    <string name="requested_messages_approved_channel_created">Message approuvé et canal de discussion créé.</string>
+    <string name="requested_messages_approved_manual_chat">Message approuvé. Vous pouvez démarrer une discussion manuellement depuis la boîte de réception.</string>
+    <string name="requested_messages_approved_sign_in">Message approuvé. Connectez-vous pour commencer à discuter.</string>
+    <string name="requested_messages_approve_failed">Échec de l\'approbation du message :</string>
+    <string name="requested_messages_rejected">Message rejeté.</string>
+    <string name="requested_messages_reject_failed">Échec du rejet du message :</string>
 
-    <!-- Offline Banner -->
+    <!-- QR -->
+    <string name="settings_qr_section_title">Liens et codes QR</string>
+    <string name="settings_qr_section_subtitle">
+    Scannez un code QR MySwissDorm pour ouvrir directement une annonce ou un avis dans l\'application.
+</string>
+    <string name="settings_qr_button">Scanner un code QR MySwissDorm</string>
+    <string name="settings_qr_prompt">Pointez la caméra vers un code QR MySwissDorm</string>
+    <string name="settings_qr_scan_cancelled">Scan annulé</string>
+    <string name="settings_qr_invalid_domain">Ce n\'est pas un lien MySwissDorm.</string>
+
+    <!-- Offline -->
     <string name="offline_banner_you_are_offline">Vous êtes hors ligne</string>
     <string name="offline_banner_last_updated">Dernière mise à jour %1$s</string>
     <string name="offline_banner_no_sync">Aucune donnée de synchronisation disponible</string>
     <string name="offline_banner_icon_description">Icône hors ligne</string>
+    <string name="unknown_owner_name">Propriétaire inconnu</string>
+    <string name="profile_offline_message">Vous devez être en ligne pour voir le profil d\'un autre utilisateur</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

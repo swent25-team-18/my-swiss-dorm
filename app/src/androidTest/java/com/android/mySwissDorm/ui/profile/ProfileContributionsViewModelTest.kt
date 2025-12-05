@@ -81,6 +81,7 @@ class ProfileContributionsViewModelTest {
                           RentalListing(
                               uid = "listing-1",
                               ownerId = userId,
+                              ownerName = null,
                               postedAt = listingTime,
                               residencyName = "Res",
                               title = "Listing title",
@@ -121,6 +122,7 @@ class ProfileContributionsViewModelTest {
                           Review(
                               uid = "review-1",
                               ownerId = userId,
+                              ownerName = null,
                               postedAt = reviewTime,
                               title = "Review title",
                               reviewText = "Great place",

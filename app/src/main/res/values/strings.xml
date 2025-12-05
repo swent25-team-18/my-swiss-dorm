@@ -46,6 +46,7 @@
     <string name="request">Request</string>
     <string name="requester">Requester</string>
     <string name="residency">Residency</string>
+    <string name="restart">Restart</string>
     <string name="retry">Retry</string>
     <string name="review">Review</string>
     <string name="reviews">Reviews</string>
@@ -215,6 +216,10 @@
     <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes from %2$s %3$s</string>
     <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes from %2$s</string>
     <string name="view_listing_no_points_of_interest">No nearby points of interest available</string>
+    <string name="view_listing_message_already_sent">You have already sent a message for this listing.</string>
+    <string name="view_listing_please_wait_for_response">Please wait for a response from the owner.</string>
+    <string name="view_listing_failed_to_submit_message">Failed to submit message:</string>
+    <string name="view_listing_message_sent">Message sent! The owner will be notified.</string>
 
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Not implemented yet</string>
@@ -305,13 +310,12 @@
     <string name="profile_save">SAVE</string>
     <string name="profile_logout">LOGOUT</string>
     <string name="profile_view_bookmarks">View Bookmarked Listings</string>
+    <string name="profile_must_restart_pop_up">You must restart the app to change language</string>
 
     <!-- ProfileViewModel -->
     <string name="profile_vm_not_signed_in">Not signed in.</string>
     <string name="profile_vm_failed_to_save">Failed to save:</string>
 
-    <!-- RequestDetailScreen -->
-    <string name="request_detail_title">Received request</string>
 
     <!-- ViewUserProfileScreen -->
     <string name="view_user_profile_send_message">Send a message</string>
@@ -474,12 +478,31 @@
     <string name="no_requested_messages">No requested messages</string>
     <string name="no_message_provided">No message provided</string>
     <string name="failed_to_create_chat">Failed to create chat</string>
+    <string name="requested_messages_approved_channel_created">Message approved and chat channel created.</string>
+    <string name="requested_messages_approved_manual_chat">Message approved. You can start a chat manually from the inbox.</string>
+    <string name="requested_messages_approved_sign_in">Message approved. Sign in to start chatting.</string>
+    <string name="requested_messages_approve_failed">Failed to approve message:</string>
+    <string name="requested_messages_rejected">Message rejected.</string>
+    <string name="requested_messages_reject_failed">Failed to reject message:</string>
 
-    <!-- Offline Banner -->
+    <!-- QR -->
+    <string name="settings_qr_section_title">Links &amp; QR codes</string>
+    <string name="settings_qr_section_subtitle">
+    Scan a MySwissDorm QR code to open a listing or review directly in the app.
+</string>
+    <string name="settings_qr_button">Scan MySwissDorm QR code</string>
+    <string name="settings_qr_prompt">Point the camera at a MySwissDorm QR code</string>
+    <string name="settings_qr_scan_cancelled">Scan cancelled</string>
+    <string name="settings_qr_invalid_domain">This is not a MySwissDorm link.</string>
+
+
+    <!-- Offline -->
     <string name="offline_banner_you_are_offline">You\'re offline</string>
     <string name="offline_banner_last_updated">Last updated %1$s</string>
     <string name="offline_banner_no_sync">No sync data available</string>
     <string name="offline_banner_icon_description">Offline icon</string>
+    <string name="unknown_owner_name">Unknown Owner</string>
+    <string name="profile_offline_message">You need to be online to view other user\'s profile</string>
 
     <!-- Other -->
     <string name="title_activity_main">MainActivity</string>

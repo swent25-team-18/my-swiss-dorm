@@ -239,6 +239,7 @@ dependencies {
     // Stream Chat SDK
     implementation(libs.stream.chat.android.compose)
     implementation(libs.stream.chat.android.client)
+    implementation("io.getstream:stream-chat-android-offline:6.0.0")
 
     // QR Code generation
     implementation("com.google.zxing:core:3.5.2")

@@ -39,6 +39,7 @@ import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -120,127 +121,84 @@ fun ChannelsScreen(
   val coroutineScope = rememberCoroutineScope()
   var isLoadInProgress by remember { mutableStateOf(false) }
 
-  // Extract channel loading logic into a reusable function
-  suspend fun loadChannels() {
-    if (isLoadInProgress) {
-      Log.d("ChannelsScreen", "loadChannels already in progress, skipping")
-      return
-    }
-    isLoadInProgress = true
-    isLoading = true
-    Log.d("ChannelsScreen", "Starting loadChannels")
-    try {
-      // Check if Stream Chat is initialized
-      if (!StreamChatProvider.isInitialized()) {
-        Log.e("ChannelsScreen", "Stream Chat not initialized")
-        isLoading = false
-        isLoadInProgress = false
-        channels = emptyList()
-        return
-      }
+    // Extract channel loading logic into a reusable function
+    suspend fun loadChannels() {
+        // REMOVED: isLoadInProgress check. It caused the deadlock.
 
-      val chatClient = StreamChatProvider.getClient()
+        // Set loading state
+        isLoading = true
+        Log.d("ChannelsScreen", "Starting loadChannels")
 
-      // Check if user is connected to Stream Chat
-      var isConnected = chatClient.clientState.user.value != null
-      if (!isConnected) {
-        Log.w("ChannelsScreen", "User not connected to Stream Chat, attempting to connect...")
-        // Try to connect the user with timeout
         try {
-          // Load profile with timeout
-          val profile = withContext(Dispatchers.IO) {
-            withTimeout(5000) {
-              ProfileRepositoryProvider.repository.getProfile(currentUser.uid)
+            // 1. Safety Check
+            if (!StreamChatProvider.isInitialized()) {
+                Log.e("ChannelsScreen", "Stream Chat not initialized")
+                channels = emptyList()
+                return // finally block will run
             }
-          }
-          
-          // Connect user with timeout
-          withContext(Dispatchers.IO) {
-            withTimeout(10000) {
-              StreamChatProvider.connectUser(
-                  firebaseUserId = currentUser.uid,
-                  displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
-                  imageUrl = "")
+
+            val chatClient = StreamChatProvider.getClient()
+            val currentUserState = chatClient.clientState.user.value
+
+            // 2. Connection Logic (Optimized)
+            // Only connect if we are strictly disconnected (null user)
+            if (currentUserState == null) {
+                Log.d("ChannelsScreen", "User not connected, connecting now...")
+                try {
+                    // Use cached Firebase name to speed up connection
+                    val displayName = currentUser.displayName
+                        ?: "User ${currentUser.uid.take(5)}"
+
+                    withTimeout(10000) {
+                        StreamChatProvider.connectUser(
+                            firebaseUserId = currentUser.uid,
+                            displayName = displayName,
+                            imageUrl = ""
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e("ChannelsScreen", "Failed to connect user", e)
+                    channels = emptyList()
+                    return // finally block will run
+                }
             }
-          }
-          
-          // Wait a bit longer and verify connection (with retries)
-          var retries = 3
-          while (retries > 0 && !isConnected) {
-            delay(1000) // Wait 1 second
-            isConnected = chatClient.clientState.user.value != null
-            retries--
-          }
-          
-          if (!isConnected) {
-            Log.e(
-                "ChannelsScreen", "Connection failed - user still not connected after connectUser")
-            isLoading = false
-            isLoadInProgress = false
-            channels = emptyList()
-            return
-          }
-          Log.d("ChannelsScreen", "User successfully connected to Stream Chat")
-        } catch (e: TimeoutCancellationException) {
-          Log.e("ChannelsScreen", "Connection timeout", e)
-          isLoading = false
-          isLoadInProgress = false
-          channels = emptyList()
-          return
+
+            // 3. Query Logic
+            try {
+                Log.d("ChannelsScreen", "Querying channels for user: ${currentUser.uid}")
+                val filter = Filters.and(
+                    Filters.eq("type", "messaging"),
+                    Filters.`in`("members", listOf(currentUser.uid))
+                )
+                val request = QueryChannelsRequest(
+                    filter = filter,
+                    offset = 0,
+                    limit = 20,
+                    messageLimit = 10 // Explicitly request messages
+                )
+
+                val result = withContext(Dispatchers.IO) {
+                    withTimeout(10000) {
+                        chatClient.queryChannels(request).await()
+                    }
+                }
+
+                channels = result.getOrNull() ?: emptyList()
+                Log.d("ChannelsScreen", "Channels query result: ${channels.size} channels found for user ${currentUser.uid}")
+            } catch (e: Exception) {
+                Log.e("ChannelsScreen", "Error querying channels", e)
+                if (channels.isEmpty()) channels = emptyList()
+            }
+
         } catch (e: Exception) {
-          Log.e("ChannelsScreen", "Failed to connect user to Stream Chat", e)
-          isLoading = false
-          isLoadInProgress = false
-          channels = emptyList()
-          return
+            Log.e("ChannelsScreen", "Unexpected error in loadChannels", e)
+            channels = emptyList()
+        } finally {
+            // CRITICAL: This ensures the spinner ALWAYS stops
+            isLoading = false
+            Log.d("ChannelsScreen", "loadChannels finished")
         }
-      }
-
-      // Query channels where current user is a member (with timeout)
-      try {
-        val filter =
-            Filters.and(
-                Filters.eq("type", "messaging"), Filters.`in`("members", listOf(currentUser.uid)))
-        val request = QueryChannelsRequest(filter = filter, offset = 0, limit = 20)
-        
-        val result = withContext(Dispatchers.IO) {
-          withTimeout(15000) { // 15 second timeout for query
-            chatClient.queryChannels(request).await()
-          }
-        }
-        
-        // Stream Chat returns Result<List<Channel>>, extract the list
-        channels = result.getOrNull() ?: emptyList()
-        if (result.isFailure) {
-          // Try to get error message from result
-          try {
-            result.getOrThrow()
-          } catch (e: Exception) {
-            Log.e("ChannelsScreen", "Error querying channels: ${e.message}", e)
-          }
-        } else {
-          Log.d("ChannelsScreen", "Successfully loaded ${channels.size} channels")
-        }
-      } catch (e: TimeoutCancellationException) {
-        Log.e("ChannelsScreen", "Query channels timeout", e)
-        channels = emptyList()
-      } catch (e: Exception) {
-        Log.e("ChannelsScreen", "Error querying channels", e)
-        channels = emptyList()
-      }
-
-      // Show channels after everything is done
-      isLoading = false
-      isLoadInProgress = false
-      Log.d("ChannelsScreen", "loadChannels completed successfully")
-    } catch (e: Exception) {
-      Log.e("ChannelsScreen", "Error loading channels", e)
-      isLoading = false
-      isLoadInProgress = false
-      // Ensure channels is set even on error to show empty state
-      channels = emptyList()
     }
-  }
 
   // Load channels when refreshKey changes (including initial load)
   LaunchedEffect(refreshKey) {
@@ -435,16 +393,55 @@ internal fun ChannelItem(
 ) {
   // Get the other user (not current user)
   val otherMember = channel.members.find { it.user.id != currentUserId }
-  val otherUserName =
+  val initialOtherUserName =
       otherMember?.user?.name ?: stringResource(R.string.channels_screen_unknown_user)
   val otherUserImage = otherMember?.user?.image
+  
+  // Robust Fallback: If member is missing, try to deduce ID from channel ID (uid1-uid2)
+  val targetUserId = otherMember?.user?.id ?: run {
+      val parts = channel.id.split("-")
+      if (parts.size == 2) {
+          if (parts[0] == currentUserId) parts[1] else parts[0]
+      } else null
+  }
+
+  // Fallback: If name is missing/unknown, try to fetch from ProfileRepository
+  var displayedName by remember { mutableStateOf(initialOtherUserName) }
+  val context = LocalContext.current
+  val unknownUserString = stringResource(R.string.channels_screen_unknown_user)
+  
+  LaunchedEffect(targetUserId) {
+      val isNameInvalid = displayedName.isBlank() || 
+                          displayedName == "Unknown User" || 
+                          displayedName == unknownUserString
+                          
+      if (isNameInvalid && targetUserId != null) {
+          try {
+              val profile = withContext(Dispatchers.IO) {
+                  ProfileRepositoryProvider.repository.getProfile(targetUserId)
+              }
+              val fullName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+              if (fullName.isNotBlank()) {
+                  displayedName = fullName
+              }
+          } catch (e: Exception) {
+              Log.e("ChannelItem", "Failed to fetch profile name for $targetUserId", e)
+          }
+      }
+  }
 
   // Get last message
   val lastMessage = channel.messages.lastOrNull()
+  // Fallback: If messages are empty but lastMessageAt exists, show placeholder
   val lastMessageText =
-      lastMessage?.text ?: stringResource(R.string.channels_screen_no_messages_yet)
+      lastMessage?.text 
+          ?: if (channel.lastMessageAt != null) "New message" 
+          else stringResource(R.string.channels_screen_no_messages_yet)
+          
   val lastMessageTime =
-      lastMessage?.createdAt?.let { formatMessageTime(it, LocalContext.current) } ?: ""
+      lastMessage?.createdAt?.let { formatMessageTime(it, LocalContext.current) }
+          ?: channel.lastMessageAt?.let { formatMessageTime(it, LocalContext.current) }
+          ?: ""
 
   // Unread count - calculate manually from last read position
   // Note: Stream Chat SDK doesn't expose unreadCount directly, so we calculate it
@@ -479,7 +476,7 @@ internal fun ChannelItem(
         // Avatar
         AsyncImage(
             model = otherUserImage ?: "https://bit.ly/2TIt8NR",
-            contentDescription = otherUserName,
+            contentDescription = displayedName,
             modifier = Modifier.size(56.dp).clip(CircleShape),
             contentScale = ContentScale.Crop)
 
@@ -492,7 +489,7 @@ internal fun ChannelItem(
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = otherUserName,
+                    text = displayedName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = TextColor,

@@ -7,6 +7,7 @@ import com.google.mlkit.nl.languageid.LanguageIdentification
 import com.google.mlkit.nl.languageid.LanguageIdentifier
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
+import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -30,8 +31,10 @@ class Translator {
   suspend fun translateText(text: String, targetLanguageCode: String, context: Context): String =
       suspendCancellableCoroutine { continuation ->
         val langIdentifier = LanguageIdentification.getClient()
+        var translator: Translator? = null
         continuation.invokeOnCancellation {
-          Log.d(logTag, "Coroutine cancelled, closing language identifier.")
+          Log.d(logTag, "Coroutine cancelled, closing language identifier and translator.")
+          translator?.close()
           langIdentifier.close()
         }
 
@@ -51,42 +54,37 @@ class Translator {
                 return@addOnSuccessListener
               }
 
+              langIdentifier.close()
+
               val options =
                   TranslatorOptions.Builder()
                       .setSourceLanguage(languageCode)
                       .setTargetLanguage(targetLanguageCode)
                       .build()
 
-              val translator = Translation.getClient(options)
+              translator = Translation.getClient(options)
 
-              langIdentifier.close()
-
-              continuation.invokeOnCancellation {
-                Log.d(logTag, "Coroutine cancelled, closing translator.")
-                translator.close()
+              translator?.let { t ->
+                t.downloadModelIfNeeded()
+                    .addOnSuccessListener {
+                      t.translate(text)
+                          .addOnSuccessListener { translatedText ->
+                            continuation.resume(translatedText)
+                            t.close()
+                          }
+                          .addOnFailureListener { exception ->
+                            Log.w(logTag, "Error translating the string: $text", exception)
+                            continuation.resume(
+                                context.getString(R.string.translator_error_translating))
+                            t.close()
+                          }
+                    }
+                    .addOnFailureListener { exception ->
+                      Log.w(logTag, "Error downloading the model", exception)
+                      continuation.resume(context.getString(R.string.translator_error_translating))
+                      t.close()
+                    }
               }
-
-              translator
-                  .downloadModelIfNeeded()
-                  .addOnSuccessListener {
-                    translator
-                        .translate(text)
-                        .addOnSuccessListener { translatedText ->
-                          continuation.resume(translatedText)
-                          translator.close()
-                        }
-                        .addOnFailureListener { exception ->
-                          Log.w(logTag, "Error translating the string: $text", exception)
-                          continuation.resume(
-                              context.getString(R.string.translator_error_translating))
-                          translator.close()
-                        }
-                  }
-                  .addOnFailureListener { exception ->
-                    Log.w(logTag, "Error downloading the model", exception)
-                    continuation.resume(context.getString(R.string.translator_error_translating))
-                    translator.close()
-                  }
             }
             .addOnFailureListener { exception ->
               Log.w(logTag, "Error detecting the language of the string: $text", exception)

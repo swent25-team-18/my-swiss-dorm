@@ -259,7 +259,7 @@ class ProfileScreenViewModel(
    * Security Rules:
    * - Includes `ownerId = uid` in the payload to satisfy rules that validate the owner on writes.
    */
-  fun saveProfile(context: Context) {
+  fun saveProfile(context: Context, postSave: () -> Unit = {}) {
     val uid = auth.currentUser?.uid
     if (uid == null) {
       _uiState.update { it.copy(errorMsg = context.getString(R.string.profile_vm_not_signed_in)) }
@@ -310,7 +310,7 @@ class ProfileScreenViewModel(
                   userSettings = UserSettings(language = languageEnum))
           profileRepo.createProfile(newProfile)
         }
-
+        postSave()
         _uiState.update { it.copy(isSaving = false, isEditing = false, errorMsg = null) }
       } catch (e: Exception) {
         Log.e("ProfileViewModel", "Failed to save profile", e)

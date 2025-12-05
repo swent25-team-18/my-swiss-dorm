@@ -1,10 +1,12 @@
 package com.android.mySwissDorm.ui.profile
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasClickAction
@@ -45,6 +47,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -144,7 +147,9 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun initialElements_viewMode_and_nonClickable_avatar() {
-    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}) }
+    compose.setContent {
+      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}, onLanguageChange = {})
+    }
     waitForProfileScreenReady()
 
     compose.onNodeWithTag("profile_title").assertIsDisplayed().assertTextEquals("Profile")
@@ -174,7 +179,9 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun editToggle_enablesFields_save_writes_to_firestore() = runTest {
     // Screen AFTER repos + seed are ready
-    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}) }
+    compose.setContent {
+      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}, onLanguageChange = {})
+    }
     waitForProfileScreenReady()
 
     // Enter edit mode
@@ -218,10 +225,23 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     // Back to view mode (wait until logout button reappears)
     compose.waitUntil(5_000) {
       compose
+          .onAllNodesWithTag(C.ProfileScreenTags.RESTART_DIALOG, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_RESTART_BUTTON).assertIsDisplayed()
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_RESTART_BUTTON).performClick()
+
+    compose.waitForIdle()
+
+    compose.waitUntil(5_000) {
+      compose
           .onAllNodesWithTag("profile_logout_button", useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
+
     compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_logout_button"))
     compose.onNodeWithTag("profile_logout_button").assertIsDisplayed()
     compose.onNodeWithTag("profile_save_button").assertDoesNotExist()
@@ -240,7 +260,9 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun editToggle_tap_twice_cancels_and_restores_viewMode() {
-    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}) }
+    compose.setContent {
+      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}, onLanguageChange = {})
+    }
     waitForProfileScreenReady()
 
     compose.onNodeWithTag("profile_edit_toggle").performClick()
@@ -258,7 +280,9 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun avatar_clickable_only_in_edit_mode() {
-    compose.setContent { ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}) }
+    compose.setContent {
+      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}, onLanguageChange = {})
+    }
     waitForProfileScreenReady()
 
     compose
@@ -276,6 +300,43 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun onLanguageIsCalledWhenUserModifyLanguage() {
+    var languageChanged = false
+    compose.setContent {
+      ProfileScreen(
+          onLogout = {},
+          onBack = {},
+          onLanguageChange = { languageChanged = true },
+          onEditPreferencesClick = {})
+    }
+    waitForProfileScreenReady()
+
+    compose.onNodeWithTag("profile_edit_toggle").performClick()
+
+    val languagePick = "Français"
+    compose.onNodeWithTag("field_language").performClick()
+    compose.onNodeWithText(languagePick, useUnmergedTree = true).performClick()
+
+    compose.onNodeWithTag("profile_save_button").assertIsDisplayed()
+    compose.onNodeWithTag("profile_save_button").performClick()
+
+    // Back to view mode (wait until logout button reappears)
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.ProfileScreenTags.RESTART_DIALOG)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_RESTART_BUTTON).assertIsDisplayed()
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_RESTART_BUTTON).performClick()
+
+    compose.waitUntil(5_000) { languageChanged }
+
+    assertTrue(languageChanged)
+  }
+
+  @Test
   fun canAddProfilePicture() {
     val localRepo = FakePhotoRepository.commonLocalRepo({ photo }, {}, true)
     val cloudRepo =
@@ -289,7 +350,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
             photoRepositoryCloud = cloudRepo,
             profileRepo = fakeProfileRepo)
     compose.setContent {
-      ProfileScreen(onLogout = {}, onBack = {}, viewModel = vm, onEditPreferencesClick = {})
+      ProfileScreen(
+          onLogout = {},
+          onBack = {},
+          viewModel = vm,
+          onEditPreferencesClick = {},
+          onLanguageChange = {})
     }
     waitForProfileScreenReady()
 
@@ -335,7 +401,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
             photoRepositoryCloud = cloudRepo,
             profileRepo = fakeProfileRepo)
     compose.setContent {
-      ProfileScreen(onLogout = {}, onBack = {}, viewModel = vm, onEditPreferencesClick = {})
+      ProfileScreen(
+          onLogout = {},
+          onBack = {},
+          viewModel = vm,
+          onEditPreferencesClick = {},
+          onLanguageChange = {})
     }
 
     waitForProfileScreenReady()
@@ -390,7 +461,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
             photoRepositoryCloud = cloudRepo,
             profileRepo = fakeProfileRepo)
     compose.setContent {
-      ProfileScreen(onLogout = {}, onBack = {}, viewModel = vm, onEditPreferencesClick = {})
+      ProfileScreen(
+          onLogout = {},
+          onBack = {},
+          viewModel = vm,
+          onEditPreferencesClick = {},
+          onLanguageChange = {})
     }
 
     waitForProfileScreenReady()
@@ -439,7 +515,11 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   fun preferences_button_is_displayed_and_navigates() {
     var clicked = false
     compose.setContent {
-      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = { clicked = true })
+      ProfileScreen(
+          onLogout = {},
+          onBack = {},
+          onEditPreferencesClick = { clicked = true },
+          onLanguageChange = {})
     }
     waitForProfileScreenReady()
     compose
@@ -451,6 +531,46 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun onLanguageIsNotCalledWhenUserCancelModifyLanguage() {
+    var languageChanged = false
+
+    compose.setContent {
+      ProfileScreen(
+          onLogout = {},
+          onBack = {},
+          onLanguageChange = { languageChanged = true },
+          onEditPreferencesClick = {})
+    }
+    waitForProfileScreenReady()
+
+    compose.onNodeWithTag("profile_edit_toggle").performClick()
+
+    val languagePick = "Français"
+    compose.onNodeWithTag("field_language").performClick()
+    compose.onNodeWithText(languagePick, useUnmergedTree = true).performClick()
+
+    compose.onNodeWithTag("profile_save_button").assertIsDisplayed()
+    compose.onNodeWithTag("profile_save_button").performClick()
+
+    // Back to view mode (wait until logout button reappears)
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.ProfileScreenTags.RESTART_DIALOG)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_CANCEL_BUTTON).assertIsDisplayed()
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG_CANCEL_BUTTON).performClick()
+
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.ProfileScreenTags.RESTART_DIALOG).assertIsNotDisplayed()
+
+    assertFalse(languageChanged)
+  }
+
+  @Test
   fun preferences_screen_saves_price_and_room_types() = runTest {
     val vm =
         ProfileScreenViewModel(
@@ -458,7 +578,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
             profileRepo = ProfileRepositoryProvider.repository,
             locationRepository = LocationRepositoryProvider.repository)
 
-    val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+    val context = ApplicationProvider.getApplicationContext<Context>()
     vm.loadProfile(context)
     compose.setContent { EditPreferencesScreen(viewModel = vm, onBack = {}) }
     compose.waitForIdle()

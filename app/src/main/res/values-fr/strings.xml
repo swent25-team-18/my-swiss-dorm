@@ -48,6 +48,7 @@
     <string name="request">Demande</string>
     <string name="requester">Demandeur</string>
     <string name="residency">Résidence</string>
+    <string name="restart">Redémarrer</string>
     <string name="retry">Réessayer</string>
     <string name="review">Avis</string>
     <string name="reviews">Avis</string>
@@ -299,6 +300,7 @@
     <string name="profile_save">ENREGISTRER</string>
     <string name="profile_logout">DÉCONNEXION</string>
     <string name="profile_view_bookmarks">Voir les annonces enregistrées</string>
+    <string name="profile_must_restart_pop_up">Vous devez redémarrer l\'application pour changer de langue</string>
 
     <!-- ProfileViewModel -->
     <string name="profile_vm_not_signed_in">Non connecté.</string>

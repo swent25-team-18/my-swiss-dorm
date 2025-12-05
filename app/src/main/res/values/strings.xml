@@ -46,6 +46,7 @@
     <string name="request">Request</string>
     <string name="requester">Requester</string>
     <string name="residency">Residency</string>
+    <string name="restart">Restart</string>
     <string name="retry">Retry</string>
     <string name="review">Review</string>
     <string name="reviews">Reviews</string>
@@ -296,6 +297,7 @@
     <string name="profile_save">SAVE</string>
     <string name="profile_logout">LOGOUT</string>
     <string name="profile_view_bookmarks">View Bookmarked Listings</string>
+    <string name="profile_must_restart_pop_up">You must restart the app to change language</string>
 
     <!-- ProfileViewModel -->
     <string name="profile_vm_not_signed_in">Not signed in.</string>

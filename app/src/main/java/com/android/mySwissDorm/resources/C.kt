@@ -94,6 +94,13 @@ object C {
     const val RETRY_BTN = "view_user_profile_retry"
     const val ERROR_TEXT = "view_user_profile_error"
     const val LOADING = "view_user_profile_loading"
+    const val PROFILE_PICTURE = "view_user_profile_picture"
+  }
+
+  object ProfileScreenTags {
+    const val RESTART_DIALOG = "profileRestartDialog"
+    const val RESTART_DIALOG_CANCEL_BUTTON = "profileRestartDialogCancel"
+    const val RESTART_DIALOG_RESTART_BUTTON = "profileRestartDialogRestart"
   }
 
   object BrowseCityTags {
@@ -290,7 +297,12 @@ object C {
     const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
     const val BOTTOM_BAR = "bottom_nav"
     const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
+    const val QR_SECTION_TITLE = "SettingsQrSectionTitle"
+    const val QR_SECTION_SUBTITLE = "SettingsQrSectionSubtitle"
+    const val QR_SCAN_BUTTON = "SettingsScanQrButton"
     const val BOOKMARKS_BUTTON = "BookmarksButton"
+
+    fun avatarTag(uri: Uri?) = "SettingsAvatarTag$uri"
 
     fun switch(label: String): String = "SettingSwitch_$label"
   }
@@ -325,6 +337,13 @@ object C {
     const val PRIVATE_ACCOMMODATION = "privateAccommodation"
 
     fun getResidencyTag(residencyName: String) = "sanitizedResidencyDropdown_$residencyName"
+  }
+
+  object ProfileTags {
+    fun profilePictureTag(uri: Uri?) = "profileScreenProfilePictureTag$uri"
+
+    const val SAVE_BUTTON = "profile_save_button"
+    const val DELETE_PP_BUTTON = "profilePictureDeleteButton"
   }
 
   object FilterTestTags {

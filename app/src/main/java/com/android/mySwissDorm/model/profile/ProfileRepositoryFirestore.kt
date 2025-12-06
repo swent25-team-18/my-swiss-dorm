@@ -146,6 +146,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
                       }
                     }
                   },
+              profilePicture = map["profilePicture"]?.let { it as? String ?: return null },
               minPrice = (mapNotNull["minPrice"] as? Number)?.toDouble(),
               maxPrice = (mapNotNull["maxPrice"] as? Number)?.toDouble(),
               minSize = (mapNotNull["minSize"] as? Number)?.toInt(),

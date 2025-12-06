@@ -148,6 +148,7 @@ class RentalListingRepositoryLocalTest {
     return RentalListing(
         uid = uid,
         ownerId = ownerId,
+        ownerName = null,
         postedAt = fixedTimestamp,
         residencyName = "Vortex",
         title = title,

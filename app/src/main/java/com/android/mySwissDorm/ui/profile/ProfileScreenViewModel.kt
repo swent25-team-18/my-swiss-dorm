@@ -1,12 +1,17 @@
 package com.android.mySwissDorm.ui.profile
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
@@ -16,6 +21,7 @@ import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,12 +42,14 @@ import kotlinx.coroutines.launch
  *   text).
  * @property errorMsg Optional error message to surface to the UI (e.g., auth or Firestore
  *   failures).
+ * @property profilePicture the user's profile picture
  */
 data class ProfileUiState(
     val firstName: String = "",
     val lastName: String = "",
     val language: String = "",
     val residence: String = "",
+    val profilePicture: Photo? = null,
     val isEditing: Boolean = false,
     val isSaving: Boolean = false,
     val errorMsg: String? = null,
@@ -75,11 +83,18 @@ data class ProfileUiState(
 class ProfileScreenViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val profileRepo: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    private val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryProvider.cloud_repository,
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository
 ) : BaseLocationSearchViewModel() {
   override val logTag = "ProfileScreenViewModel"
   private val _uiState = MutableStateFlow(ProfileUiState())
   val uiState: StateFlow<ProfileUiState> = _uiState
+
+  val photoManager =
+      PhotoManager(
+          photoRepositoryCloud = photoRepositoryCloud, photoRepositoryLocal = photoRepositoryLocal)
 
   init {
     viewModelScope.launch {
@@ -99,11 +114,17 @@ class ProfileScreenViewModel(
     viewModelScope.launch {
       try {
         val profile = profileRepo.getProfile(uid)
+        val profilePicture =
+            profile.userInfo.profilePicture?.let { profilePicture ->
+              photoManager.initialize(listOf(profilePicture))
+              photoManager.photoLoaded.firstOrNull()
+            }
         _uiState.update {
           it.copy(
               firstName = profile.userInfo.name,
               lastName = profile.userInfo.lastName,
               residence = profile.userInfo.residencyName ?: "",
+              profilePicture = profilePicture,
               language = profile.userSettings.language.displayLanguage,
               prefLocation = profile.userInfo.location,
               minPrice = profile.userInfo.minPrice,
@@ -138,9 +159,50 @@ class ProfileScreenViewModel(
     _uiState.value = _uiState.value.copy(residence = value, errorMsg = null)
   }
 
+  /**
+   * Update the profile picture in the UI and clear any transient error.
+   *
+   * @param photo the new profile picture, or `null` if the user prefer to have no profile picture
+   */
+  fun onProfilePictureChange(photo: Photo?) {
+    val currentPhotoUri: Uri? = _uiState.value.profilePicture?.image
+    viewModelScope.launch {
+      if (currentPhotoUri != null) {
+        photoManager.removePhoto(uri = currentPhotoUri, false)
+      }
+      if (photo != null) {
+        photoManager.addPhoto(photo)
+        Log.d("ProfileScreenViewModel", "New photo set")
+      }
+      _uiState.value = _uiState.value.copy(profilePicture = photo, errorMsg = null)
+    }
+  }
+
+  private fun cancelProfilePictureChange() {
+    if (photoManager.deletedPhotos.isNotEmpty()) {
+      // The photo should still be on the local repository
+      viewModelScope.launch {
+        try {
+          _uiState.value =
+              _uiState.value.copy(
+                  profilePicture =
+                      photoRepositoryCloud.retrievePhoto(photoManager.deletedPhotos.first()),
+                  errorMsg = null)
+        } catch (_: NoSuchElementException) {
+          _uiState.value =
+              _uiState.value.copy(errorMsg = "The previous profile picture could not be retrieved")
+        }
+      }
+    }
+  }
+
   /** Flip between view and edit modes; clears any transient error on toggle. */
   fun toggleEditing() {
     _uiState.value = _uiState.value.copy(isEditing = !_uiState.value.isEditing, errorMsg = null)
+    // Cancel profile picture changes if not saved
+    if (!_uiState.value.isEditing) {
+      cancelProfilePictureChange()
+    }
   }
 
   fun onPriceRangeChange(min: Double?, max: Double?) {
@@ -197,7 +259,7 @@ class ProfileScreenViewModel(
    * Security Rules:
    * - Includes `ownerId = uid` in the payload to satisfy rules that validate the owner on writes.
    */
-  fun saveProfile(context: Context) {
+  fun saveProfile(context: Context, postSave: () -> Unit = {}) {
     val uid = auth.currentUser?.uid
     if (uid == null) {
       _uiState.update { it.copy(errorMsg = context.getString(R.string.profile_vm_not_signed_in)) }
@@ -228,9 +290,11 @@ class ProfileScreenViewModel(
                       existingProfile.userInfo.copy(
                           name = state.firstName,
                           lastName = state.lastName,
+                          profilePicture = state.profilePicture?.fileName,
                           residencyName = state.residence),
                   userSettings = existingProfile.userSettings.copy(language = languageEnum))
           profileRepo.editProfile(updatedProfile)
+          photoManager.commitChanges()
         } else {
           // Create new profile
           val newProfile =
@@ -246,7 +310,7 @@ class ProfileScreenViewModel(
                   userSettings = UserSettings(language = languageEnum))
           profileRepo.createProfile(newProfile)
         }
-
+        postSave()
         _uiState.update { it.copy(isSaving = false, isEditing = false, errorMsg = null) }
       } catch (e: Exception) {
         Log.e("ProfileViewModel", "Failed to save profile", e)

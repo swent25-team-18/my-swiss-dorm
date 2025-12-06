@@ -114,6 +114,7 @@ class ReviewsRepositoryProviderTest {
     return Review(
         uid = uid,
         ownerId = "user-1",
+        ownerName = null,
         postedAt = Timestamp(1000000L, 0),
         title = "Test Review",
         reviewText = "Test text",

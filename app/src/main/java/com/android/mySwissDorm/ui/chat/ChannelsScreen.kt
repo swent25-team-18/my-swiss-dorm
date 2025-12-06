@@ -2,6 +2,8 @@ package com.android.mySwissDorm.ui.chat
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MarkEmailUnread
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -20,7 +23,6 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,8 +40,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -52,9 +54,8 @@ import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.Filters
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
@@ -82,7 +83,8 @@ import kotlinx.coroutines.withTimeout
  * - Requires the user to be signed in via Firebase Auth. Shows a sign-in prompt if not
  *   authenticated.
  * - Automatically queries Stream Chat for channels where the current user is a member.
- * - Refreshes channels when [refreshKey] changes (e.g., when returning from RequestedMessagesScreen).
+ * - Refreshes channels when [refreshKey] changes (e.g., when returning from
+ *   RequestedMessagesScreen).
  * - Supports pull-to-refresh to manually reload channels.
  * - Filters channels in real-time as the user types in the search bar.
  * - Each channel item is clickable and navigates to the chat screen via [onChannelClick].
@@ -121,84 +123,80 @@ fun ChannelsScreen(
   val coroutineScope = rememberCoroutineScope()
   var isLoadInProgress by remember { mutableStateOf(false) }
 
-    // Extract channel loading logic into a reusable function
-    suspend fun loadChannels() {
-        // REMOVED: isLoadInProgress check. It caused the deadlock.
+  // Extract channel loading logic into a reusable function
+  suspend fun loadChannels() {
+    // REMOVED: isLoadInProgress check. It caused the deadlock.
 
-        // Set loading state
-        isLoading = true
-        Log.d("ChannelsScreen", "Starting loadChannels")
+    // Set loading state
+    isLoading = true
+    Log.d("ChannelsScreen", "Starting loadChannels")
 
+    try {
+      // 1. Safety Check
+      if (!StreamChatProvider.isInitialized()) {
+        Log.e("ChannelsScreen", "Stream Chat not initialized")
+        channels = emptyList()
+        return // finally block will run
+      }
+
+      val chatClient = StreamChatProvider.getClient()
+      val currentUserState = chatClient.clientState.user.value
+
+      // 2. Connection Logic (Optimized)
+      // Only connect if we are strictly disconnected (null user)
+      if (currentUserState == null) {
+        Log.d("ChannelsScreen", "User not connected, connecting now...")
         try {
-            // 1. Safety Check
-            if (!StreamChatProvider.isInitialized()) {
-                Log.e("ChannelsScreen", "Stream Chat not initialized")
-                channels = emptyList()
-                return // finally block will run
-            }
+          // Use cached Firebase name to speed up connection
+          val displayName = currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
 
-            val chatClient = StreamChatProvider.getClient()
-            val currentUserState = chatClient.clientState.user.value
-
-            // 2. Connection Logic (Optimized)
-            // Only connect if we are strictly disconnected (null user)
-            if (currentUserState == null) {
-                Log.d("ChannelsScreen", "User not connected, connecting now...")
-                try {
-                    // Use cached Firebase name to speed up connection
-                    val displayName = currentUser.displayName
-                        ?: "User ${currentUser.uid.take(5)}"
-
-                    withTimeout(10000) {
-                        StreamChatProvider.connectUser(
-                            firebaseUserId = currentUser.uid,
-                            displayName = displayName,
-                            imageUrl = ""
-                        )
-                    }
-                } catch (e: Exception) {
-                    Log.e("ChannelsScreen", "Failed to connect user", e)
-                    channels = emptyList()
-                    return // finally block will run
-                }
-            }
-
-            // 3. Query Logic
-            try {
-                Log.d("ChannelsScreen", "Querying channels for user: ${currentUser.uid}")
-                val filter = Filters.and(
-                    Filters.eq("type", "messaging"),
-                    Filters.`in`("members", listOf(currentUser.uid))
-                )
-                val request = QueryChannelsRequest(
-                    filter = filter,
-                    offset = 0,
-                    limit = 20,
-                    messageLimit = 10 // Explicitly request messages
-                )
-
-                val result = withContext(Dispatchers.IO) {
-                    withTimeout(10000) {
-                        chatClient.queryChannels(request).await()
-                    }
-                }
-
-                channels = result.getOrNull() ?: emptyList()
-                Log.d("ChannelsScreen", "Channels query result: ${channels.size} channels found for user ${currentUser.uid}")
-            } catch (e: Exception) {
-                Log.e("ChannelsScreen", "Error querying channels", e)
-                if (channels.isEmpty()) channels = emptyList()
-            }
-
+          withTimeout(10000) {
+            StreamChatProvider.connectUser(
+                firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = "")
+          }
         } catch (e: Exception) {
-            Log.e("ChannelsScreen", "Unexpected error in loadChannels", e)
-            channels = emptyList()
-        } finally {
-            // CRITICAL: This ensures the spinner ALWAYS stops
-            isLoading = false
-            Log.d("ChannelsScreen", "loadChannels finished")
+          Log.e("ChannelsScreen", "Failed to connect user", e)
+          channels = emptyList()
+          return // finally block will run
         }
+      }
+
+      // 3. Query Logic
+      try {
+        Log.d("ChannelsScreen", "Querying channels for user: ${currentUser.uid}")
+        val filter =
+            Filters.and(
+                Filters.eq("type", "messaging"), Filters.`in`("members", listOf(currentUser.uid)))
+        val request =
+            QueryChannelsRequest(
+                filter = filter,
+                offset = 0,
+                limit = 20,
+                messageLimit = 10 // Explicitly request messages
+                )
+
+        val result =
+            withContext(Dispatchers.IO) {
+              withTimeout(10000) { chatClient.queryChannels(request).await() }
+            }
+
+        channels = result.getOrNull() ?: emptyList()
+        Log.d(
+            "ChannelsScreen",
+            "Channels query result: ${channels.size} channels found for user ${currentUser.uid}")
+      } catch (e: Exception) {
+        Log.e("ChannelsScreen", "Error querying channels", e)
+        if (channels.isEmpty()) channels = emptyList()
+      }
+    } catch (e: Exception) {
+      Log.e("ChannelsScreen", "Unexpected error in loadChannels", e)
+      channels = emptyList()
+    } finally {
+      // CRITICAL: This ensures the spinner ALWAYS stops
+      isLoading = false
+      Log.d("ChannelsScreen", "loadChannels finished")
     }
+  }
 
   // Load channels when refreshKey changes (including initial load)
   LaunchedEffect(refreshKey) {
@@ -208,15 +206,16 @@ fun ChannelsScreen(
 
   // Pull-to-refresh state
   var isRefreshing by remember { mutableStateOf(false) }
-  val pullRefreshState = rememberPullRefreshState(
-      refreshing = isRefreshing,
-      onRefresh = {
-        isRefreshing = true
-        coroutineScope.launch {
-          loadChannels()
-          isRefreshing = false
-        }
-      })
+  val pullRefreshState =
+      rememberPullRefreshState(
+          refreshing = isRefreshing,
+          onRefresh = {
+            isRefreshing = true
+            coroutineScope.launch {
+              loadChannels()
+              isRefreshing = false
+            }
+          })
 
   // Search state
   var searchQuery by remember { mutableStateOf("") }
@@ -237,117 +236,119 @@ fun ChannelsScreen(
 
   Box(modifier = modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
     Column(modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.ROOT)) {
-    // Top bar with Requested Messages button
-    TopAppBar(
-        title = {
-          Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.channels_screen_chats))
-          }
-        },
-        actions = {
-          IconButton(
-              onClick = onRequestedMessagesClick,
-              modifier = Modifier.testTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON)) {
-                BadgedBox(
-                    badge = {
-                      if (requestedMessagesCount > 0) {
-                        Badge(containerColor = MainColor) {
-                          Text(
-                              text =
-                                  if (requestedMessagesCount > 99) "99+"
-                                  else requestedMessagesCount.toString(),
-                              style = MaterialTheme.typography.labelSmall,
-                              color = White)
-                        }
-                      }
-                    }) {
-                      Icon(
-                          imageVector = Icons.Default.MarkEmailUnread,
-                          contentDescription = "Requested Messages",
-                          tint = TextColor)
-                    }
-              }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = BackGroundColor,
-                titleContentColor = TextColor,
-                actionIconContentColor = TextColor))
-
-    // Search bar - smoother, more rounded like WhatsApp, opens keyboard
-    val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-      TextField(
-          value = searchQuery,
-          onValueChange = { searchQuery = it },
-          placeholder = {
-            Text(
-                stringResource(R.string.channels_screen_search_chats),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+      // Top bar with Requested Messages button
+      TopAppBar(
+          title = {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+              Text(stringResource(R.string.channels_screen_chats))
+            }
           },
-          leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MainColor) },
-          modifier =
-              Modifier.testTag(C.ChannelsScreenTestTags.SEARCH_BAR)
-                  .fillMaxWidth()
-                  .clip(RoundedCornerShape(24.dp))
-                  .focusRequester(focusRequester)
-                  .onFocusChanged { focusState ->
-                    if (focusState.isFocused) {
-                      keyboardController?.show()
-                    }
-                  },
-          singleLine = true,
+          actions = {
+            IconButton(
+                onClick = onRequestedMessagesClick,
+                modifier = Modifier.testTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON)) {
+                  BadgedBox(
+                      badge = {
+                        if (requestedMessagesCount > 0) {
+                          Badge(containerColor = MainColor) {
+                            Text(
+                                text =
+                                    if (requestedMessagesCount > 99) "99+"
+                                    else requestedMessagesCount.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = White)
+                          }
+                        }
+                      }) {
+                        Icon(
+                            imageVector = Icons.Default.MarkEmailUnread,
+                            contentDescription = "Requested Messages",
+                            tint = TextColor)
+                      }
+                }
+          },
           colors =
-              TextFieldDefaults.colors(
-                  focusedIndicatorColor = Transparent,
-                  unfocusedIndicatorColor = Transparent,
-                  disabledIndicatorColor = Transparent,
-                  focusedContainerColor =
-                      MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                  unfocusedContainerColor =
-                      MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                  focusedTextColor = TextColor,
-                  unfocusedTextColor = TextColor,
-                  cursorColor = TextColor),
-          shape = RoundedCornerShape(24.dp))
-    }
+              TopAppBarDefaults.topAppBarColors(
+                  containerColor = BackGroundColor,
+                  titleContentColor = TextColor,
+                  actionIconContentColor = TextColor))
 
-    // Channel list
-    if (isLoading && !isRefreshing) {
-      // Don't show loading indicator during pull-to-refresh (SwipeRefresh handles that)
-      Box(
-          modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.LOADING_INDICATOR),
-          contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = MainColor)
-          }
-    } else if (filteredChannels.isEmpty()) {
-      Box(
-          modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.EMPTY_STATE),
-          contentAlignment = Alignment.Center) {
-            Text(
-                text =
-                    if (searchQuery.isBlank()) {
-                      stringResource(R.string.channels_screen_no_chats_yet)
-                    } else {
-                      stringResource(R.string.channels_screen_no_chats_found)
+      // Search bar - smoother, more rounded like WhatsApp, opens keyboard
+      val focusRequester = remember { FocusRequester() }
+      val keyboardController = LocalSoftwareKeyboardController.current
+
+      Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        TextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = {
+              Text(
+                  stringResource(R.string.channels_screen_search_chats),
+                  color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+            },
+            leadingIcon = {
+              Icon(Icons.Default.Search, contentDescription = null, tint = MainColor)
+            },
+            modifier =
+                Modifier.testTag(C.ChannelsScreenTestTags.SEARCH_BAR)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { focusState ->
+                      if (focusState.isFocused) {
+                        keyboardController?.show()
+                      }
                     },
-                style = MaterialTheme.typography.bodyLarge,
-                color = TextColor.copy(alpha = 0.7f))
+            singleLine = true,
+            colors =
+                TextFieldDefaults.colors(
+                    focusedIndicatorColor = Transparent,
+                    unfocusedIndicatorColor = Transparent,
+                    disabledIndicatorColor = Transparent,
+                    focusedContainerColor =
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    unfocusedContainerColor =
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    focusedTextColor = TextColor,
+                    unfocusedTextColor = TextColor,
+                    cursorColor = TextColor),
+            shape = RoundedCornerShape(24.dp))
+      }
+
+      // Channel list
+      if (isLoading && !isRefreshing) {
+        // Don't show loading indicator during pull-to-refresh (SwipeRefresh handles that)
+        Box(
+            modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.LOADING_INDICATOR),
+            contentAlignment = Alignment.Center) {
+              CircularProgressIndicator(color = MainColor)
+            }
+      } else if (filteredChannels.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.EMPTY_STATE),
+            contentAlignment = Alignment.Center) {
+              Text(
+                  text =
+                      if (searchQuery.isBlank()) {
+                        stringResource(R.string.channels_screen_no_chats_yet)
+                      } else {
+                        stringResource(R.string.channels_screen_no_chats_found)
+                      },
+                  style = MaterialTheme.typography.bodyLarge,
+                  color = TextColor.copy(alpha = 0.7f))
+            }
+      } else {
+        LazyColumn(modifier = Modifier.testTag(C.ChannelsScreenTestTags.CHANNELS_LIST)) {
+          items(filteredChannels) { channel ->
+            ChannelItem(
+                channel = channel,
+                currentUserId = currentUser.uid,
+                onChannelClick = { onChannelClick(channel.cid) })
           }
-    } else {
-      LazyColumn(modifier = Modifier.testTag(C.ChannelsScreenTestTags.CHANNELS_LIST)) {
-        items(filteredChannels) { channel ->
-          ChannelItem(
-              channel = channel,
-              currentUserId = currentUser.uid,
-              onChannelClick = { onChannelClick(channel.cid) })
         }
       }
     }
-    }
-    
+
     // Pull-to-refresh indicator
     PullRefreshIndicator(
         refreshing = isRefreshing,
@@ -396,48 +397,73 @@ internal fun ChannelItem(
   val initialOtherUserName =
       otherMember?.user?.name ?: stringResource(R.string.channels_screen_unknown_user)
   val otherUserImage = otherMember?.user?.image
-  
+
   // Robust Fallback: If member is missing, try to deduce ID from channel ID (uid1-uid2)
-  val targetUserId = otherMember?.user?.id ?: run {
-      val parts = channel.id.split("-")
-      if (parts.size == 2) {
-          if (parts[0] == currentUserId) parts[1] else parts[0]
-      } else null
-  }
+  val targetUserId =
+      otherMember?.user?.id
+          ?: run {
+            val parts = channel.id.split("-")
+            if (parts.size == 2) {
+              if (parts[0] == currentUserId) parts[1] else parts[0]
+            } else null
+          }
 
   // Fallback: If name is missing/unknown, try to fetch from ProfileRepository
   var displayedName by remember { mutableStateOf(initialOtherUserName) }
+  var displayedImage by remember { mutableStateOf<Any?>(otherUserImage) }
   val context = LocalContext.current
   val unknownUserString = stringResource(R.string.channels_screen_unknown_user)
-  
+
   LaunchedEffect(targetUserId) {
-      val isNameInvalid = displayedName.isBlank() || 
-                          displayedName == "Unknown User" || 
-                          displayedName == unknownUserString
-                          
-      if (isNameInvalid && targetUserId != null) {
-          try {
-              val profile = withContext(Dispatchers.IO) {
-                  ProfileRepositoryProvider.repository.getProfile(targetUserId)
-              }
-              val fullName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
-              if (fullName.isNotBlank()) {
-                  displayedName = fullName
-              }
-          } catch (e: Exception) {
-              Log.e("ChannelItem", "Failed to fetch profile name for $targetUserId", e)
+    if (targetUserId != null) {
+      try {
+        val profile =
+            withContext(Dispatchers.IO) {
+              ProfileRepositoryProvider.repository.getProfile(targetUserId)
+            }
+
+        // Update name if needed
+        val isNameInvalid =
+            displayedName.isBlank() ||
+                displayedName == "Unknown User" ||
+                displayedName == unknownUserString
+
+        if (isNameInvalid) {
+          val fullName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+          if (fullName.isNotBlank()) {
+            displayedName = fullName
           }
+        }
+
+        // Update image
+        val profilePicName = profile.userInfo.profilePicture
+        if (!profilePicName.isNullOrBlank()) {
+          try {
+            val photo =
+                withContext(Dispatchers.IO) {
+                  PhotoRepositoryProvider.cloud_repository.retrievePhoto(profilePicName)
+                }
+            displayedImage = photo.image
+          } catch (e: Exception) {
+            Log.e("ChannelItem", "Failed to retrieve photo $profilePicName", e)
+          }
+        } else {
+          displayedImage = null
+        }
+      } catch (e: Exception) {
+        Log.e("ChannelItem", "Failed to fetch profile for $targetUserId", e)
       }
+    }
   }
 
   // Get last message
   val lastMessage = channel.messages.lastOrNull()
   // Fallback: If messages are empty but lastMessageAt exists, show placeholder
   val lastMessageText =
-      lastMessage?.text 
-          ?: if (channel.lastMessageAt != null) "New message" 
+      lastMessage?.text
+          ?: if (channel.lastMessageAt != null) "New message"
           else stringResource(R.string.channels_screen_no_messages_yet)
-          
+
   val lastMessageTime =
       lastMessage?.createdAt?.let { formatMessageTime(it, LocalContext.current) }
           ?: channel.lastMessageAt?.let { formatMessageTime(it, LocalContext.current) }
@@ -474,11 +500,28 @@ internal fun ChannelItem(
               .padding(horizontal = 16.dp, vertical = 12.dp),
       verticalAlignment = Alignment.CenterVertically) {
         // Avatar
-        AsyncImage(
-            model = otherUserImage ?: "https://bit.ly/2TIt8NR",
-            contentDescription = displayedName,
-            modifier = Modifier.size(56.dp).clip(CircleShape),
-            contentScale = ContentScale.Crop)
+        if (displayedImage != null) {
+          AsyncImage(
+              model = displayedImage,
+              contentDescription = displayedName,
+              modifier = Modifier.size(56.dp).clip(CircleShape),
+              contentScale = ContentScale.Crop)
+        } else {
+          // Default icon if no profile picture
+          Box(
+              contentAlignment = Alignment.Center,
+              modifier =
+                  Modifier.size(56.dp)
+                      .clip(CircleShape)
+                      .background(BackGroundColor)
+                      .border(2.dp, MainColor, CircleShape)) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = displayedName,
+                    tint = MainColor,
+                    modifier = Modifier.size(36.dp))
+              }
+        }
 
         Spacer(modifier = Modifier.width(12.dp))
 

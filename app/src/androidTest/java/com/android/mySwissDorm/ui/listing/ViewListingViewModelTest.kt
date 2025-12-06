@@ -3,6 +3,7 @@ package com.android.mySwissDorm.ui.listing
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
@@ -93,6 +94,7 @@ class ViewListingViewModelTest : FirestoreTest() {
         RentalListing(
             uid = rentalListingRepository.getNewUid(),
             ownerId = ownerId,
+            ownerName = ownerProfile.userInfo.name + " " + ownerProfile.userInfo.lastName,
             postedAt = Timestamp.now(),
             title = "Test Listing",
             roomType = RoomType.STUDIO,
@@ -135,25 +137,61 @@ class ViewListingViewModelTest : FirestoreTest() {
     assertTrue("Contact message should be set", viewModel.uiState.value.contactMessage.isNotEmpty())
 
     // Submit the message
-    val result = viewModel.submitContactMessage()
-
-    // Advance coroutines to let the message creation complete
-    advanceUntilIdle()
-
-    // Wait a bit for Firestore to persist
-    delay(500)
+    val result = viewModel.submitContactMessage(context)
 
     // Verify result
     assertTrue("Message should be submitted successfully", result)
 
+    // Advance coroutines to let the message creation complete
+    // The ViewModel launches a coroutine in viewModelScope which uses Dispatchers.Main
+    // (set to StandardTestDispatcher by MainDispatcherRule)
+    advanceUntilIdle()
+
+    // Wait for the coroutine to complete by continuously advancing the dispatcher
+    // and checking Firestore for the message
+    var attempts = 0
+    var messageFound = false
+
+    while (attempts < 200 && !messageFound) {
+      advanceUntilIdle() // Keep advancing the test dispatcher to execute coroutines
+
+      // Check for error in ViewModel (but don't fail - might be timing)
+      val errorMsg = viewModel.uiState.value.errorMsg
+      if (errorMsg != null && errorMsg.contains("already sent")) {
+        // If message already exists, that's actually fine - means it was created
+        // Let's check Firestore to confirm
+        messageFound = true
+        break
+      }
+
+      // Check if state was updated (optional check)
+      if (viewModel.uiState.value.hasExistingMessage) {
+        // State updated, message should be created
+        messageFound = true
+        break
+      }
+
+      delay(25)
+      attempts++
+    }
+
     // Switch to owner user to read the message (as per Firestore security rules)
     switchToUser(FakeUser.FakeUser1)
 
-    // Wait a bit for FirebaseAuth to update
+    // Wait for FirebaseAuth to update
     delay(200)
 
-    // Verify message was created in Firestore
-    val pendingMessages = requestedMessageRepository.getPendingMessagesForUser(ownerId)
+    // Wait for Firestore to persist and verify message was created
+    // Retry multiple times in case Firestore needs time to persist
+    var pendingMessages = requestedMessageRepository.getPendingMessagesForUser(ownerId)
+    attempts = 0
+    while (attempts < 50 && pendingMessages.isEmpty()) {
+      delay(100)
+      advanceUntilIdle()
+      pendingMessages = requestedMessageRepository.getPendingMessagesForUser(ownerId)
+      attempts++
+    }
+
     assertTrue("Should have at least one pending message", pendingMessages.isNotEmpty())
     val createdMessage = pendingMessages.find { it.listingId == listing.uid }
     assertNotNull("Message should exist", createdMessage)
@@ -184,7 +222,7 @@ class ViewListingViewModelTest : FirestoreTest() {
     mutableUiState.update { it.copy(listing = listing, contactMessage = "Test message") }
 
     // Submit the message
-    val result = viewModel.submitContactMessage()
+    val result = viewModel.submitContactMessage(context)
 
     // Should return false for unauthenticated user
     assertFalse("Should return false for unauthenticated user", result)
@@ -210,7 +248,7 @@ class ViewListingViewModelTest : FirestoreTest() {
     mutableUiState.update { it.copy(listing = listing, contactMessage = "Test message") }
 
     // Submit the message
-    val result = viewModel.submitContactMessage()
+    val result = viewModel.submitContactMessage(context)
 
     // Should return false for anonymous user
     assertFalse("Should return false for anonymous user", result)
@@ -235,7 +273,7 @@ class ViewListingViewModelTest : FirestoreTest() {
     mutableUiState.update { it.copy(listing = listing, contactMessage = "   ") }
 
     // Submit the message
-    val result = viewModel.submitContactMessage()
+    val result = viewModel.submitContactMessage(context)
 
     // Should return false for blank message
     assertFalse("Should return false for blank message", result)
@@ -261,7 +299,7 @@ class ViewListingViewModelTest : FirestoreTest() {
     mutableUiState.update { it.copy(listing = blankListing, contactMessage = "Test message") }
 
     // Submit the message
-    val result = viewModel.submitContactMessage()
+    val result = viewModel.submitContactMessage(context)
 
     // Should return false for blank listing ID
     assertFalse("Should return false for blank listing ID", result)
@@ -287,7 +325,7 @@ class ViewListingViewModelTest : FirestoreTest() {
     mutableUiState.update { it.copy(listing = blankOwnerListing, contactMessage = "Test message") }
 
     // Submit the message
-    val result = viewModel.submitContactMessage()
+    val result = viewModel.submitContactMessage(context)
 
     // Should return false for blank owner ID
     assertFalse("Should return false for blank owner ID", result)
@@ -313,7 +351,7 @@ class ViewListingViewModelTest : FirestoreTest() {
     mutableUiState.update { it.copy(listing = listing, contactMessage = "Test message") }
 
     // Submit the message (owner trying to message themselves)
-    val result = viewModel.submitContactMessage()
+    val result = viewModel.submitContactMessage(context)
 
     // Should return false when user messages themselves
     assertFalse("Should return false when user messages themselves", result)
@@ -342,6 +380,12 @@ class ViewListingViewModelTest : FirestoreTest() {
           override suspend fun deleteRequestedMessage(messageId: String) {}
 
           override fun getNewUid(): String = "test-id"
+
+          override suspend fun hasExistingMessage(
+              fromUserId: String,
+              toUserId: String,
+              listingId: String
+          ): Boolean = false
         }
 
     val viewModel =
@@ -359,7 +403,7 @@ class ViewListingViewModelTest : FirestoreTest() {
     mutableUiState.update { it.copy(listing = listing, contactMessage = "Test message") }
 
     // Submit the message - should return true even if exception occurs in coroutine
-    val result = viewModel.submitContactMessage()
+    val result = viewModel.submitContactMessage(context)
 
     // Should return true (exception is caught in coroutine)
     assertTrue("Should return true even if exception occurs in coroutine", result)
@@ -407,5 +451,128 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     assertEquals(
         "Contact message should be updated", message, viewModel.uiState.value.contactMessage)
+  }
+
+  @Test
+  fun submitContactMessage_alreadyExists() = runTest {
+    switchToUser(FakeUser.FakeUser2)
+
+    // Create a mock repository that returns true for hasExistingMessage
+    val mockRepository =
+        object : RequestedMessageRepository {
+          override suspend fun createRequestedMessage(requestedMessage: RequestedMessage) {
+            // Should not be called
+          }
+
+          override suspend fun getPendingMessagesForUser(userId: String): List<RequestedMessage> =
+              emptyList()
+
+          override suspend fun getRequestedMessage(messageId: String): RequestedMessage? = null
+
+          override suspend fun updateMessageStatus(messageId: String, status: MessageStatus) {}
+
+          override suspend fun getPendingMessageCount(userId: String): Int = 0
+
+          override suspend fun deleteRequestedMessage(messageId: String) {}
+
+          override fun getNewUid(): String = "test-id"
+
+          override suspend fun hasExistingMessage(
+              fromUserId: String,
+              toUserId: String,
+              listingId: String
+          ): Boolean = true // Return true to simulate existing message
+        }
+
+    val viewModel =
+        ViewListingViewModel(
+            rentalListingRepository = rentalListingRepository,
+            profileRepository = profileRepository,
+            residenciesRepository = residenciesRepository,
+            requestedMessageRepository = mockRepository)
+
+    // Set listing and message
+    val uiStateField = ViewListingViewModel::class.java.getDeclaredField("_uiState")
+    uiStateField.isAccessible = true
+    val mutableUiState =
+        uiStateField.get(viewModel) as kotlinx.coroutines.flow.MutableStateFlow<ViewListingUIState>
+    mutableUiState.update { it.copy(listing = listing, contactMessage = "Test message") }
+
+    // Submit the message
+    val result = viewModel.submitContactMessage(context)
+
+    // Should return true (the check happens in coroutine)
+    assertTrue("Should return true even if message already exists", result)
+
+    // Advance coroutines to let the check complete
+    advanceUntilIdle()
+
+    // Verify error message is set
+    val errorMsg = viewModel.uiState.value.errorMsg
+    assertNotNull("Error message should be set", errorMsg)
+    assertTrue(
+        "Error message should contain 'already sent'",
+        errorMsg!!.contains(context.getString(R.string.view_listing_message_already_sent)))
+    assertTrue(
+        "Error message should contain 'wait for response'",
+        errorMsg.contains(context.getString(R.string.view_listing_please_wait_for_response)))
+
+    // Verify that hasExistingMessage is still false (not updated since we returned early)
+    assertFalse(
+        "hasExistingMessage should remain false since we returned early",
+        viewModel.uiState.value.hasExistingMessage)
+  }
+
+  @Test
+  fun toggleBookmark_exceptionHandling() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+
+    // Create a mock repository that throws an exception when toggling bookmark
+    val mockProfileRepository =
+        object : ProfileRepository by profileRepository {
+          override suspend fun addBookmark(ownerId: String, listingId: String) {
+            throw Exception("Test bookmark exception")
+          }
+
+          override suspend fun removeBookmark(ownerId: String, listingId: String) {
+            throw Exception("Test bookmark exception")
+          }
+        }
+
+    val viewModel =
+        ViewListingViewModel(
+            rentalListingRepository = rentalListingRepository,
+            profileRepository = mockProfileRepository,
+            residenciesRepository = residenciesRepository,
+            requestedMessageRepository = requestedMessageRepository)
+
+    // Load the listing first to set up state
+    viewModel.loadListing(listing.uid, context)
+    advanceUntilIdle()
+
+    // Verify initial bookmark state
+    val initialBookmarkState = viewModel.uiState.value.isBookmarked
+
+    // Toggle bookmark - should throw exception
+    viewModel.toggleBookmark(listing.uid, context)
+
+    // Advance coroutines to let the exception be caught
+    advanceUntilIdle()
+
+    // Verify error message is set
+    val errorMsg = viewModel.uiState.value.errorMsg
+    assertNotNull("Error message should be set", errorMsg)
+    assertTrue(
+        "Error message should contain 'failed to toggle bookmark'",
+        errorMsg!!.contains(context.getString(R.string.view_listing_failed_to_toggle_bookmark)))
+    assertTrue(
+        "Error message should contain exception message",
+        errorMsg.contains("Test bookmark exception"))
+
+    // Verify bookmark state hasn't changed (since exception was thrown)
+    assertEquals(
+        "Bookmark state should remain unchanged",
+        initialBookmarkState,
+        viewModel.uiState.value.isBookmarked)
   }
 }

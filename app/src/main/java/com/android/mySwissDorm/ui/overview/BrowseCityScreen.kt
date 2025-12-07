@@ -816,7 +816,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                       Row(
                           modifier = Modifier.fillMaxWidth(),
                           horizontalArrangement = Arrangement.SpaceBetween,
-                          verticalAlignment = Alignment.CenterVertically) { // Title + grade
+                          verticalAlignment = Alignment.Top) { // Title + grade
                             Text( // Title
                                 text = data.title,
                                 style = MaterialTheme.typography.titleMedium,
@@ -824,7 +824,8 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                                 textAlign = TextAlign.Start,
                                 color = TextColor,
                                 modifier = Modifier.fillMaxWidth(0.5f),
-                                maxLines = 1,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
                             )
                             DisplayGrade(data.meanGrade, 16.dp) // Display the mean grade with stars
                       }

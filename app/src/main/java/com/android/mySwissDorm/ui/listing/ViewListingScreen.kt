@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -237,11 +238,19 @@ fun ViewListingScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold),
                     modifier = Modifier.testTag(C.ViewListingTags.POI_DISTANCES))
-                if (poiDistances.isNotEmpty()) {
+
+                if (listingUIState.isLoadingPOIs) {
+                  Text(
+                      text = stringResource(R.string.poi_loading_message),
+                      style =
+                          MaterialTheme.typography.bodyMedium.copy(
+                              color = MaterialTheme.colorScheme.onSurfaceVariant,
+                              fontStyle = FontStyle.Italic),
+                      modifier = Modifier.padding(start = 16.dp, top = 2.dp))
+                } else if (poiDistances.isNotEmpty()) {
                   Column(
                       modifier = Modifier.padding(start = 16.dp),
                       verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                        // Group POIs by walking time
                         val groupedByTime = poiDistances.groupBy { it.walkingTimeMinutes }
 
                         groupedByTime
@@ -249,7 +258,6 @@ fun ViewListingScreen(
                             .sortedBy { it.first }
                             .forEach { (timeMinutes, pois) ->
                               if (pois.size == 1) {
-                                // Single POI at this time
                                 val poiDistance = pois.first()
                                 val timeText =
                                     when (poiDistance.poiType) {
@@ -263,7 +271,7 @@ fun ViewListingScreen(
                                               R.string.view_listing_walking_time_supermarket,
                                               poiDistance.walkingTimeMinutes,
                                               poiDistance.poiName)
-                                      else -> "" // Should not happen
+                                      else -> ""
                                     }
                                 Text(
                                     timeText,
@@ -285,14 +293,12 @@ fun ViewListingScreen(
                                               poiNames.last()
                                     }
 
-                                // Determine the type label (university or supermarket)
                                 val typeLabel =
                                     when {
                                       pois.all { it.poiType == POIDistance.TYPE_UNIVERSITY } ->
                                           stringResource(R.string.university)
-                                      pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } ->
-                                          "" // Supermarkets don't need a type label
-                                      else -> "" // Mixed types, no label
+                                      pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } -> ""
+                                      else -> ""
                                     }
 
                                 val timeText =

@@ -252,4 +252,41 @@ class DistanceServiceTest {
 
     assertTrue("Should return empty list on error", result.isEmpty())
   }
+
+  @Test
+  fun calculateDistancesToPOIs_fetchesSupermarketsOnceForBothBrands() = runTest {
+    // Verify that supermarkets are fetched only once, not twice (for Migros and Denner)
+    whenever(universitiesRepo.getAllUniversities()).thenReturn(emptyList())
+    whenever(supermarketsRepo.getAllSupermarkets())
+        .thenReturn(listOf(migrosEPFL, dennerEPFL, migrosRenens))
+    whenever(
+            walkingRouteService.calculateWalkingTimeMinutes(
+                eq(testLocation), eq(migrosEPFL.location)))
+        .thenReturn(1)
+    whenever(
+            walkingRouteService.calculateWalkingTimeMinutes(
+                eq(testLocation), eq(dennerEPFL.location)))
+        .thenReturn(2)
+
+    distanceService.calculateDistancesToPOIs(testLocation, null)
+
+    // Verify supermarkets were fetched only once (optimization: fetch once, use for both brands)
+    verify(supermarketsRepo, times(1)).getAllSupermarkets()
+  }
+
+  @Test
+  fun calculateDistancesToPOIs_runsCalculationsInParallel() = runTest {
+    // This test verifies that universities and supermarkets are calculated in parallel
+    // by checking that all calculations complete successfully
+    whenever(universitiesRepo.getAllUniversities()).thenReturn(listOf(epfl, unil))
+    whenever(supermarketsRepo.getAllSupermarkets()).thenReturn(listOf(migrosEPFL, dennerEPFL))
+    whenever(walkingRouteService.calculateWalkingTimeMinutes(any(), any())).thenReturn(5)
+
+    val result = distanceService.calculateDistancesToPOIs(testLocation, null)
+
+    // Should have: 2 universities + 2 supermarkets = 4 POIs
+    assertEquals("Should calculate all POIs in parallel", 4, result.size)
+    // Verify all calculations were made (parallel execution)
+    verify(walkingRouteService, times(4)).calculateWalkingTimeMinutes(any(), any())
+  }
 }

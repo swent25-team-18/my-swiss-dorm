@@ -18,6 +18,7 @@ import androidx.core.content.edit
 import androidx.credentials.CredentialManager
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.chat.StreamChatProvider
+import com.android.mySwissDorm.model.map.WalkingRouteServiceProvider
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
@@ -91,6 +92,9 @@ class MainActivity : ComponentActivity() {
     if (enableStreamInitialization) {
       StreamChatProvider.initialize(this)
     }
+
+    // Initialize route cache for persistent distance caching
+    WalkingRouteServiceProvider.initialize(this)
 
     setContent {
       val context = LocalContext.current

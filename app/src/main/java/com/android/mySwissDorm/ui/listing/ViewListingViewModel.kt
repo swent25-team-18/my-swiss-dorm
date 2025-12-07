@@ -69,6 +69,7 @@ data class ViewListingUIState(
     val isGuest: Boolean = false,
     val isBookmarked: Boolean = false,
     val poiDistances: List<POIDistance> = emptyList(),
+    val isLoadingPOIDistances: Boolean = false,
     val hasExistingMessage: Boolean = false
 )
 
@@ -185,8 +186,8 @@ class ViewListingViewModel(
         photoManager.initialize(listing.imageUrls)
         val photos = photoManager.photoLoaded
         val userUniversityName = getUserUniversityName(currentUserId, isGuest)
-        val poiDistances = calculatePOIDistances(listing, userUniversityName)
 
+        // Update UI immediately with listing data (without waiting for distances)
         val uiData =
             UIUpdateData(
                 fullNameOfPoster = fullNameOfPoster,
@@ -195,9 +196,21 @@ class ViewListingViewModel(
                 photos = photos,
                 isGuest = isGuest,
                 isBookmarked = isBookmarked,
-                poiDistances = poiDistances,
+                poiDistances = emptyList(),
+                isLoadingPOIDistances = true,
                 hasExistingMessage = hasExistingMessage)
         updateUIState(listing, uiData)
+
+        // Calculate distances asynchronously and update when ready
+        launch {
+          try {
+            val poiDistances = calculatePOIDistances(listing, userUniversityName)
+            _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIDistances = false) }
+          } catch (e: Exception) {
+            Log.e("ViewListingViewModel", "Error calculating POI distances", e)
+            _uiState.update { it.copy(poiDistances = emptyList(), isLoadingPOIDistances = false) }
+          }
+        }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
         setErrorMsg(
@@ -253,6 +266,7 @@ class ViewListingViewModel(
       val isGuest: Boolean,
       val isBookmarked: Boolean,
       val poiDistances: List<POIDistance>,
+      val isLoadingPOIDistances: Boolean,
       val hasExistingMessage: Boolean
   )
 
@@ -268,6 +282,7 @@ class ViewListingViewModel(
           isGuest = uiData.isGuest,
           isBookmarked = uiData.isBookmarked,
           poiDistances = uiData.poiDistances,
+          isLoadingPOIDistances = uiData.isLoadingPOIDistances,
           hasExistingMessage = uiData.hasExistingMessage)
     }
   }

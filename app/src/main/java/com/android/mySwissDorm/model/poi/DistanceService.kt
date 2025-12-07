@@ -4,6 +4,7 @@ import android.util.Log
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.WalkingRouteService
 import com.android.mySwissDorm.model.map.distanceTo
+import com.android.mySwissDorm.model.supermarket.Supermarket
 import com.android.mySwissDorm.model.supermarket.SupermarketsRepository
 import com.android.mySwissDorm.model.university.UniversitiesRepository
 import com.android.mySwissDorm.model.university.University
@@ -58,12 +59,29 @@ class DistanceService(
 
     try {
       coroutineScope {
-        val universityDistances = calculateUniversityDistances(location, userUniversityName)
+        // Start fetching supermarkets and calculating universities in parallel
+        val supermarketsDeferred = async { supermarketsRepository.getAllSupermarkets() }
+        val universityDistancesDeferred = async {
+          calculateUniversityDistances(location, userUniversityName)
+        }
+
+        // Get supermarkets (this will wait if not ready yet, but won't block other operations)
+        val supermarkets = supermarketsDeferred.await()
+
+        // Start Migros and Denner calculations in parallel (both use the same supermarkets list)
+        val nearestMigrosDeferred = async {
+          findNearestSupermarket(location, "Migros", supermarkets)
+        }
+        val nearestDennerDeferred = async {
+          findNearestSupermarket(location, "Denner", supermarkets)
+        }
+
+        // Wait for all calculations to complete
+        val universityDistances = universityDistancesDeferred.await()
+        val nearestMigros = nearestMigrosDeferred.await()
+        val nearestDenner = nearestDennerDeferred.await()
+
         allDistances.addAll(universityDistances)
-
-        val nearestMigros = findNearestSupermarket(location, "Migros")
-        val nearestDenner = findNearestSupermarket(location, "Denner")
-
         addSupermarketIfNotNull(allDistances, nearestMigros, "Migros")
         addSupermarketIfNotNull(allDistances, nearestDenner, "Denner")
 
@@ -130,44 +148,45 @@ class DistanceService(
     return universities.sortedBy { location.distanceTo(it.location) }.take(2)
   }
 
-  private suspend fun findNearestSupermarket(location: Location, brandName: String): POIDistance? =
-      coroutineScope {
-        val supermarkets = supermarketsRepository.getAllSupermarkets()
-        val brandSupermarkets =
-            supermarkets.filter {
-              it.name.contains(brandName, ignoreCase = true) &&
-                  !it.name.contains(
-                      if (brandName == "Migros") "Denner" else "Migros", ignoreCase = true)
-            }
-
-        if (brandSupermarkets.isEmpty()) {
-          return@coroutineScope null
+  private suspend fun findNearestSupermarket(
+      location: Location,
+      brandName: String,
+      supermarkets: List<Supermarket>
+  ): POIDistance? = coroutineScope {
+    val brandSupermarkets =
+        supermarkets.filter {
+          it.name.contains(brandName, ignoreCase = true) &&
+              !it.name.contains(
+                  if (brandName == "Migros") "Denner" else "Migros", ignoreCase = true)
         }
 
-        val supermarketTimes =
-            brandSupermarkets
-                .map { supermarket ->
-                  async {
-                    val timeMinutes =
-                        walkingRouteService.calculateWalkingTimeMinutes(
-                            location, supermarket.location)
-                    if (timeMinutes != null) {
-                      Pair(supermarket, timeMinutes)
-                    } else null
-                  }
-                }
-                .awaitAll()
-                .filterNotNull()
+    if (brandSupermarkets.isEmpty()) {
+      return@coroutineScope null
+    }
 
-        supermarketTimes
-            .minByOrNull { it.second }
-            ?.let { (supermarket, timeMinutes) ->
-              POIDistance(
-                  poiName = supermarket.name,
-                  walkingTimeMinutes = timeMinutes,
-                  poiType = POIDistance.TYPE_SUPERMARKET)
+    val supermarketTimes =
+        brandSupermarkets
+            .map { supermarket ->
+              async {
+                val timeMinutes =
+                    walkingRouteService.calculateWalkingTimeMinutes(location, supermarket.location)
+                if (timeMinutes != null) {
+                  Pair(supermarket, timeMinutes)
+                } else null
+              }
             }
-      }
+            .awaitAll()
+            .filterNotNull()
+
+    supermarketTimes
+        .minByOrNull { it.second }
+        ?.let { (supermarket, timeMinutes) ->
+          POIDistance(
+              poiName = supermarket.name,
+              walkingTimeMinutes = timeMinutes,
+              poiType = POIDistance.TYPE_SUPERMARKET)
+        }
+  }
 
   private fun addSupermarketIfNotNull(
       allDistances: MutableList<POIDistance>,

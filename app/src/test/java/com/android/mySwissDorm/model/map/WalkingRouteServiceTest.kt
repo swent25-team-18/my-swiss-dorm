@@ -24,7 +24,8 @@ class WalkingRouteServiceTest {
     client =
         OkHttpClient.Builder().addInterceptor(TestUrlRewriteInterceptor(server.url("/"))).build()
     // Use a test API key so the service doesn't fall back to Haversine calculation
-    service = WalkingRouteService(client, apiKey = "test-api-key")
+    // No persistent cache for unit tests (would require Android context)
+    service = WalkingRouteService(client, apiKey = "test-api-key", persistentCache = null)
   }
 
   @After
@@ -120,12 +121,17 @@ class WalkingRouteServiceTest {
     val result1 = service.calculateWalkingTimeMinutes(from, to)
     assertEquals(1, server.requestCount)
 
-    // Second call - should use cache
+    // Second call - should use in-memory cache
     val result2 = service.calculateWalkingTimeMinutes(from, to)
     assertEquals(1, server.requestCount) // Still 1, cache was used
 
     assertEquals("Cached result should match", result1, result2)
   }
+
+  // Note: Testing with persistent cache requires Android instrumentation.
+  // This test is covered in RouteCacheManagerTest (androidTest) which tests
+  // the integration with WalkingRouteService.
+  // For unit tests, we verify that the service works without persistent cache.
 
   @Test
   fun calculateWalkingTime_invalidCoordinates_returnsNull() = runTest {

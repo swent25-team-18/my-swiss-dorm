@@ -219,6 +219,7 @@
     <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes de %2$s %3$s</string>
     <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes de %2$s</string>
     <string name="view_listing_no_points_of_interest">Aucun point d\'intérêt à proximité disponible</string>
+    <string name="view_listing_calculating_distances">Calcul des distances...</string>
     <string name="view_listing_message_already_sent">Vous avez déjà envoyé un message pour cette annonce.</string>
     <string name="view_listing_please_wait_for_response">Veuillez attendre une réponse du propriétaire.</string>
     <string name="view_listing_failed_to_submit_message">Échec de l\'envoi du message :</string>

@@ -14,14 +14,19 @@ import org.json.JSONObject
  * Service for calculating walking routes and times between two locations. Uses OpenRouteService
  * API. Requires an API key configured in BuildConfig.OPENROUTESERVICE_API_KEY or falls back to
  * Haversine calculation.
+ *
+ * Uses both in-memory cache (for fast access) and persistent cache (via RouteCacheManager) for
+ * persistence across app restarts.
  */
 class WalkingRouteService(
     private val client: OkHttpClient,
     private val apiKey: String =
         com.android.mySwissDorm.BuildConfig.OPENROUTESERVICE_API_KEY?.takeIf { it.isNotBlank() }
-            ?: ""
+            ?: "",
+    private val persistentCache: RouteCacheManager? = null
 ) {
-  private val cache =
+  // In-memory cache for fast access (complements persistent cache)
+  private val memoryCache =
       mutableMapOf<
           String, Pair<Double, Long>>() // Cache: routeKey -> (distance in meters, timestamp)
   private val CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000L // 7 days
@@ -46,15 +51,29 @@ class WalkingRouteService(
   suspend fun calculateWalkingTimeMinutes(from: Location, to: Location): Int? =
       withContext(Dispatchers.IO) {
         try {
-          // Check cache first
           val cacheKey = "${from.latitude},${from.longitude}_${to.latitude},${to.longitude}"
-          cache[cacheKey]?.let { (cachedDistance, timestamp) ->
+
+          // Check in-memory cache first (fastest)
+          memoryCache[cacheKey]?.let { (cachedDistance, timestamp) ->
             val age = System.currentTimeMillis() - timestamp
             if (age < CACHE_DURATION_MS) {
               val timeMinutes = (cachedDistance / WALKING_SPEED_MS / 60).toInt()
               Log.d(TAG, "Using cached route: ${cachedDistance.toInt()}m = $timeMinutes min")
               return@withContext timeMinutes
+            } else {
+              // Expired, remove from memory cache
+              memoryCache.remove(cacheKey)
             }
+          }
+
+          // Check persistent cache if available
+          persistentCache?.get(cacheKey)?.let { cachedDistance ->
+            val timeMinutes = (cachedDistance / WALKING_SPEED_MS / 60).toInt()
+            // Update memory cache for faster future access
+            memoryCache[cacheKey] = Pair(cachedDistance, System.currentTimeMillis())
+            Log.d(
+                TAG, "Using persistent cached route: ${cachedDistance.toInt()}m = $timeMinutes min")
+            return@withContext timeMinutes
           }
 
           // Rate limiting
@@ -111,8 +130,9 @@ class WalkingRouteService(
             val summary = properties.getJSONObject("summary")
             val distanceMeters = summary.getDouble("distance")
 
-            // Cache the result
-            cache[cacheKey] = Pair(distanceMeters, System.currentTimeMillis())
+            // Cache the result in both memory and persistent cache
+            memoryCache[cacheKey] = Pair(distanceMeters, System.currentTimeMillis())
+            persistentCache?.put(cacheKey, distanceMeters)
 
             // Calculate walking time: distance (meters) / speed (m/s) / 60 (seconds to minutes)
             val timeMinutes = (distanceMeters / WALKING_SPEED_MS / 60).toInt()

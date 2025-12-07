@@ -230,6 +230,7 @@ fun ViewListingScreen(
 
                 // Nearby Points of Interest - right after "posted by"
                 val poiDistances = listingUIState.poiDistances
+                val isLoadingPOIDistances = listingUIState.isLoadingPOIDistances
                 Text(
                     stringResource(R.string.view_listing_nearby_points_of_interest),
                     style =
@@ -237,96 +238,118 @@ fun ViewListingScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold),
                     modifier = Modifier.testTag(C.ViewListingTags.POI_DISTANCES))
-                if (poiDistances.isNotEmpty()) {
-                  Column(
-                      modifier = Modifier.padding(start = 16.dp),
-                      verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                        // Group POIs by walking time
-                        val groupedByTime = poiDistances.groupBy { it.walkingTimeMinutes }
+                when {
+                  isLoadingPOIDistances -> {
+                    // Show loading indicator while distances are being calculated
+                    Row(
+                        modifier = Modifier.padding(start = 16.dp, top = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                          CircularProgressIndicator(
+                              modifier = Modifier.size(16.dp),
+                              strokeWidth = 2.dp,
+                              color = MainColor)
+                          Text(
+                              stringResource(R.string.view_listing_calculating_distances),
+                              style =
+                                  MaterialTheme.typography.bodyMedium.copy(
+                                      color =
+                                          MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                              alpha = 0.6f)))
+                        }
+                  }
+                  poiDistances.isNotEmpty() -> {
+                    Column(
+                        modifier = Modifier.padding(start = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                          // Group POIs by walking time
+                          val groupedByTime = poiDistances.groupBy { it.walkingTimeMinutes }
 
-                        groupedByTime
-                            .toList()
-                            .sortedBy { it.first }
-                            .forEach { (timeMinutes, pois) ->
-                              if (pois.size == 1) {
-                                // Single POI at this time
-                                val poiDistance = pois.first()
-                                val timeText =
-                                    when (poiDistance.poiType) {
-                                      POIDistance.TYPE_UNIVERSITY ->
-                                          stringResource(
-                                              R.string.view_listing_walking_time_university,
-                                              poiDistance.walkingTimeMinutes,
-                                              poiDistance.poiName)
-                                      POIDistance.TYPE_SUPERMARKET ->
-                                          stringResource(
-                                              R.string.view_listing_walking_time_supermarket,
-                                              poiDistance.walkingTimeMinutes,
-                                              poiDistance.poiName)
-                                      else -> "" // Should not happen
-                                    }
-                                Text(
-                                    timeText,
-                                    style =
-                                        MaterialTheme.typography.bodyMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            lineHeight =
-                                                MaterialTheme.typography.bodySmall.lineHeight))
-                              } else {
-                                // Multiple POIs at the same time - combine them
-                                val poiNames = pois.map { it.poiName }
-                                val andString = stringResource(R.string.and)
-                                val combinedNames =
-                                    when (poiNames.size) {
-                                      2 -> poiNames.joinToString(" $andString ")
-                                      else ->
-                                          poiNames.dropLast(1).joinToString(", ") +
-                                              " $andString " +
-                                              poiNames.last()
-                                    }
+                          groupedByTime
+                              .toList()
+                              .sortedBy { it.first }
+                              .forEach { (timeMinutes, pois) ->
+                                if (pois.size == 1) {
+                                  // Single POI at this time
+                                  val poiDistance = pois.first()
+                                  val timeText =
+                                      when (poiDistance.poiType) {
+                                        POIDistance.TYPE_UNIVERSITY ->
+                                            stringResource(
+                                                R.string.view_listing_walking_time_university,
+                                                poiDistance.walkingTimeMinutes,
+                                                poiDistance.poiName)
+                                        POIDistance.TYPE_SUPERMARKET ->
+                                            stringResource(
+                                                R.string.view_listing_walking_time_supermarket,
+                                                poiDistance.walkingTimeMinutes,
+                                                poiDistance.poiName)
+                                        else -> "" // Should not happen
+                                      }
+                                  Text(
+                                      timeText,
+                                      style =
+                                          MaterialTheme.typography.bodyMedium.copy(
+                                              color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                              lineHeight =
+                                                  MaterialTheme.typography.bodySmall.lineHeight))
+                                } else {
+                                  // Multiple POIs at the same time - combine them
+                                  val poiNames = pois.map { it.poiName }
+                                  val andString = stringResource(R.string.and)
+                                  val combinedNames =
+                                      when (poiNames.size) {
+                                        2 -> poiNames.joinToString(" $andString ")
+                                        else ->
+                                            poiNames.dropLast(1).joinToString(", ") +
+                                                " $andString " +
+                                                poiNames.last()
+                                      }
 
-                                // Determine the type label (university or supermarket)
-                                val typeLabel =
-                                    when {
-                                      pois.all { it.poiType == POIDistance.TYPE_UNIVERSITY } ->
-                                          stringResource(R.string.university)
-                                      pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } ->
-                                          "" // Supermarkets don't need a type label
-                                      else -> "" // Mixed types, no label
-                                    }
+                                  // Determine the type label (university or supermarket)
+                                  val typeLabel =
+                                      when {
+                                        pois.all { it.poiType == POIDistance.TYPE_UNIVERSITY } ->
+                                            stringResource(R.string.university)
+                                        pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } ->
+                                            "" // Supermarkets don't need a type label
+                                        else -> "" // Mixed types, no label
+                                      }
 
-                                val timeText =
-                                    if (typeLabel.isNotEmpty()) {
-                                      stringResource(
-                                          R.string.view_listing_walking_time_minutes_of_multiple,
-                                          timeMinutes,
-                                          combinedNames,
-                                          typeLabel)
-                                    } else {
-                                      stringResource(
-                                          R.string.view_listing_walking_time_minutes_of_no_type,
-                                          timeMinutes,
-                                          combinedNames)
-                                    }
+                                  val timeText =
+                                      if (typeLabel.isNotEmpty()) {
+                                        stringResource(
+                                            R.string.view_listing_walking_time_minutes_of_multiple,
+                                            timeMinutes,
+                                            combinedNames,
+                                            typeLabel)
+                                      } else {
+                                        stringResource(
+                                            R.string.view_listing_walking_time_minutes_of_no_type,
+                                            timeMinutes,
+                                            combinedNames)
+                                      }
 
-                                Text(
-                                    timeText,
-                                    style =
-                                        MaterialTheme.typography.bodyMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            lineHeight =
-                                                MaterialTheme.typography.bodySmall.lineHeight))
+                                  Text(
+                                      timeText,
+                                      style =
+                                          MaterialTheme.typography.bodyMedium.copy(
+                                              color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                              lineHeight =
+                                                  MaterialTheme.typography.bodySmall.lineHeight))
+                                }
                               }
-                            }
-                      }
-                } else {
-                  Text(
-                      stringResource(R.string.view_listing_no_points_of_interest),
-                      style =
-                          MaterialTheme.typography.bodyMedium.copy(
-                              color =
-                                  MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)),
-                      modifier = Modifier.padding(start = 16.dp, top = 2.dp))
+                        }
+                  }
+                  else -> {
+                    Text(
+                        stringResource(R.string.view_listing_no_points_of_interest),
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                color =
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)),
+                        modifier = Modifier.padding(start = 16.dp, top = 2.dp))
+                  }
                 }
                 Spacer(Modifier.height(8.dp))
 

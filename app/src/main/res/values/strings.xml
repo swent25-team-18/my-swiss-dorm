@@ -216,6 +216,7 @@
     <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes from %2$s %3$s</string>
     <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes from %2$s</string>
     <string name="view_listing_no_points_of_interest">No nearby points of interest available</string>
+    <string name="view_listing_calculating_distances">Calculating distances...</string>
     <string name="view_listing_message_already_sent">You have already sent a message for this listing.</string>
     <string name="view_listing_please_wait_for_response">Please wait for a response from the owner.</string>
     <string name="view_listing_failed_to_submit_message">Failed to submit message:</string>

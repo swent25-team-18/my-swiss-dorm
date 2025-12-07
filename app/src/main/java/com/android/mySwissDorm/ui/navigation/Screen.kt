@@ -93,6 +93,14 @@ sealed class Screen(
     }
   }
 
+  data class ResidencyDetails(val residencyName: String) :
+      Screen(
+          route = "residencyDetails/${residencyName}", nameId = R.string.screen_residency_details) {
+    companion object {
+      const val route = "residencyDetails/{residencyName}"
+    }
+  }
+
   data class Map(val lat: Float, val lng: Float, val title: String, val name: Int) :
       Screen(route = "mapScreen/${lat}/${lng}/${title}/${name}", nameId = R.string.Map_Screen) {
 

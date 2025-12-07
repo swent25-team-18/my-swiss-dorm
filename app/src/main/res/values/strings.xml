@@ -221,6 +221,15 @@
     <string name="view_listing_failed_to_submit_message">Failed to submit message:</string>
     <string name="view_listing_message_sent">Message sent! The owner will be notified.</string>
 
+    <!-- ViewResidency -->
+    <string name="view_residency_failed_to_load">Failed to load residency:</string>
+    <string name="view_residency_not_found">Residency not found</string>
+    <string name="view_residency_location">Residency Location</string>
+    <string name="view_residency_no_contact_info">No contact information available</string>
+    <string name="see_residency_details">See residency details</string>
+    <string name="screen_residency_details">Residency Details</string>
+    <string name="contact_information">Contact Information</string>
+
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Not implemented yet</string>
     <string name="app_nav_host_residency_name_is_null">Residency name is null</string>

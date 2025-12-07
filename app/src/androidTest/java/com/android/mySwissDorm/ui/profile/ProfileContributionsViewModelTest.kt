@@ -5,15 +5,18 @@ import androidx.test.core.app.ApplicationProvider
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.model.rental.RentalListingRepository
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.review.Review
 import com.android.mySwissDorm.model.review.ReviewsRepository
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -23,6 +26,71 @@ class ProfileContributionsViewModelTest {
   @get:Rule val mainDispatcherRule = MainDispatcherRule()
 
   private val context = ApplicationProvider.getApplicationContext<Context>()
+
+  @Before
+  fun setUp() {
+    // Initialize providers with mock repositories to avoid IllegalStateException
+    val mockRentalRepo =
+        object : RentalListingRepository {
+          override fun getNewUid() = "mock-uid"
+
+          override suspend fun getAllRentalListings() = emptyList<RentalListing>()
+
+          override suspend fun getAllRentalListingsByLocation(location: Location, radius: Double) =
+              emptyList<RentalListing>()
+
+          override suspend fun getAllRentalListingsByResidency(residencyName: String) =
+              emptyList<RentalListing>()
+
+          override suspend fun getAllRentalListingsByUser(userId: String) =
+              emptyList<RentalListing>()
+
+          override suspend fun getRentalListing(rentalPostId: String) =
+              throw UnsupportedOperationException()
+
+          override suspend fun addRentalListing(rentalPost: RentalListing) =
+              throw UnsupportedOperationException()
+
+          override suspend fun editRentalListing(rentalPostId: String, newValue: RentalListing) =
+              throw UnsupportedOperationException()
+
+          override suspend fun deleteRentalListing(rentalPostId: String) =
+              throw UnsupportedOperationException()
+        }
+
+    val mockReviewsRepo =
+        object : ReviewsRepository {
+          override fun getNewUid() = "mock-uid"
+
+          override suspend fun getAllReviews() = emptyList<Review>()
+
+          override suspend fun getAllReviewsByResidency(residencyName: String) = emptyList<Review>()
+
+          override suspend fun getAllReviewsByUser(userId: String) = emptyList<Review>()
+
+          override suspend fun getReview(reviewId: String) = throw UnsupportedOperationException()
+
+          override suspend fun addReview(review: Review) = throw UnsupportedOperationException()
+
+          override suspend fun editReview(reviewId: String, newValue: Review) =
+              throw UnsupportedOperationException()
+
+          override suspend fun deleteReview(reviewId: String) =
+              throw UnsupportedOperationException()
+
+          override suspend fun upvoteReview(reviewId: String, userId: String) =
+              throw UnsupportedOperationException()
+
+          override suspend fun downvoteReview(reviewId: String, userId: String) =
+              throw UnsupportedOperationException()
+
+          override suspend fun removeVote(reviewId: String, userId: String) =
+              throw UnsupportedOperationException()
+        }
+
+    RentalListingRepositoryProvider.repository = mockRentalRepo
+    ReviewsRepositoryProvider.repository = mockReviewsRepo
+  }
 
   @Test
   fun initialState_isEmptyAndNotLoading() {
@@ -75,6 +143,9 @@ class ProfileContributionsViewModelTest {
                       location: Location,
                       radius: Double
                   ) = emptyList<RentalListing>()
+
+                  override suspend fun getAllRentalListingsByResidency(residencyName: String) =
+                      emptyList<RentalListing>()
 
                   override suspend fun getAllRentalListingsByUser(userId: String) =
                       listOf(

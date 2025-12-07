@@ -76,6 +76,11 @@ class RentalListingRepositoryLocal(private val rentalListingDao: RentalListingDa
     return rentalListingDao.getAllRentalListingsByUser(userId).map { it.toRentalListing() }
   }
 
+  override suspend fun getAllRentalListingsByResidency(residencyName: String): List<RentalListing> {
+    val allListings = getAllRentalListings()
+    return allListings.filter { it.residencyName == residencyName && it.status.name == "POSTED" }
+  }
+
   /**
    * Retrieves a specific rental listing by its unique identifier.
    *

@@ -420,6 +420,10 @@
     <string name="guest_sign_in_pop_up_sign_in_to_create_profile">Sign in to create a profile</string>
     <string name="guest_sign_in_pop_up_sign_in">Sign In</string>
 
+    <!-- TranslatableText -->
+    <string name="translatable_text_translate_button">Translate</string>
+    <string name="translatable_text_see_original_button">See original</string>
+
     <!-- AddPhotoButton -->
     <string name="add_photo_button_take_photo">Take a photo</string>
     <string name="add_photo_button_from_gallery">Choose from gallery</string>

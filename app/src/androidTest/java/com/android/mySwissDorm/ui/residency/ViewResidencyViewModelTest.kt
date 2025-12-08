@@ -18,10 +18,12 @@ import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.auth.FirebaseAuth
 import java.net.URL
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -341,34 +343,46 @@ class ViewResidencyViewModelTest : FirestoreTest() {
       }
     }
 
-    // Final check - if we still haven't completed, check current state
-    val finalState = viewModel.uiState.value
-    // If error is set, clear it (even if loading is still true)
-    if (finalState.errorMsg != null) {
-      viewModel.clearErrorMsg()
-      repeat(50) {
-        advanceUntilIdle()
-        delay(50)
-        advanceUntilIdle()
-        if (viewModel.uiState.value.errorMsg == null) {
-          return@repeat
+    // Final check - if we still haven't completed, wait longer with real delays
+    // CI environments can be slower, so use real time delays here
+    var finalState = viewModel.uiState.value
+
+    // Use real time delays for CI (test dispatcher delays don't advance real time)
+    withContext(Dispatchers.Default) {
+      var attempts = 0
+      val maxAttempts = 100 // Wait up to 10 seconds (100 * 100ms)
+
+      // Wait for error to be set with real delays (CI can be slow)
+      while (finalState.errorMsg == null && attempts < maxAttempts) {
+        delay(100) // Real delay on Default dispatcher
+        finalState = viewModel.uiState.value
+        attempts++
+
+        // If loading completed and error is set, break early
+        if (!finalState.loading && finalState.errorMsg != null) {
+          break
         }
       }
-      assertNull("Error should be cleared", viewModel.uiState.value.errorMsg)
-    } else {
-      // If no error yet, wait a bit more and verify error eventually appears
-      advanceUntilIdle()
-      delay(500)
-      advanceUntilIdle()
-      val stateAfterWait = viewModel.uiState.value
-      assertNotNull(
-          "Error should be set after loading non-existent residency", stateAfterWait.errorMsg)
-      viewModel.clearErrorMsg()
-      advanceUntilIdle()
-      delay(100)
-      advanceUntilIdle()
-      assertNull("Error should be cleared", viewModel.uiState.value.errorMsg)
     }
+
+    // Advance test dispatcher after real time wait
+    advanceUntilIdle()
+
+    // Now verify error is set (it should be after all this waiting)
+    assertNotNull("Error should be set after loading non-existent residency", finalState.errorMsg)
+
+    // Clear the error
+    viewModel.clearErrorMsg()
+    // Wait for clearErrorMsg to complete
+    repeat(50) {
+      advanceUntilIdle()
+      delay(50)
+      advanceUntilIdle()
+      if (viewModel.uiState.value.errorMsg == null) {
+        return@repeat
+      }
+    }
+    assertNull("Error should be cleared", viewModel.uiState.value.errorMsg)
     advanceUntilIdle()
   }
 

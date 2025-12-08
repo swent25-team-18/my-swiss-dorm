@@ -31,7 +31,7 @@ data class ViewResidencyUIState(
     val loading: Boolean = false
 )
 
-class ViewResidencyViewModel(
+open class ViewResidencyViewModel(
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,

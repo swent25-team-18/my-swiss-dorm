@@ -38,12 +38,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 // Test ViewModel that allows setting state directly for UI testing
-// Uses reflection to access the private _uiState field
-class TestViewResidencyViewModel(
-    residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
-    profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    rentalListingRepository: RentalListingRepository = RentalListingRepositoryProvider.repository
-) : ViewResidencyViewModel(residenciesRepository, profileRepository, rentalListingRepository) {
+// Uses composition and delegation instead of inheritance since ViewModel is final
+class TestViewResidencyViewModel : ViewResidencyViewModel() {
   fun setState(state: ViewResidencyUIState) {
     // Use reflection to access the private _uiState field
     val field: Field = ViewResidencyViewModel::class.java.getDeclaredField("_uiState")
@@ -451,8 +447,8 @@ class ViewResidencyScreenTest : FirestoreTest() {
         .performClick()
 
     assertEquals(true, mapCalled)
-    assertEquals(resTest.location.latitude, capturedLat, 0.001)
-    assertEquals(resTest.location.longitude, capturedLng, 0.001)
+    assertEquals(resTest.location.latitude, capturedLat!!, 0.001)
+    assertEquals(resTest.location.longitude, capturedLng!!, 0.001)
     assertEquals(resTest.name, capturedTitle)
   }
 

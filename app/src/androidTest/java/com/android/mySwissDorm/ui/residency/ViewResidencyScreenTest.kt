@@ -50,6 +50,11 @@ class TestViewResidencyViewModel(
     val mutableStateFlow = field.get(this) as MutableStateFlow<ViewResidencyUIState>
     mutableStateFlow.value = state
   }
+
+  // Override loadResidency to be a no-op so LaunchedEffect doesn't override our test state
+  override fun loadResidency(residencyName: String, context: Context) {
+    // Do nothing - we set state directly via setState()
+  }
 }
 
 @RunWith(AndroidJUnit4::class)
@@ -149,26 +154,33 @@ class ViewResidencyScreenTest : FirestoreTest() {
 
   @Test
   fun loadingState_displaysLoadingIndicator() = runTest {
-    val viewModel =
-        ViewResidencyViewModel(
-            residenciesRepository = residenciesRepo, profileRepository = profileRepo)
+    // Use the test ViewModel so loadResidency is a no-op and we fully control the state
+    val testViewModel = TestViewResidencyViewModel()
+
+    // Force the ViewModel into a pure loading state
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = null, errorMsg = null, poiDistances = emptyList(), loading = true))
 
     compose.setContent {
       ViewResidencyScreen(
-          viewResidencyViewModel = viewModel, residencyName = "NonExistentResidency")
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = "AnyResidencyName")
     }
 
-    // Wait for loading indicator to appear - give it time to render
+    // Wait until the loading indicator appears in the semantics tree
     compose.waitUntil(timeoutMillis = 5_000) {
       try {
         compose
             .onAllNodesWithTag(C.ViewResidencyTags.LOADING, useUnmergedTree = true)
             .fetchSemanticsNodes()
             .isNotEmpty()
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         false
       }
     }
+
+    // Assert that the loading indicator is displayed
     compose.onNodeWithTag(C.ViewResidencyTags.LOADING, useUnmergedTree = true).assertIsDisplayed()
   }
 

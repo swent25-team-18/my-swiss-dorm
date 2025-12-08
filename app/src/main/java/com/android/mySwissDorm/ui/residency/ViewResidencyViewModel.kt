@@ -36,7 +36,7 @@ open class ViewResidencyViewModel(
   private val _uiState = MutableStateFlow(ViewResidencyUIState(loading = true))
   val uiState: StateFlow<ViewResidencyUIState> = _uiState.asStateFlow()
 
-  fun loadResidency(residencyName: String, context: Context) {
+  open fun loadResidency(residencyName: String, context: Context) {
     viewModelScope.launch {
       _uiState.update { it.copy(loading = true, errorMsg = null) }
       try {

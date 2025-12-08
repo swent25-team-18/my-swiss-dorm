@@ -5,7 +5,7 @@ import io.getstream.chat.android.client.channel.ChannelClient
 import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.Message
 import io.getstream.result.Result
-import io.mockk.Call
+import io.getstream.result.call.Call
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -41,17 +41,17 @@ class StreamChatProviderUnitTest {
     every { chatClient.channel(channelType, channelId) } returns channelClient
 
     // Mock create call
-    val createCall = mockk<io.getstream.chat.android.client.call.Call<Channel>>()
+    val createCall = mockk<Call<Channel>>()
     coEvery { createCall.await() } returns Result.Success(channel)
     every { channelClient.create(memberIds, any()) } returns createCall
 
     // Mock sendMessage call
-    val sendMessageCall = mockk<io.getstream.chat.android.client.call.Call<Message>>()
+    val sendMessageCall = mockk<Call<Message>>()
     coEvery { sendMessageCall.await() } returns Result.Success(mockk())
     every { channelClient.sendMessage(any()) } returns sendMessageCall
 
     // Mock watch call
-    val watchCall = mockk<io.getstream.chat.android.client.call.Call<Channel>>()
+    val watchCall = mockk<Call<Channel>>()
     coEvery { watchCall.await() } returns Result.Success(channel)
     every { channelClient.watch() } returns watchCall
 
@@ -81,15 +81,15 @@ class StreamChatProviderUnitTest {
     every { channel.messages } returns emptyList()
     every { chatClient.channel(channelType, channelId) } returns channelClient
 
-    val createCall = mockk<io.getstream.chat.android.client.call.Call<Channel>>()
+    val createCall = mockk<Call<Channel>>()
     coEvery { createCall.await() } returns Result.Success(channel)
     every { channelClient.create(memberIds, any()) } returns createCall
 
-    val sendMessageCall = mockk<io.getstream.chat.android.client.call.Call<Message>>()
+    val sendMessageCall = mockk<Call<Message>>()
     coEvery { sendMessageCall.await() } returns Result.Success(mockk())
     every { channelClient.sendMessage(any()) } returns sendMessageCall
 
-    val watchCall = mockk<io.getstream.chat.android.client.call.Call<Channel>>()
+    val watchCall = mockk<Call<Channel>>()
     coEvery { watchCall.await() } returns Result.Success(channel)
     every { channelClient.watch() } returns watchCall
 
@@ -115,11 +115,11 @@ class StreamChatProviderUnitTest {
     every { channel.messages } returns listOf(existingMessage)
     every { chatClient.channel(channelType, channelId) } returns channelClient
 
-    val createCall = mockk<io.getstream.chat.android.client.call.Call<Channel>>()
+    val createCall = mockk<Call<Channel>>()
     coEvery { createCall.await() } returns Result.Success(channel)
     every { channelClient.create(memberIds, any()) } returns createCall
 
-    val watchCall = mockk<io.getstream.chat.android.client.call.Call<Channel>>()
+    val watchCall = mockk<Call<Channel>>()
     coEvery { watchCall.await() } returns Result.Success(channel)
     every { channelClient.watch() } returns watchCall
 

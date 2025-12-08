@@ -29,5 +29,10 @@ interface ResidenciesRepository {
    */
   suspend fun getResidency(residencyName: String): Residency
 
+  /**
+   * Adds a new [Residency] item to the repository.
+   *
+   * @param residency The residency to persist.
+   */
   suspend fun addResidency(residency: Residency)
 }

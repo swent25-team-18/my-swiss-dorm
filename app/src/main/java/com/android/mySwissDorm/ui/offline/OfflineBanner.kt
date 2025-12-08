@@ -12,50 +12,71 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.DateTimeUi
 import com.android.mySwissDorm.utils.LastSyncTracker
 import com.android.mySwissDorm.utils.NetworkUtils
-import kotlinx.coroutines.delay
 
 /**
- * Displays an offline banner at the top of the screen when the device is offline.
+ * Entry point that manages the network state connection.
  *
- * The banner shows:
- * - An offline icon
- * - "You're offline" message
- * - "Last updated X hours ago" (or days/date if too far)
- *
- * The banner automatically hides when the device comes back online.
- *
- * @param modifier Modifier to be applied to the banner.
+ * This is the "smart" component that collects the network state flow and passes it to the UI.
  */
 @Composable
 fun OfflineBanner(modifier: Modifier = Modifier) {
   val context = LocalContext.current
-  var isOffline by remember { mutableStateOf(!NetworkUtils.isNetworkAvailable(context)) }
+  // Reactively observe network state changes instead of polling
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
+
+  // Pass the pure boolean to the content (The UI)
+  OfflineBannerContent(isOffline = isOffline, modifier = modifier)
+}
+
+/**
+ * Stateless component that is easy to test.
+ *
+ * This is the "dumb" component that just takes an `isOffline` boolean and displays the banner. Pass
+ * 'isOffline' directly to test different states without mocking NetworkUtils.
+ *
+ * @param isOffline Whether the device is currently offline.
+ * @param modifier Modifier to be applied to the banner.
+ */
+@Composable
+fun OfflineBannerContent(isOffline: Boolean, modifier: Modifier = Modifier) {
+  val context = LocalContext.current
+
+  // Only update sync timestamp when we become offline (banner becomes visible)
+  // This avoids unnecessary reads when the banner is hidden
   var lastSyncTimestamp by remember {
     mutableStateOf(LastSyncTracker.getLastSyncTimestamp(context))
   }
 
-  // Poll network state every 2 seconds to update the banner
-  LaunchedEffect(Unit) {
-    while (true) {
-      isOffline = !NetworkUtils.isNetworkAvailable(context)
-      lastSyncTimestamp = LastSyncTracker.getLastSyncTimestamp(context)
-      delay(2000)
+  // Update sync timestamp reactively when network state changes to offline
+  // Use rememberUpdatedState to capture the latest context
+  val currentContext by rememberUpdatedState(context)
+  LaunchedEffect(isOffline) {
+    if (isOffline) {
+      // Only read timestamp when banner becomes visible (offline)
+      lastSyncTimestamp = LastSyncTracker.getLastSyncTimestamp(currentContext)
     }
   }
 
@@ -69,7 +90,8 @@ fun OfflineBanner(modifier: Modifier = Modifier) {
           modifier
               .fillMaxWidth()
               .background(MainColor)
-              .padding(horizontal = 16.dp, vertical = 12.dp),
+              .padding(horizontal = 16.dp, vertical = 12.dp)
+              .testTag(C.OfflineBannerTags.BANNER_ROOT),
       contentAlignment = Alignment.Center) {
         val lastUpdatedText =
             if (lastSyncTimestamp != null) {
@@ -89,12 +111,19 @@ fun OfflineBanner(modifier: Modifier = Modifier) {
               text = stringResource(R.string.offline_banner_you_are_offline),
               style = MaterialTheme.typography.bodyMedium,
               color = White,
-              modifier = Modifier.weight(1f))
+              modifier = Modifier.weight(1f).testTag(C.OfflineBannerTags.OFFLINE_MESSAGE))
           Text(
               text = lastUpdatedText,
               style = MaterialTheme.typography.bodySmall,
               color = White.copy(alpha = 0.9f),
-              textAlign = TextAlign.End)
+              textAlign = TextAlign.End,
+              modifier =
+                  Modifier.testTag(
+                      if (lastSyncTimestamp != null) {
+                        C.OfflineBannerTags.LAST_UPDATED_TEXT
+                      } else {
+                        C.OfflineBannerTags.NO_SYNC_TEXT
+                      }))
         }
       }
 }

@@ -371,9 +371,15 @@ object C {
   }
 
   object TranslatableTextTestTags {
-
     const val TRANSLATABLE_TEXT = "translatable_text"
 
     const val TRANSLATE_BUTTON = "translate_button"
+  }
+
+  object OfflineBannerTags {
+    const val BANNER_ROOT = "offlineBannerRoot"
+    const val OFFLINE_MESSAGE = "offlineBannerOfflineMessage"
+    const val LAST_UPDATED_TEXT = "offlineBannerLastUpdatedText"
+    const val NO_SYNC_TEXT = "offlineBannerNoSyncText"
   }
 }

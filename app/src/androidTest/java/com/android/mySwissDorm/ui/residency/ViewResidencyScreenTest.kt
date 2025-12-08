@@ -451,8 +451,8 @@ class ViewResidencyScreenTest : FirestoreTest() {
         .performClick()
 
     assertEquals(true, mapCalled)
-    assertEquals(resTest.location.latitude, capturedLat, 0.001)
-    assertEquals(resTest.location.longitude, capturedLng, 0.001)
+    assertEquals(resTest.location.latitude, capturedLat!!, 0.001)
+    assertEquals(resTest.location.longitude, capturedLng!!, 0.001)
     assertEquals(resTest.name, capturedTitle)
   }
 

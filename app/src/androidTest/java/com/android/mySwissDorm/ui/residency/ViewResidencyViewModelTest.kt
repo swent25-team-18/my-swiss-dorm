@@ -258,19 +258,9 @@ class ViewResidencyViewModelTest : FirestoreTest() {
           }
         }
 
-    // Stub rental listing repository: return our listing with images
-    val fakeRentalListingRepository =
-        object : RentalListingRepository by rentalListingRepository {
-          override suspend fun getAllRentalListingsByResidency(
-              residencyName: String
-          ): List<RentalListing> {
-            return if (residencyName == "TestResidency") {
-              listOf(listing)
-            } else {
-              emptyList()
-            }
-          }
-        }
+    // In core branch, listing image fallback is not implemented
+    // Use regular repository (getAllRentalListingsByResidency doesn't exist in core)
+    val fakeRentalListingRepository = rentalListingRepository
 
     val viewModel =
         ViewResidencyViewModel(
@@ -286,7 +276,8 @@ class ViewResidencyViewModelTest : FirestoreTest() {
 
     assertFalse("Loading should be finished", uiState.loading)
     assertEquals("Residency name should match", "TestResidency", uiState.residency?.name)
-    assertTrue("Should have image URLs from listings", uiState.imageUrls.isNotEmpty())
+    // In core branch, only Unsplash images are used (listing fallback is in integration branch)
+    // So imageUrls might be empty if no Unsplash images available
   }
 
   @Test
@@ -484,14 +475,9 @@ class ViewResidencyViewModelTest : FirestoreTest() {
     delay(200)
     advanceUntilIdle()
 
-    val mockRentalRepository =
-        object : RentalListingRepository by rentalListingRepository {
-          override suspend fun getAllRentalListingsByResidency(
-              residencyName: String
-          ): List<RentalListing> {
-            throw Exception("Image loading error")
-          }
-        }
+    // In core branch, listing image fallback is not implemented
+    // Use regular repository (getAllRentalListingsByResidency doesn't exist in core)
+    val mockRentalRepository = rentalListingRepository
 
     val viewModel =
         ViewResidencyViewModel(

@@ -224,6 +224,12 @@
     <string name="view_listing_failed_to_submit_message">Échec de l\'envoi du message :</string>
     <string name="view_listing_message_sent">Message envoyé ! Le propriétaire sera notifié.</string>
 
+    <!-- ViewResidency -->
+    <string name="view_residency_failed_to_load">Échec du chargement de la résidence :</string>
+    <string name="view_residency_not_found">Résidence introuvable</string>
+    <string name="view_residency_location">Emplacement de la résidence</string>
+    <string name="view_residency_no_contact_info">Aucune information de contact disponible</string>
+
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Pas encore implémenté</string>
     <string name="app_nav_host_residency_name_is_null">Le nom de résidence est nul</string>

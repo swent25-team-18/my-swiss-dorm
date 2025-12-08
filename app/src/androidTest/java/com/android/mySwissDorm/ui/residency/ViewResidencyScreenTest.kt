@@ -129,11 +129,15 @@ class ViewResidencyScreenTest : FirestoreTest() {
       ViewResidencyScreen(residencyName = resTest.name, onGoBack = { backCalled = true })
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.BACK_BUTTON, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.BACK_BUTTON, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.BACK_BUTTON, useUnmergedTree = true)
@@ -154,12 +158,16 @@ class ViewResidencyScreenTest : FirestoreTest() {
           viewResidencyViewModel = viewModel, residencyName = "NonExistentResidency")
     }
 
-    // Wait for loading indicator to appear
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.LOADING, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for loading indicator to appear - give it time to render
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.LOADING, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose.onNodeWithTag(C.ViewResidencyTags.LOADING, useUnmergedTree = true).assertIsDisplayed()
   }
@@ -214,11 +222,17 @@ class ViewResidencyScreenTest : FirestoreTest() {
           residencyName = residency.name)
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for compose to be idle, then wait for POI_DISTANCES
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
@@ -240,11 +254,26 @@ class ViewResidencyScreenTest : FirestoreTest() {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for ROOT first to ensure UI is rendered, then wait for POI_DISTANCES
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.ROOT, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
@@ -266,11 +295,26 @@ class ViewResidencyScreenTest : FirestoreTest() {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for ROOT first to ensure UI is rendered, then wait for POI_DISTANCES
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.ROOT, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
@@ -295,11 +339,26 @@ class ViewResidencyScreenTest : FirestoreTest() {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for ROOT first to ensure UI is rendered, then wait for POI_DISTANCES
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.ROOT, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
@@ -325,11 +384,26 @@ class ViewResidencyScreenTest : FirestoreTest() {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for ROOT first to ensure UI is rendered, then wait for POI_DISTANCES
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.ROOT, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
@@ -359,11 +433,17 @@ class ViewResidencyScreenTest : FirestoreTest() {
           residencyName = residencyWithContact.name)
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for compose to be idle, then wait for CONTACT_INFO
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
@@ -393,11 +473,17 @@ class ViewResidencyScreenTest : FirestoreTest() {
           residencyName = residencyWithoutContact.name)
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for compose to be idle, then wait for CONTACT_INFO
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
@@ -429,11 +515,17 @@ class ViewResidencyScreenTest : FirestoreTest() {
           })
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.LOCATION, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for compose to be idle, then wait for LOCATION
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.LOCATION, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.LOCATION, useUnmergedTree = true)
@@ -503,11 +595,26 @@ class ViewResidencyScreenTest : FirestoreTest() {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for ROOT first to ensure UI is rendered, then wait for POI_DISTANCES
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.ROOT, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
@@ -537,11 +644,17 @@ class ViewResidencyScreenTest : FirestoreTest() {
           residencyName = residencyWithEmail.name)
     }
 
-    compose.waitUntil(5_000) {
-      compose
-          .onAllNodesWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    // Wait for compose to be idle, then wait for CONTACT_INFO
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)

@@ -49,6 +49,22 @@ import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
 import com.android.mySwissDorm.utils.NetworkUtils
 
+/**
+ * Screen that displays the full details of a rental listing and allows the user to contact the
+ * owner or edit the listing.
+ *
+ * The screen shows title, metadata (price, area, start date), description, images, map preview, and
+ * provides actions for bookmarking, sharing, applying (sending a contact message), or editing when
+ * the current user is the owner.
+ *
+ * @param viewListingViewModel The [ViewListingViewModel] providing listing data and actions.
+ * @param listingUid The unique identifier of the listing to display.
+ * @param onGoBack Callback invoked when the user taps the back button.
+ * @param onApply Callback invoked when the user taps the \"Apply\" button after writing a message.
+ * @param onEdit Callback invoked when the owner taps the \"Edit\" button.
+ * @param onViewProfile Callback invoked when the poster's name is tapped to view their profile.
+ * @param onViewMap Callback invoked when the map preview is tapped to open the full map screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewListingScreen(
@@ -501,6 +517,12 @@ fun ViewListingScreen(
   }
 }
 
+/**
+ * Card-like container used to group listing sections such as metadata or description.
+ *
+ * @param modifier Modifier applied to the card.
+ * @param content Composable content displayed inside the card.
+ */
 @Composable
 private fun SectionCard(
     modifier: Modifier = Modifier,
@@ -518,6 +540,7 @@ private fun SectionCard(
       }
 }
 
+/** Single bullet row used to display a textual attribute of the listing. */
 @Composable
 private fun BulletRow(text: String) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -526,6 +549,13 @@ private fun BulletRow(text: String) {
   }
 }
 
+/**
+ * Placeholder block used when a particular section (e.g., location) is unavailable.
+ *
+ * @param text Text to display inside the placeholder.
+ * @param height Desired height of the block.
+ * @param modifier Modifier applied to the placeholder container.
+ */
 @Composable
 private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
   Box(

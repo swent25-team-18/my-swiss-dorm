@@ -386,4 +386,11 @@ object C {
     const val CONTACT_INFO = "viewResidencyContactInfo"
     const val LOCATION = "viewResidencyLocation"
   }
+
+  object OfflineBannerTags {
+    const val BANNER_ROOT = "offlineBannerRoot"
+    const val OFFLINE_MESSAGE = "offlineBannerOfflineMessage"
+    const val LAST_UPDATED_TEXT = "offlineBannerLastUpdatedText"
+    const val NO_SYNC_TEXT = "offlineBannerNoSyncText"
+  }
 }

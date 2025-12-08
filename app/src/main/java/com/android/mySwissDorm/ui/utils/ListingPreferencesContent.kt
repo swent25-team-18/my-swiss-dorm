@@ -33,6 +33,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -84,7 +85,9 @@ fun ListingPreferencesContent(
     onBottomButtonClick: () -> Unit,
     onUseCurrentLocationClick: () -> Unit,
     onClearClick: () -> Unit,
-    isButtonEnabled: Boolean = true
+    isButtonEnabled: Boolean = true,
+    onSkipClick: (() -> Unit)? = null,
+    skipButtonText: String? = null
 ) {
   val scrollState = rememberScrollState()
 
@@ -113,39 +116,47 @@ fun ListingPreferencesContent(
               }
             },
             actions = {
-                androidx.compose.material3.TextButton(onClick = onClearClick) {
-                    Text(
-                        text = stringResource(R.string.browse_city_clear_filters),
-                        color = MainColor,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        )
-      },
-
-      bottomBar = {
-        Column(modifier = Modifier.padding(16.dp)) {
-          if (errorMsg != null) {
-            Text(
-                text = errorMsg,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 8.dp))
-          }
-
-          Button(
-              onClick = onBottomButtonClick,
-              enabled = isButtonEnabled,
-              modifier = Modifier.fillMaxWidth().height(52.dp).testTag(SIGN_UP_WITH_PREFERENCES),
-              shape = RoundedCornerShape(16.dp),
-              colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
-                if (isLoading) {
-                  CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
-                } else {
-                  Text(text = bottomButtonText, color = White)
-                }
+              androidx.compose.material3.TextButton(onClick = onClearClick) {
+                Text(
+                    text = stringResource(R.string.browse_city_clear_filters),
+                    color = MainColor,
+                    fontWeight = FontWeight.SemiBold)
               }
-        }
+            })
+      },
+      bottomBar = {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+              if (errorMsg != null) {
+                Text(
+                    text = errorMsg,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 8.dp))
+              }
+
+              Button(
+                  onClick = onBottomButtonClick,
+                  enabled = isButtonEnabled,
+                  modifier =
+                      Modifier.fillMaxWidth().height(52.dp).testTag(SIGN_UP_WITH_PREFERENCES),
+                  shape = RoundedCornerShape(16.dp),
+                  colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
+                    if (isLoading) {
+                      CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                    } else {
+                      Text(text = bottomButtonText, color = White)
+                    }
+                  }
+              if (onSkipClick != null && skipButtonText != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = skipButtonText,
+                    color = MainColor,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable { onSkipClick() }.padding(8.dp))
+              }
+            }
       }) { innerPadding ->
         Column(
             modifier =

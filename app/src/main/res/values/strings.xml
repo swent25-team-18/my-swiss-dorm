@@ -123,7 +123,7 @@
     <string name="sign_up_phone_number_placeholder">Phone Number</string>
     <string name="sign_up_residency">Residency</string>
     <string name="sign_up_university">University</string>
-    <string name="sign_up_button_text">Sign Up with Google</string>
+    <string name="sign_up_button_text">Confirm and Sign Up with Google</string>
     <string name="sign_up_button_help_text">Please fill in the fields correctly</string>
     <string name="sign_up_button_not_specified">Not specified</string>
     <string name="sign_up_name_help">Your first name should be less than 20 characters long</string>

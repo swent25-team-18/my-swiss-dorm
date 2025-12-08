@@ -23,7 +23,12 @@ fun SignUpPreferencesScreen(
   val context = LocalContext.current
 
   LaunchedEffect(uiState.user) { uiState.user?.let { onSignedUp() } }
-
+  val isFormValid =
+      uiState.minPrice != null &&
+          uiState.maxPrice != null &&
+          uiState.minSize != null &&
+          uiState.maxSize != null &&
+          uiState.selectedRoomTypes.isNotEmpty()
   ListingPreferencesContent(
       title = stringResource(R.string.screen_sign_up),
       selectedLocation = uiState.selectedLocation,
@@ -49,5 +54,10 @@ fun SignUpPreferencesScreen(
       onBottomButtonClick = { signUpViewModel.signUp(context, credentialManager) },
       onUseCurrentLocationClick = onUserLocationClickFunc(context, signUpViewModel),
       onClearClick = { signUpViewModel.clearPreferences() },
-      isButtonEnabled = true)
+      isButtonEnabled = isFormValid,
+      skipButtonText = "Skip",
+      onSkipClick = {
+        signUpViewModel.clearPreferences()
+        signUpViewModel.signUp(context, credentialManager)
+      })
 }

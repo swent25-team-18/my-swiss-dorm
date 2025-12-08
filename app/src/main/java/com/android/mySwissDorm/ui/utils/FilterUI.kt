@@ -40,10 +40,11 @@ fun PriceFilterContent(
       remember(priceRange) { mutableFloatStateOf((priceRange.first?.toFloat() ?: defaultMin)) }
   var maxPrice by
       remember(priceRange) { mutableFloatStateOf((priceRange.second?.toFloat() ?: defaultMax)) }
-    LaunchedEffect(Unit) {
-        if (priceRange.first == null || priceRange.second == null) {
-            onRangeChange(minPrice.toDouble(), maxPrice.toDouble())
-        }}
+  LaunchedEffect(Unit) {
+    if (priceRange.first == null || priceRange.second == null) {
+      onRangeChange(minPrice.toDouble(), maxPrice.toDouble())
+    }
+  }
   Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
       Text(

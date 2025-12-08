@@ -3,6 +3,7 @@ package com.android.mySwissDorm.ui.utils
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.utils.Translator
 import java.util.Locale
 import kotlin.use
@@ -39,11 +40,14 @@ class TranslatableTextViewModel() : ViewModel() {
    *   Translator utility.
    */
   fun translate(text: String, context: Context) {
-    viewModelScope.launch {
-      val translator = Translator()
-      val code = Locale.getDefault().language
-      val translated = translator.use { translator.translateText(text, code, context) }
-      _uiState.update { it.copy(translated = translated) }
+    if (text.isNotBlank()) {
+      viewModelScope.launch {
+        _uiState.update { it.copy(translated = context.getString(R.string.translator_translating)) }
+        val translator = Translator()
+        val code = Locale.getDefault().language
+        val translated = translator.use { translator.translateText(text, code, context) }
+        _uiState.update { it.copy(translated = translated) }
+      }
     }
   }
 }

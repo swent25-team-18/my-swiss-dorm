@@ -362,14 +362,23 @@
     <string name="reviews_by_residency_vm_failed_to_load_reviews">Impossible de charger les avis</string>
 
     <!-- ViewReviewScreen -->
-    <string name="view_review_title">Détails de l’avis</string>
+    <string name="view_review_title">Détails de l\'avis</string>
     <string name="view_review_posted_by">Publié par </string>
     <string name="view_review_posted_by_you">(Vous)</string>
     <string name="view_review_price_per_month">.-/mois</string>
     <string name="view_review_was_this_useful">Cet avis vous a-t-il été utile ?</string>
 
     <!-- ViewReviewViewModel -->
-    <string name="view_review_failed_to_load_review">Impossible de charger l’avis</string>
+    <string name="view_review_failed_to_load_review">Impossible de charger l\'avis</string>
+
+    <!-- ViewResidency -->
+    <string name="view_residency_failed_to_load">Échec du chargement de la résidence :</string>
+    <string name="view_residency_not_found">Résidence introuvable</string>
+    <string name="view_residency_location">Localisation de la résidence</string>
+    <string name="view_residency_no_contact_info">Aucune information de contact disponible</string>
+    <string name="see_residency_details">Voir les détails de la résidence</string>
+    <string name="screen_residency_details">Détails de la résidence</string>
+    <string name="contact_information">Informations de contact</string>
 
     <!-- Share dialog -->
     <string name="share">Partager</string>

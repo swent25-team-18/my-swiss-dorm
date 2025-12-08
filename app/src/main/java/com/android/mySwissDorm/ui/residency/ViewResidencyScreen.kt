@@ -45,12 +45,6 @@ fun ViewResidencyScreen(
   val residency = uiState.residency
   val errorMsg = uiState.errorMsg
 
-  LaunchedEffect(errorMsg) {
-    if (errorMsg != null) {
-      // Error is already shown in UI, no need to navigate back
-    }
-  }
-
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
@@ -72,240 +66,292 @@ fun ViewResidencyScreen(
             })
       },
       content = { paddingValues ->
-        when {
-          uiState.loading -> {
-            Box(
-                Modifier.fillMaxSize().padding(paddingValues),
-                contentAlignment = Alignment.Center) {
-                  CircularProgressIndicator(
-                      modifier = Modifier.size(64.dp).testTag(C.ViewResidencyTags.LOADING))
-                }
-          }
-          errorMsg != null || residency == null -> {
-            Box(
-                Modifier.fillMaxSize().padding(paddingValues),
-                contentAlignment = Alignment.Center) {
-                  Text(
-                      text = errorMsg ?: stringResource(R.string.view_residency_not_found),
-                      color = MaterialTheme.colorScheme.error,
-                      modifier = Modifier.testTag(C.ViewResidencyTags.ERROR))
-                }
-          }
-          else -> {
-            Column(
-                modifier =
-                    Modifier.fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .verticalScroll(rememberScrollState())
-                        .testTag(C.ViewResidencyTags.ROOT),
-                verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                  // Residency name (already in top bar, but can show here too if needed)
-                  Text(
-                      text = residency.name,
-                      fontSize = 28.sp,
-                      fontWeight = FontWeight.SemiBold,
-                      lineHeight = 32.sp,
-                      modifier = Modifier.testTag(C.ViewResidencyTags.NAME),
-                      color = TextColor)
+        ViewResidencyContent(
+            uiState = uiState,
+            residency = residency,
+            errorMsg = errorMsg,
+            paddingValues = paddingValues,
+            onViewMap = onViewMap)
+      })
+}
 
-                  // Photos
-                  val imageUrls = uiState.imageUrls
-                  SectionCard(modifier = Modifier.testTag(C.ViewResidencyTags.PHOTOS)) {
-                    Text("${stringResource(R.string.photos)} :", fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(8.dp))
-                    if (imageUrls.isNotEmpty()) {
-                      // Show first image as main image
-                      AsyncImage(
-                          model = imageUrls.first(),
-                          contentDescription = null,
-                          modifier =
-                              Modifier.fillMaxWidth()
-                                  .height(200.dp)
-                                  .clip(RoundedCornerShape(12.dp)),
-                          contentScale = ContentScale.Crop,
-                          placeholder =
-                              androidx.compose.ui.graphics.painter.ColorPainter(LightGray),
-                          error = androidx.compose.ui.graphics.painter.ColorPainter(LightGray))
-                    } else {
-                      // Placeholder if no images
-                      Box(
-                          modifier =
-                              Modifier.fillMaxWidth()
-                                  .height(200.dp)
-                                  .clip(RoundedCornerShape(12.dp))
-                                  .background(LightGray),
-                          contentAlignment = Alignment.Center) {
-                            Text(
-                                stringResource(R.string.image),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Gray)
-                          }
-                    }
-                  }
+@Composable
+private fun ViewResidencyContent(
+    uiState: ViewResidencyUIState,
+    residency: com.android.mySwissDorm.model.residency.Residency?,
+    errorMsg: String?,
+    paddingValues: PaddingValues,
+    onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit
+) {
+  when {
+    uiState.loading -> {
+      LoadingView(paddingValues)
+    }
+    errorMsg != null || residency == null -> {
+      ErrorView(errorMsg, paddingValues)
+    }
+    else -> {
+      ResidencyDetailsContent(
+          residency = residency,
+          imageUrls = uiState.imageUrls,
+          poiDistances = uiState.poiDistances,
+          paddingValues = paddingValues,
+          onViewMap = onViewMap)
+    }
+  }
+}
 
-                  // Description
-                  SectionCard(modifier = Modifier.testTag(C.ViewResidencyTags.DESCRIPTION)) {
-                    Text(
-                        "${stringResource(R.string.description)} :",
-                        fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(3.dp))
-                    Text(residency.description, style = MaterialTheme.typography.bodyLarge)
-                  }
+@Composable
+private fun LoadingView(paddingValues: PaddingValues) {
+  Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+    CircularProgressIndicator(modifier = Modifier.size(64.dp).testTag(C.ViewResidencyTags.LOADING))
+  }
+}
 
-                  // Nearby Points of Interest
-                  val poiDistances = uiState.poiDistances
-                  Text(
-                      stringResource(R.string.view_listing_nearby_points_of_interest),
-                      style =
-                          MaterialTheme.typography.bodyMedium.copy(
-                              color = MaterialTheme.colorScheme.onSurfaceVariant,
-                              fontWeight = FontWeight.SemiBold),
-                      modifier = Modifier.testTag(C.ViewResidencyTags.POI_DISTANCES))
-                  if (poiDistances.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier.padding(start = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                          // Group POIs by walking time
-                          val groupedByTime = poiDistances.groupBy { it.walkingTimeMinutes }
+@Composable
+private fun ErrorView(errorMsg: String?, paddingValues: PaddingValues) {
+  Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+    Text(
+        text = errorMsg ?: stringResource(R.string.view_residency_not_found),
+        color = MaterialTheme.colorScheme.error,
+        modifier = Modifier.testTag(C.ViewResidencyTags.ERROR))
+  }
+}
 
-                          groupedByTime
-                              .toList()
-                              .sortedBy { it.first }
-                              .forEach { (timeMinutes, pois) ->
-                                if (pois.size == 1) {
-                                  // Single POI at this time
-                                  val poiDistance = pois.first()
-                                  val timeText =
-                                      when (poiDistance.poiType) {
-                                        POIDistance.TYPE_UNIVERSITY ->
-                                            stringResource(
-                                                R.string.view_listing_walking_time_university,
-                                                poiDistance.walkingTimeMinutes,
-                                                poiDistance.poiName)
-                                        POIDistance.TYPE_SUPERMARKET ->
-                                            stringResource(
-                                                R.string.view_listing_walking_time_supermarket,
-                                                poiDistance.walkingTimeMinutes,
-                                                poiDistance.poiName)
-                                        else -> "" // Should not happen
-                                      }
-                                  Text(
-                                      timeText,
-                                      style =
-                                          MaterialTheme.typography.bodyMedium.copy(
-                                              color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                              lineHeight =
-                                                  MaterialTheme.typography.bodySmall.lineHeight))
-                                } else {
-                                  // Multiple POIs at the same time - combine them
-                                  val poiNames = pois.map { it.poiName }
-                                  val andString = stringResource(R.string.and)
-                                  val combinedNames =
-                                      when (poiNames.size) {
-                                        2 -> poiNames.joinToString(" $andString ")
-                                        else ->
-                                            poiNames.dropLast(1).joinToString(", ") +
-                                                " $andString " +
-                                                poiNames.last()
-                                      }
+@Composable
+private fun ResidencyDetailsContent(
+    residency: com.android.mySwissDorm.model.residency.Residency,
+    imageUrls: List<String>,
+    poiDistances: List<POIDistance>,
+    paddingValues: PaddingValues,
+    onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit
+) {
+  Column(
+      modifier =
+          Modifier.fillMaxSize()
+              .padding(paddingValues)
+              .padding(horizontal = 16.dp, vertical = 8.dp)
+              .verticalScroll(rememberScrollState())
+              .testTag(C.ViewResidencyTags.ROOT),
+      verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ResidencyNameHeader(residency.name)
+        PhotosSection(imageUrls)
+        DescriptionSection(residency.description)
+        POIDistancesSection(poiDistances)
+        Spacer(Modifier.height(8.dp))
+        ContactInformationSection(residency)
+        LocationSection(residency, onViewMap)
+      }
+}
 
-                                  // Determine the type label (university or supermarket)
-                                  val typeLabel =
-                                      when {
-                                        pois.all { it.poiType == POIDistance.TYPE_UNIVERSITY } ->
-                                            stringResource(R.string.university)
-                                        pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } ->
-                                            "" // Supermarkets don't need a type label
-                                        else -> "" // Mixed types, no label
-                                      }
+@Composable
+private fun ResidencyNameHeader(name: String) {
+  Text(
+      text = name,
+      fontSize = 28.sp,
+      fontWeight = FontWeight.SemiBold,
+      lineHeight = 32.sp,
+      modifier = Modifier.testTag(C.ViewResidencyTags.NAME),
+      color = TextColor)
+}
 
-                                  val timeText =
-                                      if (typeLabel.isNotEmpty()) {
-                                        stringResource(
-                                            R.string.view_listing_walking_time_minutes_of_multiple,
-                                            timeMinutes,
-                                            combinedNames,
-                                            typeLabel)
-                                      } else {
-                                        stringResource(
-                                            R.string.view_listing_walking_time_minutes_of_no_type,
-                                            timeMinutes,
-                                            combinedNames)
-                                      }
+@Composable
+private fun PhotosSection(imageUrls: List<String>) {
+  SectionCard(modifier = Modifier.testTag(C.ViewResidencyTags.PHOTOS)) {
+    Text("${stringResource(R.string.photos)} :", fontWeight = FontWeight.SemiBold)
+    Spacer(Modifier.height(8.dp))
+    if (imageUrls.isNotEmpty()) {
+      AsyncImage(
+          model = imageUrls.first(),
+          contentDescription = null,
+          modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp)),
+          contentScale = ContentScale.Crop,
+          placeholder = ColorPainter(LightGray),
+          error = ColorPainter(LightGray))
+    } else {
+      ImagePlaceholder()
+    }
+  }
+}
 
-                                  Text(
-                                      timeText,
-                                      style =
-                                          MaterialTheme.typography.bodyMedium.copy(
-                                              color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                              lineHeight =
-                                                  MaterialTheme.typography.bodySmall.lineHeight))
-                                }
-                              }
-                        }
-                  } else {
-                    Text(
-                        stringResource(R.string.view_listing_no_points_of_interest),
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                color =
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)),
-                        modifier = Modifier.padding(start = 16.dp, top = 2.dp))
-                  }
-                  Spacer(Modifier.height(8.dp))
+@Composable
+private fun ImagePlaceholder() {
+  Box(
+      modifier =
+          Modifier.fillMaxWidth()
+              .height(200.dp)
+              .clip(RoundedCornerShape(12.dp))
+              .background(LightGray),
+      contentAlignment = Alignment.Center) {
+        Text(
+            stringResource(R.string.image),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Gray)
+      }
+}
 
-                  // Contact Information
-                  SectionCard(modifier = Modifier.testTag(C.ViewResidencyTags.CONTACT_INFO)) {
-                    Text(
-                        "${stringResource(R.string.contact_information)} :",
-                        fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(8.dp))
-                    if (residency.email != null) {
-                      Text(
-                          "${stringResource(R.string.email)}: ${residency.email}",
-                          style = MaterialTheme.typography.bodyMedium)
-                      Spacer(Modifier.height(4.dp))
-                    }
-                    if (residency.phone != null) {
-                      Text(
-                          "${stringResource(R.string.phone)}: ${residency.phone}",
-                          style = MaterialTheme.typography.bodyMedium)
-                      Spacer(Modifier.height(4.dp))
-                    }
-                    if (residency.website != null) {
-                      Text(
-                          "${stringResource(R.string.website)}: ${residency.website}",
-                          style = MaterialTheme.typography.bodyMedium)
-                    }
-                    if (residency.email == null &&
-                        residency.phone == null &&
-                        residency.website == null) {
-                      Text(
-                          stringResource(R.string.view_residency_no_contact_info),
-                          style = MaterialTheme.typography.bodyMedium,
-                          color = Gray)
-                    }
-                  }
+@Composable
+private fun DescriptionSection(description: String) {
+  SectionCard(modifier = Modifier.testTag(C.ViewResidencyTags.DESCRIPTION)) {
+    Text("${stringResource(R.string.description)} :", fontWeight = FontWeight.SemiBold)
+    Spacer(Modifier.height(3.dp))
+    Text(description, style = MaterialTheme.typography.bodyLarge)
+  }
+}
 
-                  // Location
-                  MapPreview(
-                      location = residency.location,
-                      title = residency.name,
-                      modifier =
-                          Modifier.fillMaxWidth()
-                              .height(180.dp)
-                              .testTag(C.ViewResidencyTags.LOCATION),
-                      onMapClick = {
-                        onViewMap(
-                            residency.location.latitude,
-                            residency.location.longitude,
-                            residency.name,
-                            R.string.view_residency_location)
-                      })
-                }
-          }
-        }
+@Composable
+private fun POIDistancesSection(poiDistances: List<POIDistance>) {
+  Text(
+      stringResource(R.string.view_listing_nearby_points_of_interest),
+      style =
+          MaterialTheme.typography.bodyMedium.copy(
+              color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold),
+      modifier = Modifier.testTag(C.ViewResidencyTags.POI_DISTANCES))
+  if (poiDistances.isNotEmpty()) {
+    POIDistancesList(poiDistances)
+  } else {
+    Text(
+        stringResource(R.string.view_listing_no_points_of_interest),
+        style =
+            MaterialTheme.typography.bodyMedium.copy(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)),
+        modifier = Modifier.padding(start = 16.dp, top = 2.dp))
+  }
+}
+
+@Composable
+private fun POIDistancesList(poiDistances: List<POIDistance>) {
+  Column(
+      modifier = Modifier.padding(start = 16.dp),
+      verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        val groupedByTime = poiDistances.groupBy { it.walkingTimeMinutes }
+        groupedByTime
+            .toList()
+            .sortedBy { it.first }
+            .forEach { (timeMinutes, pois) -> POIDistanceItem(timeMinutes, pois) }
+      }
+}
+
+@Composable
+private fun POIDistanceItem(timeMinutes: Int, pois: List<POIDistance>) {
+  val timeText =
+      if (pois.size == 1) {
+        formatSinglePOITimeText(pois.first())
+      } else {
+        formatMultiplePOIsTimeText(timeMinutes, pois)
+      }
+  Text(
+      timeText,
+      style =
+          MaterialTheme.typography.bodyMedium.copy(
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              lineHeight = MaterialTheme.typography.bodySmall.lineHeight))
+}
+
+@Composable
+private fun formatSinglePOITimeText(poiDistance: POIDistance): String {
+  return when (poiDistance.poiType) {
+    POIDistance.TYPE_UNIVERSITY ->
+        stringResource(
+            R.string.view_listing_walking_time_university,
+            poiDistance.walkingTimeMinutes,
+            poiDistance.poiName)
+    POIDistance.TYPE_SUPERMARKET ->
+        stringResource(
+            R.string.view_listing_walking_time_supermarket,
+            poiDistance.walkingTimeMinutes,
+            poiDistance.poiName)
+    else -> ""
+  }
+}
+
+@Composable
+private fun formatMultiplePOIsTimeText(timeMinutes: Int, pois: List<POIDistance>): String {
+  val poiNames = pois.map { it.poiName }
+  val andString = stringResource(R.string.and)
+  val combinedNames =
+      when (poiNames.size) {
+        2 -> poiNames.joinToString(" $andString ")
+        else -> poiNames.dropLast(1).joinToString(", ") + " $andString " + poiNames.last()
+      }
+  val typeLabel = determinePOITypeLabel(pois)
+  return if (typeLabel.isNotEmpty()) {
+    stringResource(
+        R.string.view_listing_walking_time_minutes_of_multiple,
+        timeMinutes,
+        combinedNames,
+        typeLabel)
+  } else {
+    stringResource(
+        R.string.view_listing_walking_time_minutes_of_no_type, timeMinutes, combinedNames)
+  }
+}
+
+@Composable
+private fun determinePOITypeLabel(pois: List<POIDistance>): String {
+  return when {
+    pois.all { it.poiType == POIDistance.TYPE_UNIVERSITY } -> stringResource(R.string.university)
+    pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } -> ""
+    else -> ""
+  }
+}
+
+@Composable
+private fun ContactInformationSection(
+    residency: com.android.mySwissDorm.model.residency.Residency
+) {
+  SectionCard(modifier = Modifier.testTag(C.ViewResidencyTags.CONTACT_INFO)) {
+    Text("${stringResource(R.string.contact_information)} :", fontWeight = FontWeight.SemiBold)
+    Spacer(Modifier.height(8.dp))
+    if (hasContactInfo(residency)) {
+      ContactInfoItems(residency)
+    } else {
+      Text(
+          stringResource(R.string.view_residency_no_contact_info),
+          style = MaterialTheme.typography.bodyMedium,
+          color = Gray)
+    }
+  }
+}
+
+private fun hasContactInfo(residency: com.android.mySwissDorm.model.residency.Residency): Boolean {
+  return residency.email != null || residency.phone != null || residency.website != null
+}
+
+@Composable
+private fun ContactInfoItems(residency: com.android.mySwissDorm.model.residency.Residency) {
+  if (residency.email != null) {
+    ContactInfoItem(stringResource(R.string.email), residency.email)
+  }
+  if (residency.phone != null) {
+    ContactInfoItem(stringResource(R.string.phone), residency.phone)
+  }
+  if (residency.website != null) {
+    ContactInfoItem(stringResource(R.string.website), residency.website.toString())
+  }
+}
+
+@Composable
+private fun ContactInfoItem(label: String, value: String) {
+  Text("$label: $value", style = MaterialTheme.typography.bodyMedium)
+  Spacer(Modifier.height(4.dp))
+}
+
+@Composable
+private fun LocationSection(
+    residency: com.android.mySwissDorm.model.residency.Residency,
+    onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit
+) {
+  MapPreview(
+      location = residency.location,
+      title = residency.name,
+      modifier = Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewResidencyTags.LOCATION),
+      onMapClick = {
+        onViewMap(
+            residency.location.latitude,
+            residency.location.longitude,
+            residency.name,
+            R.string.view_residency_location)
       })
 }
 

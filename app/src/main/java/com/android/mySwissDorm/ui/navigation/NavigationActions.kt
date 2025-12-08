@@ -25,8 +25,15 @@ class NavigationActions(
     private val navigationViewModel: NavigationViewModel? = null
 ) {
 
+  /**
+   * Returns the underlying [NavHostController] used for navigation.
+   *
+   * This is mainly exposed so that external code (e.g., tests) can interact directly with the
+   * controller when necessary.
+   */
   fun navController(): NavHostController = navController
 
+  /** Navigates one step back in the navigation stack, if possible. */
   fun goBack() {
     navController.popBackStack()
   }
@@ -54,6 +61,12 @@ class NavigationActions(
   }
 
   //  Use currentBackStackEntry for reliable route reads during transitions
+  /**
+   * Returns the current destination route string, or null if it cannot be determined.
+   *
+   * This should be preferred over reading from `navController.currentDestination` directly during
+   * transitions.
+   */
   fun currentRoute(): String? = navController.currentBackStackEntry?.destination?.route
 
   /**

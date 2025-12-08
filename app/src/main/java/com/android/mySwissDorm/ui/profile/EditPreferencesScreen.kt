@@ -15,6 +15,12 @@ fun EditPreferencesScreen(viewModel: ProfileScreenViewModel, onBack: () -> Unit)
   val context = LocalContext.current
 
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, viewModel)
+    val isFormValid = state.prefLocation != null &&
+            state.minPrice != null &&
+            state.maxPrice != null &&
+            state.minSize != null &&
+            state.maxSize != null &&
+            state.selectedRoomTypes.isNotEmpty()
 
   ListingPreferencesContent(
       title = stringResource(R.string.listing_preferences),
@@ -38,6 +44,11 @@ fun EditPreferencesScreen(viewModel: ProfileScreenViewModel, onBack: () -> Unit)
       isLoading = state.isSaving,
       errorMsg = state.errorMsg,
       bottomButtonText = stringResource(R.string.save_preferences),
+      isButtonEnabled = isFormValid,
       onBottomButtonClick = { viewModel.savePreferences(context, onSuccess = onBack) },
-      onUseCurrentLocationClick = onUseCurrentLocationClick)
+      onUseCurrentLocationClick = onUseCurrentLocationClick,onClearClick = {
+          viewModel.clearPreferences()
+          viewModel.savePreferences(context, onSuccess = onBack)
+      }
+      )
 }

@@ -82,7 +82,9 @@ fun ListingPreferencesContent(
     errorMsg: String?,
     bottomButtonText: String,
     onBottomButtonClick: () -> Unit,
-    onUseCurrentLocationClick: () -> Unit
+    onUseCurrentLocationClick: () -> Unit,
+    onClearClick: () -> Unit,
+    isButtonEnabled: Boolean = true
 ) {
   val scrollState = rememberScrollState()
 
@@ -109,8 +111,19 @@ fun ListingPreferencesContent(
                     contentDescription = "Back",
                     tint = MainColor)
               }
-            })
+            },
+            actions = {
+                androidx.compose.material3.TextButton(onClick = onClearClick) {
+                    Text(
+                        text = stringResource(R.string.browse_city_clear_filters),
+                        color = MainColor,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        )
       },
+
       bottomBar = {
         Column(modifier = Modifier.padding(16.dp)) {
           if (errorMsg != null) {
@@ -122,6 +135,7 @@ fun ListingPreferencesContent(
 
           Button(
               onClick = onBottomButtonClick,
+              enabled = isButtonEnabled,
               modifier = Modifier.fillMaxWidth().height(52.dp).testTag(SIGN_UP_WITH_PREFERENCES),
               shape = RoundedCornerShape(16.dp),
               colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {

@@ -8,6 +8,7 @@ import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -33,13 +34,16 @@ fun PriceFilterContent(
     onRangeChange: (Double?, Double?) -> Unit
 ) {
   val defaultMin = 0.0f
-  val defaultMax = 2000.0f
+  val defaultMax = 0.0f
 
   var minPrice by
       remember(priceRange) { mutableFloatStateOf((priceRange.first?.toFloat() ?: defaultMin)) }
   var maxPrice by
       remember(priceRange) { mutableFloatStateOf((priceRange.second?.toFloat() ?: defaultMax)) }
-
+    LaunchedEffect(Unit) {
+        if (priceRange.first == null || priceRange.second == null) {
+            onRangeChange(minPrice.toDouble(), maxPrice.toDouble())
+        }}
   Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
       Text(
@@ -73,7 +77,7 @@ fun PriceFilterContent(
 @Composable
 fun SizeFilterContent(sizeRange: Pair<Int?, Int?>, onRangeChange: (Int?, Int?) -> Unit) {
   val defaultMin = 0.0f
-  val defaultMax = 100.0f
+  val defaultMax = 0.0f
   var minSize by
       remember(sizeRange) { mutableFloatStateOf((sizeRange.first?.toFloat() ?: defaultMin)) }
   var maxSize by

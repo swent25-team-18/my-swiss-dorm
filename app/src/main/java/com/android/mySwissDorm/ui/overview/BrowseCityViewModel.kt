@@ -281,15 +281,12 @@ class BrowseCityViewModel(
         }
         fun isRecommended(listing: RentalListing): Boolean {
           if (userInfo == null) return false
-          if (userInfo.preferredRoomTypes.isNotEmpty() &&
-              listing.roomType !in userInfo.preferredRoomTypes)
-              return false
-          if (userInfo.maxPrice != null && listing.pricePerMonth > userInfo.maxPrice) return false
-          if (userInfo.minPrice != null && listing.pricePerMonth < userInfo.minPrice) return false
-          if (userInfo.minSize != null && listing.areaInM2 < userInfo.minSize) return false
-          if (userInfo.maxSize != null && listing.areaInM2 > userInfo.maxSize) return false
-
-          return true
+          if ((listing.roomType !in userInfo.preferredRoomTypes) ||
+                (userInfo.maxPrice != null && listing.pricePerMonth > userInfo.maxPrice) ||
+                (userInfo.minPrice != null && listing.pricePerMonth < userInfo.minPrice)||
+                (userInfo.minSize != null && listing.areaInM2 < userInfo.minSize) ||
+                (userInfo.maxSize != null && listing.areaInM2 > userInfo.maxSize)) return false
+            return true
         }
         // Sort by most recent if enabled and recommended (always)
         var comparator = compareByDescending<RentalListing> { isRecommended(it) }

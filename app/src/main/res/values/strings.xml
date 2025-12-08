@@ -286,7 +286,7 @@
     <string name="browse_city_vm_failed_to_load_residencies">Failed to load listings</string>
     <string name="browse_city_vm_price_per_month">.-/month</string>
     <!-- EditPreferencesScreen -->
-    <string name="listing_preferences">Listing Preferences</string>
+    <string name="listing_preferences">Preferences</string>
     <string name="save_preferences">Save Preferences</string>
 
     <!-- BookmarkedListingsScreen -->

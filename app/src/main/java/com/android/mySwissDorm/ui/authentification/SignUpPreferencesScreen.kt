@@ -47,5 +47,7 @@ fun SignUpPreferencesScreen(
       errorMsg = uiState.errMsg,
       bottomButtonText = stringResource(R.string.sign_up_button_text),
       onBottomButtonClick = { signUpViewModel.signUp(context, credentialManager) },
-      onUseCurrentLocationClick = onUserLocationClickFunc(context, signUpViewModel))
+      onUseCurrentLocationClick = onUserLocationClickFunc(context, signUpViewModel),
+      onClearClick = { signUpViewModel.clearPreferences() },
+      isButtonEnabled = true)
 }

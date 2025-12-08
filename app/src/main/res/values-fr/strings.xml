@@ -289,7 +289,7 @@
     <string name="browse_city_vm_failed_to_load_residencies">Impossible de charger les résidences</string>
     <string name="browse_city_vm_price_per_month">.-/mois</string>
     <!-- EditPreferencesScreen -->
-    <string name="listing_preferences">Préférences d\'affichage</string>
+    <string name="listing_preferences">Préférences</string>
     <string name="save_preferences">Enregistrer vos préférences</string>
 
     <!-- BookmarkedListingsScreen -->

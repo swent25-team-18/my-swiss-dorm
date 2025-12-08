@@ -51,6 +51,8 @@ object C {
     const val TITLE = "viewListingTitle"
     const val POSTED_BY = "viewListingPostedBy"
     const val POSTED_BY_NAME = "viewListingPostedByName"
+    const val RESIDENCY_NAME = "viewListingResidencyName"
+    const val RESIDENCY_NAME_CLICKABLE = "viewListingResidencyNameClickable"
     const val BULLETS = "viewListingBullets"
     const val DESCRIPTION = "viewListingDescription"
     const val PHOTOS = "viewListingPhotos"
@@ -163,6 +165,7 @@ object C {
     const val ERROR = "reviewsByResidencyError"
     const val EMPTY = "reviewsByResidencyEmpty"
     const val REVIEW_LIST = "reviewsByResidencyReviewList"
+    const val VIEW_RESIDENCY_DETAILS_BUTTON = "reviewsByResidencyViewResidencyDetailsButton"
 
     fun reviewCard(reviewUid: String) = "reviewsByResidencyReviewCard_$reviewUid"
 
@@ -368,5 +371,19 @@ object C {
     const val QR_ERROR = "shareLinkDialogQrError"
     const val COPY_LINK_BUTTON = "shareLinkDialogCopyLinkButton"
     const val CANCEL_TEXT = "shareLinkDialogCancelText"
+  }
+
+  object ViewResidencyTags {
+    const val ROOT = "viewResidencyRoot"
+    const val TOP_BAR_TITLE = "viewResidencyTopBarTitle"
+    const val BACK_BUTTON = "viewResidencyBackButton"
+    const val LOADING = "viewResidencyLoading"
+    const val ERROR = "viewResidencyError"
+    const val NAME = "viewResidencyName"
+    const val PHOTOS = "viewResidencyPhotos"
+    const val DESCRIPTION = "viewResidencyDescription"
+    const val POI_DISTANCES = "viewResidencyPOIDistances"
+    const val CONTACT_INFO = "viewResidencyContactInfo"
+    const val LOCATION = "viewResidencyLocation"
   }
 }

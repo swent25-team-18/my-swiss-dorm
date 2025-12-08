@@ -63,6 +63,7 @@ import com.android.mySwissDorm.ui.profile.ProfileScreenViewModel
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.qr.MySwissDormQrResult
 import com.android.mySwissDorm.ui.qr.parseMySwissDormQr
+import com.android.mySwissDorm.ui.residency.ViewResidencyScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewViewModel
@@ -387,10 +388,35 @@ fun AppNavHost(
               ReviewsByResidencyScreen(
                   residencyName = residencyName,
                   onGoBack = { navActions.goBack() },
-                  onSelectReview = { navActions.navigateTo(Screen.ReviewOverview(it.reviewUid)) })
+                  onSelectReview = { navActions.navigateTo(Screen.ReviewOverview(it.reviewUid)) },
+                  onViewResidencyDetails = {
+                    navActions.navigateTo(Screen.ResidencyDetails(residencyName))
+                  })
             }
                 ?: run {
                   Log.e("AppNavHost", "residencyName is null")
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_residency_name_is_null),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                }
+          }
+
+          composable(Screen.ResidencyDetails.route) { navBackStackEntry ->
+            val residencyName = navBackStackEntry.arguments?.getString("residencyName")
+
+            residencyName?.let {
+              ViewResidencyScreen(
+                  residencyName = residencyName,
+                  onGoBack = { navActions.goBack() },
+                  onViewMap = { lat, lng, title, name ->
+                    navController.navigate(
+                        Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
+                  })
+            }
+                ?: run {
+                  Log.e("AppNavHost", "residencyName is null for ResidencyDetails")
                   Toast.makeText(
                           context,
                           context.getString(R.string.app_nav_host_residency_name_is_null),
@@ -408,6 +434,9 @@ fun AppNavHost(
                   viewListingViewModel = viewListingViewModel,
                   listingUid = it,
                   onGoBack = { navActions.goBack() },
+                  onViewResidency = { residencyName ->
+                    navActions.navigateTo(Screen.ResidencyDetails(residencyName))
+                  },
                   onApply = {
                     coroutineScope.launch {
                       val success = viewListingViewModel.submitContactMessage(context)

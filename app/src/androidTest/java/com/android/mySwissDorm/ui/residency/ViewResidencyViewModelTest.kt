@@ -501,13 +501,14 @@ class ViewResidencyViewModelTest : FirestoreTest() {
 
     viewModel.loadResidency("Vortex", context)
 
-    // Wait for loading to complete and images to be loaded - use fixed iterations
+    // Wait for loading to complete and images to be loaded - use timeout-based approach
     // Vortex has Unsplash images, so even if listing images fail, we should have Unsplash images
-    // Increase iterations and delay when running with other tests
-    repeat(200) { // Increased iterations for robustness
+    var elapsed = 0L
+    val startTime = System.currentTimeMillis()
+    val timeoutMs = 5000L
+    while (elapsed < timeoutMs) {
       advanceUntilIdle()
-      delay(100)
-      advanceUntilIdle() // Advance again after real delay
+      delay(50)
       val uiState = viewModel.uiState.value
       if (!uiState.loading && uiState.residency != null) {
         // Loading completed - verify we have images (Unsplash fallback)
@@ -516,19 +517,15 @@ class ViewResidencyViewModelTest : FirestoreTest() {
         advanceUntilIdle() // Ensure all coroutines complete
         return@runTest
       }
+      elapsed = System.currentTimeMillis() - startTime
     }
 
-    // If we get here, max iterations reached
+    // If we get here, timeout occurred
     val uiState = viewModel.uiState.value
-    // Even if loading is still true, check if residency and images are loaded (graceful handling)
-    if (uiState.residency != null && uiState.imageUrls.isNotEmpty()) {
-      assertNotNull("Residency should be loaded", uiState.residency)
-      assertTrue("Should have Unsplash images as fallback", uiState.imageUrls.isNotEmpty())
-    } else {
-      assertFalse("Loading should have completed", uiState.loading)
-      assertNotNull("Residency should be loaded", uiState.residency)
-      assertTrue("Should have Unsplash images as fallback", uiState.imageUrls.isNotEmpty())
-    }
+    assertFalse("Loading should have completed", uiState.loading)
+    assertNotNull("Residency should be loaded", uiState.residency)
+    assertEquals("Residency name should match", "Vortex", uiState.residency?.name)
+    assertTrue("Should have Unsplash images as fallback", uiState.imageUrls.isNotEmpty())
     advanceUntilIdle() // Ensure all coroutines complete
   }
 

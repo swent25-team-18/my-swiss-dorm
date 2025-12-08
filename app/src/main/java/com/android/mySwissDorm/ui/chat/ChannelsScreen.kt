@@ -474,18 +474,14 @@ internal fun ChannelItem(
   val currentUserRead = channel.read.find { it.user.id == currentUserId }
   val unreadCount =
       if (currentUserRead != null && channel.messages.isNotEmpty()) {
-        val lastReadMessageId = currentUserRead.lastRead
-        if (lastReadMessageId != null) {
-          val lastReadIndex =
-              channel.messages.indexOfFirst { it.id == lastReadMessageId.toString() }
-          if (lastReadIndex >= 0 && lastReadIndex < channel.messages.size - 1) {
-            // Count messages after the last read message
-            (channel.messages.size - 1 - lastReadIndex).coerceAtLeast(0)
-          } else {
-            0
+        val lastReadDate = currentUserRead.lastRead
+        if (lastReadDate != null) {
+          channel.messages.count { message ->
+            val createdAt = message.createdAt ?: message.createdLocallyAt
+            createdAt?.after(lastReadDate) == true
           }
         } else {
-          // If no last read message, all messages are unread
+          // If no last read date, all messages are unread
           channel.messages.size
         }
       } else {

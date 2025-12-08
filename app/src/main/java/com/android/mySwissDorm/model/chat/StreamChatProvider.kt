@@ -43,6 +43,16 @@ object StreamChatProvider {
     return client ?: throw IllegalStateException("Stream Chat not initialized.")
   }
 
+  @org.jetbrains.annotations.VisibleForTesting
+  fun setClient(chatClient: ChatClient) {
+    client = chatClient
+  }
+
+  @org.jetbrains.annotations.VisibleForTesting
+  fun resetClient() {
+    client = null
+  }
+
   suspend fun connectUser(firebaseUserId: String, displayName: String, imageUrl: String) {
     val user = User(id = firebaseUserId, name = displayName, image = imageUrl)
 

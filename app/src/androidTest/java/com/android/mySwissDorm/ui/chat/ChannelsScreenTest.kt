@@ -1,15 +1,12 @@
 package com.android.mySwissDorm.ui.chat
 
-import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextClearance
-import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.StreamChatProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.resources.C
@@ -18,6 +15,12 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.auth.FirebaseAuth
+import io.getstream.chat.android.models.Channel
+import io.getstream.chat.android.models.ChannelUserRead
+import io.getstream.chat.android.models.Message
+import io.getstream.chat.android.models.User
+import io.mockk.unmockkObject
+import java.util.Date
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -46,14 +49,16 @@ class ChannelsScreenTest : FirestoreTest() {
   }
 
   @After
-  fun signOut() {
+  override fun tearDown() {
     FirebaseAuth.getInstance().signOut()
+    // Ensure static mocks are cleared to avoid leaking into other tests
+    unmockkObject(StreamChatProvider)
+    unmockkObject(ProfileRepositoryProvider)
+    unmockkObject(PhotoRepositoryProvider)
   }
 
-  /**
-   * Test 1: Basic UI elements are displayed Verifies that the essential UI components (search bar,
-   * title, requested messages button) are visible
-   */
+  // --- BASIC UI TESTS ---
+
   @Test
   fun basicElementsAreDisplayed() = runTest {
     var requestedMessagesClicked = false
@@ -68,28 +73,17 @@ class ChannelsScreenTest : FirestoreTest() {
       }
     }
 
-    // Wait for screen to load (it will show loading indicator first)
+    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithTag(C.ChannelsScreenTestTags.ROOT).fetchSemanticsNodes().isNotEmpty()
     }
 
-    // Verify root is displayed
     compose.onNodeWithTag(C.ChannelsScreenTestTags.ROOT).assertIsDisplayed()
-
-    // Verify search bar is displayed
     compose.onNodeWithTag(C.ChannelsScreenTestTags.SEARCH_BAR).assertIsDisplayed()
-
-    // Verify "Chats" title is displayed
     compose.onNodeWithText("Chats").assertIsDisplayed()
-
-    // Verify requested messages button is displayed
     compose.onNodeWithTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON).assertIsDisplayed()
   }
 
-  /**
-   * Test 2: Requested messages button click triggers callback Verifies that clicking the requested
-   * messages button calls the provided callback
-   */
   @Test
   fun requestedMessagesButtonClick_triggersCallback() = runTest {
     var requestedMessagesClicked = false
@@ -99,30 +93,20 @@ class ChannelsScreenTest : FirestoreTest() {
         ChannelsScreen(
             onChannelClick = {},
             onRequestedMessagesClick = { requestedMessagesClicked = true },
-            requestedMessagesCount = 5) // Show badge with count
+            requestedMessagesCount = 5)
       }
     }
 
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithTag(C.ChannelsScreenTestTags.ROOT).fetchSemanticsNodes().isNotEmpty()
     }
 
-    // Verify button is displayed
-    compose.onNodeWithTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON).assertIsDisplayed()
-
-    // Click the requested messages button
     compose.onNodeWithTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON).performClick()
 
-    // Verify callback was called
     compose.waitUntil(timeoutMillis = 1_000) { requestedMessagesClicked }
     assert(requestedMessagesClicked) { "onRequestedMessagesClick callback should be called" }
   }
 
-  /**
-   * Test 3: Empty state is displayed when no channels exist Verifies that the empty state message
-   * is shown when there are no channels
-   */
   @Test
   fun emptyState_isDisplayedWhenNoChannels() = runTest {
     compose.setContent {
@@ -132,14 +116,6 @@ class ChannelsScreenTest : FirestoreTest() {
       }
     }
 
-    // Wait for loading to complete
-    compose.waitUntil(timeoutMillis = 10_000) {
-      val loadingNodes = compose.onAllNodesWithTag(C.ChannelsScreenTestTags.LOADING_INDICATOR)
-      val emptyNodes = compose.onAllNodesWithTag(C.ChannelsScreenTestTags.EMPTY_STATE)
-      loadingNodes.fetchSemanticsNodes().isEmpty() || emptyNodes.fetchSemanticsNodes().isNotEmpty()
-    }
-
-    // Verify empty state is displayed (may take time for Stream Chat to initialize)
     compose.waitUntil(timeoutMillis = 15_000) {
       val emptyNodes = compose.onAllNodesWithTag(C.ChannelsScreenTestTags.EMPTY_STATE)
       emptyNodes.fetchSemanticsNodes().isNotEmpty() ||
@@ -150,7 +126,6 @@ class ChannelsScreenTest : FirestoreTest() {
     }
   }
 
-  /** Test 4: Search bar accepts text input Verifies that users can type in the search bar */
   @Test
   fun searchBar_acceptsTextInput() = runTest {
     compose.setContent {
@@ -160,7 +135,6 @@ class ChannelsScreenTest : FirestoreTest() {
       }
     }
 
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose
           .onAllNodesWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
@@ -169,15 +143,10 @@ class ChannelsScreenTest : FirestoreTest() {
     }
 
     val searchBar = compose.onNodeWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
-
-    // Type in search bar
     searchBar.performTextInput("test query")
-
-    // Verify text was entered (search bar should contain the text)
     searchBar.assertIsDisplayed()
   }
 
-  /** Test 5: Search bar can be cleared Verifies that users can clear the search bar */
   @Test
   fun searchBar_canBeCleared() = runTest {
     compose.setContent {
@@ -187,7 +156,6 @@ class ChannelsScreenTest : FirestoreTest() {
       }
     }
 
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose
           .onAllNodesWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
@@ -196,20 +164,11 @@ class ChannelsScreenTest : FirestoreTest() {
     }
 
     val searchBar = compose.onNodeWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
-
-    // Type in search bar
     searchBar.performTextInput("test")
-    // Clear search bar
     searchBar.performTextClearance()
-
-    // Verify search bar is still displayed
     searchBar.assertIsDisplayed()
   }
 
-  /**
-   * Test 6: Requested messages badge displays count correctly Verifies that the badge shows the
-   * correct count when requestedMessagesCount > 0
-   */
   @Test
   fun requestedMessagesBadge_displaysCount() = runTest {
     compose.setContent {
@@ -219,19 +178,12 @@ class ChannelsScreenTest : FirestoreTest() {
       }
     }
 
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithTag(C.ChannelsScreenTestTags.ROOT).fetchSemanticsNodes().isNotEmpty()
     }
-
-    // Verify button is displayed (badge should be visible with count)
     compose.onNodeWithTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON).assertIsDisplayed()
   }
 
-  /**
-   * Test 7: Requested messages badge shows 99+ for large counts Verifies that counts over 99
-   * display as "99+"
-   */
   @Test
   fun requestedMessagesBadge_shows99PlusForLargeCounts() = runTest {
     compose.setContent {
@@ -240,20 +192,12 @@ class ChannelsScreenTest : FirestoreTest() {
             onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 150)
       }
     }
-
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithTag(C.ChannelsScreenTestTags.ROOT).fetchSemanticsNodes().isNotEmpty()
     }
-
-    // Verify button is displayed
     compose.onNodeWithTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON).assertIsDisplayed()
   }
 
-  /**
-   * Test 8: No badge when requestedMessagesCount is 0 Verifies that no badge is shown when count is
-   * 0
-   */
   @Test
   fun requestedMessagesBadge_notShownWhenCountIsZero() = runTest {
     compose.setContent {
@@ -262,43 +206,27 @@ class ChannelsScreenTest : FirestoreTest() {
             onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 0)
       }
     }
-
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithTag(C.ChannelsScreenTestTags.ROOT).fetchSemanticsNodes().isNotEmpty()
     }
-
-    // Verify button is displayed (but badge should not be visible)
     compose.onNodeWithTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON).assertIsDisplayed()
   }
 
-  /**
-   * Test 9: Sign-in required message when user is not signed in Verifies that a sign-in message is
-   * shown when user is not authenticated
-   */
   @Test
   fun signInRequiredMessage_displayedWhenNotSignedIn() = runTest {
-    // Sign out
     FirebaseAuth.getInstance().signOut()
-
     compose.setContent {
       MySwissDormAppTheme {
         ChannelsScreen(
             onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 0)
       }
     }
-
-    // Verify sign-in message is displayed
     compose.waitUntil(timeoutMillis = 2_000) {
       compose.onAllNodesWithText("Please sign in to view chats").fetchSemanticsNodes().isNotEmpty()
     }
     compose.onNodeWithText("Please sign in to view chats").assertIsDisplayed()
   }
 
-  /**
-   * Test 10: Channel list is displayed when channels exist Verifies that the channels list
-   * container is shown (may be empty initially)
-   */
   @Test
   fun channelList_containerIsDisplayed() = runTest {
     compose.setContent {
@@ -307,21 +235,12 @@ class ChannelsScreenTest : FirestoreTest() {
             onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 0)
       }
     }
-
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 10_000) {
-      val rootNodes = compose.onAllNodesWithTag(C.ChannelsScreenTestTags.ROOT)
-      rootNodes.fetchSemanticsNodes().isNotEmpty()
+      compose.onAllNodesWithTag(C.ChannelsScreenTestTags.ROOT).fetchSemanticsNodes().isNotEmpty()
     }
-
-    // Verify root is displayed (which contains the list container)
     compose.onNodeWithTag(C.ChannelsScreenTestTags.ROOT).assertIsDisplayed()
   }
 
-  /**
-   * Test 11: Search functionality filters channels Verifies that typing in search bar filters the
-   * channel list
-   */
   @Test
   fun search_filtersChannels() = runTest {
     compose.setContent {
@@ -330,28 +249,17 @@ class ChannelsScreenTest : FirestoreTest() {
             onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 0)
       }
     }
-
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose
           .onAllNodesWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
-
     val searchBar = compose.onNodeWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
-
-    // Type a search query
     searchBar.performTextInput("nonexistent")
-
-    // Verify search bar still displays the text
     searchBar.assertIsDisplayed()
   }
 
-  /**
-   * Test 12: All UI elements are accessible Verifies that all main UI elements can be found and are
-   * accessible
-   */
   @Test
   fun allUIElements_areAccessible() = runTest {
     compose.setContent {
@@ -360,27 +268,18 @@ class ChannelsScreenTest : FirestoreTest() {
             onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 3)
       }
     }
-
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithTag(C.ChannelsScreenTestTags.ROOT).fetchSemanticsNodes().isNotEmpty()
     }
-
-    // Verify all main elements exist
     compose.onNodeWithTag(C.ChannelsScreenTestTags.ROOT).assertIsDisplayed()
     compose.onNodeWithTag(C.ChannelsScreenTestTags.SEARCH_BAR).assertIsDisplayed()
     compose.onNodeWithTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON).assertIsDisplayed()
     compose.onNodeWithText("Chats").assertIsDisplayed()
   }
 
-  /**
-   * Test 13: Screen handles multiple rapid clicks Verifies that the screen handles multiple rapid
-   * interactions gracefully
-   */
   @Test
   fun multipleRapidClicks_handledGracefully() = runTest {
     var clickCount = 0
-
     compose.setContent {
       MySwissDormAppTheme {
         ChannelsScreen(
@@ -389,27 +288,17 @@ class ChannelsScreenTest : FirestoreTest() {
             requestedMessagesCount = 0)
       }
     }
-
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose
           .onAllNodesWithTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
-
-    // Perform multiple rapid clicks
     val button = compose.onNodeWithTag(C.ChannelsScreenTestTags.REQUESTED_MESSAGES_BUTTON)
     repeat(5) { button.performClick() }
-
-    // Verify screen is still functional
     compose.onNodeWithTag(C.ChannelsScreenTestTags.ROOT).assertIsDisplayed()
   }
 
-  /**
-   * Test 14: Search with empty string shows all channels Verifies that clearing search shows all
-   * channels
-   */
   @Test
   fun searchWithEmptyString_showsAllChannels() = runTest {
     compose.setContent {
@@ -418,62 +307,40 @@ class ChannelsScreenTest : FirestoreTest() {
             onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 0)
       }
     }
-
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose
           .onAllNodesWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
-
     val searchBar = compose.onNodeWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
-
-    // Type something
     searchBar.performTextInput("test")
-    // Clear it
     searchBar.performTextClearance()
-
-    // Verify search bar is still functional
     searchBar.assertIsDisplayed()
   }
 
-  /**
-   * Test 15: Screen handles profile loading errors gracefully Verifies that errors in profile
-   * loading don't crash the screen
-   */
   @Test
   fun profileLoadingErrors_handledGracefully() = runTest {
-    // Delete profile to simulate error
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     if (userId != null) {
       try {
         ProfileRepositoryProvider.repository.deleteProfile(userId)
       } catch (e: Exception) {
-        // Ignore if profile doesn't exist
+        /* Ignore */
       }
     }
-
     compose.setContent {
       MySwissDormAppTheme {
         ChannelsScreen(
             onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 0)
       }
     }
-
-    // Wait for screen to handle error
     compose.waitUntil(timeoutMillis = 5_000) {
       compose.onAllNodesWithTag(C.ChannelsScreenTestTags.ROOT).fetchSemanticsNodes().isNotEmpty()
     }
-
-    // Screen should handle error gracefully
     compose.onNodeWithTag(C.ChannelsScreenTestTags.ROOT).assertIsDisplayed()
   }
 
-  /**
-   * Test 16: Screen handles very long search queries Verifies that very long search queries don't
-   * break the UI
-   */
   @Test
   fun veryLongSearchQuery_handledCorrectly() = runTest {
     compose.setContent {
@@ -482,22 +349,143 @@ class ChannelsScreenTest : FirestoreTest() {
             onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 0)
       }
     }
-
-    // Wait for screen to load
     compose.waitUntil(timeoutMillis = 5_000) {
       compose
           .onAllNodesWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
-
     val searchBar = compose.onNodeWithTag(C.ChannelsScreenTestTags.SEARCH_BAR)
     val longQuery = "a".repeat(500)
-
-    // Type very long query
     searchBar.performTextInput(longQuery)
-
-    // Verify search bar is still functional
     searchBar.assertIsDisplayed()
+  }
+
+  @Test
+  fun channelItem_calculatesUnreadCountCorrectly() = runTest {
+    // 1. Setup Data
+    val currentUserId = "currentUser"
+    val otherUser = User(id = "other", name = "Other")
+    val now = System.currentTimeMillis()
+
+    // Create 5 messages
+    // Messages 1, 2, 3 are older than lastRead
+    // Messages 4, 5 are newer than lastRead
+    val messages =
+        (1..5).map { id ->
+          val timeOffset = if (id <= 3) -100000L else 100000L
+          Message(id = "$id", text = "Msg $id", createdAt = Date(now + timeOffset + (id * 1000)))
+        }
+
+    // User has read up to roughly message "3" time
+    val readState =
+        ChannelUserRead(
+            user = User(id = currentUserId),
+            lastRead = Date(now),
+        )
+
+    val channel =
+        Channel(
+            type = "messaging",
+            id = "123",
+            members =
+                listOf(
+                    io.getstream.chat.android.models.Member(user = User(id = currentUserId)),
+                    io.getstream.chat.android.models.Member(user = otherUser)),
+            messages = messages,
+            read = listOf(readState))
+
+    // 2. Render ONLY the ChannelItem
+    compose.setContent {
+      MySwissDormAppTheme {
+        ChannelItem(channel = channel, currentUserId = currentUserId, onChannelClick = {})
+      }
+    }
+
+    // 3. Assert: Verify the badge shows "2"
+    compose.onNodeWithText("2").assertIsDisplayed()
+  }
+
+  @Test
+  fun dateFormatting_coversAllTimeRanges() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val now = System.currentTimeMillis()
+
+    // 1. Just Now (< 1 min)
+    val justNowDate = Date(now - 30 * 1000)
+    assert(
+        formatMessageTime(justNowDate, context) ==
+            context.getString(R.string.channels_screen_just_now))
+
+    // 2. Minutes Ago (10 mins)
+    val tenMinsAgo = Date(now - 10 * 60 * 1000)
+    assert(formatMessageTime(tenMinsAgo, context).contains("10")) // "10m ago"
+
+    // 3. Hours Ago (2 hours)
+    val twoHoursAgo = Date(now - 2 * 60 * 60 * 1000)
+    assert(formatMessageTime(twoHoursAgo, context).contains("2")) // "2h ago"
+
+    // 4. Yesterday (24 hours + 1 min)
+    val yesterday = Date(now - 25 * 60 * 60 * 1000)
+    assert(
+        formatMessageTime(yesterday, context) ==
+            context.getString(R.string.channels_screen_yesterday))
+
+    // 5. Days Ago (3 days)
+    val threeDaysAgo = Date(now - 3 * 24 * 60 * 60 * 1000)
+    assert(formatMessageTime(threeDaysAgo, context).contains("3")) // "3d ago"
+
+    // 6. Date Format (> 7 days)
+    val oldDate = Date(now - 10L * 24 * 60 * 60 * 1000) // 10 days ago
+    val res = formatMessageTime(oldDate, context)
+    assert(!res.contains("ago") && res != "Yesterday" && res != "Just now")
+  }
+
+  @Test
+  fun channelItem_fetchesProfile_whenNameIsUnknown() = runTest {
+    // 1. Setup: Create an "other" user/profile using FirestoreTest helpers (rule-friendly)
+    FirebaseAuth.getInstance().signOut()
+    val otherUserId = signInEmailUser(otherTestEmail, otherTestPassword)
+    createProfileForUser(
+        userId = otherUserId,
+        name = "Real",
+        lastName = "Name",
+        email = otherTestEmail,
+        phone = "1234567890")
+
+    // Switch back to the main test user (signed in during setUp)
+    FirebaseAuth.getInstance().signOut()
+    switchToUser(FakeUser.FakeUser1)
+    val currentUserId = FirebaseAuth.getInstance().currentUser!!.uid
+
+    // Unknown user stub
+    val unknownUser = User(id = otherUserId, name = "Unknown User", image = "")
+
+    val channel =
+        Channel(
+            type = "messaging",
+            id = "$currentUserId-$otherUserId",
+            members =
+                listOf(
+                    io.getstream.chat.android.models.Member(user = User(id = currentUserId)),
+                    io.getstream.chat.android.models.Member(user = unknownUser)),
+            messages = emptyList())
+
+    // 2. Render
+    compose.setContent {
+      MySwissDormAppTheme {
+        ChannelItem(channel = channel, currentUserId = currentUserId, onChannelClick = {})
+      }
+    }
+
+    // 4. Assert: "Real Name" should eventually appear
+    compose.waitUntil(timeoutMillis = 5000) {
+      try {
+        compose.onNodeWithText("Real Name").assertIsDisplayed()
+        true
+      } catch (e: AssertionError) {
+        false
+      }
+    }
   }
 }

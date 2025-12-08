@@ -285,7 +285,6 @@ class ViewResidencyViewModelTest : FirestoreTest() {
     viewModel.loadResidency("NonExistent", context)
 
     // Wait for loading to complete and error to be set - use fixed iterations
-    var errorSet = false
     repeat(200) { // Increased iterations for robustness
       advanceUntilIdle()
       delay(100)
@@ -293,7 +292,6 @@ class ViewResidencyViewModelTest : FirestoreTest() {
       val uiState = viewModel.uiState.value
       // Check that loading is complete AND error is set
       if (!uiState.loading && uiState.errorMsg != null) {
-        errorSet = true
         // Error is set, now clear it
         assertNotNull("Error should be set", uiState.errorMsg)
 
@@ -317,13 +315,37 @@ class ViewResidencyViewModelTest : FirestoreTest() {
       }
     }
 
-    // If we get here, max iterations reached - check what state we're in
-    val uiState = viewModel.uiState.value
-    // Check if error is set even if loading is still true
-    if (uiState.errorMsg != null) {
-      assertNotNull("Error should be set", uiState.errorMsg)
+    // If we get here, max iterations reached - wait a bit more and check what state we're in
+    // Give additional time for the operation to complete
+    repeat(50) {
+      advanceUntilIdle()
+      delay(100)
+      advanceUntilIdle()
+      val uiState = viewModel.uiState.value
+      if (!uiState.loading && uiState.errorMsg != null) {
+        // Now we have the error, clear it
+        assertNotNull("Error should be set", uiState.errorMsg)
+        viewModel.clearErrorMsg()
+        // Wait for clearErrorMsg to complete
+        repeat(50) {
+          advanceUntilIdle()
+          delay(50)
+          advanceUntilIdle()
+          if (viewModel.uiState.value.errorMsg == null) {
+            return@repeat
+          }
+        }
+        assertNull("Error should be cleared", viewModel.uiState.value.errorMsg)
+        advanceUntilIdle()
+        return@runTest
+      }
+    }
+
+    // Final check - if we still haven't completed, check current state
+    val finalState = viewModel.uiState.value
+    // If error is set, clear it (even if loading is still true)
+    if (finalState.errorMsg != null) {
       viewModel.clearErrorMsg()
-      // Wait for clearErrorMsg to complete
       repeat(50) {
         advanceUntilIdle()
         delay(50)
@@ -334,17 +356,20 @@ class ViewResidencyViewModelTest : FirestoreTest() {
       }
       assertNull("Error should be cleared", viewModel.uiState.value.errorMsg)
     } else {
-      assertFalse("Loading should have completed", uiState.loading)
+      // If no error yet, wait a bit more and verify error eventually appears
+      advanceUntilIdle()
+      delay(500)
+      advanceUntilIdle()
+      val stateAfterWait = viewModel.uiState.value
+      assertNotNull(
+          "Error should be set after loading non-existent residency", stateAfterWait.errorMsg)
+      viewModel.clearErrorMsg()
+      advanceUntilIdle()
+      delay(100)
+      advanceUntilIdle()
+      assertNull("Error should be cleared", viewModel.uiState.value.errorMsg)
     }
-    // Ensure all coroutines complete before test ends
     advanceUntilIdle()
-    delay(100)
-    advanceUntilIdle()
-    assertNotNull("Error should be set", uiState.errorMsg)
-
-    viewModel.clearErrorMsg()
-
-    assertNull("Error should be cleared", viewModel.uiState.value.errorMsg)
   }
 
   @Test

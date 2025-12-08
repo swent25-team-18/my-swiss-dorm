@@ -5,6 +5,20 @@ package com.android.mySwissDorm.ui.residency
  * available images from Unsplash and other sources.
  */
 object ResidencyImageProvider {
+  // Unsplash image URL constants to avoid duplication
+  private const val UNSPLASH_IMAGE_1 =
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"
+  private const val UNSPLASH_IMAGE_2 =
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80"
+  private const val UNSPLASH_IMAGE_3 =
+      "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80"
+  private const val UNSPLASH_IMAGE_4 =
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80"
+  private const val UNSPLASH_IMAGE_1_WITH_CROP = "$UNSPLASH_IMAGE_1&auto=format&fit=crop"
+  private const val UNSPLASH_IMAGE_2_WITH_CROP = "$UNSPLASH_IMAGE_2&auto=format&fit=crop"
+  private const val UNSPLASH_IMAGE_3_WITH_CROP = "$UNSPLASH_IMAGE_3&auto=format&fit=crop"
+  private const val UNSPLASH_IMAGE_4_WITH_CROP = "$UNSPLASH_IMAGE_4&auto=format&fit=crop"
+
   /**
    * Maps residency names to default image URLs. These are publicly available images that can be
    * used as placeholders.
@@ -12,40 +26,27 @@ object ResidencyImageProvider {
   private val residencyImageMap =
       mapOf(
           // Lausanne residencies
-          "Vortex" to
-              "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80&auto=format&fit=crop",
-          "Atrium" to
-              "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80&auto=format&fit=crop",
-          "Cité St-Julien" to
-              "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80&auto=format&fit=crop",
+          "Vortex" to UNSPLASH_IMAGE_1_WITH_CROP,
+          "Atrium" to UNSPLASH_IMAGE_2_WITH_CROP,
+          "Cité St-Julien" to UNSPLASH_IMAGE_3_WITH_CROP,
           // Fribourg residencies
-          "Salvatorhaus" to
-              "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80&auto=format&fit=crop",
-          "Les Estudiantines" to
-              "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80",
-          "Les Cèdres" to "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-          "Les Vergers" to
-              "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
-          "Les Acacias" to
-              "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-          "Les Tilleuls" to
-              "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80",
-          "Les Sapins" to "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-          "Les Chênes" to "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
-          "Les Platanes" to
-              "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-          "Les Erables" to
-              "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80",
-          "Les Bouleaux" to
-              "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-          "Les Hêtres" to "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
-          "Les Frênes" to "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-          "Les Ormes" to "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80",
-          "Les Peupliers" to
-              "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-          "Les Mélèzes" to
-              "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
-          "Les Pins" to "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80")
+          "Salvatorhaus" to UNSPLASH_IMAGE_4_WITH_CROP,
+          "Les Estudiantines" to UNSPLASH_IMAGE_3,
+          "Les Cèdres" to UNSPLASH_IMAGE_4,
+          "Les Vergers" to UNSPLASH_IMAGE_2,
+          "Les Acacias" to UNSPLASH_IMAGE_1,
+          "Les Tilleuls" to UNSPLASH_IMAGE_3,
+          "Les Sapins" to UNSPLASH_IMAGE_4,
+          "Les Chênes" to UNSPLASH_IMAGE_2,
+          "Les Platanes" to UNSPLASH_IMAGE_1,
+          "Les Erables" to UNSPLASH_IMAGE_3,
+          "Les Bouleaux" to UNSPLASH_IMAGE_4,
+          "Les Hêtres" to UNSPLASH_IMAGE_2,
+          "Les Frênes" to UNSPLASH_IMAGE_1,
+          "Les Ormes" to UNSPLASH_IMAGE_3,
+          "Les Peupliers" to UNSPLASH_IMAGE_4,
+          "Les Mélèzes" to UNSPLASH_IMAGE_2,
+          "Les Pins" to UNSPLASH_IMAGE_1)
 
   /**
    * Gets a default image URL for a residency.

@@ -388,10 +388,7 @@ fun AppNavHost(
               ReviewsByResidencyScreen(
                   residencyName = residencyName,
                   onGoBack = { navActions.goBack() },
-                  onSelectReview = { navActions.navigateTo(Screen.ReviewOverview(it.reviewUid)) },
-                  onViewResidencyDetails = {
-                    navActions.navigateTo(Screen.ResidencyDetails(residencyName))
-                  })
+                  onSelectReview = { navActions.navigateTo(Screen.ReviewOverview(it.reviewUid)) })
             }
                 ?: run {
                   Log.e("AppNavHost", "residencyName is null")
@@ -434,9 +431,6 @@ fun AppNavHost(
                   viewListingViewModel = viewListingViewModel,
                   listingUid = it,
                   onGoBack = { navActions.goBack() },
-                  onViewResidency = { residencyName ->
-                    navActions.navigateTo(Screen.ResidencyDetails(residencyName))
-                  },
                   onApply = {
                     coroutineScope.launch {
                       val success = viewListingViewModel.submitContactMessage(context)

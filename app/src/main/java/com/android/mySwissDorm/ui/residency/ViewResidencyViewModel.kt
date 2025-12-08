@@ -125,15 +125,8 @@ class ViewResidencyViewModel(
         return unsplashImages
       }
 
-      // Fallback to listing images if no Unsplash image available
-      val listings = rentalListingRepository.getAllRentalListingsByResidency(residencyName)
-      val listingImages = listings.flatMap { it.imageUrls }.distinct().take(5)
-
-      if (listingImages.isNotEmpty()) {
-        Log.d("ViewResidencyViewModel", "Using listing images for residency: $residencyName")
-        return listingImages
-      }
-
+      // No fallback images available in core version
+      // Listing image fallback is added in integration branch
       Log.d("ViewResidencyViewModel", "No images found for residency: $residencyName")
       emptyList()
     } catch (e: Exception) {

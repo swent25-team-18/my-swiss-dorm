@@ -55,6 +55,7 @@ object C {
     const val DESCRIPTION = "viewListingDescription"
     const val PHOTOS = "viewListingPhotos"
     const val LOCATION = "viewListingLocation"
+    const val POI_DISTANCES = "viewListingPOIDistances"
     const val CONTACT_FIELD = "viewListingContactField"
     const val APPLY_BTN = "viewListingApplyBtn"
     const val EDIT_BTN = "viewListingEditBtn"
@@ -367,5 +368,12 @@ object C {
     const val QR_ERROR = "shareLinkDialogQrError"
     const val COPY_LINK_BUTTON = "shareLinkDialogCopyLinkButton"
     const val CANCEL_TEXT = "shareLinkDialogCancelText"
+  }
+
+  object OfflineBannerTags {
+    const val BANNER_ROOT = "offlineBannerRoot"
+    const val OFFLINE_MESSAGE = "offlineBannerOfflineMessage"
+    const val LAST_UPDATED_TEXT = "offlineBannerLastUpdatedText"
+    const val NO_SYNC_TEXT = "offlineBannerNoSyncText"
   }
 }

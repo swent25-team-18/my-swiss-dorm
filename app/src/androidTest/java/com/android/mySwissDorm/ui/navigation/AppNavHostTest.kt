@@ -475,11 +475,20 @@ class AppNavHostTest : FirestoreTest() {
   @Test
   fun appNavHost_settingsRoute_anonymousUserProfileClick_showsToast() = runTest {
     signInAnonymous()
-    delay(500)
 
     composeTestRule.runOnUiThread { navController.navigate(Screen.Settings.route) }
     composeTestRule.waitForIdle()
-    delay(1000)
+
+    // Wait for Settings screen to be visible by checking for a UI element
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      composeTestRule
+          .onAllNodes(
+              hasTestTag(com.android.mySwissDorm.resources.C.SettingsTags.PROFILE_BUTTON),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    } //
+    composeTestRule.waitForIdle()
 
     // The toast will be shown when profile is clicked, but we can't easily test that
     // We just verify navigation works
@@ -495,11 +504,20 @@ class AppNavHostTest : FirestoreTest() {
   @Test
   fun appNavHost_settingsRoute_anonymousUserContributionClick_showsToast() = runTest {
     signInAnonymous()
-    delay(500)
 
     composeTestRule.runOnUiThread { navController.navigate(Screen.Settings.route) }
     composeTestRule.waitForIdle()
-    delay(1000)
+
+    // Wait for Settings screen to be visible by checking for a UI element
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      composeTestRule
+          .onAllNodes(
+              hasTestTag(com.android.mySwissDorm.resources.C.SettingsTags.CONTRIBUTIONS_BUTTON),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    composeTestRule.waitForIdle()
 
     // Navigation should work
     composeTestRule.runOnUiThread {
@@ -658,7 +676,18 @@ class AppNavHostTest : FirestoreTest() {
       navController.navigate(Screen.ListingOverview(listing.uid).route)
     }
     composeTestRule.waitForIdle()
-    delay(2000)
+
+    // Wait for the listing screen to load by checking for a UI element
+    // This ensures all coroutines in viewModelScope have completed
+    composeTestRule.waitUntil(timeoutMillis = 30_000) {
+      composeTestRule
+          .onAllNodes(
+              hasTestTag(com.android.mySwissDorm.resources.C.ViewListingTags.TITLE),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    composeTestRule.waitForIdle()
 
     composeTestRule.runOnUiThread {
       val currentRoute = navController.currentBackStackEntry?.destination?.route

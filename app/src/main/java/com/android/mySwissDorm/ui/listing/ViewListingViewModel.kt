@@ -14,6 +14,8 @@ import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.poi.DistanceService
+import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListing
@@ -23,6 +25,8 @@ import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.supermarket.SupermarketsRepositoryProvider
+import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.google.firebase.Timestamp
@@ -64,6 +68,7 @@ data class ViewListingUIState(
     val fullScreenImagesIndex: Int = 0,
     val isGuest: Boolean = false,
     val isBookmarked: Boolean = false,
+    val poiDistances: List<POIDistance> = emptyList(),
     val hasExistingMessage: Boolean = false
 )
 
@@ -134,7 +139,7 @@ class ViewListingViewModel(
         val isOwner = currentUserId == listing.ownerId
         val isGuest = currentUser?.isAnonymous ?: false
 
-        // Check if the current user is blocked by the listing owner
+        // Check if the listing owner has blocked the current user
         val isBlockedByOwner =
             if (currentUserId != null && !isOwner) {
               runCatching { profileRepository.getBlockedUserIds(listing.ownerId) }
@@ -179,23 +184,91 @@ class ViewListingViewModel(
 
         photoManager.initialize(listing.imageUrls)
         val photos = photoManager.photoLoaded
-        _uiState.update {
-          it.copy(
-              listing = listing,
-              fullNameOfPoster = fullNameOfPoster,
-              isOwner = isOwner,
-              isBlockedByOwner = isBlockedByOwner,
-              locationOfListing = listing.location,
-              images = photos,
-              isGuest = isGuest,
-              isBookmarked = isBookmarked,
-              hasExistingMessage = hasExistingMessage)
-        }
+        val userUniversityName = getUserUniversityName(currentUserId, isGuest)
+        val poiDistances = calculatePOIDistances(listing, userUniversityName)
+
+        val uiData =
+            UIUpdateData(
+                fullNameOfPoster = fullNameOfPoster,
+                isOwner = isOwner,
+                isBlockedByOwner = isBlockedByOwner,
+                photos = photos,
+                isGuest = isGuest,
+                isBookmarked = isBookmarked,
+                poiDistances = poiDistances,
+                hasExistingMessage = hasExistingMessage)
+        updateUIState(listing, uiData)
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
         setErrorMsg(
             "${context.getString(R.string.view_listing_failed_to_load_listings)} ${e.message}")
       }
+    }
+  }
+
+  private suspend fun getUserUniversityName(currentUserId: String?, isGuest: Boolean): String? {
+    if (currentUserId == null || isGuest) {
+      return null
+    }
+    return try {
+      val userProfile = profileRepository.getProfile(currentUserId)
+      userProfile.userInfo.universityName
+    } catch (e: Exception) {
+      Log.d(
+          "ViewListingViewModel",
+          "Could not get user profile for university, showing 2 nearest universities",
+          e)
+      null
+    }
+  }
+
+  private suspend fun calculatePOIDistances(
+      listing: RentalListing,
+      userUniversityName: String?
+  ): List<POIDistance> {
+    return try {
+      val distanceService =
+          DistanceService(
+              universitiesRepository = UniversitiesRepositoryProvider.repository,
+              supermarketsRepository = SupermarketsRepositoryProvider.repository,
+              walkingRouteService =
+                  com.android.mySwissDorm.model.map.WalkingRouteServiceProvider.service)
+      val distances = distanceService.calculateDistancesToPOIs(listing.location, userUniversityName)
+      Log.d(
+          "ViewListingViewModel",
+          "Calculated ${distances.size} POI distances for listing ${listing.uid} at lat=${listing.location.latitude}, lng=${listing.location.longitude}${if (userUniversityName != null) " (user university: $userUniversityName)" else " (showing 2 nearest universities)"}")
+      distances
+    } catch (e: Exception) {
+      Log.e("ViewListingViewModel", "Error calculating POI distances", e)
+      emptyList()
+    }
+  }
+
+  /** Data class to group UI state update parameters, reducing the number of function parameters. */
+  private data class UIUpdateData(
+      val fullNameOfPoster: String,
+      val isOwner: Boolean,
+      val isBlockedByOwner: Boolean,
+      val photos: List<Photo>,
+      val isGuest: Boolean,
+      val isBookmarked: Boolean,
+      val poiDistances: List<POIDistance>,
+      val hasExistingMessage: Boolean
+  )
+
+  private fun updateUIState(listing: RentalListing, uiData: UIUpdateData) {
+    _uiState.update {
+      it.copy(
+          listing = listing,
+          fullNameOfPoster = uiData.fullNameOfPoster,
+          isOwner = uiData.isOwner,
+          isBlockedByOwner = uiData.isBlockedByOwner,
+          locationOfListing = listing.location,
+          images = uiData.photos,
+          isGuest = uiData.isGuest,
+          isBookmarked = uiData.isBookmarked,
+          poiDistances = uiData.poiDistances,
+          hasExistingMessage = uiData.hasExistingMessage)
     }
   }
 

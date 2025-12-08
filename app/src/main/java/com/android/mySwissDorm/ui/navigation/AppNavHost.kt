@@ -83,6 +83,21 @@ private object ChannelsRefreshState {
   val refreshKey = mutableIntStateOf(0)
 }
 
+/**
+ * Root navigation host of the app.
+ *
+ * This composable wires the `NavHost` with all routes used in the application, sets up bottom bar
+ * destinations, authentication flow, and secondary screens, and delegates navigation logic to
+ * [NavigationActions] and [NavigationViewModel].
+ *
+ * @param modifier Optional [Modifier] for the root layout.
+ * @param context The current [Context], used for navigation side effects and messages.
+ * @param credentialManager The credentials manager used for authentication flows.
+ * @param navActionsExternal Optional externally provided [NavigationActions] instance. If null, one
+ *   is created internally.
+ * @param navigationViewModel ViewModel that owns navigation state and initial destination.
+ * @param activity Optional [MainActivity] reference used for actions such as language changes.
+ */
 @Composable
 fun AppNavHost(
     modifier: Modifier = Modifier,
@@ -686,6 +701,14 @@ fun AppNavHost(
   }
 }
 
+/**
+ * Parses and handles a scanned MySwissDorm QR URL by navigating to the appropriate screen or
+ * showing a generic error if the link cannot be processed.
+ *
+ * @param scannedUrl The URL contained in the QR code.
+ * @param navigationActions The navigation helper used to perform navigation.
+ * @param context A [Context] used to display error messages.
+ */
 private fun handleScannedQrUrl(
     scannedUrl: String,
     navigationActions: NavigationActions,
@@ -712,6 +735,12 @@ private fun handleScannedQrUrl(
   }
 }
 
+/**
+ * In-memory holder for navigation data shared between listing overview and the map overview.
+ *
+ * This object is used as a simple bridge to transfer the currently displayed listings and the
+ * browse location when navigating to the city map overview screen.
+ */
 object MapNavigationData {
   var currentListings: List<ListingCardUI> = emptyList()
   var browseLocation: Location? = null

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
@@ -48,6 +49,22 @@ import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
 import com.android.mySwissDorm.utils.NetworkUtils
 
+/**
+ * Screen that displays the full details of a rental listing and allows the user to contact the
+ * owner or edit the listing.
+ *
+ * The screen shows title, metadata (price, area, start date), description, images, map preview, and
+ * provides actions for bookmarking, sharing, applying (sending a contact message), or editing when
+ * the current user is the owner.
+ *
+ * @param viewListingViewModel The [ViewListingViewModel] providing listing data and actions.
+ * @param listingUid The unique identifier of the listing to display.
+ * @param onGoBack Callback invoked when the user taps the back button.
+ * @param onApply Callback invoked when the user taps the \"Apply\" button after writing a message.
+ * @param onEdit Callback invoked when the owner taps the \"Edit\" button.
+ * @param onViewProfile Callback invoked when the poster's name is tapped to view their profile.
+ * @param onViewMap Callback invoked when the map preview is tapped to open the full map screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewListingScreen(
@@ -227,6 +244,108 @@ fun ViewListingScreen(
                           color = Gray)
                     }
 
+                // Nearby Points of Interest - right after "posted by"
+                val poiDistances = listingUIState.poiDistances
+                Text(
+                    stringResource(R.string.view_listing_nearby_points_of_interest),
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold),
+                    modifier = Modifier.testTag(C.ViewListingTags.POI_DISTANCES))
+                if (poiDistances.isNotEmpty()) {
+                  Column(
+                      modifier = Modifier.padding(start = 16.dp),
+                      verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                        // Group POIs by walking time
+                        val groupedByTime = poiDistances.groupBy { it.walkingTimeMinutes }
+
+                        groupedByTime
+                            .toList()
+                            .sortedBy { it.first }
+                            .forEach { (timeMinutes, pois) ->
+                              if (pois.size == 1) {
+                                // Single POI at this time
+                                val poiDistance = pois.first()
+                                val timeText =
+                                    when (poiDistance.poiType) {
+                                      POIDistance.TYPE_UNIVERSITY ->
+                                          stringResource(
+                                              R.string.view_listing_walking_time_university,
+                                              poiDistance.walkingTimeMinutes,
+                                              poiDistance.poiName)
+                                      POIDistance.TYPE_SUPERMARKET ->
+                                          stringResource(
+                                              R.string.view_listing_walking_time_supermarket,
+                                              poiDistance.walkingTimeMinutes,
+                                              poiDistance.poiName)
+                                      else -> "" // Should not happen
+                                    }
+                                Text(
+                                    timeText,
+                                    style =
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            lineHeight =
+                                                MaterialTheme.typography.bodySmall.lineHeight))
+                              } else {
+                                // Multiple POIs at the same time - combine them
+                                val poiNames = pois.map { it.poiName }
+                                val andString = stringResource(R.string.and)
+                                val combinedNames =
+                                    when (poiNames.size) {
+                                      2 -> poiNames.joinToString(" $andString ")
+                                      else ->
+                                          poiNames.dropLast(1).joinToString(", ") +
+                                              " $andString " +
+                                              poiNames.last()
+                                    }
+
+                                // Determine the type label (university or supermarket)
+                                val typeLabel =
+                                    when {
+                                      pois.all { it.poiType == POIDistance.TYPE_UNIVERSITY } ->
+                                          stringResource(R.string.university)
+                                      pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } ->
+                                          "" // Supermarkets don't need a type label
+                                      else -> "" // Mixed types, no label
+                                    }
+
+                                val timeText =
+                                    if (typeLabel.isNotEmpty()) {
+                                      stringResource(
+                                          R.string.view_listing_walking_time_minutes_of_multiple,
+                                          timeMinutes,
+                                          combinedNames,
+                                          typeLabel)
+                                    } else {
+                                      stringResource(
+                                          R.string.view_listing_walking_time_minutes_of_no_type,
+                                          timeMinutes,
+                                          combinedNames)
+                                    }
+
+                                Text(
+                                    timeText,
+                                    style =
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            lineHeight =
+                                                MaterialTheme.typography.bodySmall.lineHeight))
+                              }
+                            }
+                      }
+                } else {
+                  Text(
+                      stringResource(R.string.view_listing_no_points_of_interest),
+                      style =
+                          MaterialTheme.typography.bodyMedium.copy(
+                              color =
+                                  MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)),
+                      modifier = Modifier.padding(start = 16.dp, top = 2.dp))
+                }
+                Spacer(Modifier.height(8.dp))
+
                 // Bullet section
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
                   BulletRow("${listing.roomType}")
@@ -275,6 +394,7 @@ fun ViewListingScreen(
                       height = 180.dp,
                       modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
                 }
+
                 if (listingUIState.isGuest) {
                   // The guest user has to sign in to apply to a listing when they view it
                   Box(
@@ -375,6 +495,12 @@ fun ViewListingScreen(
   }
 }
 
+/**
+ * Card-like container used to group listing sections such as metadata or description.
+ *
+ * @param modifier Modifier applied to the card.
+ * @param content Composable content displayed inside the card.
+ */
 @Composable
 private fun SectionCard(
     modifier: Modifier = Modifier,
@@ -392,6 +518,7 @@ private fun SectionCard(
       }
 }
 
+/** Single bullet row used to display a textual attribute of the listing. */
 @Composable
 private fun BulletRow(text: String) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -400,6 +527,13 @@ private fun BulletRow(text: String) {
   }
 }
 
+/**
+ * Placeholder block used when a particular section (e.g., location) is unavailable.
+ *
+ * @param text Text to display inside the placeholder.
+ * @param height Desired height of the block.
+ * @param modifier Modifier applied to the placeholder container.
+ */
 @Composable
 private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
   Box(

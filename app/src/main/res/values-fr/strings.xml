@@ -62,6 +62,7 @@
     <string name="unblock">Débloquer</string>
     <string name="unexpected_error">Erreur inattendue</string>
     <string name="university">Université</string>
+    <string name="supermarket">Supermarché</string>
     <string name="unknown">Inconnu</string>
     <string name="user">Utilisateur</string>
     <string name="website">Site web</string>
@@ -206,6 +207,18 @@
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Impossible de charger l\'annonce :</string>
     <string name="view_listing_failed_to_toggle_bookmark">Échec du basculement du signet :</string>
+    <string name="view_listing_nearby_points_of_interest">Points d\'intérêt à proximité</string>
+    <string name="view_listing_distance_away_from">à %1$.1f km de %2$s</string>
+    <string name="view_listing_distance_university">à %1$.1f km de l\'université %2$s</string>
+    <string name="view_listing_distance_supermarket">à %1$.1f km de %2$s</string>
+    <string name="view_listing_distance_from_nearest_supermarket">à %1$.1f km du supermarché le plus proche</string>
+    <string name="view_listing_distance_at_km_of_multiple">à %1$.1f km de %2$s %3$s</string>
+    <string name="view_listing_distance_at_km_of_no_type">à %1$.1f km de %2$s</string>
+    <string name="view_listing_walking_time_university">%1$d minutes de l\'université %2$s</string>
+    <string name="view_listing_walking_time_supermarket">%1$d minutes de %2$s</string>
+    <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes de %2$s %3$s</string>
+    <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes de %2$s</string>
+    <string name="view_listing_no_points_of_interest">Aucun point d\'intérêt à proximité disponible</string>
     <string name="view_listing_message_already_sent">Vous avez déjà envoyé un message pour cette annonce.</string>
     <string name="view_listing_please_wait_for_response">Veuillez attendre une réponse du propriétaire.</string>
     <string name="view_listing_failed_to_submit_message">Échec de l\'envoi du message :</string>
@@ -455,6 +468,12 @@
     <string name="sanitized_text_fields_price_required">Le prix est requis</string>
     <string name="sanitized_text_fields_price_leading_zero">Aucun zéro initial</string>
     <string name="sanitized_text_fields_price_range">Le prix doit être entre 1 et 10’000 CHF</string>
+
+    <!-- Translator -->
+    <string name="translator_translating">Traduction…</string>
+    <string name="translator_error_translating">Erreur lors de la traduction.</string>
+    <string name="translator_could_not_determine_language">N\'a pas pu déterminer le langage</string>
+
     <!-- Map -->
     <string name="map_view">Carte d\'annonces</string>
     <string name="Map_Screen">Écran de carte</string>
@@ -499,4 +518,5 @@
     <string name="title_activity_second">SecondActivity</string>
     <string name="default_web_client_id">587708119125-oqlivs13orms6lmp32pujt11ft3fat3h.apps.googleusercontent.com</string>
     <string name="of">de</string>
+    <string name="and">et</string>
 </resources>

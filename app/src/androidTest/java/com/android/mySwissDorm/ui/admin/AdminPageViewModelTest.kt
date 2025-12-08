@@ -7,6 +7,8 @@ import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.supermarket.SupermarketsRepositoryFirestore
+import com.android.mySwissDorm.model.supermarket.SupermarketsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.utils.FakeUser
@@ -31,6 +33,8 @@ class AdminPageViewModelTest : FirestoreTest() {
         UniversitiesRepositoryFirestore(FirebaseEmulator.firestore)
     ResidenciesRepositoryProvider.repository =
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
+    SupermarketsRepositoryProvider.repository =
+        SupermarketsRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
   @Before

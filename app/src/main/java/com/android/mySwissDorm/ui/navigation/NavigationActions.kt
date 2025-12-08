@@ -82,6 +82,12 @@ class NavigationActions(
   fun navigateTo(screen: Screen) {
     // For Homepage, delegate to ViewModel to determine destination (MVVM pattern)
     if (screen == Screen.Homepage) {
+      val current = currentRoute()
+      // If we're already on the Homepage, stay there (don't navigate to BrowseOverview)
+      if (current == Screen.Homepage.route) {
+        return
+      }
+
       val scope = coroutineScope
       val viewModel = navigationViewModel
       if (scope != null && viewModel != null) {
@@ -89,9 +95,9 @@ class NavigationActions(
           val destination = viewModel.getHomepageDestination()
           // Switch to main thread for navigation (required by Navigation Component)
           withContext(Dispatchers.Main) {
-            val current = currentRoute()
+            val currentAfterCheck = currentRoute()
             // Only navigate if we're not already on the destination
-            if (current != destination.route) {
+            if (currentAfterCheck != destination.route) {
               navigateToScreen(destination)
             }
           }

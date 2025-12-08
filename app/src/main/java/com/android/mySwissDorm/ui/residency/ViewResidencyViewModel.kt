@@ -9,8 +9,6 @@ import com.android.mySwissDorm.model.poi.DistanceService
 import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.rental.RentalListingRepository
-import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
@@ -27,16 +25,13 @@ data class ViewResidencyUIState(
     val residency: Residency? = null,
     val errorMsg: String? = null,
     val poiDistances: List<POIDistance> = emptyList(),
-    val imageUrls: List<String> = emptyList(),
     val loading: Boolean = false
 )
 
-class ViewResidencyViewModel(
+open class ViewResidencyViewModel(
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
-    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val rentalListingRepository: RentalListingRepository =
-        RentalListingRepositoryProvider.repository
+    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewResidencyUIState(loading = true))
   val uiState: StateFlow<ViewResidencyUIState> = _uiState.asStateFlow()
@@ -48,15 +43,7 @@ class ViewResidencyViewModel(
         // Load residency first and show it immediately
         val residency = residenciesRepository.getResidency(residencyName)
 
-        // Load images (Unsplash priority) - load in parallel but don't block
-        val imageUrls = loadResidencyImages(residencyName)
-        Log.d(
-            "ViewResidencyViewModel",
-            "Loaded ${imageUrls.size} images for residency: $residencyName, URLs: $imageUrls")
-
-        _uiState.update {
-          it.copy(residency = residency, imageUrls = imageUrls, loading = false, errorMsg = null)
-        }
+        _uiState.update { it.copy(residency = residency, loading = false, errorMsg = null) }
 
         // Load POI distances in background (non-blocking)
         val currentUser = FirebaseAuth.getInstance().currentUser
@@ -112,34 +99,6 @@ class ViewResidencyViewModel(
     } catch (e: Exception) {
       Log.e("ViewResidencyViewModel", "Error calculating POI distances", e)
       emptyList()
-    }
-  }
-
-  private suspend fun loadResidencyImages(residencyName: String): List<String> {
-    return try {
-      // Use Unsplash images in priority
-      val unsplashImages = ResidencyImageProvider.getDefaultImages(residencyName)
-
-      if (unsplashImages.isNotEmpty()) {
-        Log.d("ViewResidencyViewModel", "Using Unsplash image for residency: $residencyName")
-        return unsplashImages
-      }
-
-      // Fallback to listing images if no Unsplash image available
-      val listings = rentalListingRepository.getAllRentalListingsByResidency(residencyName)
-      val listingImages = listings.flatMap { it.imageUrls }.distinct().take(5)
-
-      if (listingImages.isNotEmpty()) {
-        Log.d("ViewResidencyViewModel", "Using listing images for residency: $residencyName")
-        return listingImages
-      }
-
-      Log.d("ViewResidencyViewModel", "No images found for residency: $residencyName")
-      emptyList()
-    } catch (e: Exception) {
-      Log.e("ViewResidencyViewModel", "Error loading residency images", e)
-      // Fallback to Unsplash image on error
-      ResidencyImageProvider.getDefaultImages(residencyName)
     }
   }
 

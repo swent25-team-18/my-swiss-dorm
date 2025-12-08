@@ -10,14 +10,14 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
-import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -25,7 +25,9 @@ import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import java.lang.reflect.Field
 import java.net.URL
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -34,18 +36,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import java.lang.reflect.Field
 
 // Test ViewModel that allows setting state directly for UI testing
 // Uses reflection to access the private _uiState field
 class TestViewResidencyViewModel(
     residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
-    profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    rentalListingRepository: RentalListingRepository = RentalListingRepositoryProvider.repository
-) : ViewResidencyViewModel(residenciesRepository, profileRepository, rentalListingRepository) {
+    profileRepository: ProfileRepository = ProfileRepositoryProvider.repository
+) : ViewResidencyViewModel(residenciesRepository, profileRepository) {
   fun setState(state: ViewResidencyUIState) {
     // Use reflection to access the private _uiState field
     val field: Field = ViewResidencyViewModel::class.java.getDeclaredField("_uiState")
@@ -119,7 +116,6 @@ class ViewResidencyScreenTest : FirestoreTest() {
     compose
         .onNodeWithTag(C.ViewResidencyTags.DESCRIPTION, useUnmergedTree = true)
         .assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewResidencyTags.PHOTOS, useUnmergedTree = true).assertIsDisplayed()
     compose
         .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
         .assertIsDisplayed()
@@ -144,10 +140,11 @@ class ViewResidencyScreenTest : FirestoreTest() {
 
   @Test
   fun loadingState_displaysLoadingIndicator() = runTest {
-    val viewModel = ViewResidencyViewModel(
-        residenciesRepository = residenciesRepo,
-        profileRepository = profileRepo,
-        rentalListingRepository = listingsRepo)
+    val viewModel =
+        ViewResidencyViewModel(
+            residenciesRepository = residenciesRepo,
+            profileRepository = profileRepo,
+        )
 
     compose.setContent {
       ViewResidencyScreen(
@@ -155,17 +152,16 @@ class ViewResidencyScreenTest : FirestoreTest() {
     }
 
     // Check that loading indicator is displayed initially
-    compose
-        .onNodeWithTag(C.ViewResidencyTags.LOADING, useUnmergedTree = true)
-        .assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewResidencyTags.LOADING, useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
   fun errorState_displaysError() = runTest {
-    val viewModel = ViewResidencyViewModel(
-        residenciesRepository = residenciesRepo,
-        profileRepository = profileRepo,
-        rentalListingRepository = listingsRepo)
+    val viewModel =
+        ViewResidencyViewModel(
+            residenciesRepository = residenciesRepo,
+            profileRepository = profileRepo,
+        )
 
     compose.setContent {
       ViewResidencyScreen(
@@ -181,36 +177,6 @@ class ViewResidencyScreenTest : FirestoreTest() {
     }
 
     compose.onNodeWithTag(C.ViewResidencyTags.ERROR, useUnmergedTree = true).assertIsDisplayed()
-  }
-
-  @Test
-  fun emptyImageUrls_displaysPlaceholder() = runTest {
-    val testViewModel = TestViewResidencyViewModel()
-    val residencyWithoutImages =
-        Residency(
-            name = "TestResidency",
-            description = "Test description",
-            location = Location(name = "Test", latitude = 46.0, longitude = 6.0),
-            city = "Lausanne",
-            email = null,
-            phone = null,
-            website = null)
-
-    testViewModel.setState(
-        ViewResidencyUIState(
-            residency = residencyWithoutImages,
-            imageUrls = emptyList(),
-            loading = false,
-            poiDistances = emptyList()))
-
-    compose.setContent {
-      ViewResidencyScreen(
-          viewResidencyViewModel = testViewModel, residencyName = residencyWithoutImages.name)
-    }
-
-    waitForScreenRoot()
-
-    compose.onNodeWithTag(C.ViewResidencyTags.PHOTOS, useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
@@ -231,10 +197,12 @@ class ViewResidencyScreenTest : FirestoreTest() {
             residency = residency,
             poiDistances = emptyList(),
             loading = false,
-            imageUrls = listOf("image1.jpg")))
+        ))
 
     compose.setContent {
-      ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = residency.name)
+      ViewResidencyScreen(
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = residency.name)
     }
 
     waitForScreenRoot()
@@ -253,7 +221,7 @@ class ViewResidencyScreenTest : FirestoreTest() {
             residency = resTest,
             poiDistances = poiDistances,
             loading = false,
-            imageUrls = listOf("image1.jpg")))
+        ))
 
     compose.setContent {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
@@ -275,7 +243,7 @@ class ViewResidencyScreenTest : FirestoreTest() {
             residency = resTest,
             poiDistances = poiDistances,
             loading = false,
-            imageUrls = listOf("image1.jpg")))
+        ))
 
     compose.setContent {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
@@ -300,7 +268,7 @@ class ViewResidencyScreenTest : FirestoreTest() {
             residency = resTest,
             poiDistances = poiDistances,
             loading = false,
-            imageUrls = listOf("image1.jpg")))
+        ))
 
     compose.setContent {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
@@ -326,7 +294,7 @@ class ViewResidencyScreenTest : FirestoreTest() {
             residency = resTest,
             poiDistances = poiDistances,
             loading = false,
-            imageUrls = listOf("image1.jpg")))
+        ))
 
     compose.setContent {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
@@ -354,14 +322,12 @@ class ViewResidencyScreenTest : FirestoreTest() {
 
     testViewModel.setState(
         ViewResidencyUIState(
-            residency = residencyWithContact,
-            loading = false,
-            imageUrls = listOf("image1.jpg"),
-            poiDistances = emptyList()))
+            residency = residencyWithContact, loading = false, poiDistances = emptyList()))
 
     compose.setContent {
       ViewResidencyScreen(
-          viewResidencyViewModel = testViewModel, residencyName = residencyWithContact.name)
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = residencyWithContact.name)
     }
 
     waitForScreenRoot()
@@ -386,14 +352,12 @@ class ViewResidencyScreenTest : FirestoreTest() {
 
     testViewModel.setState(
         ViewResidencyUIState(
-            residency = residencyWithoutContact,
-            loading = false,
-            imageUrls = listOf("image1.jpg"),
-            poiDistances = emptyList()))
+            residency = residencyWithoutContact, loading = false, poiDistances = emptyList()))
 
     compose.setContent {
       ViewResidencyScreen(
-          viewResidencyViewModel = testViewModel, residencyName = residencyWithoutContact.name)
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = residencyWithoutContact.name)
     }
 
     waitForScreenRoot()
@@ -407,21 +371,17 @@ class ViewResidencyScreenTest : FirestoreTest() {
   fun locationSection_callsOnViewMap() = runTest {
     val testViewModel = TestViewResidencyViewModel()
     testViewModel.setState(
-        ViewResidencyUIState(
-            residency = resTest,
-            loading = false,
-            imageUrls = listOf("image1.jpg"),
-            poiDistances = emptyList()))
+        ViewResidencyUIState(residency = resTest, loading = false, poiDistances = emptyList()))
 
     var mapCalled = false
-    var capturedLat: Double? = null
-    var capturedLng: Double? = null
+    var capturedLat: Double = 0.0
+    var capturedLng: Double = 0.0
     var capturedTitle: String? = null
     var capturedNameId: Int? = null
 
     compose.setContent {
       ViewResidencyScreen(
-          viewResidencyViewModel = testViewModel,
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
           residencyName = resTest.name,
           onViewMap = { lat, lng, title, nameId ->
             mapCalled = true
@@ -452,7 +412,8 @@ class ViewResidencyScreenTest : FirestoreTest() {
 
     compose.setContent {
       ViewResidencyScreen(
-          viewResidencyViewModel = testViewModel, residencyName = "TestResidencyName")
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = "TestResidencyName")
     }
 
     // Initially, residency is null, so should show residencyName
@@ -465,14 +426,12 @@ class ViewResidencyScreenTest : FirestoreTest() {
   fun errorState_withErrorMsg_displaysError() = runTest {
     val testViewModel = TestViewResidencyViewModel()
     testViewModel.setState(
-        ViewResidencyUIState(
-            loading = false,
-            residency = null,
-            errorMsg = "Test error message"))
+        ViewResidencyUIState(loading = false, residency = null, errorMsg = "Test error message"))
 
     compose.setContent {
       ViewResidencyScreen(
-          viewResidencyViewModel = testViewModel, residencyName = "TestResidencyName")
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = "TestResidencyName")
     }
 
     compose.waitUntil(5_000) {
@@ -497,7 +456,7 @@ class ViewResidencyScreenTest : FirestoreTest() {
             residency = resTest,
             poiDistances = poiDistances,
             loading = false,
-            imageUrls = listOf("image1.jpg")))
+        ))
 
     compose.setContent {
       ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
@@ -525,14 +484,12 @@ class ViewResidencyScreenTest : FirestoreTest() {
 
     testViewModel.setState(
         ViewResidencyUIState(
-            residency = residencyWithEmail,
-            loading = false,
-            imageUrls = listOf("image1.jpg"),
-            poiDistances = emptyList()))
+            residency = residencyWithEmail, loading = false, poiDistances = emptyList()))
 
     compose.setContent {
       ViewResidencyScreen(
-          viewResidencyViewModel = testViewModel, residencyName = residencyWithEmail.name)
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = residencyWithEmail.name)
     }
 
     waitForScreenRoot()

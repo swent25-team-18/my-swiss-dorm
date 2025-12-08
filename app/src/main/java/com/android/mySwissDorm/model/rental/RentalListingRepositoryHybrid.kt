@@ -56,13 +56,6 @@ class RentalListingRepositoryHybrid(
           localFallback = { localRepository.getAllRentalListingsByUser(userId) },
           syncToLocal = { listings -> syncListingsToLocal(listings) })
 
-  override suspend fun getAllRentalListingsByResidency(residencyName: String): List<RentalListing> =
-      performRead(
-          operationName = "getAllRentalListingsByResidency",
-          remoteCall = { remoteRepository.getAllRentalListingsByResidency(residencyName) },
-          localFallback = { localRepository.getAllRentalListingsByResidency(residencyName) },
-          syncToLocal = { listings -> syncListingsToLocal(listings) })
-
   override suspend fun getRentalListing(rentalPostId: String): RentalListing =
       performRead(
           operationName = "getRentalListing",

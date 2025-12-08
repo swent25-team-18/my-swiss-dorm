@@ -39,17 +39,6 @@ class RentalListingRepositoryFirestore(
     return snapshot.mapNotNull { documentToRentalListing(it) }
   }
 
-  override suspend fun getAllRentalListingsByResidency(residencyName: String): List<RentalListing> {
-    val snapshot =
-        rentalListingDb
-            .collection(RENTAL_LISTINGS_COLLECTION)
-            .whereEqualTo("residencyName", residencyName)
-            .whereEqualTo("status", "POSTED")
-            .get()
-            .await()
-    return snapshot.mapNotNull { documentToRentalListing(it) }
-  }
-
   override suspend fun getAllRentalListingsByLocation(
       location: Location,
       radius: Double

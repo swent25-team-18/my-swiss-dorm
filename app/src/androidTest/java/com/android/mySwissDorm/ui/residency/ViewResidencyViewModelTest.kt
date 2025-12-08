@@ -8,12 +8,6 @@ import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
-import com.android.mySwissDorm.model.rental.RentalListing
-import com.android.mySwissDorm.model.rental.RentalListingRepository
-import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
-import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
-import com.android.mySwissDorm.model.rental.RentalStatus
-import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -22,7 +16,6 @@ import com.android.mySwissDorm.ui.profile.MainDispatcherRule
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import java.net.URL
 import kotlinx.coroutines.delay
@@ -47,17 +40,14 @@ class ViewResidencyViewModelTest : FirestoreTest() {
   private val context: Context = ApplicationProvider.getApplicationContext<Context>()
   private lateinit var residenciesRepository: ResidenciesRepository
   private lateinit var profileRepository: ProfileRepository
-  private lateinit var rentalListingRepository: RentalListingRepository
   private lateinit var testResidency: Residency
 
   override fun createRepositories() {
     residenciesRepository = ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
     profileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    rentalListingRepository = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
 
     ResidenciesRepositoryProvider.repository = residenciesRepository
     ProfileRepositoryProvider.repository = profileRepository
-    RentalListingRepositoryProvider.repository = rentalListingRepository
   }
 
   @Before
@@ -88,16 +78,13 @@ class ViewResidencyViewModelTest : FirestoreTest() {
     assertNull("Initial residency should be null", uiState.residency)
     assertNull("Initial error should be null", uiState.errorMsg)
     assertTrue("Initial POI distances should be empty", uiState.poiDistances.isEmpty())
-    assertTrue("Initial image URLs should be empty", uiState.imageUrls.isEmpty())
   }
 
   @Test
   fun loadResidency_success() = runTest {
     val viewModel =
         ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
+            residenciesRepository = residenciesRepository, profileRepository = profileRepository)
 
     viewModel.loadResidency("Vortex", context)
 
@@ -137,9 +124,7 @@ class ViewResidencyViewModelTest : FirestoreTest() {
 
     val viewModel =
         ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
+            residenciesRepository = residenciesRepository, profileRepository = profileRepository)
 
     viewModel.loadResidency("NonExistent", context)
 
@@ -185,117 +170,10 @@ class ViewResidencyViewModelTest : FirestoreTest() {
   }
 
   @Test
-  fun loadResidency_loadsUnsplashImages() = runTest {
-    val viewModel =
-        ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
-
-    viewModel.loadResidency("Vortex", context)
-
-    // Wait for loading to complete and images to be loaded
-    var elapsed = 0L
-    val startTime = System.currentTimeMillis()
-    val timeoutMs = 5000L
-    while (elapsed < timeoutMs) {
-      advanceUntilIdle()
-      delay(50)
-      val uiState = viewModel.uiState.value
-      if (!uiState.loading && uiState.imageUrls.isNotEmpty()) {
-        // Success - images loaded
-        assertTrue("Should have image URLs", uiState.imageUrls.isNotEmpty())
-        return@runTest
-      }
-      elapsed = System.currentTimeMillis() - startTime
-    }
-
-    // If we get here, timeout occurred
-    val uiState = viewModel.uiState.value
-    assertFalse("Loading should have completed", uiState.loading)
-    assertTrue("Should have image URLs", uiState.imageUrls.isNotEmpty())
-  }
-
-  @Test
-  fun loadResidency_fallbackToListingImages() = runTest {
-    // Residency without its own images
-    val residencyWithoutImage =
-        Residency(
-            name = "TestResidency",
-            description = "Test description",
-            location = Location(name = "Test", latitude = 46.0, longitude = 6.0),
-            city = "Lausanne",
-            email = null,
-            phone = null,
-            website = null)
-
-    // Listing that has images for this residency
-    val listing =
-        RentalListing(
-            uid = "listing-1",
-            ownerId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
-            ownerName = null,
-            postedAt = Timestamp.now(),
-            residencyName = "TestResidency",
-            title = "Test Listing",
-            roomType = RoomType.STUDIO,
-            pricePerMonth = 1000.0,
-            areaInM2 = 25,
-            startDate = Timestamp.now(),
-            description = "Test",
-            imageUrls = listOf("image1.jpg", "image2.jpg"),
-            status = RentalStatus.POSTED,
-            location = Location("Test", 46.0, 6.0))
-
-    // Stub residency repository: no Firestore, just return our residency
-    val fakeResidenciesRepository =
-        object : ResidenciesRepository by residenciesRepository {
-          override suspend fun getResidency(residencyName: String): Residency {
-            if (residencyName == "TestResidency") {
-              return residencyWithoutImage
-            }
-            throw IllegalArgumentException("Unknown residency: $residencyName")
-          }
-        }
-
-    // Stub rental listing repository: return our listing with images
-    val fakeRentalListingRepository =
-        object : RentalListingRepository by rentalListingRepository {
-          override suspend fun getAllRentalListingsByResidency(
-              residencyName: String
-          ): List<RentalListing> {
-            return if (residencyName == "TestResidency") {
-              listOf(listing)
-            } else {
-              emptyList()
-            }
-          }
-        }
-
-    val viewModel =
-        ViewResidencyViewModel(
-            residenciesRepository = fakeResidenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = fakeRentalListingRepository)
-
-    viewModel.loadResidency("TestResidency", context)
-    // Let the viewModel coroutine finish in the test dispatcher
-    advanceUntilIdle()
-
-    val uiState = viewModel.uiState.value
-
-    assertFalse("Loading should be finished", uiState.loading)
-    assertEquals("Residency name should match", "TestResidency", uiState.residency?.name)
-    assertTrue("Should have image URLs from listings", uiState.imageUrls.isNotEmpty())
-  }
-
-  @Test
   fun loadResidency_calculatesPOIDistances() = runTest {
     val viewModel =
         ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
+            residenciesRepository = residenciesRepository, profileRepository = profileRepository)
 
     viewModel.loadResidency("Vortex", context)
     advanceUntilIdle()
@@ -328,9 +206,7 @@ class ViewResidencyViewModelTest : FirestoreTest() {
 
     val viewModel =
         ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
+            residenciesRepository = residenciesRepository, profileRepository = profileRepository)
 
     viewModel.loadResidency("Vortex", context)
     advanceUntilIdle()
@@ -348,9 +224,7 @@ class ViewResidencyViewModelTest : FirestoreTest() {
 
     val viewModel =
         ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
+            residenciesRepository = residenciesRepository, profileRepository = profileRepository)
 
     viewModel.loadResidency("Vortex", context)
     advanceUntilIdle()
@@ -381,9 +255,7 @@ class ViewResidencyViewModelTest : FirestoreTest() {
 
     val viewModel =
         ViewResidencyViewModel(
-            residenciesRepository = mockRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
+            residenciesRepository = mockRepository, profileRepository = profileRepository)
 
     viewModel.loadResidency("Vortex", context)
     advanceUntilIdle()
@@ -408,9 +280,7 @@ class ViewResidencyViewModelTest : FirestoreTest() {
 
     val viewModel =
         ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
+            residenciesRepository = residenciesRepository, profileRepository = profileRepository)
 
     viewModel.loadResidency("NonExistent", context)
 
@@ -478,64 +348,10 @@ class ViewResidencyViewModelTest : FirestoreTest() {
   }
 
   @Test
-  fun loadResidency_imageLoadingException_fallbackToUnsplash() = runTest {
-    // Wait a bit to ensure any coroutines from previous tests have completed
-    advanceUntilIdle()
-    delay(200)
-    advanceUntilIdle()
-
-    val mockRentalRepository =
-        object : RentalListingRepository by rentalListingRepository {
-          override suspend fun getAllRentalListingsByResidency(
-              residencyName: String
-          ): List<RentalListing> {
-            throw Exception("Image loading error")
-          }
-        }
-
-    val viewModel =
-        ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = mockRentalRepository)
-
-    viewModel.loadResidency("Vortex", context)
-
-    // Wait for loading to complete and images to be loaded - use timeout-based approach
-    // Vortex has Unsplash images, so even if listing images fail, we should have Unsplash images
-    var elapsed = 0L
-    val startTime = System.currentTimeMillis()
-    val timeoutMs = 5000L
-    while (elapsed < timeoutMs) {
-      advanceUntilIdle()
-      delay(50)
-      val uiState = viewModel.uiState.value
-      if (!uiState.loading && uiState.residency != null) {
-        // Loading completed - verify we have images (Unsplash fallback)
-        assertTrue("Should have Unsplash images as fallback", uiState.imageUrls.isNotEmpty())
-        assertEquals("Residency should be loaded", "Vortex", uiState.residency?.name)
-        advanceUntilIdle() // Ensure all coroutines complete
-        return@runTest
-      }
-      elapsed = System.currentTimeMillis() - startTime
-    }
-
-    // If we get here, timeout occurred
-    val uiState = viewModel.uiState.value
-    assertFalse("Loading should have completed", uiState.loading)
-    assertNotNull("Residency should be loaded", uiState.residency)
-    assertEquals("Residency name should match", "Vortex", uiState.residency?.name)
-    assertTrue("Should have Unsplash images as fallback", uiState.imageUrls.isNotEmpty())
-    advanceUntilIdle() // Ensure all coroutines complete
-  }
-
-  @Test
   fun loadResidency_poiCalculationException_handlesGracefully() = runTest {
     val viewModel =
         ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
+            residenciesRepository = residenciesRepository, profileRepository = profileRepository)
 
     viewModel.loadResidency("Vortex", context)
     advanceUntilIdle()
@@ -561,8 +377,7 @@ class ViewResidencyViewModelTest : FirestoreTest() {
     val viewModel =
         ViewResidencyViewModel(
             residenciesRepository = residenciesRepository,
-            profileRepository = mockProfileRepository,
-            rentalListingRepository = rentalListingRepository)
+            profileRepository = mockProfileRepository)
 
     viewModel.loadResidency("Vortex", context)
 
@@ -584,9 +399,7 @@ class ViewResidencyViewModelTest : FirestoreTest() {
   fun loadResidency_multipleCalls_onlyLastOneMatters() = runTest {
     val viewModel =
         ViewResidencyViewModel(
-            residenciesRepository = residenciesRepository,
-            profileRepository = profileRepository,
-            rentalListingRepository = rentalListingRepository)
+            residenciesRepository = residenciesRepository, profileRepository = profileRepository)
 
     // Helper to wait for loading to complete
     suspend fun waitForLoadingComplete(timeoutMs: Long = 5000) {

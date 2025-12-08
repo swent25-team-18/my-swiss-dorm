@@ -39,9 +39,6 @@ class ProfileContributionsViewModelTest {
           override suspend fun getAllRentalListingsByLocation(location: Location, radius: Double) =
               emptyList<RentalListing>()
 
-          override suspend fun getAllRentalListingsByResidency(residencyName: String) =
-              emptyList<RentalListing>()
-
           override suspend fun getAllRentalListingsByUser(userId: String) =
               emptyList<RentalListing>()
 
@@ -143,9 +140,6 @@ class ProfileContributionsViewModelTest {
                       location: Location,
                       radius: Double
                   ) = emptyList<RentalListing>()
-
-                  override suspend fun getAllRentalListingsByResidency(residencyName: String) =
-                      emptyList<RentalListing>()
 
                   override suspend fun getAllRentalListingsByUser(userId: String) =
                       listOf(

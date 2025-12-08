@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.residency
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,9 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.painter.ColorPainter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -21,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.resources.C
@@ -93,7 +88,6 @@ private fun ViewResidencyContent(
     else -> {
       ResidencyDetailsContent(
           residency = residency,
-          imageUrls = uiState.imageUrls,
           poiDistances = uiState.poiDistances,
           paddingValues = paddingValues,
           onViewMap = onViewMap)
@@ -121,7 +115,6 @@ private fun ErrorView(errorMsg: String?, paddingValues: PaddingValues) {
 @Composable
 private fun ResidencyDetailsContent(
     residency: com.android.mySwissDorm.model.residency.Residency,
-    imageUrls: List<String>,
     poiDistances: List<POIDistance>,
     paddingValues: PaddingValues,
     onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit
@@ -135,7 +128,6 @@ private fun ResidencyDetailsContent(
               .testTag(C.ViewResidencyTags.ROOT),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ResidencyNameHeader(residency.name)
-        PhotosSection(imageUrls)
         DescriptionSection(residency.description)
         POIDistancesSection(poiDistances)
         Spacer(Modifier.height(8.dp))
@@ -153,41 +145,6 @@ private fun ResidencyNameHeader(name: String) {
       lineHeight = 32.sp,
       modifier = Modifier.testTag(C.ViewResidencyTags.NAME),
       color = TextColor)
-}
-
-@Composable
-private fun PhotosSection(imageUrls: List<String>) {
-  SectionCard(modifier = Modifier.testTag(C.ViewResidencyTags.PHOTOS)) {
-    Text("${stringResource(R.string.photos)} :", fontWeight = FontWeight.SemiBold)
-    Spacer(Modifier.height(8.dp))
-    if (imageUrls.isNotEmpty()) {
-      AsyncImage(
-          model = imageUrls.first(),
-          contentDescription = null,
-          modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp)),
-          contentScale = ContentScale.Crop,
-          placeholder = ColorPainter(LightGray),
-          error = ColorPainter(LightGray))
-    } else {
-      ImagePlaceholder()
-    }
-  }
-}
-
-@Composable
-private fun ImagePlaceholder() {
-  Box(
-      modifier =
-          Modifier.fillMaxWidth()
-              .height(200.dp)
-              .clip(RoundedCornerShape(12.dp))
-              .background(LightGray),
-      contentAlignment = Alignment.Center) {
-        Text(
-            stringResource(R.string.image),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Gray)
-      }
 }
 
 @Composable

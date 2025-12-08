@@ -34,14 +34,6 @@ interface RentalListingRepository {
   suspend fun getAllRentalListingsByUser(userId: String): List<RentalListing>
 
   /**
-   * Retrieves all Rental listings for a specific residency from the repository.
-   *
-   * @param residencyName The name of the residency whose listings to retrieve.
-   * @return A list of all Rental listings for the specified residency.
-   */
-  suspend fun getAllRentalListingsByResidency(residencyName: String): List<RentalListing>
-
-  /**
    * Retrieves a specific rental post by its unique identifier.
    *
    * @param rentalPostId The unique identifier of the rental post item to retrieve.

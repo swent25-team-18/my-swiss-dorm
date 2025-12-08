@@ -195,6 +195,15 @@ fun SignUpScreen(
                                   residenciesExpanded = false
                                 })
                           }
+                          DropdownMenuItem(
+                              modifier =
+                                  Modifier.testTag(
+                                      C.SanitizedResidencyDropdownTags.PRIVATE_ACCOMMODATION),
+                              text = { Text(stringResource(R.string.private_accommodation)) },
+                              onClick = {
+                                signUpViewModel.updateResidencyName("Private Accommodation")
+                                residenciesExpanded = false
+                              })
                         }
                   }
 

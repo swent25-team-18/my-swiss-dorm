@@ -60,7 +60,8 @@ fun ViewListingScreen(
     onViewProfile: (ownerId: String) -> Unit = {},
     onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit =
         { _, _, _, _ ->
-        }
+        },
+    onViewResidency: (residencyName: String) -> Unit = {}
 ) {
   val context = LocalContext.current
   LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid, context) }
@@ -227,6 +228,27 @@ fun ViewListingScreen(
                           style = baseTextStyle,
                           color = Gray)
                     }
+
+                // Residency name (clickable) - right after "posted by", same spacing as POI lines
+                // (0.dp)
+                if (listing.residencyName.isNotEmpty() &&
+                    listing.residencyName != "Private Accommodation") {
+                  Row(
+                      modifier = Modifier.testTag(C.ViewListingTags.RESIDENCY_NAME),
+                      verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${stringResource(R.string.residency)}: ",
+                            style = baseTextStyle,
+                            color = Gray)
+                        Text(
+                            text = listing.residencyName,
+                            style =
+                                baseTextStyle.copy(fontWeight = FontWeight.Bold, color = MainColor),
+                            modifier =
+                                Modifier.testTag(C.ViewListingTags.RESIDENCY_NAME_CLICKABLE)
+                                    .clickable { onViewResidency(listing.residencyName) })
+                      }
+                }
 
                 // Nearby Points of Interest - right after "posted by"
                 val poiDistances = listingUIState.poiDistances

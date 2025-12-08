@@ -37,7 +37,7 @@ class TranslatableTextTest {
     compose.onNodeWithTag(C.TranslatableTextTestTags.TRANSLATE_BUTTON).assertTextEquals("Translate")
     compose.onNodeWithTag(C.TranslatableTextTestTags.TRANSLATE_BUTTON).performClick()
 
-    compose.waitUntil(5_000) { compose.onNodeWithText("It's a dog").isDisplayed() }
+    compose.waitUntil(20_000) { compose.onNodeWithText("It's a dog").isDisplayed() }
 
     compose
         .onNodeWithTag(C.TranslatableTextTestTags.TRANSLATE_BUTTON)

@@ -230,6 +230,7 @@
     <string name="view_residency_location">Emplacement de la résidence</string>
     <string name="view_residency_no_contact_info">Aucune information de contact disponible</string>
     <string name="see_residency_details">Voir les détails de la résidence</string>
+    <string name="screen_residency_details">Détails de la résidence</string>
 
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Pas encore implémenté</string>

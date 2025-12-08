@@ -369,4 +369,11 @@ object C {
     const val COPY_LINK_BUTTON = "shareLinkDialogCopyLinkButton"
     const val CANCEL_TEXT = "shareLinkDialogCancelText"
   }
+
+  object TranslatableTextTestTags {
+
+    const val TRANSLATABLE_TEXT = "translatable_text"
+
+    const val TRANSLATE_BUTTON = "translate_button"
+  }
 }

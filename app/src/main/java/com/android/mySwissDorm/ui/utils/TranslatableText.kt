@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.MainColor
 
 /**
@@ -71,7 +73,7 @@ fun TranslatableText(
     // Text to display, original or translated
     Text(
         text = textToDisplay,
-        modifier = modifier,
+        modifier = modifier.testTag(C.TranslatableTextTestTags.TRANSLATABLE_TEXT),
         color = color,
         fontSize = fontSize,
         fontStyle = fontStyle,
@@ -101,7 +103,9 @@ fun TranslatableText(
           }
       Text(
           text = clickableText,
-          modifier = Modifier.clickable(onClick = { isTranslated = !isTranslated }),
+          modifier =
+              Modifier.clickable(onClick = { isTranslated = !isTranslated })
+                  .testTag(C.TranslatableTextTestTags.TRANSLATE_BUTTON),
           color = MainColor)
     }
   }

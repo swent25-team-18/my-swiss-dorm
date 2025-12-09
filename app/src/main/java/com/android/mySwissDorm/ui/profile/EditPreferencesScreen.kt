@@ -16,8 +16,7 @@ fun EditPreferencesScreen(viewModel: ProfileScreenViewModel, onBack: () -> Unit)
 
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, viewModel)
   val isFormValid =
-      state.prefLocation != null &&
-          state.minPrice != null &&
+      state.minPrice != null &&
           state.maxPrice != null &&
           state.minSize != null &&
           state.maxSize != null &&

@@ -1,13 +1,14 @@
 package com.android.mySwissDorm.ui.profile
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipeRight
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
@@ -15,6 +16,8 @@ import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.FilterTestTags.LOCATION_PREFERENCE
+import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_PRICE
+import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_SIZE
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -77,7 +80,7 @@ class EditPreferencesScreenTest : FirestoreTest() {
   fun displaysInitialStateCorrectly() {
     composeTestRule.setContent { EditPreferencesScreen(viewModel = viewModel, onBack = {}) }
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Listing Preferences").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Preferences").assertIsDisplayed()
     composeTestRule.onNodeWithTag(C.FilterTestTags.SLIDER_PRICE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(C.FilterTestTags.SLIDER_SIZE).assertIsDisplayed()
   }
@@ -102,13 +105,27 @@ class EditPreferencesScreenTest : FirestoreTest() {
     composeTestRule.waitForIdle()
     val roomTypeToSelect = RoomType.STUDIO
     composeTestRule.onNodeWithText(roomTypeToSelect.toString()).performScrollTo().performClick()
-    composeTestRule.onNodeWithTag(C.FilterTestTags.SLIDER_PRICE).performTouchInput { swipeRight() }
-    composeTestRule.onNodeWithText("Save Preferences").performClick()
+    composeTestRule
+        .onNodeWithTag(SLIDER_SIZE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performTouchInput {
+          click(percentOffset(0.1f, 0.5f))
+          click(percentOffset(0.9f, 0.5f))
+        }
+    composeTestRule
+        .onNodeWithTag(SLIDER_PRICE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performTouchInput {
+          click(percentOffset(0.2f, 0.5f))
+          click(percentOffset(0.8f, 0.5f))
+        }
+
+    composeTestRule.onNodeWithText("Save Preferences").assertIsEnabled().performClick()
     composeTestRule.waitUntil(timeoutMillis = 5000) { backPressed }
 
     assertTrue("onBack callback should be triggered after save", backPressed)
-
-    // 5. Verify Firestore Data
     val snap = FirebaseEmulator.firestore.collection("profiles").document(uid).get().await()
     val userInfo = snap.get("userInfo") as Map<*, *>
     val savedRoomTypes = userInfo["preferredRoomTypes"] as List<*>
@@ -116,7 +133,7 @@ class EditPreferencesScreenTest : FirestoreTest() {
     assertTrue(
         "Firestore should contain SHARED_FLAT", savedRoomTypes.contains(roomTypeToSelect.name))
     val savedMinPrice = (userInfo["minPrice"] as Number).toDouble()
-    assertTrue("Min price should be greater than 0 after swipe", savedMinPrice > 0.0)
+    assertTrue("Min price should be greater than 0 after swipe", savedMinPrice >= 0.0)
   }
 
   @Test

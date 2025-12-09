@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
@@ -24,7 +25,6 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.action.ViewActions.swipeRight
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
@@ -34,6 +34,8 @@ import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_PRICE
+import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_SIZE
 import com.android.mySwissDorm.utils.FakePhotoRepository
 import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
@@ -522,11 +524,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
           onLanguageChange = {})
     }
     waitForProfileScreenReady()
-    compose
-        .onNodeWithText("Listing Preferences")
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
+    compose.onNodeWithText("Preferences").performScrollTo().assertIsDisplayed().performClick()
     assertTrue("Preferences navigation callback should be triggered", clicked)
   }
 
@@ -582,7 +580,14 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     vm.loadProfile(context)
     compose.setContent { EditPreferencesScreen(viewModel = vm, onBack = {}) }
     compose.waitForIdle()
-    compose.onNodeWithTag("price_slider").performTouchInput { swipeRight() }
+    compose.onNodeWithTag(SLIDER_SIZE).performScrollTo().assertIsDisplayed().performTouchInput {
+      click(percentOffset(0.1f, 0.5f))
+      click(percentOffset(0.9f, 0.5f))
+    }
+    compose.onNodeWithTag(SLIDER_PRICE).performScrollTo().assertIsDisplayed().performTouchInput {
+      click(percentOffset(0.2f, 0.5f))
+      click(percentOffset(0.8f, 0.5f))
+    }
     val roomType = RoomType.STUDIO.toString()
     compose.onNodeWithText(roomType).performScrollTo().performClick()
     compose.onNodeWithText("Save Preferences").performClick()

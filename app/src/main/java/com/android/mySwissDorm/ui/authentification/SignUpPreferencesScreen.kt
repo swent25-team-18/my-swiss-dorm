@@ -55,7 +55,7 @@ fun SignUpPreferencesScreen(
       onUseCurrentLocationClick = onUserLocationClickFunc(context, signUpViewModel),
       onClearClick = { signUpViewModel.clearPreferences() },
       isButtonEnabled = isFormValid,
-      skipButtonText = "Skip",
+      skipButtonText = stringResource(R.string.skip),
       onSkipClick = {
         signUpViewModel.clearPreferences()
         signUpViewModel.signUp(context, credentialManager)

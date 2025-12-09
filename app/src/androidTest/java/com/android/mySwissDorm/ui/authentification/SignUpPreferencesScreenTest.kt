@@ -4,12 +4,14 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
@@ -19,6 +21,9 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.LOCATION_PREFERENCE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_PRICE
+import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_SIZE
+import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.ui.utils.ListingPreferencesContent
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator
@@ -60,23 +65,45 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onBack = {},
           onSignedUp = {})
     }
-
+    viewModel.uiState.value.copy(selectedLocation = cityLausanne.location)
     composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
     composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(SKIP).performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithText("Custom Location").performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithTag(BUDGET).performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithTag(PREFERRED_SIZE).performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithTag(PREFERRED_ROOM_TYPE).performScrollTo().assertIsDisplayed()
     composeTestRule
+        .onNodeWithTag(SLIDER_SIZE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performTouchInput {
+          click(percentOffset(0.1f, 0.5f))
+          click(percentOffset(0.9f, 0.5f))
+        }
+    composeTestRule
+        .onNodeWithTag(SLIDER_PRICE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performTouchInput {
+          click(percentOffset(0.2f, 0.5f))
+          click(percentOffset(0.8f, 0.5f))
+        }
+    composeTestRule
         .onNodeWithTag(LOCATION_PREFERENCE)
         .performScrollTo()
         .assertIsDisplayed()
         .assertHasClickAction()
-    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).performScrollTo().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(RoomType.STUDIO.toString())
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
     composeTestRule
         .onNodeWithText(RoomType.COLOCATION.toString())
         .performScrollTo()
         .assertIsDisplayed()
+        .performClick()
     composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).assertIsDisplayed().assertIsEnabled()
   }
 

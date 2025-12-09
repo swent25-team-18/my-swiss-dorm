@@ -47,6 +47,7 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.LOCATION_PREFERENCE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -154,7 +155,7 @@ fun ListingPreferencesContent(
                     text = skipButtonText,
                     color = MainColor,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { onSkipClick() }.padding(8.dp))
+                    modifier = Modifier.clickable { onSkipClick() }.padding(8.dp).testTag(SKIP))
               }
             }
       }) { innerPadding ->

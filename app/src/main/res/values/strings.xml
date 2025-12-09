@@ -137,6 +137,7 @@
     <string name="budget">Budget</string>
     <string name="preferred_size">Preferred Size</string>
     <string name="preferred_room_type">Preferred Room Type</string>
+    <string name="skip">Skip</string>
     <!-- SignUpViewModel -->
     <string name="sign_up_vm_auth_cancelled">Authentification cancelled</string>
     <string name="sign_up_vm_failed_to_get_credentials">Failed to get credentials:</string>

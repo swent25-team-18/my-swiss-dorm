@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.profile
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.click
@@ -37,6 +38,8 @@ class EditPreferencesScreenTest : FirestoreTest() {
 
   private lateinit var viewModel: ProfileScreenViewModel
   private lateinit var uid: String
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {}
 
@@ -89,7 +92,7 @@ class EditPreferencesScreenTest : FirestoreTest() {
   fun interactingWithRoomTypes_updatesState() {
     composeTestRule.setContent { EditPreferencesScreen(viewModel = viewModel, onBack = {}) }
     composeTestRule.waitForIdle()
-    val roomType = RoomType.STUDIO.toString()
+    val roomType = RoomType.STUDIO.getName(context)
     composeTestRule.onNodeWithText(roomType).performScrollTo().performClick()
     val currentTypes = viewModel.uiState.value.selectedRoomTypes
     assertTrue("Studio should be selected in VM state", currentTypes.contains(RoomType.STUDIO))
@@ -104,7 +107,10 @@ class EditPreferencesScreenTest : FirestoreTest() {
     }
     composeTestRule.waitForIdle()
     val roomTypeToSelect = RoomType.STUDIO
-    composeTestRule.onNodeWithText(roomTypeToSelect.toString()).performScrollTo().performClick()
+    composeTestRule
+        .onNodeWithText(roomTypeToSelect.getName(context))
+        .performScrollTo()
+        .performClick()
     composeTestRule
         .onNodeWithTag(SLIDER_SIZE)
         .performScrollTo()

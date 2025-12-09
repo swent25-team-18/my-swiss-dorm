@@ -67,6 +67,11 @@
     <string name="user">Utilisateur</string>
     <string name="website">Site web</string>
 
+    <!-- RoomType -->
+    <string name="studio">Studio</string>
+    <string name="apartment">Appartement</string>
+    <string name="room_in_flatshare">Chambre en colocation</string>
+
     <!-- AdminPageScreen -->
     <string name="admin_page_admins_only">Réservé aux administrateurs.</string>
     <string name="admin_page_title">Page Administrateur</string>

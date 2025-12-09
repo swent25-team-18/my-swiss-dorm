@@ -65,6 +65,11 @@
     <string name="user">User</string>
     <string name="website">Website</string>
 
+    <!-- RoomType -->
+    <string name="studio">Studio</string>
+    <string name="apartment">Apartment</string>
+    <string name="room_in_flatshare">Room in flatshare</string>
+
     <!-- AdminPageScreen -->
     <string name="admin_page_admins_only">Admins only.</string>
     <string name="admin_page_title">Admin Page</string>

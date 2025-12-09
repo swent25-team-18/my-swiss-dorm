@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.authentification
 
+import android.content.Context
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
@@ -42,6 +44,8 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
 
   private lateinit var viewModel: SignUpViewModel
   private lateinit var fakeCredentialManager: FakeCredentialManager
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {}
 
@@ -94,12 +98,12 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
         .assertIsDisplayed()
         .assertHasClickAction()
     composeTestRule
-        .onNodeWithText(RoomType.STUDIO.toString())
+        .onNodeWithText(RoomType.STUDIO.getName(context))
         .performScrollTo()
         .assertIsDisplayed()
         .performClick()
     composeTestRule
-        .onNodeWithText(RoomType.COLOCATION.toString())
+        .onNodeWithText(RoomType.COLOCATION.getName(context))
         .performScrollTo()
         .assertIsDisplayed()
         .performClick()
@@ -130,7 +134,7 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onSignedUp = {})
     }
 
-    val chip = composeTestRule.onNodeWithText(RoomType.STUDIO.toString())
+    val chip = composeTestRule.onNodeWithText(RoomType.STUDIO.getName(context))
     chip.performScrollTo()
     chip.performClick()
     composeTestRule.waitForIdle()
@@ -306,10 +310,13 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onSkipClick = {})
     }
 
-    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).performScrollTo().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(RoomType.STUDIO.getName(context))
+        .performScrollTo()
+        .assertIsDisplayed()
 
     val target = RoomType.COLOCATION
-    composeTestRule.onNodeWithText(target.toString()).performScrollTo().performClick()
+    composeTestRule.onNodeWithText(target.getName(context)).performScrollTo().performClick()
 
     assert(clickedType.value == target)
   }

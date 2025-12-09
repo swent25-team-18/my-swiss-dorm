@@ -588,7 +588,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
       click(percentOffset(0.2f, 0.5f))
       click(percentOffset(0.8f, 0.5f))
     }
-    val roomType = RoomType.STUDIO.toString()
+    val roomType = RoomType.STUDIO.getName(context)
     compose.onNodeWithText(roomType).performScrollTo().performClick()
     compose.onNodeWithText("Save Preferences").performClick()
     var success = false

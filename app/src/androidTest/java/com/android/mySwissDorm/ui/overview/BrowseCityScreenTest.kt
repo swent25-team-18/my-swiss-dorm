@@ -646,7 +646,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     vm.uiState.value.listings.items.forEach { listing ->
       assertTrue(
           "All listings should be Studio type",
-          listing.leftBullets.firstOrNull() == RoomType.STUDIO.toString())
+          listing.leftBullets.firstOrNull() == RoomType.STUDIO.getName(context))
     }
   }
 

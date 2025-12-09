@@ -677,13 +677,14 @@ private fun RoomTypeFilterContent(
     selectedRoomTypes: Set<RoomType>,
     onSelectionChange: (Set<RoomType>) -> Unit
 ) {
+  val context = LocalContext.current
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
     RoomType.entries.forEach { roomType ->
       Row(
           modifier = Modifier.fillMaxWidth(),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(roomType.toString(), color = TextColor)
+            Text(roomType.getName(context), color = TextColor)
             Checkbox(
                 checked = roomType in selectedRoomTypes,
                 onCheckedChange = { checked ->
@@ -813,20 +814,26 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.Start,
                     ) { // Title, location, and grade
-                      Row(
-                          modifier = Modifier.fillMaxWidth(),
-                          horizontalArrangement = Arrangement.SpaceBetween,
-                          verticalAlignment = Alignment.CenterVertically) { // Title + grade
-                            Text( // Title
-                                text = data.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Start,
-                                color = TextColor,
-                                modifier = Modifier.fillMaxWidth(0.5f),
-                                maxLines = 1,
-                            )
-                            DisplayGrade(data.meanGrade, 16.dp) // Display the mean grade with stars
+                      Box(modifier = Modifier.fillMaxWidth()) {
+                        // Stars positioned at top-right
+                        Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                          DisplayGrade(data.meanGrade, 16.dp) // Display the mean grade with stars
+                        }
+                        // Title positioned lower, taking available width but leaving space for
+                        // stars
+                        Text( // Title
+                            text = data.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Start,
+                            color = TextColor,
+                            modifier =
+                                Modifier.fillMaxWidth(0.7f)
+                                    .padding(top = 20.dp) // Push title below stars
+                                    .align(Alignment.TopStart),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                       }
                       Row(verticalAlignment = Alignment.Top) { // Location
                         Icon(

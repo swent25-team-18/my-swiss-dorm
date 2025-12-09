@@ -18,7 +18,6 @@ import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.firestore.FieldValue
 import io.mockk.unmockkAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
@@ -236,11 +235,14 @@ class SettingsScreenTest : FirestoreTest() {
 
     // Switch back to current user (FakeUser1) and add blocked user to their list
     switchToUser(FakeUser.FakeUser1)
-    FirebaseEmulator.firestore
-        .collection(PROFILE_COLLECTION_PATH)
-        .document(uid)
-        .update("blockedUserIds", FieldValue.arrayUnion(blockedUserUid))
-        .await()
+    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    val profile = profileRepo.getProfile(uid)
+    val updatedProfile =
+        profile.copy(
+            userInfo =
+                profile.userInfo.copy(
+                    blockedUserIds = profile.userInfo.blockedUserIds + blockedUserUid))
+    profileRepo.editProfile(updatedProfile)
 
     setContentWithVm()
     compose.waitForIdle()

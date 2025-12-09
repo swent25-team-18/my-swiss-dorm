@@ -107,6 +107,9 @@ fun ChannelsScreen(
     onRequestedMessagesClick: () -> Unit,
     requestedMessagesCount: Int = 0,
     refreshKey: Int = 0,
+    isStreamInitialized: (() -> Boolean)? = null,
+    ensureConnected: (suspend () -> Unit)? = null,
+    fetchChannels: (suspend () -> List<Channel>)? = null,
 ) {
   val currentUser = FirebaseAuth.getInstance().currentUser
 
@@ -123,6 +126,42 @@ fun ChannelsScreen(
   val coroutineScope = rememberCoroutineScope()
   var isLoadInProgress by remember { mutableStateOf(false) }
 
+  // Provide injectable hooks (used by tests) with sensible defaults
+  val effectiveIsStreamInitialized = isStreamInitialized ?: { StreamChatProvider.isInitialized() }
+  val effectiveEnsureConnected: suspend () -> Unit =
+      ensureConnected
+          ?: {
+            val displayName = currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
+            try {
+              withTimeout(10000) {
+                StreamChatProvider.connectUser(
+                    firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = "")
+              }
+            } catch (e: Exception) {
+              throw e
+            }
+          }
+  val effectiveFetchChannels: suspend () -> List<Channel> =
+      fetchChannels
+          ?: {
+            val chatClient = StreamChatProvider.getClient()
+            val filter =
+                Filters.and(
+                    Filters.eq("type", "messaging"),
+                    Filters.`in`("members", listOf(currentUser.uid)))
+            val request =
+                QueryChannelsRequest(
+                    filter = filter,
+                    offset = 0,
+                    limit = 20,
+                    messageLimit = 10 // Explicitly request messages
+                    )
+            withContext(Dispatchers.IO) {
+                  withTimeout(10000) { chatClient.queryChannels(request).await() }
+                }
+                .getOrNull() ?: emptyList()
+          }
+
   // Extract channel loading logic into a reusable function
   suspend fun loadChannels() {
     // REMOVED: isLoadInProgress check. It caused the deadlock.
@@ -133,10 +172,28 @@ fun ChannelsScreen(
 
     try {
       // 1. Safety Check
-      if (!StreamChatProvider.isInitialized()) {
+      if (!effectiveIsStreamInitialized()) {
         Log.e("ChannelsScreen", "Stream Chat not initialized")
         channels = emptyList()
         return // finally block will run
+      }
+
+      // If tests injected custom hooks, use them and skip clientState/proxy accesses
+      if (fetchChannels != null || ensureConnected != null) {
+        try {
+          effectiveEnsureConnected()
+        } catch (e: Exception) {
+          Log.e("ChannelsScreen", "Injected ensureConnected failed", e)
+          channels = emptyList()
+          return
+        }
+        try {
+          channels = effectiveFetchChannels()
+        } catch (e: Exception) {
+          Log.e("ChannelsScreen", "Injected fetchChannels failed", e)
+          channels = emptyList()
+        }
+        return
       }
 
       val chatClient = StreamChatProvider.getClient()
@@ -147,13 +204,7 @@ fun ChannelsScreen(
       if (currentUserState == null) {
         Log.d("ChannelsScreen", "User not connected, connecting now...")
         try {
-          // Use cached Firebase name to speed up connection
-          val displayName = currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
-
-          withTimeout(10000) {
-            StreamChatProvider.connectUser(
-                firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = "")
-          }
+          effectiveEnsureConnected()
         } catch (e: Exception) {
           Log.e("ChannelsScreen", "Failed to connect user", e)
           channels = emptyList()
@@ -164,23 +215,7 @@ fun ChannelsScreen(
       // 3. Query Logic
       try {
         Log.d("ChannelsScreen", "Querying channels for user: ${currentUser.uid}")
-        val filter =
-            Filters.and(
-                Filters.eq("type", "messaging"), Filters.`in`("members", listOf(currentUser.uid)))
-        val request =
-            QueryChannelsRequest(
-                filter = filter,
-                offset = 0,
-                limit = 20,
-                messageLimit = 10 // Explicitly request messages
-                )
-
-        val result =
-            withContext(Dispatchers.IO) {
-              withTimeout(10000) { chatClient.queryChannels(request).await() }
-            }
-
-        channels = result.getOrNull() ?: emptyList()
+        channels = effectiveFetchChannels()
         Log.d(
             "ChannelsScreen",
             "Channels query result: ${channels.size} channels found for user ${currentUser.uid}")

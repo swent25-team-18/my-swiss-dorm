@@ -36,6 +36,7 @@ import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.share.ShareLinkDialog
 import com.android.mySwissDorm.ui.theme.AlmostWhite
+import com.android.mySwissDorm.ui.theme.Black
 import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -448,7 +449,8 @@ fun ViewListingScreen(
                         value = listingUIState.contactMessage,
                         onValueChange = { viewListingViewModel.setContactMessage(it) },
                         placeholder = {
-                          Text(stringResource(R.string.view_listing_contact_announcer))
+                          Text(
+                              stringResource(R.string.view_listing_contact_announcer), color = Gray)
                         },
                         modifier = Modifier.fillMaxWidth().testTag(C.ViewListingTags.CONTACT_FIELD),
                         shape = RoundedCornerShape(16.dp),
@@ -461,7 +463,8 @@ fun ViewListingScreen(
                                 disabledContainerColor = AlmostWhite,
                                 focusedBorderColor = OutlineColor,
                                 unfocusedBorderColor = OutlineColor,
-                                cursorColor = TextColor))
+                                cursorColor = Black,
+                                focusedTextColor = Black))
 
                     // Apply now button (centered, half width, rounded, red or violet)
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

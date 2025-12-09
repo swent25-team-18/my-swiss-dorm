@@ -556,4 +556,34 @@ class AdminPageScreenTest : FirestoreTest() {
           .isEmpty()
     }
   }
+
+  @Test
+  fun fullScreenWorksForCityImage() {
+    setContent()
+    // Add photo to the city form and verify it is displayed
+    viewModel.onImage(photo)
+    composeTestRule.waitUntil {
+      composeTestRule
+          .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+    // Check that full screen mode is present
+    composeTestRule
+        .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+        .performClick()
+    composeTestRule.waitUntil {
+      composeTestRule
+          .onNodeWithTag(C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+    // Check that the admin can exit the admin mode
+    composeTestRule
+        .onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON, useUnmergedTree = true)
+        .performClick()
+    composeTestRule.waitUntil {
+      composeTestRule
+          .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+          .isDisplayed()
+    }
+  }
 }

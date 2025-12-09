@@ -139,7 +139,9 @@ class EditListingScreenTest : FirestoreTest() {
     val s = vm.uiState.value
     assertEquals("1200.0", s.price)
     assertEquals("25", s.sizeSqm)
-    assertTrue(s.isFormValid)
+    // rentalListing1 has no photos; with requireAtLeastOnePhoto enabled the form must be invalid
+    assertTrue(s.pickedImages.isEmpty())
+    assertTrue(!s.isFormValid)
   }
 
   @Test
@@ -173,6 +175,12 @@ class EditListingScreenTest : FirestoreTest() {
     vm.setPrice("1500")
     vm.setSizeSqm("25.0")
     vm.setHousingType(RoomType.STUDIO)
+
+    // Ensure at least one photo is present before saving (required by validation)
+    vm.addPhoto(fakePhoto)
+    composeRule.waitForIdle()
+
+    assertTrue(vm.uiState.value.pickedImages.isNotEmpty())
     assertTrue(vm.uiState.value.isFormValid)
     val accepted = vm.editRentalListing(rentalListing1.uid, context)
     assertTrue(accepted)
@@ -181,6 +189,21 @@ class EditListingScreenTest : FirestoreTest() {
     assertEquals(1500.0, finalDoc.pricePerMonth, 0.0)
     assertEquals(25, finalDoc.areaInM2)
     assertEquals(RoomType.STUDIO, finalDoc.roomType)
+  }
+
+  @Test
+  fun vm_cannot_save_without_photos() = runTest {
+    val vm = EditListingViewModel()
+    vm.getRentalListing(rentalListing1.uid, context)
+
+    composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
+
+    // rentalListing1 has no photos, so form must be invalid and save should fail
+    assertTrue(vm.uiState.value.pickedImages.isEmpty())
+    assertTrue(!vm.uiState.value.isFormValid)
+
+    val ok = vm.editRentalListing(rentalListing1.uid, context)
+    assertTrue(!ok)
   }
 
   @Test
@@ -197,8 +220,16 @@ class EditListingScreenTest : FirestoreTest() {
 
   @Test
   fun editing_listing_saves_to_firestore() = runTest {
-    val vm = EditListingViewModel()
-    setContentFor(vm, rentalListing1.uid)
+    // Use a listing that has an existing photo and inject fake photo repositories so that
+    // photo validation passes and edit does not depend on real storage.
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val fakeCloudRepo =
+        FakePhotoRepositoryCloud(onRetrieve = { fakePhoto }, onUpload = {}, onDelete = true)
+    val vm =
+        EditListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+
+    setContentFor(vm, rentalListing3.uid)
 
     composeRule.waitUntil(5_000) {
       composeRule
@@ -215,7 +246,10 @@ class EditListingScreenTest : FirestoreTest() {
 
     composeRule.onNodeWithText("Save", useUnmergedTree = true).assertIsEnabled().performClick()
 
-    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing1.uid)
+    // Give Firestore some time to persist the edit
+    kotlinx.coroutines.delay(500)
+
+    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing3.uid)
     assertEquals("Cozy Studio - Updated", finalDoc.title)
     assertEquals(1500.0, finalDoc.pricePerMonth, 0.0)
     assertEquals(25, finalDoc.areaInM2)
@@ -275,6 +309,44 @@ class EditListingScreenTest : FirestoreTest() {
             "Please complete all required fields (valid size, price, and starting date).",
             useUnmergedTree = true)
         .assertExists()
+  }
+
+  @Test
+  fun ui_cannot_save_when_all_photos_removed() = runTest {
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val fakeCloudRepo =
+        FakePhotoRepositoryCloud(onRetrieve = { fakePhoto }, onUpload = {}, onDelete = true)
+    val vm =
+        EditListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+    // rentalListing3 is seeded with one photo (fakePhoto.fileName)
+    vm.getRentalListing(rentalListing3.uid, context)
+    composeRule.waitForIdle()
+    setContentFor(vm, rentalListing3.uid)
+
+    // Wait for the Save button to appear
+    composeRule.waitUntil(5_000) {
+      composeRule
+          .onAllNodes(hasTestTag(C.EditListingScreenTags.SAVE_BUTTON), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Initially, there is at least one photo so the form can be valid and Save enabled
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.SAVE_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+
+    // Remove the only existing photo
+    vm.removePhoto(fakePhoto.image, false)
+    composeRule.waitForIdle()
+
+    // After removing all photos the form must be invalid and Save disabled
+    composeRule.waitUntil(5_000) { !vm.uiState.value.isFormValid }
+
+    composeRule
+        .onNodeWithTag(C.EditListingScreenTags.SAVE_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
   }
 
   @Test
@@ -414,11 +486,17 @@ class EditListingScreenTest : FirestoreTest() {
 
   @Test
   fun editing_start_date_persists_to_firestore() = runTest {
-    val vm = EditListingViewModel()
-    vm.getRentalListing(rentalListing1.uid, context)
+    // Use a listing that has an existing photo and fake photo repositories so validation passes.
+    val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ fakePhoto }, {}, true)
+    val fakeCloudRepo =
+        FakePhotoRepositoryCloud(onRetrieve = { fakePhoto }, onUpload = {}, onDelete = true)
+    val vm =
+        EditListingViewModel(
+            photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
+    vm.getRentalListing(rentalListing3.uid, context)
 
     composeRule.waitUntil(5_000) { vm.uiState.value.title.isNotBlank() }
-    setContentFor(vm, rentalListing1.uid)
+    setContentFor(vm, rentalListing3.uid)
 
     composeRule.waitUntil(5_000) {
       composeRule
@@ -452,7 +530,7 @@ class EditListingScreenTest : FirestoreTest() {
     // Give time for Firestore write to complete
     kotlinx.coroutines.delay(500)
 
-    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing1.uid)
+    val finalDoc = RentalListingRepositoryProvider.repository.getRentalListing(rentalListing3.uid)
     assertEquals("Start date should be persisted", vm.uiState.value.startDate, finalDoc.startDate)
   }
 

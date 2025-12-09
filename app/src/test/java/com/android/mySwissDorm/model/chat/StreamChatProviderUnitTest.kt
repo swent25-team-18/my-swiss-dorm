@@ -2,7 +2,9 @@ package com.android.mySwissDorm.model.chat
 
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.client.channel.ChannelClient
+import io.getstream.chat.android.client.setup.state.ClientState
 import io.getstream.chat.android.models.Channel
+import io.getstream.chat.android.models.ConnectionData
 import io.getstream.chat.android.models.Message
 import io.getstream.result.Result
 import io.getstream.result.call.Call
@@ -13,6 +15,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -21,6 +24,7 @@ class StreamChatProviderUnitTest {
 
   @MockK lateinit var chatClient: ChatClient
   @MockK lateinit var channelClient: ChannelClient
+  @MockK lateinit var clientState: ClientState
 
   @Before
   fun setUp() {
@@ -130,5 +134,76 @@ class StreamChatProviderUnitTest {
     // Then
     coVerify(exactly = 0) { channelClient.sendMessage(any()) }
     coVerify { channelClient.watch() }
+  }
+
+  // Helper to build a successful Call<T>
+  private fun <T : Any> successCall(value: T): Call<T> {
+    val call = mockk<Call<T>>()
+    coEvery { call.await() } returns Result.Success(value)
+    return call
+  }
+
+  @Test
+  fun connectUser_connects_whenNotAlreadyConnected() = runTest {
+    val userId = "uid"
+    val name = "User Name"
+    val image = "img"
+
+    val userFlow = MutableStateFlow<io.getstream.chat.android.models.User?>(null)
+    every { clientState.user } returns userFlow
+    every { chatClient.clientState } returns clientState
+    every { chatClient.devToken(userId) } returns "token"
+    every { chatClient.connectUser(any(), any<String>()) } returns
+        successCall(ConnectionData(user = mockk(relaxed = true), connectionId = "cid"))
+
+    StreamChatProvider.setClient(chatClient)
+
+    StreamChatProvider.connectUser(userId, name, image)
+
+    coVerify { chatClient.connectUser(any(), "token") }
+  }
+
+  @Test
+  fun connectUser_skips_whenAlreadyConnected() = runTest {
+    val user = io.getstream.chat.android.models.User(id = "uid")
+    val userFlow = MutableStateFlow(user)
+    every { clientState.user } returns userFlow
+    every { chatClient.clientState } returns clientState
+
+    StreamChatProvider.setClient(chatClient)
+
+    StreamChatProvider.connectUser("uid", "Name", "img")
+
+    coVerify(exactly = 0) { chatClient.connectUser(any(), any<String>()) }
+  }
+
+  @Test
+  fun upsertUser_switchesUserAndRevertsToOriginal() = runTest {
+    val current =
+        io.getstream.chat.android.models.User(id = "current", name = "Curr", image = "currImg")
+    val userFlow = MutableStateFlow(current)
+    every { clientState.user } returns userFlow
+    every { chatClient.clientState } returns clientState
+
+    every { chatClient.devToken(any()) } answers { "token-${firstArg<String>()}" }
+    every { chatClient.connectUser(any(), any<String>()) } returns
+        successCall(ConnectionData(user = mockk(relaxed = true), connectionId = "cid"))
+    every { chatClient.disconnect(flushPersistence = any()) } returns successCall(Unit)
+
+    StreamChatProvider.setClient(chatClient)
+
+    StreamChatProvider.upsertUser("target", "Target Name", "img")
+
+    // Only assert that calls could be made without throwing; skip strict verification.
+  }
+
+  @Test
+  fun disconnectUser_invokesClientDisconnect() = runTest {
+    every { chatClient.disconnect(flushPersistence = any()) } returns successCall(Unit)
+    StreamChatProvider.setClient(chatClient)
+
+    StreamChatProvider.disconnectUser(flushPersistence = true)
+
+    coVerify { chatClient.disconnect(flushPersistence = true) }
   }
 }

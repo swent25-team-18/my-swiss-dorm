@@ -1554,6 +1554,40 @@ class AppNavHostTest : FirestoreTest() {
   }
 
   @Test
+  fun appNavHost_inbox_requestedMessagesButton_navigatesToRequestedMessages() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    delay(500)
+
+    composeTestRule.runOnUiThread { navController.navigate(Screen.Inbox.route) }
+    composeTestRule.waitForIdle()
+
+    // Wait for ChannelsScreen to render
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      composeTestRule
+          .onAllNodes(hasTestTag(com.android.mySwissDorm.resources.C.ChannelsScreenTestTags.ROOT))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Click Requested Messages button (covers onRequestedMessagesClick)
+    composeTestRule
+        .onNode(
+            hasTestTag(
+                com.android.mySwissDorm.resources.C.ChannelsScreenTestTags
+                    .REQUESTED_MESSAGES_BUTTON))
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should navigate to RequestedMessages",
+          Screen.RequestedMessages.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+  }
+
+  @Test
   fun appNavHost_requestedMessages_approve_createsChannel_mocked() = runTest {
     // Setup users
     switchToUser(FakeUser.FakeUser1)

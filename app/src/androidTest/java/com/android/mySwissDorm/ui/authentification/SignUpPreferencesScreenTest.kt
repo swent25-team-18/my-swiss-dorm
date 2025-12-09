@@ -166,7 +166,10 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           errorMsg = null,
           bottomButtonText = "Action",
           onBottomButtonClick = {},
-          onUseCurrentLocationClick = {})
+          onUseCurrentLocationClick = {},
+          onClearClick = {},
+          isButtonEnabled = true,
+          onSkipClick = {})
     }
 
     composeTestRule.onNodeWithText("Action").assertIsNotDisplayed()
@@ -199,7 +202,10 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           errorMsg = errorText,
           bottomButtonText = "Action",
           onBottomButtonClick = {},
-          onUseCurrentLocationClick = {})
+          onUseCurrentLocationClick = {},
+          onClearClick = {},
+          isButtonEnabled = true,
+          onSkipClick = {})
     }
 
     composeTestRule.onNodeWithText(errorText).assertIsDisplayed()
@@ -231,7 +237,10 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           errorMsg = null,
           bottomButtonText = "Action",
           onBottomButtonClick = {},
-          onUseCurrentLocationClick = {})
+          onUseCurrentLocationClick = {},
+          onClearClick = {},
+          isButtonEnabled = true,
+          onSkipClick = {})
     }
     composeTestRule.waitForIdle()
   }
@@ -264,7 +273,10 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           errorMsg = null,
           bottomButtonText = "Action",
           onBottomButtonClick = {},
-          onUseCurrentLocationClick = {})
+          onUseCurrentLocationClick = {},
+          onClearClick = {},
+          isButtonEnabled = true,
+          onSkipClick = {})
     }
 
     composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).performScrollTo().assertIsDisplayed()

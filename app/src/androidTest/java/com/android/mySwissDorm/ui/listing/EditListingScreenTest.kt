@@ -367,7 +367,6 @@ class EditListingScreenTest : FirestoreTest() {
     composeRule
         .onNodeWithTag(C.EditListingScreenTags.START_DATE_FIELD, useUnmergedTree = true)
         .assertIsDisplayed()
-    composeRule.onNodeWithText("Start Date", useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test

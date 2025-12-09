@@ -348,7 +348,7 @@ fun ViewListingScreen(
 
                 // Bullet section
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
-                  BulletRow("${listing.roomType}")
+                  BulletRow(listing.roomType.getName(context))
                   BulletRow(
                       "${listing.pricePerMonth}${stringResource(R.string.view_listing_price_per_month)}")
                   BulletRow("${listing.areaInM2}m²")

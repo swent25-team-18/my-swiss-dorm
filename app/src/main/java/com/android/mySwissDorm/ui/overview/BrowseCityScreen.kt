@@ -677,13 +677,14 @@ private fun RoomTypeFilterContent(
     selectedRoomTypes: Set<RoomType>,
     onSelectionChange: (Set<RoomType>) -> Unit
 ) {
+  val context = LocalContext.current
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
     RoomType.entries.forEach { roomType ->
       Row(
           modifier = Modifier.fillMaxWidth(),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(roomType.toString(), color = TextColor)
+            Text(roomType.getName(context), color = TextColor)
             Checkbox(
                 checked = roomType in selectedRoomTypes,
                 onCheckedChange = { checked ->

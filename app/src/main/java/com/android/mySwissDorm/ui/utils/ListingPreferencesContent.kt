@@ -34,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -85,6 +86,7 @@ fun ListingPreferencesContent(
     onUseCurrentLocationClick: () -> Unit
 ) {
   val scrollState = rememberScrollState()
+  val context = LocalContext.current
 
   if (showLocationDialog) {
     CustomLocationDialog(
@@ -209,7 +211,7 @@ fun ListingPreferencesContent(
                         FilterChip(
                             selected = isSelected,
                             onClick = { onToggleRoomType(type) },
-                            label = { Text(type.toString()) },
+                            label = { Text(type.getName(context)) },
                             leadingIcon =
                                 if (isSelected) {
                                   { Icon(Icons.Default.Check, contentDescription = null) }

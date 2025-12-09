@@ -429,6 +429,11 @@
     <string name="guest_sign_in_pop_up_sign_in_to_create_profile">Connectez-vous pour créer un profil</string>
     <string name="guest_sign_in_pop_up_sign_in">Connexion</string>
 
+    <!-- TranslatableText -->
+    <string name="translatable_text_translate_button">Traduire</string>
+    <string name="translatable_text_see_original_button">Voir l\'original</string>
+
+
     <!-- AddPhotoButton -->
     <string name="add_photo_button_take_photo">Prendre une photo</string>
     <string name="add_photo_button_from_gallery">Choisir depuis la galerie</string>

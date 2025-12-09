@@ -166,7 +166,7 @@ private fun RentalListing.toCardUI(context: Context): ListingCardUI {
 
   return ListingCardUI(
       title = title,
-      leftBullets = listOf(roomType.toString(), price, area),
+      leftBullets = listOf(roomType.getName(context), price, area),
       rightBullets = listOf(start, resName),
       listingUid = uid,
       location = location)

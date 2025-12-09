@@ -583,7 +583,7 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.setContent { EditPreferencesScreen(viewModel = vm, onBack = {}) }
     compose.waitForIdle()
     compose.onNodeWithTag("price_slider").performTouchInput { swipeRight() }
-    val roomType = RoomType.STUDIO.toString()
+    val roomType = RoomType.STUDIO.getName(context)
     compose.onNodeWithText(roomType).performScrollTo().performClick()
     compose.onNodeWithText("Save Preferences").performClick()
     var success = false

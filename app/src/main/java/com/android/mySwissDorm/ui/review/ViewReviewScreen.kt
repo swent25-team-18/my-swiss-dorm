@@ -190,7 +190,7 @@ fun ViewReviewScreen(
 
               // Bullet section
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.BULLETS)) {
-                BulletRow("${review.roomType}")
+                BulletRow(review.roomType.getName(context))
                 BulletRow(
                     "${review.pricePerMonth}${stringResource(R.string.view_review_price_per_month)}")
                 BulletRow("${review.areaInM2}m²")

@@ -140,7 +140,7 @@ class RentalListingRepositoryFirestore(
       val postedAt = document.getTimestamp("postedAt") ?: return null
       val roomTypeStr = document.getString("roomType") ?: return null
       val roomType =
-          RoomType.entries.firstOrNull { it.name == roomTypeStr || it.value == roomTypeStr }
+          RoomType.entries.firstOrNull { it.name == roomTypeStr }
               ?: return null // will take the value if its in the num otherwise null for safety
       val pricePerMonth = document.getDouble("pricePerMonth") ?: return null
       val areaInM2 = document.getLong("areaInM2")?.toInt() ?: return null

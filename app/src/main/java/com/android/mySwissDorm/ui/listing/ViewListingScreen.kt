@@ -21,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -240,13 +239,20 @@ fun ViewListingScreen(
                     modifier = Modifier.testTag(C.ViewListingTags.POI_DISTANCES))
 
                 if (listingUIState.isLoadingPOIs) {
-                  Text(
-                      text = stringResource(R.string.poi_loading_message),
-                      style =
-                          MaterialTheme.typography.bodyMedium.copy(
-                              color = MaterialTheme.colorScheme.onSurfaceVariant,
-                              fontStyle = FontStyle.Italic),
-                      modifier = Modifier.padding(start = 16.dp, top = 2.dp))
+                  Row(
+                      modifier = Modifier.padding(start = 16.dp, top = 2.dp),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MainColor)
+                        Text(
+                            stringResource(R.string.poi_loading_message),
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.6f)))
+                      }
                 } else if (poiDistances.isNotEmpty()) {
                   Column(
                       modifier = Modifier.padding(start = 16.dp),

@@ -19,7 +19,8 @@ import org.json.JSONObject
 class WalkingRouteService(
     private val client: OkHttpClient,
     private val apiKey: String =
-        "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjczNjc4NjIyMGE3ZDQ4MWNiZmFkNGUwNDkyOGVmNmU3IiwiaCI6Im11cm11cjY0In0="
+        com.android.mySwissDorm.BuildConfig.OPENROUTESERVICE_API_KEY.takeIf { it.isNotBlank() }
+            ?: ""
 ) {
   private val cache = mutableMapOf<String, Pair<Double, Long>>()
   private val CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000L // 7 days
@@ -34,10 +35,27 @@ class WalkingRouteService(
   }
 
   /**
-   * Searches for supermarkets using Photon API. NOW PERFORMING PARALLEL SEARCHES for specific
-   * brands to ensure they are found.
+   * Asynchronously searches for supermarkets and major grocery chains near a given location using
+   * the Photon API.
+   *
+   * To ensure comprehensive coverage, this function performs **parallel searches** for specific
+   * high-priority Swiss brands ("Migros", "Denner", "Coop") alongside a generic "supermarket"
+   * query. This strategy helps find locations that may be indexed solely by brand name or solely by
+   * category.
+   *
+   * **Key Implementation Details:**
+   * - **Concurrency:** Utilizes [async] to launch simultaneous network requests for all search
+   *   terms, reducing total wait time.
+   * - **Deduplication:** Results are aggregated into a map keyed by the shop's unique ID (`uid`) to
+   *   ensure the final list contains no duplicates.
+   * - **Context:** Execution is confined to [Dispatchers.IO], making it safe to call from the main
+   *   thread.
+   *
+   * @param location The [Location] object representing the center point of the search area.
+   * @return A [List] of unique [Supermarket] objects. Returns an empty list if no shops are found
+   *   or if the API calls fail.
    */
-  suspend fun searchNearbyShops(location: Location, radiusMeters: Int = 2000): List<Supermarket> =
+  suspend fun searchNearbyShops(location: Location): List<Supermarket> =
       withContext(Dispatchers.IO) {
         val uniqueShops = mutableMapOf<String, Supermarket>()
         val searchTerms = listOf("Migros", "Denner", "Coop", "supermarket")

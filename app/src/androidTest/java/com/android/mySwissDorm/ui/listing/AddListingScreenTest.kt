@@ -81,12 +81,13 @@ class AddListingScreenTest : FirestoreTest() {
     val photo = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
     val fakeLocalRepo = FakePhotoRepository.commonLocalRepo({ photo }, {}, true)
     val vm = AddListingViewModel(photoRepositoryLocal = fakeLocalRepo)
-    runTest {
+    runBlocking {
       vm.addPhoto(photo)
-      // Wait for the photo to be added to the state
+      // Wait for the photo to be added to the state using real delays
+      // This is more reliable in CI than test dispatcher advancement
       var attempts = 0
-      while (vm.uiState.value.pickedImages.isEmpty() && attempts < 50) {
-        delay(10)
+      while (vm.uiState.value.pickedImages.isEmpty() && attempts < 100) {
+        delay(50)
         attempts++
       }
     }
@@ -176,7 +177,8 @@ class AddListingScreenTest : FirestoreTest() {
     val vm = createViewModelWithPhoto()
     setContentWithViewModel(vm) { uid -> capturedUid = uid }
 
-    // Wait for the ViewModel to initialize
+    // Wait for the ViewModel to initialize and photo to be reflected in UI
+    composeRule.waitUntil(5_000) { vm.uiState.value.pickedImages.isNotEmpty() }
     composeRule.waitForIdle()
 
     val confirmBtn =

@@ -28,6 +28,7 @@ data class ListingFormState(
     val showFullScreenImages: Boolean = false,
     val fullScreenImagesIndex: Int = 0,
     val requireResidencyName: Boolean = false,
+    val requireAtLeastOnePhoto: Boolean = false,
     val isSubmitting: Boolean = false,
     val ownerName: String? = null,
 ) {
@@ -38,6 +39,7 @@ data class ListingFormState(
       val priceOk = InputSanitizers.validateFinal<Int>(FieldType.Price, price).isValid
       val descOk = InputSanitizers.validateFinal<String>(FieldType.Description, description).isValid
       val residencyOk = !requireResidencyName || residencyName.isNotEmpty()
+      val photosOk = !requireAtLeastOnePhoto || pickedImages.isNotEmpty()
 
       val locationOk =
           if (residencyName == "Private Accommodation") {
@@ -46,6 +48,6 @@ data class ListingFormState(
             true
           }
 
-      return titleOk && descOk && sizeOk && priceOk && residencyOk && locationOk
+      return titleOk && descOk && sizeOk && priceOk && residencyOk && photosOk && locationOk
     }
 }

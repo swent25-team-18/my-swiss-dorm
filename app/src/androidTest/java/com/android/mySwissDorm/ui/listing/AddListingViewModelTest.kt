@@ -14,6 +14,7 @@ import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.ui.profile.MainDispatcherRule
 import com.android.mySwissDorm.utils.FakePhotoRepository
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
@@ -25,7 +26,9 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
 import java.io.File
 import java.net.URL
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -34,6 +37,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -47,6 +51,8 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class AddListingViewModelTest : FirestoreTest() {
+
+  @get:Rule val mainDispatcherRule = MainDispatcherRule()
 
   private val context = ApplicationProvider.getApplicationContext<Context>()
   private val photo1 = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
@@ -111,6 +117,7 @@ class AddListingViewModelTest : FirestoreTest() {
     assertFalse("Empty form must not be considered valid", vm.uiState.value.isFormValid)
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun vm_marks_complete_valid_form_as_valid() = runTest {
     switchToUser(FakeUser.FakeUser1)
@@ -126,13 +133,9 @@ class AddListingViewModelTest : FirestoreTest() {
     vm.setStartDate(Timestamp.now())
     vm.addPhoto(photo1)
 
-    // Wait for photo to be added to the state
-    var attempts = 0
-    while (vm.uiState.value.pickedImages.isEmpty() && attempts < 50) {
-      delay(10)
-      attempts++
-    }
-    assertTrue(!vm.uiState.value.pickedImages.isEmpty())
+    // Wait for photo to be added to the state by advancing the test dispatcher
+    advanceUntilIdle()
+    assertTrue("Photo should be added to pickedImages", vm.uiState.value.pickedImages.isNotEmpty())
 
     val s = vm.uiState.value
     assertTrue("Form with all required, correctly formatted fields must be valid", s.isFormValid)
@@ -182,11 +185,7 @@ class AddListingViewModelTest : FirestoreTest() {
     vm.setPrice("1.0")
     vm.addPhoto(photo1)
     // Wait for photo to be added
-    var attempts = 0
-    while (vm.uiState.value.pickedImages.isEmpty() && attempts < 50) {
-      delay(10)
-      attempts++
-    }
+    advanceUntilIdle()
     assertTrue("Size 1.0 and price 1.0 should be valid", vm.uiState.value.isFormValid)
 
     // Upper edge valid
@@ -194,11 +193,7 @@ class AddListingViewModelTest : FirestoreTest() {
     vm.setPrice("9999.0")
     vm.addPhoto(photo1)
     // Wait for photo to be added
-    attempts = 0
-    while (vm.uiState.value.pickedImages.isEmpty() && attempts < 50) {
-      delay(10)
-      attempts++
-    }
+    advanceUntilIdle()
     assertTrue("Upper bounds inside limit should be valid", vm.uiState.value.isFormValid)
 
     // Size over max (typing clamps to 1000.0)
@@ -210,11 +205,7 @@ class AddListingViewModelTest : FirestoreTest() {
     vm.setPrice("10001")
     vm.addPhoto(photo1)
     // Wait for photo to be added
-    attempts = 0
-    while (vm.uiState.value.pickedImages.isEmpty() && attempts < 50) {
-      delay(10)
-      attempts++
-    }
+    advanceUntilIdle()
     assertTrue(
         "Typing clamps price to 10000; validator should still consider form valid",
         vm.uiState.value.isFormValid)
@@ -272,11 +263,7 @@ class AddListingViewModelTest : FirestoreTest() {
                 name = "Custom flat", latitude = 46.52, longitude = 6.63)
         vm.setCustomLocation(customLoc)
         // Wait for photo to be added
-        var attempts = 0
-        while (vm.uiState.value.pickedImages.isEmpty() && attempts < 50) {
-          delay(10)
-          attempts++
-        }
+        advanceUntilIdle()
         assertTrue(vm.uiState.value.isFormValid)
         vm.submitForm({}, context)
         assertNotEquals("At least one field is not valid", vm.uiState.value.errorMsg)
@@ -313,11 +300,7 @@ class AddListingViewModelTest : FirestoreTest() {
     vm.setStartDate(Timestamp.now())
     vm.addPhoto(photo1)
     // Wait for photo to be added
-    var attempts = 0
-    while (vm.uiState.value.pickedImages.isEmpty() && attempts < 50) {
-      delay(10)
-      attempts++
-    }
+    advanceUntilIdle()
     assertTrue("Form itself should be valid", vm.uiState.value.isFormValid)
     vm.submitForm({ fail("onConfirm must not be called for guest users") }, context)
     assertEquals("Guest users cannot create listings", vm.uiState.value.errorMsg)

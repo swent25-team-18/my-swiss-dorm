@@ -26,6 +26,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -318,5 +319,116 @@ class RequestedMessagesViewModelTest {
         // Then
         val state = viewModel.uiState.value
         assert(state.error?.contains(failedString) == true)
+      }
+
+  @Test
+  fun loadMessages_repositoryThrows_setsError() =
+      runTest(testDispatcher) {
+        every { context.getString(R.string.unexpected_error) } returns "Unexpected"
+        coEvery { requestedMessageRepository.getPendingMessagesForUser("currentUserId") } throws
+            Exception("boom")
+
+        viewModel.loadMessages(context)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.error?.contains("Unexpected") == true)
+      }
+
+  @Test
+  fun approveMessage_connectUserFails_stillCreatesChannel() =
+      runTest(testDispatcher) {
+        val messageId = "msg_connect_fail"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "list1",
+                listingTitle = "Title",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = System.currentTimeMillis())
+
+        val senderProfile = mockk<Profile>(relaxed = true)
+        every { senderProfile.userInfo } returns
+            UserInfo(name = "Sender", lastName = "Name", email = "", phoneNumber = "")
+        val myProfile = mockk<Profile>(relaxed = true)
+        every { myProfile.userInfo } returns
+            UserInfo(name = "Me", lastName = " User", email = "", phoneNumber = "")
+
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+        coEvery { profileRepository.getProfile("senderId") } returns senderProfile
+        coEvery { profileRepository.getProfile("currentUserId") } returns myProfile
+
+        every { StreamChatProvider.isInitialized() } returns true
+        coEvery { StreamChatProvider.connectUser(any(), any(), any()) } throws
+            RuntimeException("connect fail")
+        // Upsert succeeds
+        coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } returns Unit
+        coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } returns
+            "channel:id"
+
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Even though connect failed, channel creation should still be attempted
+        coVerify { StreamChatProvider.upsertUser("senderId", "Sender Name", "") }
+        coVerify {
+          StreamChatProvider.createChannel(
+              channelType = "messaging",
+              channelId = null,
+              memberIds = listOf("senderId", "currentUserId"),
+              extraData = mapOf("name" to "Chat"),
+              initialMessageText = "Hello")
+        }
+      }
+
+  @Test
+  fun approveMessage_upsertFails_stillCreatesChannel() =
+      runTest(testDispatcher) {
+        val messageId = "msg_upsert_fail"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "list1",
+                listingTitle = "Title",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = System.currentTimeMillis())
+
+        val senderProfile = mockk<Profile>(relaxed = true)
+        every { senderProfile.userInfo } returns
+            UserInfo(name = "Sender", lastName = "Name", email = "", phoneNumber = "")
+        val myProfile = mockk<Profile>(relaxed = true)
+        every { myProfile.userInfo } returns
+            UserInfo(name = "Me", lastName = " User", email = "", phoneNumber = "")
+
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+        coEvery { profileRepository.getProfile("senderId") } returns senderProfile
+        coEvery { profileRepository.getProfile("currentUserId") } returns myProfile
+
+        every { StreamChatProvider.isInitialized() } returns true
+        coEvery { StreamChatProvider.connectUser(any(), any(), any()) } returns Unit
+        coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } throws
+            RuntimeException("upsert fail")
+        coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } returns
+            "channel:id"
+
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Create channel still called even if upsert failed
+        coVerify {
+          StreamChatProvider.createChannel(
+              channelType = "messaging",
+              channelId = null,
+              memberIds = listOf("senderId", "currentUserId"),
+              extraData = mapOf("name" to "Chat"),
+              initialMessageText = "Hello")
+        }
       }
 }

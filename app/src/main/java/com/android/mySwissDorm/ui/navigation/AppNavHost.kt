@@ -74,6 +74,7 @@ import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.utils.SignInPopUp
 import com.google.firebase.auth.FirebaseAuth
+import io.getstream.chat.android.models.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -106,6 +107,10 @@ fun AppNavHost(
     navActionsExternal: NavigationActions? = null,
     navigationViewModel: NavigationViewModel = viewModel(),
     activity: MainActivity? = null,
+    // Test overrides to avoid Stream Chat mocking in instrumentation
+    isStreamInitializedOverride: (() -> Boolean)? = null,
+    ensureConnectedOverride: (suspend () -> Unit)? = null,
+    fetchChannelsOverride: (suspend () -> List<Channel>)? = null,
 ) {
   val navController = navActionsExternal?.navController() ?: rememberNavController()
 
@@ -231,6 +236,9 @@ fun AppNavHost(
                       },
                       requestedMessagesCount = requestedMessagesCount,
                       refreshKey = channelsRefreshKey,
+                      isStreamInitialized = isStreamInitializedOverride,
+                      ensureConnected = ensureConnectedOverride,
+                      fetchChannels = fetchChannelsOverride,
                       modifier = Modifier.padding(paddingValues))
                 }
           }

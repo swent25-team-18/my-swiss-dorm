@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.chat
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -52,12 +53,30 @@ import com.google.firebase.auth.FirebaseAuth
 import io.getstream.chat.android.client.api.models.QueryChannelsRequest
 import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.Filters
+import io.getstream.result.Result
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+
+@VisibleForTesting
+suspend fun defaultFetchChannelsForTest(
+    currentUserId: String,
+    queryChannels: suspend (QueryChannelsRequest) -> Result<List<Channel>> = { request ->
+      val chatClient = StreamChatProvider.getClient()
+      withTimeout(10000) { chatClient.queryChannels(request).await() }
+    }
+): List<Channel> {
+  val filter =
+      Filters.and(Filters.eq("type", "messaging"), Filters.`in`("members", listOf(currentUserId)))
+  val request =
+      QueryChannelsRequest(
+          filter = filter, offset = 0, limit = 20, messageLimit = 10 // Explicitly request messages
+          )
+  return withContext(Dispatchers.IO) { queryChannels(request) }.getOrNull() ?: emptyList()
+}
 
 /**
  * Channels screen displaying a WhatsApp-like interface for browsing and searching chat channels.
@@ -142,25 +161,7 @@ fun ChannelsScreen(
             }
           }
   val effectiveFetchChannels: suspend () -> List<Channel> =
-      fetchChannels
-          ?: {
-            val chatClient = StreamChatProvider.getClient()
-            val filter =
-                Filters.and(
-                    Filters.eq("type", "messaging"),
-                    Filters.`in`("members", listOf(currentUser.uid)))
-            val request =
-                QueryChannelsRequest(
-                    filter = filter,
-                    offset = 0,
-                    limit = 20,
-                    messageLimit = 10 // Explicitly request messages
-                    )
-            withContext(Dispatchers.IO) {
-                  withTimeout(10000) { chatClient.queryChannels(request).await() }
-                }
-                .getOrNull() ?: emptyList()
-          }
+      fetchChannels ?: { defaultFetchChannelsForTest(currentUser.uid) }
 
   // Extract channel loading logic into a reusable function
   suspend fun loadChannels() {

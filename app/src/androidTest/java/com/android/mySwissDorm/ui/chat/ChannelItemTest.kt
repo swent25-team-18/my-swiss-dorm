@@ -1,10 +1,12 @@
 package com.android.mySwissDorm.ui.chat
 
+import android.net.Uri
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -220,6 +222,94 @@ class ChannelItemTest {
     }
 
     compose.onNodeWithText("Deduced User").assertIsDisplayed()
+  }
+
+  @Test
+  fun channelItem_retrievesPhoto_whenProfilePicturePresent() {
+    val currentUserId = "user1"
+    val otherUserId = "user2"
+    val channel =
+        Channel(
+            id = "channel1",
+            members =
+                listOf(
+                    Member(user = User(id = currentUserId)), Member(user = User(id = otherUserId))),
+            lastMessageAt = Date())
+
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Other",
+                    lastName = "User",
+                    email = "e",
+                    phoneNumber = "1",
+                    profilePicture = "pic1"),
+            userSettings = com.android.mySwissDorm.model.profile.UserSettings(),
+            ownerId = otherUserId)
+    profileRepository.stubProfile(otherUserId, profile)
+
+    var retrieved = false
+
+    compose.setContent {
+      MySwissDormAppTheme {
+        ChannelItem(
+            channel = channel,
+            currentUserId = currentUserId,
+            onChannelClick = {},
+            retrievePhoto = {
+              retrieved = true
+              Photo(Uri.parse("file://pic1"), "pic1")
+            })
+      }
+    }
+
+    compose.waitForIdle()
+    assert(retrieved)
+  }
+
+  @Test
+  fun channelItem_handlesPhotoRetrievalFailure() {
+    val currentUserId = "user1"
+    val otherUserId = "user2"
+    val channel =
+        Channel(
+            id = "channel1",
+            members =
+                listOf(
+                    Member(user = User(id = currentUserId)), Member(user = User(id = otherUserId))),
+            lastMessageAt = Date())
+
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Other",
+                    lastName = "User",
+                    email = "e",
+                    phoneNumber = "1",
+                    profilePicture = "pic2"),
+            userSettings = com.android.mySwissDorm.model.profile.UserSettings(),
+            ownerId = otherUserId)
+    profileRepository.stubProfile(otherUserId, profile)
+
+    var attempted = false
+
+    compose.setContent {
+      MySwissDormAppTheme {
+        ChannelItem(
+            channel = channel,
+            currentUserId = currentUserId,
+            onChannelClick = {},
+            retrievePhoto = {
+              attempted = true
+              throw RuntimeException("fail")
+            })
+      }
+    }
+
+    compose.waitForIdle()
+    assert(attempted)
   }
 }
 

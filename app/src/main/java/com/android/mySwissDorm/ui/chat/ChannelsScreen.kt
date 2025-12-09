@@ -2,7 +2,6 @@ package com.android.mySwissDorm.ui.chat
 
 import android.content.Context
 import android.util.Log
-import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.resources.C
@@ -50,9 +50,11 @@ import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.Transparent
 import com.android.mySwissDorm.ui.theme.White
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import io.getstream.chat.android.client.api.models.QueryChannelsRequest
 import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.Filters
+import io.getstream.chat.android.models.User
 import io.getstream.result.Result
 import java.text.SimpleDateFormat
 import java.util.*
@@ -61,7 +63,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
-@VisibleForTesting
 suspend fun defaultFetchChannelsForTest(
     currentUserId: String,
     queryChannels: suspend (QueryChannelsRequest) -> Result<List<Channel>> = { request ->
@@ -76,6 +77,50 @@ suspend fun defaultFetchChannelsForTest(
           filter = filter, offset = 0, limit = 20, messageLimit = 10 // Explicitly request messages
           )
   return withContext(Dispatchers.IO) { queryChannels(request) }.getOrNull() ?: emptyList()
+}
+
+suspend fun defaultEnsureConnected(currentUser: FirebaseUser) {
+  val displayName = currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
+  withTimeout(10000) {
+    StreamChatProvider.connectUser(
+        firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = "")
+  }
+}
+
+suspend fun loadChannelsDefault(
+    currentUser: FirebaseUser,
+    isStreamInitialized: () -> Boolean = { StreamChatProvider.isInitialized() },
+    ensureConnected: suspend () -> Unit = { defaultEnsureConnected(currentUser) },
+    fetchChannels: suspend () -> List<Channel> = { defaultFetchChannelsForTest(currentUser.uid) },
+    getClientStateUser: () -> User? = { StreamChatProvider.getClient().clientState.user.value }
+): List<Channel> {
+  if (!isStreamInitialized()) {
+    Log.e("ChannelsScreen", "Stream Chat not initialized")
+    return emptyList()
+  }
+
+  val currentUserState = getClientStateUser()
+  if (currentUserState == null) {
+    Log.d("ChannelsScreen", "User not connected, connecting now...")
+    try {
+      ensureConnected()
+    } catch (e: Exception) {
+      Log.e("ChannelsScreen", "Failed to connect user", e)
+      return emptyList()
+    }
+  }
+
+  return try {
+    Log.d("ChannelsScreen", "Querying channels for user: ${currentUser.uid}")
+    val fetched = fetchChannels()
+    Log.d(
+        "ChannelsScreen",
+        "Channels query result: ${fetched.size} channels found for user ${currentUser.uid}")
+    fetched
+  } catch (e: Exception) {
+    Log.e("ChannelsScreen", "Error querying channels", e)
+    emptyList()
+  }
 }
 
 /**
@@ -148,18 +193,7 @@ fun ChannelsScreen(
   // Provide injectable hooks (used by tests) with sensible defaults
   val effectiveIsStreamInitialized = isStreamInitialized ?: { StreamChatProvider.isInitialized() }
   val effectiveEnsureConnected: suspend () -> Unit =
-      ensureConnected
-          ?: {
-            val displayName = currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
-            try {
-              withTimeout(10000) {
-                StreamChatProvider.connectUser(
-                    firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = "")
-              }
-            } catch (e: Exception) {
-              throw e
-            }
-          }
+      ensureConnected ?: { defaultEnsureConnected(currentUser) }
   val effectiveFetchChannels: suspend () -> List<Channel> =
       fetchChannels ?: { defaultFetchChannelsForTest(currentUser.uid) }
 
@@ -197,33 +231,12 @@ fun ChannelsScreen(
         return
       }
 
-      val chatClient = StreamChatProvider.getClient()
-      val currentUserState = chatClient.clientState.user.value
-
-      // 2. Connection Logic (Optimized)
-      // Only connect if we are strictly disconnected (null user)
-      if (currentUserState == null) {
-        Log.d("ChannelsScreen", "User not connected, connecting now...")
-        try {
-          effectiveEnsureConnected()
-        } catch (e: Exception) {
-          Log.e("ChannelsScreen", "Failed to connect user", e)
-          channels = emptyList()
-          return // finally block will run
-        }
-      }
-
-      // 3. Query Logic
-      try {
-        Log.d("ChannelsScreen", "Querying channels for user: ${currentUser.uid}")
-        channels = effectiveFetchChannels()
-        Log.d(
-            "ChannelsScreen",
-            "Channels query result: ${channels.size} channels found for user ${currentUser.uid}")
-      } catch (e: Exception) {
-        Log.e("ChannelsScreen", "Error querying channels", e)
-        if (channels.isEmpty()) channels = emptyList()
-      }
+      channels =
+          loadChannelsDefault(
+              currentUser = currentUser,
+              isStreamInitialized = effectiveIsStreamInitialized,
+              ensureConnected = effectiveEnsureConnected,
+              fetchChannels = effectiveFetchChannels)
     } catch (e: Exception) {
       Log.e("ChannelsScreen", "Unexpected error in loadChannels", e)
       channels = emptyList()
@@ -426,7 +439,10 @@ internal fun ChannelItem(
     channel: Channel,
     currentUserId: String,
     onChannelClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    retrievePhoto: suspend (String) -> Photo? = {
+      PhotoRepositoryProvider.cloud_repository.retrievePhoto(it)
+    }
 ) {
   // Get the other user (not current user)
   val otherMember = channel.members.find { it.user.id != currentUserId }
@@ -475,11 +491,8 @@ internal fun ChannelItem(
         val profilePicName = profile.userInfo.profilePicture
         if (!profilePicName.isNullOrBlank()) {
           try {
-            val photo =
-                withContext(Dispatchers.IO) {
-                  PhotoRepositoryProvider.cloud_repository.retrievePhoto(profilePicName)
-                }
-            displayedImage = photo.image
+            val photo = withContext(Dispatchers.IO) { retrievePhoto(profilePicName) }
+            displayedImage = photo?.image
           } catch (e: Exception) {
             Log.e("ChannelItem", "Failed to retrieve photo $profilePicName", e)
           }

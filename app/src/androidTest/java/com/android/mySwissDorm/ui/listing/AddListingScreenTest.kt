@@ -287,8 +287,9 @@ class AddListingScreenTest : FirestoreTest() {
             hasTestTag(C.AddListingScreenTags.DESC_FIELD) and hasSetTextAction(),
             useUnmergedTree = true)
         .performTextInput("Description")
+    vm.setResidency("Vortex")
     // Select a residency (now required)
-    selectResidency("Vortex")
+    // selectResidency("Vortex")
 
     // Button should be enabled with all valid fields including photo
     composeRule

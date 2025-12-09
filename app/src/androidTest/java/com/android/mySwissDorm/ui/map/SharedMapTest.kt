@@ -5,6 +5,9 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.resources.C.SharedMapTags.IMAGE_COUNTER
+import com.android.mySwissDorm.resources.C.SharedMapTags.NEXT_IMAGE
+import com.android.mySwissDorm.resources.C.SharedMapTags.PREVIOUS_IMAGE
 import com.android.mySwissDorm.ui.overview.ListingCardUI
 import org.junit.Rule
 import org.junit.Test
@@ -22,7 +25,19 @@ class SharedMapTest {
           leftBullets = listOf("Studio", "1000.-"),
           rightBullets = listOf("Available"),
           listingUid = "uid1",
-          image = Uri.parse("http://fake.uri/image.jpg"),
+          image = listOf(Uri.parse("http://fake.uri/image.jpg")),
+          location = location)
+  private val listingWithMultipleImages =
+      ListingCardUI(
+          title = "Listing Multiple",
+          leftBullets = listOf("Studio", "1200.-"),
+          rightBullets = listOf("Available"),
+          listingUid = "uid2",
+          image =
+              listOf(
+                  Uri.parse("http://fake.uri/image1.jpg"),
+                  Uri.parse("http://fake.uri/image2.jpg"),
+                  Uri.parse("http://fake.uri/image3.jpg")),
           location = location)
 
   @Test
@@ -93,5 +108,35 @@ class SharedMapTest {
 
     composeTestRule.onNodeWithText("Listing With Image").performClick()
     assert(clickedId == "uid1")
+  }
+
+  @Test
+  fun smallListingCard_singleImage_hidesNavigationArrows() {
+    composeTestRule.setContent {
+      SmallListingPreviewCard(listing = listingWithImage, onClick = {}, onClose = {})
+    }
+    composeTestRule.onNodeWithTag(NEXT_IMAGE).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(PREVIOUS_IMAGE).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(IMAGE_COUNTER).assertDoesNotExist()
+  }
+
+  @Test
+  fun smallListingCard_multipleImages_navigatesCorrectly() {
+    composeTestRule.setContent {
+      SmallListingPreviewCard(listing = listingWithMultipleImages, onClick = {}, onClose = {})
+    }
+    composeTestRule.onNodeWithText("1/3").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(PREVIOUS_IMAGE).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(NEXT_IMAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NEXT_IMAGE).performClick()
+    composeTestRule.onNodeWithText("2/3").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(PREVIOUS_IMAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NEXT_IMAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NEXT_IMAGE).performClick()
+    composeTestRule.onNodeWithText("3/3").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(NEXT_IMAGE).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(PREVIOUS_IMAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(PREVIOUS_IMAGE).performClick()
+    composeTestRule.onNodeWithText("2/3").assertIsDisplayed()
   }
 }

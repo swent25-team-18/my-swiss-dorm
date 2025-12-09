@@ -376,4 +376,10 @@ object C {
     const val LAST_UPDATED_TEXT = "offlineBannerLastUpdatedText"
     const val NO_SYNC_TEXT = "offlineBannerNoSyncText"
   }
+
+  object SharedMapTags {
+    const val IMAGE_COUNTER = "imageCounter"
+    const val PREVIOUS_IMAGE = "previousImage"
+    const val NEXT_IMAGE = "nextImage"
+  }
 }

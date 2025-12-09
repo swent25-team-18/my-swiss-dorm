@@ -80,7 +80,7 @@ class BookmarkedListingsViewModel(
             if (listing.imageUrls.isNotEmpty()) {
               try {
                 val photo = photoRepositoryCloud.retrievePhoto(listing.imageUrls.first())
-                listingCardUI = listingCardUI.copy(image = photo.image)
+                listingCardUI = listingCardUI.copy(image = listOf(photo.image))
               } catch (_: NoSuchElementException) {
                 Log.e(
                     "BookmarkedListingsViewModel",

@@ -97,6 +97,8 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
           auth = FirebaseEmulator.auth,
           profiles = ProfileRepositoryFirestore(FirebaseEmulator.firestore))
 
+  private val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+
   private suspend fun awaitUntil(timeoutMs: Long = 5000, intervalMs: Long = 25, p: () -> Boolean) {
     val start = System.currentTimeMillis()
     while (!p()) {
@@ -108,7 +110,6 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
   @Test
   fun refresh_loadsBlockedContacts_whenUsersAreBlocked() = runTest {
     // Block a user
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     val profile = profileRepo.getProfile(currentUserUid)
     val updatedProfile =
         profile.copy(
@@ -155,24 +156,14 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
     assertEquals(blockedUser1Uid, blockedContacts[0].uid)
     assertEquals("Blocked User1", blockedContacts[0].displayName)
 
-    // Verify in Firestore
-    val doc =
-        FirebaseEmulator.firestore
-            .collection(PROFILE_COLLECTION_PATH)
-            .document(currentUserUid)
-            .get()
-            .await()
-    val userInfo = doc.get("userInfo") as? Map<*, *>
-    @Suppress("UNCHECKED_CAST")
-    val blockedIds =
-        (userInfo?.get("blockedUserIds") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+    // Verify via repository
+    val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertTrue(blockedUser1Uid in blockedIds)
   }
 
   @Test
   fun unblockUser_removesUserFromBlockedList() = runTest {
     // First block a user
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     val profile = profileRepo.getProfile(currentUserUid)
     val updatedProfile =
         profile.copy(
@@ -195,17 +186,8 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
     // Verify user is removed from blocked list
     assertEquals(0, vm.uiState.value.blockedContacts.size)
 
-    // Verify in Firestore
-    val doc =
-        FirebaseEmulator.firestore
-            .collection(PROFILE_COLLECTION_PATH)
-            .document(currentUserUid)
-            .get()
-            .await()
-    val userInfo = doc.get("userInfo") as? Map<*, *>
-    @Suppress("UNCHECKED_CAST")
-    val blockedIds =
-        (userInfo?.get("blockedUserIds") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+    // Verify via repository
+    val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertFalse(blockedUser1Uid in blockedIds)
   }
 
@@ -232,7 +214,6 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
   fun refresh_handlesNonExistentBlockedUser() = runTest {
     // Block a user that doesn't exist in profiles
     val nonExistentUid = "non-existent-uid"
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     val profile = profileRepo.getProfile(currentUserUid)
     val updatedProfile =
         profile.copy(

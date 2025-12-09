@@ -25,7 +25,6 @@ import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -218,12 +217,8 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
     assertTrue(vm.uiState.value.isBlockedByOwner)
     assertEquals(blockedUserUid, FirebaseEmulator.auth.currentUser!!.uid)
 
-    // Verify in Firestore
-    val doc = FirebaseEmulator.firestore.collection("profiles").document(ownerUid).get().await()
-    val userInfo = doc.get("userInfo") as? Map<*, *>
-    @Suppress("UNCHECKED_CAST")
-    val blockedIds =
-        (userInfo?.get("blockedUserIds") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+    // Verify via repository
+    val blockedIds = profileRepo.getBlockedUserIds(ownerUid)
     assertTrue(blockedUserUid in blockedIds)
   }
 

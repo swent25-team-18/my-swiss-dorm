@@ -21,7 +21,6 @@ import com.android.mySwissDorm.utils.FirestoreTest
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -116,13 +115,8 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     // Wait for the blocked status to update in the ViewModel
     waitUntil { vm.uiState.value.isBlocked }
 
-    // Verify blocked status in Firestore
-    val doc =
-        FirebaseEmulator.firestore.collection("profiles").document(currentUserUid).get().await()
-    val userInfo = doc.get("userInfo") as? Map<*, *>
-    @Suppress("UNCHECKED_CAST")
-    val blockedIds =
-        (userInfo?.get("blockedUserIds") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+    // Verify blocked status via repository
+    val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertTrue("User should be blocked after blockUser call", targetUserUid in blockedIds)
 
     // Verify ViewModel state is updated
@@ -207,13 +201,8 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     // Wait for the blocked status to update in the ViewModel
     waitUntil { vm.uiState.value.isBlocked }
 
-    // Verify blocked status in Firestore
-    val doc =
-        FirebaseEmulator.firestore.collection("profiles").document(currentUserUid).get().await()
-    val userInfo = doc.get("userInfo") as? Map<*, *>
-    @Suppress("UNCHECKED_CAST")
-    val blockedIds =
-        (userInfo?.get("blockedUserIds") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+    // Verify blocked status via repository
+    val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertTrue(targetUserUid in blockedIds)
 
     // Verify ViewModel state is updated
@@ -244,12 +233,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     vm.unblockUser(targetUserUid, onError = {}, context)
     waitUntil { !vm.uiState.value.isBlocked }
 
-    val doc =
-        FirebaseEmulator.firestore.collection("profiles").document(currentUserUid).get().await()
-    val userInfo = doc.get("userInfo") as? Map<*, *>
-    @Suppress("UNCHECKED_CAST")
-    val blockedIds =
-        (userInfo?.get("blockedUserIds") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+    val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertFalse("User should be unblocked after unblockUser call", targetUserUid in blockedIds)
   }
 
@@ -280,12 +264,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
 
     waitUntil { !vm.uiState.value.isBlocked }
 
-    val doc =
-        FirebaseEmulator.firestore.collection("profiles").document(currentUserUid).get().await()
-    val userInfo = doc.get("userInfo") as? Map<*, *>
-    @Suppress("UNCHECKED_CAST")
-    val blockedIds =
-        (userInfo?.get("blockedUserIds") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+    val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertFalse(targetUserUid in blockedIds)
   }
 
@@ -308,12 +287,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
 
     waitUntil { vm.uiState.value.isBlocked }
 
-    val doc =
-        FirebaseEmulator.firestore.collection("profiles").document(currentUserUid).get().await()
-    val userInfo = doc.get("userInfo") as? Map<*, *>
-    @Suppress("UNCHECKED_CAST")
-    val blockedIds =
-        (userInfo?.get("blockedUserIds") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+    val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertTrue(targetUserUid in blockedIds)
   }
 

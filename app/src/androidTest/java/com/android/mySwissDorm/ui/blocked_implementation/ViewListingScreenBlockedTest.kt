@@ -21,7 +21,6 @@ import com.android.mySwissDorm.ui.listing.ViewListingViewModel
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.firestore.FieldValue
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -76,11 +75,13 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
       listingsRepo.addRentalListing(ownerListing)
 
       // Block FakeUser2 from FakeUser1's profile
-      FirebaseEmulator.firestore
-          .collection("profiles")
-          .document(ownerUid)
-          .update("blockedUserIds", FieldValue.arrayUnion(blockedUserUid))
-          .await()
+      val ownerProfile = profileRepo.getProfile(ownerUid)
+      val updatedProfile =
+          ownerProfile.copy(
+              userInfo =
+                  ownerProfile.userInfo.copy(
+                      blockedUserIds = ownerProfile.userInfo.blockedUserIds + blockedUserUid))
+      profileRepo.editProfile(updatedProfile)
 
       // Switch to blocked user for tests
       switchToUser(FakeUser.FakeUser2)
@@ -219,8 +220,10 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
 
     // Verify in Firestore
     val doc = FirebaseEmulator.firestore.collection("profiles").document(ownerUid).get().await()
+    val userInfo = doc.get("userInfo") as? Map<*, *>
     @Suppress("UNCHECKED_CAST")
-    val blockedIds = doc.get("blockedUserIds") as? List<String> ?: emptyList()
+    val blockedIds =
+        (userInfo?.get("blockedUserIds") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
     assertTrue(blockedUserUid in blockedIds)
   }
 

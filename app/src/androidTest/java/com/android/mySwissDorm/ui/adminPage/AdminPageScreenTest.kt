@@ -3,6 +3,7 @@ package com.android.mySwissDorm.ui.adminPage
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -121,7 +122,7 @@ class AdminPageScreenTest : FirestoreTest() {
     setContent()
 
     // Default that i chose is City
-    composeTestRule.onNodeWithText("Image ID").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).performScrollTo().assertIsDisplayed()
     composeTestRule.onNode(hasText("City") and hasSetTextAction()).assertDoesNotExist()
 
     // Switch to Residency
@@ -130,7 +131,7 @@ class AdminPageScreenTest : FirestoreTest() {
     composeTestRule.waitUntil(5_000) {
       viewModel.uiState.selected == AdminPageViewModel.EntityType.RESIDENCY
     }
-    composeTestRule.onNodeWithText("Image ID").assertDoesNotExist()
+    composeTestRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).assertDoesNotExist()
     // Check for Residency-specific fields
     composeTestRule
         .onNode(hasText("Description") and hasSetTextAction())
@@ -184,7 +185,10 @@ class AdminPageScreenTest : FirestoreTest() {
     composeTestRule.waitUntil(5_000) {
       viewModel.uiState.selected == AdminPageViewModel.EntityType.CITY
     }
-    composeTestRule.onNodeWithText("Image ID").performScrollTo().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(C.AdminPageTags.LOCATION_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
     composeTestRule.onNode(hasText("City") and hasSetTextAction()).assertDoesNotExist()
   }
 
@@ -202,7 +206,7 @@ class AdminPageScreenTest : FirestoreTest() {
 
     // Set imageId and location directly via ViewModel for testing
     // (Image ID field uses Website validator which might reject "123", so set directly)
-    viewModel.onImageId("123")
+    viewModel.onImage(photo)
     val testLocation = Location(name = "Lausanne", latitude = 46.5191, longitude = 6.5668)
     viewModel.onLocationConfirm(testLocation)
 
@@ -214,7 +218,7 @@ class AdminPageScreenTest : FirestoreTest() {
     assertEquals(46.5191, state.location?.latitude ?: 0.0, 0.001)
     assertEquals(6.5668, state.location?.longitude ?: 0.0, 0.001)
     assertEquals("A nice city", state.description)
-    assertEquals("123", state.imageId)
+    assertEquals(photo, state.image)
   }
 
   @Test
@@ -237,12 +241,14 @@ class AdminPageScreenTest : FirestoreTest() {
     val location = Location(name = "Genève", latitude = 46.2044, longitude = 6.1432)
     viewModel.onLocationConfirm(location)
     viewModel.onDescription("A beautiful city")
-    viewModel.onImageId("456")
+    viewModel.onImage(photo)
 
     composeTestRule.onNodeWithTag(C.AdminPageTags.SAVE_BUTTON).performClick()
     runTest { assertEquals(1, getCityCount()) }
 
-    composeTestRule.onNodeWithText("Saved successfully!").assertIsDisplayed()
+    composeTestRule.waitUntil("The city has not be posted successfully", 5_000) {
+      composeTestRule.onNodeWithText("Saved successfully!").isDisplayed()
+    }
   }
 
   @Test

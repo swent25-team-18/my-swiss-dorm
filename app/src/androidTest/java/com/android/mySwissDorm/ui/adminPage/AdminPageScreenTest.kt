@@ -126,7 +126,10 @@ class AdminPageScreenTest : FirestoreTest() {
     composeTestRule.onNode(hasText("City") and hasSetTextAction()).assertDoesNotExist()
 
     // Switch to Residency
-    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_RESIDENCY).performClick()
+    composeTestRule
+        .onNodeWithTag(C.AdminPageTags.CHIP_RESIDENCY, useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
     // Wait until state is updated to make sure i'm in the correct state
     composeTestRule.waitUntil(5_000) {
       viewModel.uiState.selected == AdminPageViewModel.EntityType.RESIDENCY
@@ -147,7 +150,10 @@ class AdminPageScreenTest : FirestoreTest() {
         .assertIsDisplayed()
 
     // Switch to University
-    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_UNIVERSITY).performClick()
+    composeTestRule
+        .onNodeWithTag(C.AdminPageTags.CHIP_UNIVERSITY, useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
     composeTestRule.waitUntil(5_000) {
       viewModel.uiState.selected == AdminPageViewModel.EntityType.UNIVERSITY
     }
@@ -167,7 +173,10 @@ class AdminPageScreenTest : FirestoreTest() {
         .assertIsDisplayed()
 
     // Switch to Admin
-    composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_ADMIN).performClick()
+    composeTestRule
+        .onNodeWithTag(C.AdminPageTags.CHIP_ADMIN, useUnmergedTree = true)
+        .performScrollTo()
+        .performClick()
     composeTestRule.waitUntil(5_000) {
       viewModel.uiState.selected == AdminPageViewModel.EntityType.ADMIN
     }
@@ -178,7 +187,7 @@ class AdminPageScreenTest : FirestoreTest() {
         .assertIsDisplayed()
     composeTestRule.onNodeWithTag(C.AdminPageTags.LOCATION_BUTTON).assertDoesNotExist()
     composeTestRule.onNode(hasText("Name") and hasSetTextAction()).assertDoesNotExist()
-    composeTestRule.onNodeWithText("Image ID").assertDoesNotExist()
+    composeTestRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).assertDoesNotExist()
 
     // Switch back to City
     composeTestRule.onNodeWithTag(C.AdminPageTags.CHIP_CITY).performClick()

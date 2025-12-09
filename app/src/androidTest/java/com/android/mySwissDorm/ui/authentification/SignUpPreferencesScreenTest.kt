@@ -68,7 +68,6 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
     viewModel.uiState.value.copy(selectedLocation = cityLausanne.location)
     composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(SKIP).performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithText("Custom Location").performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithTag(BUDGET).performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithTag(PREFERRED_SIZE).performScrollTo().assertIsDisplayed()
@@ -104,6 +103,7 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
         .performScrollTo()
         .assertIsDisplayed()
         .performClick()
+    composeTestRule.onNodeWithTag(SKIP).assertIsDisplayed().assertIsEnabled()
     composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).assertIsDisplayed().assertIsEnabled()
   }
 

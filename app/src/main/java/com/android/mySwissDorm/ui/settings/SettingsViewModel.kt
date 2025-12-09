@@ -118,7 +118,8 @@ class SettingsViewModel(
 
   /**
    * Deletes profile doc; then tries to delete auth user. If recent login is required, we surface an
-   * error but still ensure flags reset.
+   * error but still ensure flags reset. After successful deletion, signs out to clear cached auth
+   * state.
    */
   fun deleteAccount(onDone: (Boolean, String?) -> Unit, context: Context) {
     val user = auth.currentUser
@@ -145,6 +146,17 @@ class SettingsViewModel(
               } else {
                 ok = false
                 msg = e.message
+              }
+            }
+            .onSuccess {
+              // After successful deletion, sign out to clear cached auth state
+              // This ensures that when the app restarts, NavigationViewModel will correctly
+              // detect that the user is not logged in
+              try {
+                auth.signOut()
+              } catch (e: Exception) {
+                Log.e("SettingsViewModel", "Error signing out after account deletion", e)
+                // Don't fail the deletion if signOut fails - the account is already deleted
               }
             }
       } catch (e: Exception) {

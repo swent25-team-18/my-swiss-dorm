@@ -338,6 +338,31 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   @Test
+  fun deleteAccountDialog_hasProperContrastColors() {
+    setContentWithVm()
+    compose.waitForIdle()
+
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
+    compose.scrollUntilDisplayed(scrollTag, C.SettingsTags.DELETE_ACCOUNT_BUTTON)
+    compose.waitUntilTagExists(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
+
+    compose
+        .onNodeWithTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON, useUnmergedTree = true)
+        .performClick()
+
+    // Verify dialog is visible (which means colors are applied)
+    compose.onNodeWithText("Delete account?", useUnmergedTree = true).assertIsDisplayed()
+    compose
+        .onNodeWithText(
+            "This will permanently remove your account. You may need to re-authenticate.",
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose.onNodeWithText("Delete", useUnmergedTree = true).assertIsDisplayed()
+    compose.onNodeWithText("Cancel", useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
   fun accessibilitySwitches_toggleStateCorrectly() {
     setContentWithVm()
     compose.waitForIdle()

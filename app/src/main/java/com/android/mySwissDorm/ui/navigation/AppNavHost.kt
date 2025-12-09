@@ -72,8 +72,10 @@ import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.utils.SignInPopUp
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -149,7 +151,7 @@ fun AppNavHost(
           composable(Screen.SignIn.route) {
             SignInScreen(
                 credentialManager = credentialManager,
-                onSignedIn = { navigationViewModel.determineInitialDestination() },
+                onSignedIn = { navActions.navigateTo(Screen.Homepage) },
                 onSignUp = { navActions.navigateTo(Screen.SignUp) },
             )
           }
@@ -170,7 +172,20 @@ fun AppNavHost(
                 signUpViewModel = viewModel,
                 credentialManager = credentialManager,
                 onBack = { navActions.goBack() },
-                onSignedUp = { navigationViewModel.determineInitialDestination() })
+                onSignedUp = {
+                  // After successful sign-up, navigate to Homepage and clear the entire auth flow
+                  coroutineScope.launch {
+                    val destination = navigationViewModel.getHomepageDestination()
+                    // Switch to main thread for navigation (required by Navigation Component)
+                    withContext(Dispatchers.Main) {
+                      navController.navigate(destination.route) {
+                        // Clear entire back stack including sign-in and sign-up screens
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                      }
+                    }
+                  }
+                })
           }
 
           // --- Bottom bar destinations ---

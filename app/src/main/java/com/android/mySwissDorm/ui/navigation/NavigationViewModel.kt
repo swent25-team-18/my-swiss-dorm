@@ -90,12 +90,25 @@ class NavigationViewModel(
                       initialLocation = null)
             }
           } catch (e: Exception) {
-            // Profile not found or error fetching → Default to Homepage
-            Log.e("NavigationViewModel", "Error fetching profile, defaulting to Homepage", e)
+            // Profile not found or error fetching
+            // If profile doesn't exist, the account may have been deleted
+            // Sign out and navigate to SignIn screen
+            Log.e(
+                "NavigationViewModel",
+                "Error fetching profile (profile may not exist), signing out and navigating to SignIn",
+                e)
+            try {
+              auth.signOut()
+            } catch (signOutError: Exception) {
+              Log.e(
+                  "NavigationViewModel",
+                  "Error signing out after profile fetch failure",
+                  signOutError)
+            }
             _navigationState.value =
                 NavigationState(
                     isLoading = false,
-                    initialDestination = Screen.Homepage.route,
+                    initialDestination = Screen.SignIn.route,
                     initialLocation = null)
           }
         }

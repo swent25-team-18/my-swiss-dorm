@@ -149,7 +149,15 @@ fun SettingsScreen(
   SettingsScreenContent(
       ui = ui,
       onProfileClick = onProfileClick,
-      onDeleteAccount = { vm.deleteAccount({ _, _ -> }, context) },
+      onDeleteAccount = {
+        vm.deleteAccount(
+            { success, _ ->
+              if (success) {
+                navigationActions?.navigateTo(Screen.SignIn)
+              }
+            },
+            context)
+      },
       onContributionClick = onContributionClick,
       onViewBookmarks = onViewBookmarks,
       onUnblockUser = { uid -> vm.unblockUser(uid, context) },
@@ -605,19 +613,25 @@ fun SettingsScreenContent(
         onDismissRequest = { showDeleteConfirm = false },
         title = { Text(stringResource(R.string.settings_delete_dialog_title)) },
         text = { Text(stringResource(R.string.settings_delete_dialog_text)) },
+        containerColor = BackGroundColor,
+        titleContentColor = TextColor,
+        textContentColor = TextColor,
         confirmButton = {
           TextButton(
               onClick = {
                 showDeleteConfirm = false
                 onDeleteAccount()
-              }) {
+              },
+              colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
                 Text(stringResource(R.string.delete))
               }
         },
         dismissButton = {
-          TextButton(onClick = { showDeleteConfirm = false }) {
-            Text(stringResource(R.string.cancel))
-          }
+          TextButton(
+              onClick = { showDeleteConfirm = false },
+              colors = ButtonDefaults.textButtonColors(contentColor = TextColor)) {
+                Text(stringResource(R.string.cancel))
+              }
         })
   }
 }

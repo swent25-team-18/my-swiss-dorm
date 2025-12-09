@@ -62,4 +62,20 @@ class StreamChatProviderTest {
     // mode.
     // So we skip deep logic verification here and rely on AppNavHostTest integration test.
   }
+
+  @Test
+  fun testResetClient() {
+    // Mock the client
+    val mockClient = io.mockk.mockk<io.getstream.chat.android.client.ChatClient>()
+    StreamChatProvider.setClient(mockClient)
+
+    // Verify initialized
+    assertTrue(StreamChatProvider.isInitialized())
+
+    // Reset
+    StreamChatProvider.resetClient()
+
+    // Verify not initialized
+    assertFalse(StreamChatProvider.isInitialized())
+  }
 }

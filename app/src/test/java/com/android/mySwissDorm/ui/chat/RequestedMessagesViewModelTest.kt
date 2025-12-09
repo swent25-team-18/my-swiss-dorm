@@ -224,4 +224,99 @@ class RequestedMessagesViewModelTest {
         assertEquals(1, state.messages.size)
         assertEquals("Unknown User", state.messages[0].senderName)
       }
+
+  @Test
+  fun approveMessage_channelCreationFails_setsManualChatSuccessMessage() =
+      runTest(testDispatcher) {
+        // Given
+        val messageId = "msg_fail_channel"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "sender",
+                toUserId = "me",
+                listingId = "l",
+                listingTitle = "t",
+                message = "m",
+                status = MessageStatus.PENDING,
+                timestamp = 0L)
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+        every { currentUser.isAnonymous } returns false
+
+        // Ensure chat is initialized so it attempts creation
+        every { StreamChatProvider.isInitialized() } returns true
+
+        // Mock channel creation failure
+        coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } throws
+            RuntimeException("Network error")
+
+        val manualChatString = "Manual chat required"
+        every { context.getString(R.string.requested_messages_approved_manual_chat) } returns
+            manualChatString
+
+        // When
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(manualChatString, viewModel.uiState.value.successMessage)
+      }
+
+  @Test
+  fun approveMessage_failsWhenUserIsAnonymous() =
+      runTest(testDispatcher) {
+        // Given
+        val messageId = "msg_anon"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "sender",
+                toUserId = "me",
+                listingId = "l",
+                listingTitle = "t",
+                message = "m",
+                status = MessageStatus.PENDING,
+                timestamp = 0L)
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+
+        // Mock anonymous user
+        every { currentUser.isAnonymous } returns true
+
+        val signInString = "Please sign in"
+        every { context.getString(R.string.requested_messages_approved_sign_in) } returns
+            signInString
+
+        // When
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(signInString, viewModel.uiState.value.successMessage)
+        // Verify createChannel was NOT called
+        coVerify(exactly = 0) {
+          StreamChatProvider.createChannel(any(), any(), any(), any(), any())
+        }
+      }
+
+  @Test
+  fun approveMessage_generalExceptionSetsError() =
+      runTest(testDispatcher) {
+        // Given
+        val messageId = "msg_error"
+        // Repository throws exception immediately
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } throws
+            Exception("Database error")
+
+        val failedString = "Approve failed"
+        every { context.getString(R.string.requested_messages_approve_failed) } returns failedString
+
+        // When
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Then
+        val state = viewModel.uiState.value
+        assert(state.error?.contains(failedString) == true)
+      }
 }

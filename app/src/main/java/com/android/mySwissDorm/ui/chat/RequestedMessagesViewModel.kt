@@ -137,8 +137,10 @@ class RequestedMessagesViewModel(
                 }
                 .awaitAll()
 
+        // FIX: Use copy() to preserve existing successMessage that might have been set
+        // by approveMessage() running concurrently.
         _uiState.value =
-            RequestedMessagesUiState(messages = enrichedMessages, isLoading = false, error = null)
+            _uiState.value.copy(messages = enrichedMessages, isLoading = false, error = null)
       } catch (e: Exception) {
         Log.e("RequestedMessagesViewModel", "Error loading requested messages", e)
         setError((context.getString(R.string.unexpected_error) + ": ${e.message}"))

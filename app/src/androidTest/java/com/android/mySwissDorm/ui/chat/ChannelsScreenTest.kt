@@ -19,6 +19,10 @@ import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.ChannelUserRead
 import io.getstream.chat.android.models.Message
 import io.getstream.chat.android.models.User
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import java.util.Date
 import kotlinx.coroutines.test.runTest
@@ -487,5 +491,128 @@ class ChannelsScreenTest : FirestoreTest() {
         false
       }
     }
+  }
+
+  @Test
+  fun loadChannels_handlesConnectUserFailure() = runTest {
+    // Setup: StreamChat initialized, but user is null
+    mockkObject(StreamChatProvider)
+    every { StreamChatProvider.isInitialized() } returns true
+
+    // Mock client with null user to trigger connection logic
+    val mockClient = mockk<io.getstream.chat.android.client.ChatClient>()
+    val mockClientState = mockk<io.getstream.chat.android.client.setup.state.ClientState>()
+    every { mockClientState.user.value } returns null
+    every { mockClient.clientState } returns mockClientState
+    every { StreamChatProvider.getClient() } returns mockClient
+
+    // Mock connectUser to throw Exception
+    coEvery { StreamChatProvider.connectUser(any(), any(), any()) } throws
+        Exception("Connect failed")
+
+    compose.setContent {
+      MySwissDormAppTheme {
+        ChannelsScreen(
+            onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 0)
+      }
+    }
+
+    // Wait to ensure no crash and empty state is displayed (or at least logic finishes)
+    compose.waitUntil(timeoutMillis = 2000) {
+      compose
+          .onAllNodesWithTag(C.ChannelsScreenTestTags.EMPTY_STATE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose.onNodeWithTag(C.ChannelsScreenTestTags.EMPTY_STATE).assertIsDisplayed()
+  }
+
+  @Test
+  fun loadChannels_handlesQueryChannelsFailure() = runTest {
+    // Setup: StreamChat initialized
+    mockkObject(StreamChatProvider)
+    every { StreamChatProvider.isInitialized() } returns true
+
+    val mockClient = mockk<io.getstream.chat.android.client.ChatClient>()
+    val mockClientState = mockk<io.getstream.chat.android.client.setup.state.ClientState>()
+    // User is null to trigger connection
+    every { mockClientState.user.value } returns null
+    every { mockClient.clientState } returns mockClientState
+    every { StreamChatProvider.getClient() } returns mockClient
+
+    // Connect succeeds
+    coEvery { StreamChatProvider.connectUser(any(), any(), any()) } returns Unit
+
+    // Query throws Exception
+    coEvery { mockClient.queryChannels(any()) } throws Exception("Query failed")
+
+    compose.setContent {
+      MySwissDormAppTheme {
+        ChannelsScreen(
+            onChannelClick = {}, onRequestedMessagesClick = {}, requestedMessagesCount = 0)
+      }
+    }
+
+    compose.waitUntil(timeoutMillis = 2000) {
+      compose
+          .onAllNodesWithTag(C.ChannelsScreenTestTags.EMPTY_STATE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose.onNodeWithTag(C.ChannelsScreenTestTags.EMPTY_STATE).assertIsDisplayed()
+  }
+
+  @Test
+  fun channelItem_click_triggersCallback() = runTest {
+    // Setup: One channel in list
+    mockkObject(StreamChatProvider)
+    every { StreamChatProvider.isInitialized() } returns true
+
+    val mockClient = mockk<io.getstream.chat.android.client.ChatClient>()
+    val mockClientState = mockk<io.getstream.chat.android.client.setup.state.ClientState>()
+    // User already connected
+    every { mockClientState.user.value } returns
+        io.getstream.chat.android.models.User(id = "currentUserId")
+    every { mockClient.clientState } returns mockClientState
+    every { StreamChatProvider.getClient() } returns mockClient
+
+    // Mock query result with one channel
+    val channel =
+        Channel(
+            id = "123",
+            type = "messaging",
+            members =
+                listOf(
+                    io.getstream.chat.android.models.Member(
+                        user = io.getstream.chat.android.models.User(id = "currentUserId")),
+                    io.getstream.chat.android.models.Member(
+                        user =
+                            io.getstream.chat.android.models.User(id = "other", name = "Other"))))
+
+    // Mock the async call: queryChannels(req).await()
+    val mockCall = mockk<io.getstream.result.call.Call<List<Channel>>>()
+    coEvery { mockCall.await() } returns io.getstream.result.Result.Success(listOf(channel))
+    every { mockClient.queryChannels(any()) } returns mockCall
+
+    var clickedCid: String? = null
+    compose.setContent {
+      MySwissDormAppTheme {
+        ChannelsScreen(
+            onChannelClick = { clickedCid = it },
+            onRequestedMessagesClick = {},
+            requestedMessagesCount = 0)
+      }
+    }
+
+    // Wait for item to appear
+    compose.waitUntil(timeoutMillis = 5000) {
+      compose.onAllNodesWithText("Other").fetchSemanticsNodes().isNotEmpty()
+    }
+
+    // Perform Click
+    compose.onNodeWithText("Other").performClick()
+
+    // Verify Callback
+    assert(clickedCid == "messaging:123")
   }
 }

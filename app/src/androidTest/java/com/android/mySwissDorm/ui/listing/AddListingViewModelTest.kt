@@ -132,6 +132,7 @@ class AddListingViewModelTest : FirestoreTest() {
       delay(10)
       attempts++
     }
+    assertTrue(!vm.uiState.value.pickedImages.isEmpty())
 
     val s = vm.uiState.value
     assertTrue("Form with all required, correctly formatted fields must be valid", s.isFormValid)

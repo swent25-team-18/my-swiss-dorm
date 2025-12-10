@@ -36,8 +36,14 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
   }
 
   override suspend fun getBlockedUserIds(ownerId: String): List<String> {
-    val profile = getProfile(ownerId)
-    return profile.userInfo.blockedUserIds
+    return try {
+      val profile = getProfile(ownerId)
+      profile.userInfo.blockedUserIds
+    } catch (e: NoSuchElementException) {
+      // Return emptyList when profile is missing (maintains backward compatibility
+      // with previous behavior that returned emptyList for missing field)
+      emptyList()
+    }
   }
 
   override suspend fun addBlockedUser(ownerId: String, targetUid: String) {

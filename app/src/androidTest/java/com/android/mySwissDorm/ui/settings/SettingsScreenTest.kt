@@ -41,11 +41,15 @@ class SettingsScreenTest : FirestoreTest() {
 
   @get:Rule val compose = createComposeRule()
   private lateinit var uid: String
+  private lateinit var profileRepo: ProfileRepository
+
+  override fun createRepositories() {
+    profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+  }
 
   /** VM backed by emulator singletons. */
   private fun makeVm(): SettingsViewModel {
-    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = profileRepo)
   }
 
   /** Set content with our explicit VM. */
@@ -64,10 +68,6 @@ class SettingsScreenTest : FirestoreTest() {
             onViewBookmarks = onViewBookmarks)
       }
     }
-  }
-
-  override fun createRepositories() {
-    /* none */
   }
 
   @Before
@@ -235,14 +235,7 @@ class SettingsScreenTest : FirestoreTest() {
 
     // Switch back to current user (FakeUser1) and add blocked user to their list
     switchToUser(FakeUser.FakeUser1)
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    val profile = profileRepo.getProfile(uid)
-    val updatedProfile =
-        profile.copy(
-            userInfo =
-                profile.userInfo.copy(
-                    blockedUserIds = profile.userInfo.blockedUserIds + blockedUserUid))
-    profileRepo.editProfile(updatedProfile)
+    profileRepo.addBlockedUser(uid, blockedUserUid)
 
     setContentWithVm()
     compose.waitForIdle()
@@ -427,7 +420,6 @@ class SettingsScreenTest : FirestoreTest() {
 
     // Directly trigger the save operation to ensure it completes
     // Since the fire-and-forget coroutine might not complete in tests, we'll save directly
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     val existingProfile = profileRepo.getProfile(uid)
     val updatedProfile =
         existingProfile.copy(userSettings = existingProfile.userSettings.copy(darkMode = true))
@@ -489,7 +481,6 @@ class SettingsScreenTest : FirestoreTest() {
 
     // Directly trigger the save operation to ensure it completes
     // Since the fire-and-forget coroutine might not complete in tests, we'll save directly
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     val existingProfile = profileRepo.getProfile(uid)
     val updatedProfile =
         existingProfile.copy(userSettings = existingProfile.userSettings.copy(darkMode = false))

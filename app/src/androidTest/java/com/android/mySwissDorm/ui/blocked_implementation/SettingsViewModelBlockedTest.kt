@@ -110,13 +110,7 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
   @Test
   fun refresh_loadsBlockedContacts_whenUsersAreBlocked() = runTest {
     // Block a user
-    val profile = profileRepo.getProfile(currentUserUid)
-    val updatedProfile =
-        profile.copy(
-            userInfo =
-                profile.userInfo.copy(
-                    blockedUserIds = profile.userInfo.blockedUserIds + blockedUser1Uid))
-    profileRepo.editProfile(updatedProfile)
+    profileRepo.addBlockedUser(currentUserUid, blockedUser1Uid)
 
     val vm = vm()
     vm.refresh()
@@ -164,13 +158,7 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
   @Test
   fun unblockUser_removesUserFromBlockedList() = runTest {
     // First block a user
-    val profile = profileRepo.getProfile(currentUserUid)
-    val updatedProfile =
-        profile.copy(
-            userInfo =
-                profile.userInfo.copy(
-                    blockedUserIds = profile.userInfo.blockedUserIds + blockedUser1Uid))
-    profileRepo.editProfile(updatedProfile)
+    profileRepo.addBlockedUser(currentUserUid, blockedUser1Uid)
 
     val vm = vm()
     vm.refresh()
@@ -214,13 +202,7 @@ class SettingsViewModelBlockedTest : FirestoreTest() {
   fun refresh_handlesNonExistentBlockedUser() = runTest {
     // Block a user that doesn't exist in profiles
     val nonExistentUid = "non-existent-uid"
-    val profile = profileRepo.getProfile(currentUserUid)
-    val updatedProfile =
-        profile.copy(
-            userInfo =
-                profile.userInfo.copy(
-                    blockedUserIds = profile.userInfo.blockedUserIds + nonExistentUid))
-    profileRepo.editProfile(updatedProfile)
+    profileRepo.addBlockedUser(currentUserUid, nonExistentUid)
 
     val vm = vm()
     vm.refresh()

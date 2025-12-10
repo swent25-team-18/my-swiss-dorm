@@ -74,13 +74,7 @@ class ViewListingScreenBlockedTest : FirestoreTest() {
       listingsRepo.addRentalListing(ownerListing)
 
       // Block FakeUser2 from FakeUser1's profile
-      val ownerProfile = profileRepo.getProfile(ownerUid)
-      val updatedProfile =
-          ownerProfile.copy(
-              userInfo =
-                  ownerProfile.userInfo.copy(
-                      blockedUserIds = ownerProfile.userInfo.blockedUserIds + blockedUserUid))
-      profileRepo.editProfile(updatedProfile)
+      profileRepo.addBlockedUser(ownerUid, blockedUserUid)
 
       // Switch to blocked user for tests
       switchToUser(FakeUser.FakeUser2)

@@ -126,13 +126,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
   @Test
   fun blockButton_showsBlockedState_whenAlreadyBlocked() = runTest {
     // Pre-block the user
-    val profile = profileRepo.getProfile(currentUserUid)
-    val updatedProfile =
-        profile.copy(
-            userInfo =
-                profile.userInfo.copy(
-                    blockedUserIds = profile.userInfo.blockedUserIds + targetUserUid))
-    profileRepo.editProfile(updatedProfile)
+    profileRepo.addBlockedUser(currentUserUid, targetUserUid)
 
     compose.setContent {
       MySwissDormAppTheme {
@@ -217,13 +211,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
   @Test
   fun unblockUser_removesUserFromBlockedListInFirestore() = runTest {
     // Pre-block the user
-    val profile = profileRepo.getProfile(currentUserUid)
-    val updatedProfile =
-        profile.copy(
-            userInfo =
-                profile.userInfo.copy(
-                    blockedUserIds = profile.userInfo.blockedUserIds + targetUserUid))
-    profileRepo.editProfile(updatedProfile)
+    profileRepo.addBlockedUser(currentUserUid, targetUserUid)
 
     val vm = ViewProfileScreenViewModel(profileRepo)
     vm.loadProfile(targetUserUid, context)
@@ -240,13 +228,7 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
   @Test
   fun blockButton_allowsUnblockingFromUi() = runTest {
     // Pre-block the user
-    val profile = profileRepo.getProfile(currentUserUid)
-    val updatedProfile =
-        profile.copy(
-            userInfo =
-                profile.userInfo.copy(
-                    blockedUserIds = profile.userInfo.blockedUserIds + targetUserUid))
-    profileRepo.editProfile(updatedProfile)
+    profileRepo.addBlockedUser(currentUserUid, targetUserUid)
 
     val vm = ViewProfileScreenViewModel(profileRepo)
 

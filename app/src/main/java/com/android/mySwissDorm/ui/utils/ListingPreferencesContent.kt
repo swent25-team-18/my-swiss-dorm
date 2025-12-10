@@ -33,7 +33,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +48,7 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.LOCATION_PREFERENCE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -82,9 +85,14 @@ fun ListingPreferencesContent(
     errorMsg: String?,
     bottomButtonText: String,
     onBottomButtonClick: () -> Unit,
-    onUseCurrentLocationClick: () -> Unit
+    onUseCurrentLocationClick: () -> Unit,
+    onClearClick: () -> Unit,
+    isButtonEnabled: Boolean = true,
+    onSkipClick: (() -> Unit)? = null,
+    skipButtonText: String? = null
 ) {
   val scrollState = rememberScrollState()
+  val context = LocalContext.current
 
   if (showLocationDialog) {
     CustomLocationDialog(
@@ -109,29 +117,49 @@ fun ListingPreferencesContent(
                     contentDescription = "Back",
                     tint = MainColor)
               }
+            },
+            actions = {
+              androidx.compose.material3.TextButton(onClick = onClearClick) {
+                Text(
+                    text = stringResource(R.string.browse_city_clear_filters),
+                    color = MainColor,
+                    fontWeight = FontWeight.SemiBold)
+              }
             })
       },
       bottomBar = {
-        Column(modifier = Modifier.padding(16.dp)) {
-          if (errorMsg != null) {
-            Text(
-                text = errorMsg,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 8.dp))
-          }
-
-          Button(
-              onClick = onBottomButtonClick,
-              modifier = Modifier.fillMaxWidth().height(52.dp).testTag(SIGN_UP_WITH_PREFERENCES),
-              shape = RoundedCornerShape(16.dp),
-              colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
-                if (isLoading) {
-                  CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
-                } else {
-                  Text(text = bottomButtonText, color = White)
-                }
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+              if (errorMsg != null) {
+                Text(
+                    text = errorMsg,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 8.dp))
               }
-        }
+
+              Button(
+                  onClick = onBottomButtonClick,
+                  enabled = isButtonEnabled,
+                  modifier =
+                      Modifier.fillMaxWidth().height(52.dp).testTag(SIGN_UP_WITH_PREFERENCES),
+                  shape = RoundedCornerShape(16.dp),
+                  colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
+                    if (isLoading) {
+                      CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                    } else {
+                      Text(text = bottomButtonText, color = White)
+                    }
+                  }
+              if (onSkipClick != null && skipButtonText != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = skipButtonText,
+                    color = MainColor,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable { onSkipClick() }.padding(8.dp).testTag(SKIP))
+              }
+            }
       }) { innerPadding ->
         Column(
             modifier =
@@ -209,7 +237,7 @@ fun ListingPreferencesContent(
                         FilterChip(
                             selected = isSelected,
                             onClick = { onToggleRoomType(type) },
-                            label = { Text(type.toString()) },
+                            label = { Text(type.getName(context)) },
                             leadingIcon =
                                 if (isSelected) {
                                   { Icon(Icons.Default.Check, contentDescription = null) }

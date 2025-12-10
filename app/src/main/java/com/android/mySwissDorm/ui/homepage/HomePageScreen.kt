@@ -73,6 +73,10 @@ object HomePageScreenTestTags {
   fun getTestTagForCityCardDescription(cityName: String): String = "cityCardDescription${cityName}"
 }
 
+object HomePageScreenSizes {
+  val CITY_IMAGE_HEIGHT = 180.dp
+}
+
 /**
  * The main screen for the home page, displaying a list of cities and a search bar.
  *
@@ -229,7 +233,7 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
           model = uri,
           contentDescription = city.name,
           contentScale = ContentScale.Crop,
-          modifier = Modifier.fillMaxWidth().height(180.dp))
+          modifier = Modifier.fillMaxWidth().height(HomePageScreenSizes.CITY_IMAGE_HEIGHT))
       Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(8.dp)) {
         Text(
             modifier =

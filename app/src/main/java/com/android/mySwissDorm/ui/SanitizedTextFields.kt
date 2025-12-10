@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -350,10 +351,11 @@ fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, acc
                 ),
         modifier = Modifier.menuAnchor().fillMaxWidth(),
     )
+    val context = LocalContext.current
     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
       RoomType.entries.forEach { type ->
         DropdownMenuItem(
-            text = { Text(type.toString()) },
+            text = { Text(type.getName(context)) },
             onClick = {
               onSelected(type)
               expanded = false

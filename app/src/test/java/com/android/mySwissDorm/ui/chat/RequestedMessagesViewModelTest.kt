@@ -1,0 +1,434 @@
+package com.android.mySwissDorm.ui.chat
+
+import android.content.Context
+import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.StreamChatProvider
+import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
+import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.UserInfo
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkAll
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class RequestedMessagesViewModelTest {
+
+  private lateinit var viewModel: RequestedMessagesViewModel
+  private lateinit var requestedMessageRepository: RequestedMessageRepository
+  private lateinit var profileRepository: ProfileRepository
+  private lateinit var auth: FirebaseAuth
+  private lateinit var context: Context
+  private lateinit var currentUser: FirebaseUser
+
+  private val testDispatcher = StandardTestDispatcher()
+
+  @Before
+  fun setUp() {
+    Dispatchers.setMain(testDispatcher)
+
+    requestedMessageRepository = mockk(relaxed = true)
+    profileRepository = mockk(relaxed = true)
+    auth = mockk(relaxed = true)
+    context = mockk(relaxed = true)
+    currentUser = mockk(relaxed = true)
+
+    every { auth.currentUser } returns currentUser
+    every { currentUser.uid } returns "currentUserId"
+    every { currentUser.isAnonymous } returns false
+
+    mockkObject(StreamChatProvider)
+    every { StreamChatProvider.isInitialized() } returns true
+    coEvery { StreamChatProvider.connectUser(any(), any(), any()) } returns Unit
+    coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } returns Unit
+    coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } returns
+        "channel:id"
+
+    // Mock context strings
+    every { context.getString(any()) } returns "test string"
+    every { context.getString(R.string.requested_messages_approved_channel_created) } returns
+        "Channel created"
+
+    viewModel =
+        RequestedMessagesViewModel(
+            requestedMessageRepository = requestedMessageRepository,
+            profileRepository = profileRepository,
+            auth = auth)
+  }
+
+  @After
+  fun tearDown() {
+    Dispatchers.resetMain()
+    unmockkAll()
+  }
+
+  @Test
+  fun approveMessage_success_createsChannel() =
+      runTest(testDispatcher) {
+        // Given
+        val messageId = "msg1"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "list1",
+                listingTitle = "Title",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = System.currentTimeMillis())
+        val senderInfo =
+            UserInfo(
+                name = "Sender",
+                lastName = "Name",
+                email = "sender@example.com",
+                phoneNumber = "123")
+        val myInfo =
+            UserInfo(name = "My", lastName = "Self", email = "me@example.com", phoneNumber = "456")
+
+        // Create proper Profile objects (mockk for data classes can be messy)
+        val senderProfile = mockk<Profile>(relaxed = true)
+        every { senderProfile.userInfo } returns senderInfo
+
+        val myProfile = mockk<Profile>(relaxed = true)
+        every { myProfile.userInfo } returns myInfo
+
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { profileRepository.getProfile("senderId") } returns senderProfile
+        coEvery { profileRepository.getProfile("currentUserId") } returns myProfile
+        coEvery { requestedMessageRepository.getPendingMessagesForUser("currentUserId") } returns
+            emptyList()
+
+        // When
+        viewModel.approveMessage(messageId, context)
+        repeat(6) { advanceUntilIdle() } // allow nested coroutines to complete
+
+        // Then
+        coVerify {
+          requestedMessageRepository.updateMessageStatus(messageId, MessageStatus.APPROVED)
+        }
+        coVerify { StreamChatProvider.connectUser("currentUserId", "My Self", "") }
+        coVerify { StreamChatProvider.upsertUser("senderId", "Sender Name", "") }
+        coVerify {
+          StreamChatProvider.createChannel(
+              channelType = "messaging",
+              channelId = null,
+              memberIds = listOf("senderId", "currentUserId"),
+              extraData = mapOf("name" to "Chat"),
+              initialMessageText = "Hello")
+        }
+        // Success message timing can be racy; we only verify channel creation was invoked.
+      }
+
+  @Test
+  fun rejectMessage_success_deletesMessage() =
+      runTest(testDispatcher) {
+        // Given
+        val messageId = "msg1"
+        coEvery { requestedMessageRepository.getPendingMessagesForUser("currentUserId") } returns
+            emptyList()
+
+        // When
+        viewModel.rejectMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Then
+        coVerify {
+          requestedMessageRepository.updateMessageStatus(messageId, MessageStatus.REJECTED)
+        }
+        coVerify { requestedMessageRepository.deleteRequestedMessage(messageId) }
+        coVerify { requestedMessageRepository.getPendingMessagesForUser("currentUserId") }
+      }
+
+  @Test
+  fun loadMessages_enrichesMessagesWithSenderName() =
+      runTest(testDispatcher) {
+        // Given
+        val message =
+            RequestedMessage(
+                id = "msg1",
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "list1",
+                listingTitle = "Title",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = System.currentTimeMillis())
+        val senderInfo =
+            UserInfo(
+                name = "Sender",
+                lastName = "Name",
+                email = "sender@example.com",
+                phoneNumber = "123")
+        val senderProfile = mockk<Profile>(relaxed = true)
+        every { senderProfile.userInfo } returns senderInfo
+
+        coEvery { requestedMessageRepository.getPendingMessagesForUser("currentUserId") } returns
+            listOf(message)
+        coEvery { profileRepository.getProfile("senderId") } returns senderProfile
+
+        // When
+        viewModel.loadMessages(context)
+        advanceUntilIdle()
+
+        // Then
+        val state = viewModel.uiState.value
+        assertEquals(1, state.messages.size)
+        assertEquals("Sender Name", state.messages[0].senderName)
+        assertEquals(message, state.messages[0].message)
+      }
+
+  @Test
+  fun loadMessages_fallbackToUnknownUser_whenProfileLoadFails() =
+      runTest(testDispatcher) {
+        // Given
+        val message =
+            RequestedMessage(
+                id = "msg1",
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "list1",
+                listingTitle = "Title",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = System.currentTimeMillis())
+
+        coEvery { requestedMessageRepository.getPendingMessagesForUser("currentUserId") } returns
+            listOf(message)
+        coEvery { profileRepository.getProfile("senderId") } throws Exception("Profile load failed")
+
+        // When
+        viewModel.loadMessages(context)
+        advanceUntilIdle()
+
+        // Then
+        val state = viewModel.uiState.value
+        assertEquals(1, state.messages.size)
+        assertEquals("Unknown User", state.messages[0].senderName)
+      }
+
+  @Test
+  fun approveMessage_channelCreationFails_setsManualChatSuccessMessage() =
+      runTest(testDispatcher) {
+        // Given
+        val messageId = "msg_fail_channel"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "sender",
+                toUserId = "me",
+                listingId = "l",
+                listingTitle = "t",
+                message = "m",
+                status = MessageStatus.PENDING,
+                timestamp = 0L)
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+        every { currentUser.isAnonymous } returns false
+
+        // Ensure chat is initialized so it attempts creation
+        every { StreamChatProvider.isInitialized() } returns true
+
+        // Mock channel creation failure
+        coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } throws
+            RuntimeException("Network error")
+
+        val manualChatString = "Manual chat required"
+        every { context.getString(R.string.requested_messages_approved_manual_chat) } returns
+            manualChatString
+
+        // When
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(manualChatString, viewModel.uiState.value.successMessage)
+      }
+
+  @Test
+  fun approveMessage_failsWhenUserIsAnonymous() =
+      runTest(testDispatcher) {
+        // Given
+        val messageId = "msg_anon"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "sender",
+                toUserId = "me",
+                listingId = "l",
+                listingTitle = "t",
+                message = "m",
+                status = MessageStatus.PENDING,
+                timestamp = 0L)
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+
+        // Mock anonymous user
+        every { currentUser.isAnonymous } returns true
+
+        val signInString = "Please sign in"
+        every { context.getString(R.string.requested_messages_approved_sign_in) } returns
+            signInString
+
+        // When
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(signInString, viewModel.uiState.value.successMessage)
+        // Verify createChannel was NOT called
+        coVerify(exactly = 0) {
+          StreamChatProvider.createChannel(any(), any(), any(), any(), any())
+        }
+      }
+
+  @Test
+  fun approveMessage_generalExceptionSetsError() =
+      runTest(testDispatcher) {
+        // Given
+        val messageId = "msg_error"
+        // Repository throws exception immediately
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } throws
+            Exception("Database error")
+
+        val failedString = "Approve failed"
+        every { context.getString(R.string.requested_messages_approve_failed) } returns failedString
+
+        // When
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Then
+        val state = viewModel.uiState.value
+        assert(state.error?.contains(failedString) == true)
+      }
+
+  @Test
+  fun loadMessages_repositoryThrows_setsError() =
+      runTest(testDispatcher) {
+        every { context.getString(R.string.unexpected_error) } returns "Unexpected"
+        coEvery { requestedMessageRepository.getPendingMessagesForUser("currentUserId") } throws
+            Exception("boom")
+
+        viewModel.loadMessages(context)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.error?.contains("Unexpected") == true)
+      }
+
+  @Test
+  fun approveMessage_connectUserFails_stillCreatesChannel() =
+      runTest(testDispatcher) {
+        val messageId = "msg_connect_fail"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "list1",
+                listingTitle = "Title",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = System.currentTimeMillis())
+
+        val senderProfile = mockk<Profile>(relaxed = true)
+        every { senderProfile.userInfo } returns
+            UserInfo(name = "Sender", lastName = "Name", email = "", phoneNumber = "")
+        val myProfile = mockk<Profile>(relaxed = true)
+        every { myProfile.userInfo } returns
+            UserInfo(name = "Me", lastName = " User", email = "", phoneNumber = "")
+
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+        coEvery { profileRepository.getProfile("senderId") } returns senderProfile
+        coEvery { profileRepository.getProfile("currentUserId") } returns myProfile
+
+        every { StreamChatProvider.isInitialized() } returns true
+        coEvery { StreamChatProvider.connectUser(any(), any(), any()) } throws
+            RuntimeException("connect fail")
+        // Upsert succeeds
+        coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } returns Unit
+        coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } returns
+            "channel:id"
+
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Even though connect failed, channel creation should still be attempted
+        coVerify { StreamChatProvider.upsertUser("senderId", "Sender Name", "") }
+        coVerify {
+          StreamChatProvider.createChannel(
+              channelType = "messaging",
+              channelId = null,
+              memberIds = listOf("senderId", "currentUserId"),
+              extraData = mapOf("name" to "Chat"),
+              initialMessageText = "Hello")
+        }
+      }
+
+  @Test
+  fun approveMessage_upsertFails_stillCreatesChannel() =
+      runTest(testDispatcher) {
+        val messageId = "msg_upsert_fail"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "list1",
+                listingTitle = "Title",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = System.currentTimeMillis())
+
+        val senderProfile = mockk<Profile>(relaxed = true)
+        every { senderProfile.userInfo } returns
+            UserInfo(name = "Sender", lastName = "Name", email = "", phoneNumber = "")
+        val myProfile = mockk<Profile>(relaxed = true)
+        every { myProfile.userInfo } returns
+            UserInfo(name = "Me", lastName = " User", email = "", phoneNumber = "")
+
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+        coEvery { profileRepository.getProfile("senderId") } returns senderProfile
+        coEvery { profileRepository.getProfile("currentUserId") } returns myProfile
+
+        every { StreamChatProvider.isInitialized() } returns true
+        coEvery { StreamChatProvider.connectUser(any(), any(), any()) } returns Unit
+        coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } throws
+            RuntimeException("upsert fail")
+        coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } returns
+            "channel:id"
+
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Create channel still called even if upsert failed
+        coVerify {
+          StreamChatProvider.createChannel(
+              channelType = "messaging",
+              channelId = null,
+              memberIds = listOf("senderId", "currentUserId"),
+              extraData = mapOf("name" to "Chat"),
+              initialMessageText = "Hello")
+        }
+      }
+}

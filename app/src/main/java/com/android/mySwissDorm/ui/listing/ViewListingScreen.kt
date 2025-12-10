@@ -36,6 +36,7 @@ import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.share.ShareLinkDialog
 import com.android.mySwissDorm.ui.theme.AlmostWhite
+import com.android.mySwissDorm.ui.theme.Black
 import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -253,11 +254,26 @@ fun ViewListingScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold),
                     modifier = Modifier.testTag(C.ViewListingTags.POI_DISTANCES))
-                if (poiDistances.isNotEmpty()) {
+
+                if (listingUIState.isLoadingPOIs) {
+                  Row(
+                      modifier = Modifier.padding(start = 16.dp, top = 2.dp),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MainColor)
+                        Text(
+                            stringResource(R.string.poi_loading_message),
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.6f)))
+                      }
+                } else if (poiDistances.isNotEmpty()) {
                   Column(
                       modifier = Modifier.padding(start = 16.dp),
                       verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                        // Group POIs by walking time
                         val groupedByTime = poiDistances.groupBy { it.walkingTimeMinutes }
 
                         groupedByTime
@@ -265,7 +281,6 @@ fun ViewListingScreen(
                             .sortedBy { it.first }
                             .forEach { (timeMinutes, pois) ->
                               if (pois.size == 1) {
-                                // Single POI at this time
                                 val poiDistance = pois.first()
                                 val timeText =
                                     when (poiDistance.poiType) {
@@ -279,7 +294,7 @@ fun ViewListingScreen(
                                               R.string.view_listing_walking_time_supermarket,
                                               poiDistance.walkingTimeMinutes,
                                               poiDistance.poiName)
-                                      else -> "" // Should not happen
+                                      else -> ""
                                     }
                                 Text(
                                     timeText,
@@ -301,14 +316,12 @@ fun ViewListingScreen(
                                               poiNames.last()
                                     }
 
-                                // Determine the type label (university or supermarket)
                                 val typeLabel =
                                     when {
                                       pois.all { it.poiType == POIDistance.TYPE_UNIVERSITY } ->
                                           stringResource(R.string.university)
-                                      pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } ->
-                                          "" // Supermarkets don't need a type label
-                                      else -> "" // Mixed types, no label
+                                      pois.all { it.poiType == POIDistance.TYPE_SUPERMARKET } -> ""
+                                      else -> ""
                                     }
 
                                 val timeText =
@@ -348,7 +361,7 @@ fun ViewListingScreen(
 
                 // Bullet section
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
-                  BulletRow("${listing.roomType}")
+                  BulletRow(listing.roomType.getName(context))
                   BulletRow(
                       "${listing.pricePerMonth}${stringResource(R.string.view_listing_price_per_month)}")
                   BulletRow("${listing.areaInM2}m²")
@@ -448,7 +461,8 @@ fun ViewListingScreen(
                         value = listingUIState.contactMessage,
                         onValueChange = { viewListingViewModel.setContactMessage(it) },
                         placeholder = {
-                          Text(stringResource(R.string.view_listing_contact_announcer))
+                          Text(
+                              stringResource(R.string.view_listing_contact_announcer), color = Gray)
                         },
                         modifier = Modifier.fillMaxWidth().testTag(C.ViewListingTags.CONTACT_FIELD),
                         shape = RoundedCornerShape(16.dp),
@@ -461,7 +475,8 @@ fun ViewListingScreen(
                                 disabledContainerColor = AlmostWhite,
                                 focusedBorderColor = OutlineColor,
                                 unfocusedBorderColor = OutlineColor,
-                                cursorColor = TextColor))
+                                cursorColor = Black,
+                                focusedTextColor = Black))
 
                     // Apply now button (centered, half width, rounded, red or violet)
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

@@ -29,6 +29,7 @@ object C {
     const val SIGN_UP_BUTTON = "signUpButton"
     const val SIGN_UP_HELP_TEXT = "signUpHelpText"
     const val SIGN_UP_BACK_BUTTON = "signUpBackButton"
+    const val SKIP = "skip"
 
     fun universityNameTestTag(universityName: String?): String {
       return "${universityName ?: "nullValUniversityName"}TestTag"
@@ -370,10 +371,22 @@ object C {
     const val CANCEL_TEXT = "shareLinkDialogCancelText"
   }
 
+  object TranslatableTextTestTags {
+    const val TRANSLATABLE_TEXT = "translatable_text"
+
+    const val TRANSLATE_BUTTON = "translate_button"
+  }
+
   object OfflineBannerTags {
     const val BANNER_ROOT = "offlineBannerRoot"
     const val OFFLINE_MESSAGE = "offlineBannerOfflineMessage"
     const val LAST_UPDATED_TEXT = "offlineBannerLastUpdatedText"
     const val NO_SYNC_TEXT = "offlineBannerNoSyncText"
+  }
+
+  object SharedMapTags {
+    const val IMAGE_COUNTER = "imageCounter"
+    const val PREVIOUS_IMAGE = "previousImage"
+    const val NEXT_IMAGE = "nextImage"
   }
 }

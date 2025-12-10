@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,6 +34,7 @@ import com.android.mySwissDorm.MainActivity
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.admin.AdminRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
+import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.admin.AdminPageScreen
@@ -72,9 +74,15 @@ import com.android.mySwissDorm.ui.settings.SettingsScreen
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.utils.SignInPopUp
 import com.google.firebase.auth.FirebaseAuth
+import io.getstream.chat.android.models.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+
+// Shared state for refreshing channels when returning from RequestedMessagesScreen
+private object ChannelsRefreshState {
+  val refreshKey = mutableIntStateOf(0)
+}
 
 /**
  * Root navigation host of the app.
@@ -99,6 +107,10 @@ fun AppNavHost(
     navActionsExternal: NavigationActions? = null,
     navigationViewModel: NavigationViewModel = viewModel(),
     activity: MainActivity? = null,
+    // Test overrides to avoid Stream Chat mocking in instrumentation
+    isStreamInitializedOverride: (() -> Boolean)? = null,
+    ensureConnectedOverride: (suspend () -> Unit)? = null,
+    fetchChannelsOverride: (suspend () -> List<Channel>)? = null,
 ) {
   val navController = navActionsExternal?.navController() ?: rememberNavController()
 
@@ -187,6 +199,8 @@ fun AppNavHost(
           composable(Screen.Inbox.route) {
             var requestedMessagesCount by remember { mutableStateOf(0) }
             val currentRoute = navController.currentDestination?.route
+            // Track refresh key for channels - observe the shared state
+            val channelsRefreshKey by ChannelsRefreshState.refreshKey
 
             // Refresh count whenever the Inbox screen is visible
             // Use a key that only changes when we actually navigate to Inbox
@@ -212,12 +226,19 @@ fun AppNavHost(
                 }) { paddingValues ->
                   ChannelsScreen(
                       onChannelClick = { channelId ->
-                        navActions.navigateTo(Screen.ChatChannel(channelId))
+                        // navActions.navigateTo(Screen.ChatChannel(channelId))
+                        Toast.makeText(
+                                context, "Chat screen not implemented yet", Toast.LENGTH_SHORT)
+                            .show()
                       },
                       onRequestedMessagesClick = {
                         navActions.navigateTo(Screen.RequestedMessages)
                       },
                       requestedMessagesCount = requestedMessagesCount,
+                      refreshKey = channelsRefreshKey,
+                      isStreamInitialized = isStreamInitializedOverride,
+                      ensureConnected = ensureConnectedOverride,
+                      fetchChannels = fetchChannelsOverride,
                       modifier = Modifier.padding(paddingValues))
                 }
           }
@@ -447,7 +468,7 @@ fun AppNavHost(
                                   context.getString(R.string.view_listing_message_sent),
                                   Toast.LENGTH_LONG)
                               .show()
-                          navActions.goBack()
+                          navActions.navigateTo(Screen.ListingOverview(listingUid))
                         }
                       }
                     }
@@ -628,8 +649,15 @@ fun AppNavHost(
               ProfileScreen(
                   onBack = { navActions.goBack() },
                   onLogout = {
-                    AuthRepositoryProvider.repository.signOut()
-                    navigationViewModel.determineInitialDestination()
+                    coroutineScope.launch {
+                      try {
+                        StreamChatProvider.disconnectUser()
+                      } catch (e: Exception) {
+                        Log.e("AppNavHost", "Error disconnecting stream user", e)
+                      }
+                      AuthRepositoryProvider.repository.signOut()
+                      navigationViewModel.determineInitialDestination()
+                    }
                   },
                   onLanguageChange = { activity?.updateLanguage(it) },
                   onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
@@ -670,7 +698,11 @@ fun AppNavHost(
 
           composable(Screen.RequestedMessages.route) {
             RequestedMessagesScreen(
-                onBackClick = { navActions.goBack() },
+                onBackClick = {
+                  // Increment refresh key to trigger channels refresh
+                  ChannelsRefreshState.refreshKey.value++
+                  navActions.goBack()
+                },
                 onViewProfile = { userId -> navActions.navigateTo(Screen.ViewUserProfile(userId)) })
           }
         }

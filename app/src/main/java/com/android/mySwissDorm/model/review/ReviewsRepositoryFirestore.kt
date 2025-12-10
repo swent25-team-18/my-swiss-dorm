@@ -267,7 +267,7 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
       val residencyName = document.getString("residencyName") ?: return null
       val roomTypeString = document.getString("roomType") ?: return null
       val roomType =
-          RoomType.entries.firstOrNull { it.name == roomTypeString || it.value == roomTypeString }
+          RoomType.entries.firstOrNull { it.name == roomTypeString }
               ?: return null // will take the value if its in the num otherwise null for safety
       val pricePerMonth = document.getDouble("pricePerMonth") ?: return null
       val areaInM2 = (document.getDouble("areaInM2") ?: return null).toInt()

@@ -67,6 +67,11 @@
     <string name="user">Utilisateur</string>
     <string name="website">Site web</string>
 
+    <!-- RoomType -->
+    <string name="studio">Studio</string>
+    <string name="apartment">Appartement</string>
+    <string name="room_in_flatshare">Chambre en colocation</string>
+
     <!-- AdminPageScreen -->
     <string name="admin_page_admins_only">Réservé aux administrateurs.</string>
     <string name="admin_page_title">Page Administrateur</string>
@@ -79,7 +84,7 @@
     <string name="admin_page_name_required">Le nom est requis.</string>
     <string name="admin_page_location_required">La localisation est requise.</string>
     <string name="admin_page_description_required_city">La description est requise pour une ville.</string>
-    <string name="admin_page_image_id_required_city">L\'ID de l\'image est requis pour une ville.</string>
+    <string name="admin_page_image_id_required_city">Une image est requise pour une ville.</string>
     <string name="admin_page_city_name_required_residency">Le nom de la ville est requis pour une résidence.</string>
     <string name="admin_page_city_name_required_university">Le nom de la ville est requis pour une université.</string>
     <string name="admin_page_email_required_university">L\'e-mail est requis pour une université.</string>
@@ -125,7 +130,7 @@
     <string name="sign_up_phone_number_placeholder">Numéro de téléphone</string>
     <string name="sign_up_residency">Résidence</string>
     <string name="sign_up_university">Université</string>
-    <string name="sign_up_button_text">S’inscrire avec Google</string>
+    <string name="sign_up_button_text">Confirmé et s’inscrire avec Google</string>
     <string name="sign_up_button_help_text">Veuillez remplir correctement les champs</string>
     <string name="sign_up_button_not_specified">Non spécifié</string>
     <string name="sign_up_name_help">Votre prénom doit contenir moins de 20 caractères</string>
@@ -138,6 +143,7 @@
     <string name="budget">Budget</string>
     <string name="preferred_size">Taille préférée</string>
     <string name="preferred_room_type">Type de chambre préféré</string>
+    <string name="skip">Ignorer</string>
 
 
 
@@ -203,6 +209,7 @@
     <string name="view_listing_apply_now">Postuler !</string>
     <string name="view_listing_listing_location">Localisation de l’annonce</string>
     <string name="view_listing_sign_in_to_apply">Connectez-vous pour contacter le propriétaire et postuler.</string>
+    <string name="poi_loading_message">Recherche des points d\'intérêt à proximité…</string>
 
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Impossible de charger l\'annonce :</string>
@@ -289,7 +296,7 @@
     <string name="browse_city_vm_failed_to_load_residencies">Impossible de charger les résidences</string>
     <string name="browse_city_vm_price_per_month">.-/mois</string>
     <!-- EditPreferencesScreen -->
-    <string name="listing_preferences">Préférences d\'affichage</string>
+    <string name="listing_preferences">Préférences</string>
     <string name="save_preferences">Enregistrer vos préférences</string>
 
     <!-- BookmarkedListingsScreen -->
@@ -423,6 +430,11 @@
     <!-- GuestSignInPopUp -->
     <string name="guest_sign_in_pop_up_sign_in_to_create_profile">Connectez-vous pour créer un profil</string>
     <string name="guest_sign_in_pop_up_sign_in">Connexion</string>
+
+    <!-- TranslatableText -->
+    <string name="translatable_text_translate_button">Traduire</string>
+    <string name="translatable_text_see_original_button">Voir l\'original</string>
+
 
     <!-- AddPhotoButton -->
     <string name="add_photo_button_take_photo">Prendre une photo</string>

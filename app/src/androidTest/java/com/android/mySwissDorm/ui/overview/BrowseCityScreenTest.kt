@@ -646,7 +646,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     vm.uiState.value.listings.items.forEach { listing ->
       assertTrue(
           "All listings should be Studio type",
-          listing.leftBullets.firstOrNull() == RoomType.STUDIO.toString())
+          listing.leftBullets.firstOrNull() == RoomType.STUDIO.getName(context))
     }
   }
 
@@ -1112,7 +1112,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val currentProfile = profileRepo.getProfile(ownerUid)
     val updatedUserInfo =
         currentProfile.userInfo.copy(
-            maxPrice = 1500.0, minSize = 0, preferredRoomTypes = emptyList())
+            maxPrice = 1500.0, minSize = 0, preferredRoomTypes = listOf(RoomType.STUDIO))
     profileRepo.editProfile(currentProfile.copy(userInfo = updatedUserInfo))
     val expensiveListing =
         listingLaus1.copy(

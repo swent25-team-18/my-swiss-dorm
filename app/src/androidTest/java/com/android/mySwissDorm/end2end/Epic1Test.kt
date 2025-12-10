@@ -27,7 +27,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.screen.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
@@ -154,11 +154,9 @@ class Epic1Test : FirestoreTest() {
             performClick()
           }
         }
-        composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).isDisplayed()
-        }
+        composeTestRule.waitUntil(5_000) { composeTestRule.onNodeWithTag(SKIP).isDisplayed() }
 
-        composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).performClick()
+        composeTestRule.onNodeWithTag(SKIP).performClick()
 
         runCatching {
               ProfileRepositoryProvider.repository.getProfile(

@@ -4,85 +4,126 @@ import android.content.Context
 import android.content.pm.PackageManager
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.client.logger.ChatLogLevel
+import io.getstream.chat.android.models.Channel
+import io.getstream.chat.android.models.Message
+import io.getstream.chat.android.models.UploadAttachmentsNetworkType
 import io.getstream.chat.android.models.User
-import kotlinx.coroutines.tasks.await
+import io.getstream.chat.android.offline.plugin.factory.StreamOfflinePluginFactory
+import io.getstream.chat.android.state.plugin.config.StatePluginConfig
+import io.getstream.chat.android.state.plugin.factory.StreamStatePluginFactory
+import io.getstream.result.Result
 
 /**
- * Provides a single instance of the Stream Chat client in the app. Similar to other repository
- * providers in the app (e.g., ProfileRepositoryProvider).
- *
- * The client is initialized once in MainActivity and can be accessed throughout the app.
+ * Thin wrapper around Stream Chat SDK to centralize initialization, connection, and channel
+ * creation. This provider is intentionally minimal to keep Stream-specific logic in one place and
+ * make it easier to stub in tests.
  */
 object StreamChatProvider {
   private var client: ChatClient? = null
 
   /**
-   * Initializes the Stream Chat client with the API key from the manifest. This should be called
-   * once in MainActivity.onCreate().
+   * Initializes Stream Chat with offline/state plugins and stores the singleton client. Safe to
+   * call multiple times; initialization only happens once.
    *
-   * @param context the application context
+   * @throws IllegalStateException if the STREAM_API_KEY meta-data entry is missing or blank.
    */
   fun initialize(context: Context) {
     if (client == null) {
       val apiKey = getApiKeyFromManifest(context)
-
       if (apiKey.isBlank()) {
-        throw IllegalStateException(
-            "Stream API key not found. Please add STREAM_API_KEY to local.properties or manifestPlaceholders.")
+        throw IllegalStateException("Stream API key not found.")
       }
+
+      val offlinePluginFactory = StreamOfflinePluginFactory(appContext = context.applicationContext)
+
+      val statePluginFactory =
+          StreamStatePluginFactory(
+              config = StatePluginConfig(backgroundSyncEnabled = true, userPresence = true),
+              appContext = context.applicationContext)
 
       client =
           ChatClient.Builder(apiKey, context.applicationContext)
-              .logLevel(ChatLogLevel.ALL) // Use ChatLogLevel.NOTHING in production
+              .withPlugins(offlinePluginFactory, statePluginFactory)
+              .uploadAttachmentsNetworkType(UploadAttachmentsNetworkType.NOT_ROAMING)
+              .logLevel(ChatLogLevel.ALL)
               .build()
     }
   }
 
-  /**
-   * Gets the Stream Chat client instance.
-   *
-   * @return the ChatClient instance
-   * @throws IllegalStateException if the client hasn't been initialized
-   */
+  /** Returns the singleton [ChatClient] or throws if not initialized. */
   fun getClient(): ChatClient {
-    return client
-        ?: throw IllegalStateException(
-            "Stream Chat not initialized. Call StreamChatProvider.initialize() first.")
+    return client ?: throw IllegalStateException("Stream Chat not initialized.")
   }
+
+  @org.jetbrains.annotations.VisibleForTesting
+  fun setClient(chatClient: ChatClient) {
+    client = chatClient
+  }
+
+  @org.jetbrains.annotations.VisibleForTesting
+  fun resetClient() {
+    client = null
+  }
+
   /**
-   * Connects the current Firebase user to Stream Chat. This should be called after Firebase
-   * authentication succeeds.
-   *
-   * @param firebaseUserId the Firebase user ID (used as Stream user ID)
-   * @param displayName the user's display name
-   * @param imageUrl optional profile image URL
+   * Connects the given user if no user is currently connected. Uses dev token (suitable for
+   * development and emulator environments).
    */
   suspend fun connectUser(firebaseUserId: String, displayName: String, imageUrl: String) {
     val user = User(id = firebaseUserId, name = displayName, image = imageUrl)
-    // Generate a development token (use server-side token generation in production)
-    val token = getClient().devToken(firebaseUserId)
 
-    // Connect user to Stream
-    getClient().connectUser(user = user, token = token).await()
+    // Instant Load check
+    if (getClient().clientState.user.value == null) {
+      val token = getClient().devToken(firebaseUserId)
+      getClient().connectUser(user = user, token = token).await()
+    }
   }
 
   /**
-   * Disconnects the current user from Stream Chat. This should be called when the user signs out.
-   *
-   * @param flushPersistence if true, will clear user data (default: true)
-   * @param deleteDevice if true, will delete the registered device from Stream backend (default:
-   *   true)
+   * Creates or updates a user in Stream Chat by temporarily connecting as them. This is a
+   * development-mode workaround since client-side upsertUsers might be restricted or unavailable.
    */
-  suspend fun disconnectUser(flushPersistence: Boolean = true, deleteDevice: Boolean = true) {
+  /**
+   * Creates or updates a user by temporarily connecting as them (development-mode workaround).
+   * Reconnects the previous user when finished.
+   */
+  suspend fun upsertUser(userId: String, name: String, image: String = "") {
+    val client = getClient()
+    val currentUser = client.clientState.user.value
+
+    // If we are already this user, nothing to do
+    if (currentUser?.id == userId) return
+
+    // 1. Store current user credentials to reconnect later
+    val currentUserId = currentUser?.id
+    val currentUserName = currentUser?.name ?: ""
+    val currentUserImage = currentUser?.image ?: ""
+
+    // 2. Disconnect current user (if any)
+    if (currentUser != null) {
+      disconnectUser(flushPersistence = false)
+    }
+
+    // 3. Connect as the target user (this creates/updates them in Dev Mode)
+    try {
+      connectUser(userId, name, image)
+    } finally {
+      // 4. Always disconnect the target user
+      disconnectUser(flushPersistence = false)
+
+      // 5. Reconnect the original user (if there was one)
+      if (currentUserId != null) {
+        connectUser(currentUserId, currentUserName, currentUserImage)
+      }
+    }
+  }
+
+  /** Disconnects the current user. */
+  suspend fun disconnectUser(flushPersistence: Boolean = false) {
     getClient().disconnect(flushPersistence = flushPersistence).await()
   }
 
-  /**
-   * Reads the Stream API key from AndroidManifest.xml.
-   *
-   * @param context the context to access package manager
-   * @return the API key, or empty string if not found
-   */
+  /** Reads the Stream API key from AndroidManifest meta-data (STREAM_API_KEY). */
   private fun getApiKeyFromManifest(context: Context): String {
     return try {
       val appInfo =
@@ -94,46 +135,53 @@ object StreamChatProvider {
     }
   }
 
-  /**
-   * Checks if the Stream Chat client has been initialized.
-   *
-   * @return true if initialized, false otherwise
-   */
-  fun isInitialized(): Boolean {
-    return client != null
-  }
+  /** Returns true when the Stream Chat client has been initialized. */
+  fun isInitialized(): Boolean = client != null
 
   /**
-   * Creates a new channel in Stream Chat.
+   * Creates (and watches) a messaging channel, optionally sending an initial message when empty.
    *
-   * @param channelType The type of channel (e.g., "messaging", "livestream", "team", "gaming")
-   * @param channelId Optional channel ID. If null, Stream will generate one based on members.
-   * @param memberIds List of user IDs to add as members of the channel
-   * @param extraData Optional map of additional data to store with the channel (e.g., name,
-   *   description)
-   * @return The created channel's CID (Channel ID) in format "channelType:channelId"
+   * @return the CID in `type:id` format (e.g., `messaging:uid1-uid2`).
+   * @throws IllegalStateException if creation fails.
    */
   suspend fun createChannel(
       channelType: String = "messaging",
       channelId: String? = null,
       memberIds: List<String>,
-      extraData: Map<String, Any> = emptyMap()
+      extraData: Map<String, Any> = emptyMap(),
+      initialMessageText: String? = null
   ): String {
-    val chatClient = getClient()
+    val finalChannelId = channelId ?: memberIds.sorted().joinToString("-")
+    val channelClient = getClient().channel(channelType, finalChannelId)
 
-    // Generate channelId if not provided
-    val finalChannelId =
-        channelId
-            ?: run {
-              val sortedMembers = memberIds.sorted()
-              sortedMembers.joinToString("-")
-            }
+    // FIX 1: Use 'create' to set members correctly. 'watch' without members might not add them.
+    // We will call watch() afterwards if needed, but create usually watches.
+    val result = channelClient.create(memberIds = memberIds, extraData = extraData).await()
 
-    val channelClient = chatClient.channel(channelType, finalChannelId)
+    if (result is Result.Failure) {
+      throw IllegalStateException("Failed to create channel: ${result.value.message}")
+    }
 
-    channelClient.create(memberIds = memberIds, extraData = extraData).await()
+    // FIX 2: Explicitly specify <Channel> in the cast
+    val channel = (result as Result.Success<Channel>).value
+    val messages = channel.messages
 
-    // Return the CID in format "channelType:channelId"
+    // 3. Send initial message if empty
+    if (messages.isEmpty()) {
+      val textToSend =
+          if (initialMessageText.isNullOrBlank()) {
+            "Chat request accepted"
+          } else {
+            initialMessageText
+          }
+
+      val message = Message(text = textToSend, type = "regular")
+      channelClient.sendMessage(message).await()
+    }
+
+    // 4. Watch the channel to ensure local cache is updated with the new message/members
+    channelClient.watch().await()
+
     return "$channelType:$finalChannelId"
   }
 }

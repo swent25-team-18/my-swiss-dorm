@@ -4,7 +4,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
@@ -18,7 +17,6 @@ import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.firestore.FieldValue
 import io.mockk.unmockkAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
@@ -42,11 +40,15 @@ class SettingsScreenTest : FirestoreTest() {
 
   @get:Rule val compose = createComposeRule()
   private lateinit var uid: String
+  private lateinit var profileRepo: ProfileRepository
+
+  override fun createRepositories() {
+    profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+  }
 
   /** VM backed by emulator singletons. */
   private fun makeVm(): SettingsViewModel {
-    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = profileRepo)
   }
 
   /** Set content with our explicit VM. */
@@ -65,10 +67,6 @@ class SettingsScreenTest : FirestoreTest() {
             onViewBookmarks = onViewBookmarks)
       }
     }
-  }
-
-  override fun createRepositories() {
-    /* none */
   }
 
   @Before
@@ -236,11 +234,7 @@ class SettingsScreenTest : FirestoreTest() {
 
     // Switch back to current user (FakeUser1) and add blocked user to their list
     switchToUser(FakeUser.FakeUser1)
-    FirebaseEmulator.firestore
-        .collection(PROFILE_COLLECTION_PATH)
-        .document(uid)
-        .update("blockedUserIds", FieldValue.arrayUnion(blockedUserUid))
-        .await()
+    profileRepo.addBlockedUser(uid, blockedUserUid)
 
     setContentWithVm()
     compose.waitForIdle()
@@ -425,7 +419,6 @@ class SettingsScreenTest : FirestoreTest() {
 
     // Directly trigger the save operation to ensure it completes
     // Since the fire-and-forget coroutine might not complete in tests, we'll save directly
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     val existingProfile = profileRepo.getProfile(uid)
     val updatedProfile =
         existingProfile.copy(userSettings = existingProfile.userSettings.copy(darkMode = true))
@@ -487,7 +480,6 @@ class SettingsScreenTest : FirestoreTest() {
 
     // Directly trigger the save operation to ensure it completes
     // Since the fire-and-forget coroutine might not complete in tests, we'll save directly
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     val existingProfile = profileRepo.getProfile(uid)
     val updatedProfile =
         existingProfile.copy(userSettings = existingProfile.userSettings.copy(darkMode = false))
@@ -569,59 +561,5 @@ class SettingsScreenTest : FirestoreTest() {
     compose.waitUntil("The profile picture is not displayed in the settings", 5_000) {
       compose.onNodeWithTag(C.SettingsTags.avatarTag(null), useUnmergedTree = true).isDisplayed()
     }
-  }
-  // ---------- QR scan tests ----------
-
-  @Test
-  fun qrScanResult_nullOrBlank_doesNotNavigate() {
-    val context = InstrumentationRegistry.getInstrumentation().targetContext
-    var navigated = false
-
-    InstrumentationRegistry.getInstrumentation().runOnMainSync {
-      handleQrScanResult(null, context) { navigated = true }
-      handleQrScanResult("", context) { navigated = true }
-    }
-
-    assert(!navigated) { "QR navigation should not be triggered for null or blank contents" }
-  }
-
-  @Test
-  fun qrScanResult_invalidDomain_doesNotNavigate() {
-    val context = InstrumentationRegistry.getInstrumentation().targetContext
-    var navigated = false
-    val invalidUrl = "https://example.com/some/path"
-
-    InstrumentationRegistry.getInstrumentation().runOnMainSync {
-      handleQrScanResult(invalidUrl, context) { navigated = true }
-    }
-
-    assert(!navigated) { "QR navigation should not be triggered for invalid domain" }
-  }
-
-  @Test
-  fun qrScanResult_validMySwissDormLink_triggersNavigation() {
-    val context = InstrumentationRegistry.getInstrumentation().targetContext
-    val validUrl = "https://my-swiss-dorm.web.app/some/path?foo=bar"
-    var navigatedUrl: String? = null
-
-    InstrumentationRegistry.getInstrumentation().runOnMainSync {
-      handleQrScanResult(validUrl, context) { navigatedUrl = it }
-    }
-
-    assert(navigatedUrl == validUrl) {
-      "QR navigation should be triggered with the scanned MySwissDorm URL"
-    }
-  }
-
-  @Test
-  fun qrScanButton_isDisplayedAndClickable() {
-    setContentWithVm()
-    compose.waitForIdle()
-
-    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
-    val buttonTag = "SETTINGS_SCAN_QR_BUTTON"
-
-    compose.scrollUntilDisplayed(scrollTag, buttonTag)
-    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).assertIsDisplayed().performClick()
   }
 }

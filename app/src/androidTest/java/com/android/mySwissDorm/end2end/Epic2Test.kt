@@ -21,7 +21,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.screen.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
@@ -115,9 +115,9 @@ class Epic2Test : FirestoreTest() {
     }
 
     compose.waitForIdle()
-    compose.waitUntil(5_000) { compose.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).isDisplayed() }
+    compose.waitUntil(5_000) { compose.onNodeWithTag(SKIP).isDisplayed() }
 
-    compose.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).performClick()
+    compose.onNodeWithTag(SKIP).performClick()
     // 2. Select custom location
     compose.waitUntil(5000) {
       compose.onNodeWithTag(HomePageScreenTestTags.LOCATION_SELECTION).isDisplayed()

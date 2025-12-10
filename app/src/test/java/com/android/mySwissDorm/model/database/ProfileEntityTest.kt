@@ -234,7 +234,8 @@ class ProfileEntityTest {
                 minSize = 20,
                 maxSize = 50,
                 preferredRoomTypes = listOf(RoomType.STUDIO, RoomType.APARTMENT),
-                bookmarkedListingIds = listOf("listing-1", "listing-2")),
+                bookmarkedListingIds = listOf("listing-1", "listing-2"),
+                blockedUserIds = emptyList()),
         userSettings =
             UserSettings(
                 language = Language.ENGLISH,
@@ -261,6 +262,7 @@ class ProfileEntityTest {
         maxSize = 50,
         preferredRoomTypes = "STUDIO,APARTMENT",
         bookmarkedListingIds = listOf("listing-1", "listing-2"),
+        blockedUserIds = emptyList(),
         language = "ENGLISH",
         isPublic = true,
         isPushNotified = true,

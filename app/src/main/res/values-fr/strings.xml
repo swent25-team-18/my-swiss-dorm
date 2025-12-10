@@ -130,7 +130,7 @@
     <string name="sign_up_phone_number_placeholder">Numéro de téléphone</string>
     <string name="sign_up_residency">Résidence</string>
     <string name="sign_up_university">Université</string>
-    <string name="sign_up_button_text">S’inscrire avec Google</string>
+    <string name="sign_up_button_text">Confirmé et s’inscrire avec Google</string>
     <string name="sign_up_button_help_text">Veuillez remplir correctement les champs</string>
     <string name="sign_up_button_not_specified">Non spécifié</string>
     <string name="sign_up_name_help">Votre prénom doit contenir moins de 20 caractères</string>
@@ -143,6 +143,7 @@
     <string name="budget">Budget</string>
     <string name="preferred_size">Taille préférée</string>
     <string name="preferred_room_type">Type de chambre préféré</string>
+    <string name="skip">Ignorer</string>
 
 
 
@@ -295,7 +296,7 @@
     <string name="browse_city_vm_failed_to_load_residencies">Impossible de charger les résidences</string>
     <string name="browse_city_vm_price_per_month">.-/mois</string>
     <!-- EditPreferencesScreen -->
-    <string name="listing_preferences">Préférences d\'affichage</string>
+    <string name="listing_preferences">Préférences</string>
     <string name="save_preferences">Enregistrer vos préférences</string>
 
     <!-- BookmarkedListingsScreen -->

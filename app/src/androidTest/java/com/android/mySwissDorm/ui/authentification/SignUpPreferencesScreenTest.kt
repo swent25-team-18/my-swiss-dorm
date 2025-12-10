@@ -1,15 +1,19 @@
 package com.android.mySwissDorm.ui.authentification
 
+import android.content.Context
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
@@ -19,6 +23,9 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.LOCATION_PREFERENCE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_PRICE
+import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_SIZE
+import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.ui.utils.ListingPreferencesContent
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator
@@ -37,6 +44,8 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
 
   private lateinit var viewModel: SignUpViewModel
   private lateinit var fakeCredentialManager: FakeCredentialManager
+
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() {}
 
@@ -60,7 +69,7 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onBack = {},
           onSignedUp = {})
     }
-
+    viewModel.uiState.value.copy(selectedLocation = cityLausanne.location)
     composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
     composeTestRule.waitForIdle()
     composeTestRule.onNodeWithText("Custom Location").performScrollTo().assertIsDisplayed()
@@ -68,15 +77,37 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
     composeTestRule.onNodeWithTag(PREFERRED_SIZE).performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithTag(PREFERRED_ROOM_TYPE).performScrollTo().assertIsDisplayed()
     composeTestRule
+        .onNodeWithTag(SLIDER_SIZE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performTouchInput {
+          click(percentOffset(0.1f, 0.5f))
+          click(percentOffset(0.9f, 0.5f))
+        }
+    composeTestRule
+        .onNodeWithTag(SLIDER_PRICE)
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performTouchInput {
+          click(percentOffset(0.2f, 0.5f))
+          click(percentOffset(0.8f, 0.5f))
+        }
+    composeTestRule
         .onNodeWithTag(LOCATION_PREFERENCE)
         .performScrollTo()
         .assertIsDisplayed()
         .assertHasClickAction()
-    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).performScrollTo().assertIsDisplayed()
     composeTestRule
-        .onNodeWithText(RoomType.COLOCATION.toString())
+        .onNodeWithText(RoomType.STUDIO.getName(context))
         .performScrollTo()
         .assertIsDisplayed()
+        .performClick()
+    composeTestRule
+        .onNodeWithText(RoomType.COLOCATION.getName(context))
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+    composeTestRule.onNodeWithTag(SKIP).assertIsDisplayed().assertIsEnabled()
     composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).assertIsDisplayed().assertIsEnabled()
   }
 
@@ -103,7 +134,7 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           onSignedUp = {})
     }
 
-    val chip = composeTestRule.onNodeWithText(RoomType.STUDIO.toString())
+    val chip = composeTestRule.onNodeWithText(RoomType.STUDIO.getName(context))
     chip.performScrollTo()
     chip.performClick()
     composeTestRule.waitForIdle()
@@ -166,7 +197,10 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           errorMsg = null,
           bottomButtonText = "Action",
           onBottomButtonClick = {},
-          onUseCurrentLocationClick = {})
+          onUseCurrentLocationClick = {},
+          onClearClick = {},
+          isButtonEnabled = true,
+          onSkipClick = {})
     }
 
     composeTestRule.onNodeWithText("Action").assertIsNotDisplayed()
@@ -199,7 +233,10 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           errorMsg = errorText,
           bottomButtonText = "Action",
           onBottomButtonClick = {},
-          onUseCurrentLocationClick = {})
+          onUseCurrentLocationClick = {},
+          onClearClick = {},
+          isButtonEnabled = true,
+          onSkipClick = {})
     }
 
     composeTestRule.onNodeWithText(errorText).assertIsDisplayed()
@@ -231,7 +268,10 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           errorMsg = null,
           bottomButtonText = "Action",
           onBottomButtonClick = {},
-          onUseCurrentLocationClick = {})
+          onUseCurrentLocationClick = {},
+          onClearClick = {},
+          isButtonEnabled = true,
+          onSkipClick = {})
     }
     composeTestRule.waitForIdle()
   }
@@ -264,13 +304,19 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
           errorMsg = null,
           bottomButtonText = "Action",
           onBottomButtonClick = {},
-          onUseCurrentLocationClick = {})
+          onUseCurrentLocationClick = {},
+          onClearClick = {},
+          isButtonEnabled = true,
+          onSkipClick = {})
     }
 
-    composeTestRule.onNodeWithText(RoomType.STUDIO.toString()).performScrollTo().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(RoomType.STUDIO.getName(context))
+        .performScrollTo()
+        .assertIsDisplayed()
 
     val target = RoomType.COLOCATION
-    composeTestRule.onNodeWithText(target.toString()).performScrollTo().performClick()
+    composeTestRule.onNodeWithText(target.getName(context)).performScrollTo().performClick()
 
     assert(clickedType.value == target)
   }

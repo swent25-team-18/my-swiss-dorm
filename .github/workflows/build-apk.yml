@@ -48,7 +48,8 @@ jobs:
         env:
           MAPS_API_KEY: ${{secrets.MAPS_API_KEY }}
           STREAM_API_KEY: ${{secrets.STREAM_API_KEY}}
-        run: ./gradlew assembleRelease -PMAPS_API_KEY="$MAPS_API_KEY" -PSTREAM_API_KEY="$STREAM_API_KEY" lint --parallel
+          OPENROUTESERVICE_API_KEY: ${{secrets.OPENROUTESERVICE_API_KEY}}
+        run: ./gradlew assembleRelease -PMAPS_API_KEY="$MAPS_API_KEY" -PSTREAM_API_KEY="$STREAM_API_KEY" -POPENROUTESERVICE_API_KEY="$OPENROUTESERVICE_API_KEY" lint --parallel
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

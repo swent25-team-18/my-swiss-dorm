@@ -64,7 +64,7 @@ fun ListingCard(
                             .clip(RoundedCornerShape(12.dp))
                             .background(ListingCardColor)) {
                       AsyncImage(
-                          model = data.image,
+                          model = data.image.firstOrNull(),
                           contentDescription = null,
                           modifier = Modifier.fillMaxSize(),
                           contentScale = ContentScale.Crop)

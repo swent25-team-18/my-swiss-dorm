@@ -94,6 +94,16 @@ class NavigationActionsTest : FirestoreTest() {
     }
     composeTestRule.waitForIdle()
 
+    // First navigate to Settings to ensure we're not already on Homepage
+    composeTestRule.runOnUiThread { navActions.navigateTo(Screen.Settings) }
+    composeTestRule.waitForIdle()
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should be on Settings before navigating to Homepage",
+          Screen.Settings.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+
     // Navigate to Homepage - should navigate to BrowseOverview
     composeTestRule.runOnUiThread { navActions.navigateTo(Screen.Homepage) }
 
@@ -162,6 +172,54 @@ class NavigationActionsTest : FirestoreTest() {
     composeTestRule.runOnUiThread {
       assertEquals(
           "Should navigate to Homepage when user has no location",
+          Screen.Homepage.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+  }
+
+  @Test
+  fun navigateToHomepage_alreadyOnHomepage_staysOnHomepage() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+    val location = Location("Lausanne", 46.5197, 6.6323)
+
+    // Use profile1 with updated location and ownerId
+    ProfileRepositoryProvider.repository.createProfile(
+        profile1.copy(userInfo = profile1.userInfo.copy(location = location), ownerId = uid))
+
+    // Wait for profile to be created and recreate NavigationActions with updated ViewModel
+    composeTestRule.waitForIdle()
+    composeTestRule.runOnUiThread {
+      val viewModel = NavigationViewModel(profileRepository = ProfileRepositoryProvider.repository)
+      navActions =
+          NavigationActions(
+              navController = navController,
+              coroutineScope = CoroutineScope(Dispatchers.Main),
+              navigationViewModel = viewModel)
+    }
+    composeTestRule.waitForIdle()
+
+    // First, navigate directly to Homepage (bypassing location check)
+    composeTestRule.runOnUiThread { navActions.navigateToHomepageDirectly() }
+    composeTestRule.waitForIdle()
+
+    // Verify we're on Homepage
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should be on Homepage after navigateToHomepageDirectly",
+          Screen.Homepage.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
+
+    // Now click the home button again while already on Homepage
+    // This should stay on Homepage, not navigate to BrowseOverview
+    composeTestRule.runOnUiThread { navActions.navigateTo(Screen.Homepage) }
+    composeTestRule.waitForIdle()
+
+    // Should still be on Homepage (not BrowseOverview)
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should stay on Homepage when clicking home button while already on Homepage, even if user has location",
           Screen.Homepage.route,
           navController.currentBackStackEntry?.destination?.route)
     }
@@ -259,6 +317,16 @@ class NavigationActionsTest : FirestoreTest() {
               navigationViewModel = viewModel)
     }
     composeTestRule.waitForIdle()
+
+    // First navigate to Settings to ensure we're not already on Homepage
+    composeTestRule.runOnUiThread { navActions.navigateTo(Screen.Settings) }
+    composeTestRule.waitForIdle()
+    composeTestRule.runOnUiThread {
+      assertEquals(
+          "Should be on Settings before navigating to Homepage",
+          Screen.Settings.route,
+          navController.currentBackStackEntry?.destination?.route)
+    }
 
     // First, verify that navigateTo(Screen.Homepage) would navigate to BrowseOverview
     composeTestRule.runOnUiThread { navActions.navigateTo(Screen.Homepage) }

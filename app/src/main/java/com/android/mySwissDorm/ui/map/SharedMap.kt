@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,12 +19,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.SharedMapTags.PREVIOUS_IMAGE
 import com.android.mySwissDorm.ui.overview.ListingCardUI
 import com.android.mySwissDorm.ui.theme.*
 import com.google.android.gms.maps.model.LatLng
@@ -201,6 +205,9 @@ fun SmallListingPreviewCard(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+  var currentImageIndex by remember(listing.listingUid) { mutableIntStateOf(0) }
+  val imageCount = listing.image.size
+  val safeIndex = if (imageCount > 0) currentImageIndex.coerceIn(0, imageCount - 1) else 0
   Card(
       modifier = modifier.clickable { onClick() },
       shape = RoundedCornerShape(16.dp),
@@ -208,14 +215,61 @@ fun SmallListingPreviewCard(
       colors = CardDefaults.cardColors(containerColor = White)) {
         Box {
           Column(modifier = Modifier.fillMaxWidth()) {
-            if (listing.image != null) {
-              AsyncImage(
-                  model = listing.image,
-                  contentDescription = null,
-                  modifier = Modifier.fillMaxWidth().height(200.dp),
-                  contentScale = ContentScale.Crop)
+            if (imageCount > 0) {
+              Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+                if (listing.image.isNotEmpty()) {
+                  AsyncImage(
+                      model = listing.image[safeIndex],
+                      contentDescription = null,
+                      modifier = Modifier.fillMaxSize(),
+                      contentScale = ContentScale.Crop)
+                }
+                if (imageCount > 1) {
+                  if (safeIndex > 0) {
+                    IconButton(
+                        onClick = { currentImageIndex-- },
+                        modifier =
+                            Modifier.align(Alignment.CenterStart)
+                                .padding(4.dp)
+                                .background(Dark.copy(alpha = 0.5f), CircleShape)
+                                .size(28.dp)
+                                .testTag(PREVIOUS_IMAGE)) {
+                          Icon(
+                              imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
+                              contentDescription = "Previous Image",
+                              tint = White,
+                              modifier = Modifier.size(14.dp))
+                        }
+                  }
+                  if (safeIndex < imageCount - 1) {
+                    IconButton(
+                        onClick = { currentImageIndex++ },
+                        modifier =
+                            Modifier.align(Alignment.CenterEnd)
+                                .padding(4.dp)
+                                .background(Dark.copy(alpha = 0.5f), CircleShape)
+                                .size(28.dp)
+                                .testTag(C.SharedMapTags.NEXT_IMAGE)) {
+                          Icon(
+                              imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                              contentDescription = "Next Image",
+                              tint = White,
+                              modifier = Modifier.size(14.dp))
+                        }
+                  }
+                  Text(
+                      text = "${safeIndex + 1}/$imageCount",
+                      style = MaterialTheme.typography.labelSmall,
+                      color = MainColor,
+                      modifier =
+                          Modifier.align(Alignment.BottomEnd)
+                              .padding(8.dp)
+                              .background(Dark.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                              .padding(horizontal = 4.dp, vertical = 2.dp)
+                              .testTag(C.SharedMapTags.IMAGE_COUNTER))
+                }
+              }
             }
-
             Column(modifier = Modifier.padding(12.dp)) {
               Text(
                   text = listing.title,

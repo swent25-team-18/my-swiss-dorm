@@ -1,6 +1,7 @@
 package com.android.mySwissDorm.ui.admin
 
 import android.content.Context
+import android.net.Uri
 import android.util.Patterns
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,12 +15,18 @@ import com.android.mySwissDorm.model.city.City
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepository
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryStorage
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.university.UniversitiesRepository
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.model.university.University
+import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import java.net.URL
 import kotlinx.coroutines.launch
@@ -31,6 +38,9 @@ class AdminPageViewModel(
         UniversitiesRepositoryProvider.repository,
     private val adminRepo: AdminRepository = AdminRepository(),
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
+    val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryStorage(photoSubDir = "cities/"),
+    val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository
 ) : BaseLocationSearchViewModel() {
   override val logTag = "AdminPageViewModel"
 
@@ -46,7 +56,7 @@ class AdminPageViewModel(
       val name: String = "",
       val location: Location? = null,
       val description: String = "",
-      val imageId: String = "",
+      val image: Photo? = null,
       val city: String = "",
       val email: String = "",
       val phone: String = "",
@@ -66,6 +76,23 @@ class AdminPageViewModel(
   // Handlers for all necessary form field changes
   fun onTypeChange(t: EntityType) {
     uiState = uiState.copy(selected = t, message = null)
+  }
+
+  val photoManager =
+      PhotoManager(
+          photoRepositoryLocal = photoRepositoryLocal, photoRepositoryCloud = photoRepositoryCloud)
+
+  fun onImage(photo: Photo?) {
+    val currentPhotoUri: Uri? = uiState.image?.image
+    viewModelScope.launch {
+      if (currentPhotoUri != null) {
+        photoManager.removePhoto(uri = currentPhotoUri, true)
+      }
+      if (photo != null) {
+        photoManager.addPhoto(photo)
+      }
+    }
+    uiState = uiState.copy(image = photo)
   }
 
   fun onName(v: String) {
@@ -111,10 +138,6 @@ class AdminPageViewModel(
     uiState = uiState.copy(description = v)
   }
 
-  fun onImageId(v: String) {
-    uiState = uiState.copy(imageId = v)
-  }
-
   fun onCity(v: String) {
     uiState = uiState.copy(city = v)
   }
@@ -149,7 +172,7 @@ class AdminPageViewModel(
           uiState.location == null -> context.getString(R.string.admin_page_location_required)
           uiState.description.isBlank() ->
               context.getString(R.string.admin_page_description_required_city)
-          uiState.imageId.isBlank() -> context.getString(R.string.admin_page_image_id_required_city)
+          uiState.image == null -> context.getString(R.string.admin_page_image_id_required_city)
           else -> null
         }
       }
@@ -236,8 +259,9 @@ class AdminPageViewModel(
                     name = uiState.name.trim(),
                     description = uiState.description.trim(),
                     location = location,
-                    imageId = uiState.imageId)
+                    imageId = uiState.image!!.fileName)
             citiesRepo.addCity(city)
+            photoRepositoryCloud.uploadPhoto(uiState.image!!)
           }
           EntityType.RESIDENCY -> {
             // Location is validated to be non-null

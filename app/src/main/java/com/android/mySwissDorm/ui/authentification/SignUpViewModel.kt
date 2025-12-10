@@ -228,4 +228,17 @@ class SignUpViewModel(
       }
     }
   }
+
+  fun clearPreferences() {
+    _uiState.update { currentState ->
+      currentState.copy(
+          selectedLocation = null,
+          locationQuery = "",
+          minPrice = null,
+          maxPrice = null,
+          minSize = null,
+          maxSize = null,
+          selectedRoomTypes = emptySet())
+    }
+  }
 }

@@ -1,5 +1,7 @@
 package com.android.mySwissDorm.model.rental
 
+import android.content.Context
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.google.firebase.Timestamp
 
@@ -42,13 +44,13 @@ data class RentalListing(
     val location: Location
 )
 
-enum class RoomType(val value: String) {
-  STUDIO("Studio"),
-  APARTMENT("Apartment"),
-  COLOCATION("Room in flatshare");
+enum class RoomType(val stringResId: Int) {
+  STUDIO(R.string.studio),
+  APARTMENT(R.string.apartment),
+  COLOCATION(R.string.room_in_flatshare);
 
-  override fun toString(): String {
-    return value
+  fun getName(context: Context): String {
+    return context.getString(stringResId)
   }
 }
 

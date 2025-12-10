@@ -19,4 +19,5 @@ data class UserInfo(
     val maxSize: Int? = null,
     val preferredRoomTypes: List<RoomType> = emptyList(),
     val bookmarkedListingIds: List<String> = emptyList(),
+    val blockedUserIds: List<String> = emptyList(),
 )

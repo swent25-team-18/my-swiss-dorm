@@ -1,12 +1,8 @@
 package com.android.mySwissDorm.ui
 
 import android.content.ContentValues
-import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -21,9 +17,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.utils.FakeGetContentContract
+import com.android.mySwissDorm.utils.FakePickMultipleVisualMediaContract
 import com.android.mySwissDorm.utils.FakeRequestPermissionContract
 import junit.framework.TestCase.assertTrue
-import kotlin.collections.emptyList
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -128,32 +124,6 @@ class GalleryButtonTest {
     assertTrue(notClicked.value)
   }
 
-  private inner class FakePickMultipleVisualMediaContract(shouldSucceed: Boolean = true) :
-      ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>>() {
-
-    val list: List<@JvmSuppressWildcards Uri> =
-        if (shouldSucceed) {
-          listOf(Uri.parse(fakeUri), Uri.parse(fakeUri2))
-        } else {
-          emptyList()
-        }
-
-    override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent {
-      return Intent()
-    }
-
-    override fun parseResult(resultCode: Int, intent: Intent?): List<@JvmSuppressWildcards Uri> {
-      return list
-    }
-
-    override fun getSynchronousResult(
-        context: Context,
-        input: PickVisualMediaRequest
-    ): SynchronousResult<List<@JvmSuppressWildcards Uri>>? {
-      return SynchronousResult(list)
-    }
-  }
-
   @Test
   fun testEveryThingIsDisplayedGalleryButtonMultiple() {
     composeTestRule.setContent {
@@ -177,7 +147,7 @@ class GalleryButtonTest {
             photos.addAll(it)
           },
           permissionContract = FakeRequestPermissionContract.success(),
-          choosePicturesContract = FakePickMultipleVisualMediaContract(true))
+          choosePicturesContract = FakePickMultipleVisualMediaContract(true, fakeUri, fakeUri2))
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
     galleryButtonNode.assertIsDisplayed()
@@ -215,7 +185,7 @@ class GalleryButtonTest {
       GalleryButtonMultiplePick(
           onSelect = { photos.addAll(it) },
           permissionContract = FakeRequestPermissionContract.success(),
-          choosePicturesContract = FakePickMultipleVisualMediaContract(true))
+          choosePicturesContract = FakePickMultipleVisualMediaContract(true, fakeUri, fakeUri2))
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
     galleryButtonNode.assertIsDisplayed()
@@ -241,5 +211,36 @@ class GalleryButtonTest {
     galleryButtonNode.performClick()
 
     composeTestRule.waitUntil(5_000) { photo.value.fileName.contains(".") }
+  }
+
+  @Test
+  fun testGalleryButtonNoAccessShouldNotTriggerOnSelect() {
+    val selected = mutableStateOf(false)
+    composeTestRule.setContent {
+      DefaultGalleryButton(
+          onSelect = { selected.value = true },
+          permissionContract = FakeRequestPermissionContract.failure(),
+          choosePictureContract = FakeGetContentContract(false, fakeUri))
+    }
+    composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG).assertIsDisplayed().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue("No picture should have been selected", !selected.value)
+  }
+
+  @Test
+  fun testGalleryMultiplePickNoAccessShouldNotTriggerOnSelect() {
+    val selected = mutableStateOf(false)
+    composeTestRule.setContent {
+      DefaultGalleryButtonMultiplePick(
+          onSelect = { selected.value = true },
+          permissionContract = FakeRequestPermissionContract.failure(),
+          choosePicturesContract = FakePickMultipleVisualMediaContract(true))
+    }
+    composeTestRule
+        .onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
+        .assertIsDisplayed()
+        .performClick()
+    composeTestRule.waitForIdle()
+    assertTrue("No picture should have been selected", !selected.value)
   }
 }

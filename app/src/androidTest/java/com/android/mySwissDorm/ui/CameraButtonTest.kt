@@ -89,4 +89,18 @@ class CameraButtonTest {
       photoCaptured.value?.image?.scheme == "content"
     }
   }
+
+  @Test
+  fun testCameraDoesNotReturnPhotoDeniedCameraAccess() {
+    val captured = mutableStateOf(false)
+    composeTestRule.setContent {
+      DefaultCameraButton(
+          onSave = { captured.value = true },
+          permissionContract = FakeRequestPermissionContract.failure(),
+          takePictureContract = FakeTakePictureContract.success())
+    }
+    composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG).assertIsDisplayed().performClick()
+    composeTestRule.waitForIdle()
+    assertTrue("No photos should have been captured", !captured.value)
+  }
 }

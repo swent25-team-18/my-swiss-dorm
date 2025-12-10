@@ -3,6 +3,7 @@ package com.android.mySwissDorm.utils
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContract
 
 class FakeTakePictureContract private constructor(private val shouldSucceed: Boolean = true) :
@@ -69,5 +70,34 @@ class FakeGetContentContract(private val shouldSucceed: Boolean = true, val fake
     } else {
       null
     }
+  }
+}
+
+class FakePickMultipleVisualMediaContract(
+    shouldSucceed: Boolean = true,
+    fakeUri: String = Uri.EMPTY.toString(),
+    fakeUri2: String = Uri.EMPTY.toString()
+) : ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>>() {
+
+  val list: List<@JvmSuppressWildcards Uri> =
+      if (shouldSucceed) {
+        listOf(Uri.parse(fakeUri), Uri.parse(fakeUri2))
+      } else {
+        emptyList()
+      }
+
+  override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent {
+    return Intent()
+  }
+
+  override fun parseResult(resultCode: Int, intent: Intent?): List<@JvmSuppressWildcards Uri> {
+    return list
+  }
+
+  override fun getSynchronousResult(
+      context: Context,
+      input: PickVisualMediaRequest
+  ): SynchronousResult<List<@JvmSuppressWildcards Uri>>? {
+    return SynchronousResult(list)
   }
 }

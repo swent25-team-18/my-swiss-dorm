@@ -4,6 +4,8 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -236,6 +238,114 @@ class ProfileRepositoryFirestoreTest : FirestoreTest() {
     userSettingsData["pushNotified"] = profile1.userSettings.isPushNotified
     docRef.set(data).await()
     assertEquals(profile1, repo.getProfile(profile1.ownerId))
+  }
+
+  @Test
+  fun canGetBlockedUserIds() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    profile1 =
+        profile1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.createProfile(profile1)
+
+    // Initially empty
+    val initialBlocked = repo.getBlockedUserIds(profile1.ownerId)
+    assertTrue(initialBlocked.isEmpty())
+
+    // After adding blocked users
+    switchToUser(FakeUser.FakeUser2)
+    profile2 =
+        profile2.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.createProfile(profile2)
+
+    switchToUser(FakeUser.FakeUser1)
+    repo.addBlockedUser(profile1.ownerId, profile2.ownerId)
+    val blockedIds = repo.getBlockedUserIds(profile1.ownerId)
+    assertEquals(1, blockedIds.size)
+    assertTrue(profile2.ownerId in blockedIds)
+  }
+
+  @Test
+  fun canAddBlockedUser() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    profile1 =
+        profile1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.createProfile(profile1)
+
+    switchToUser(FakeUser.FakeUser2)
+    profile2 =
+        profile2.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.createProfile(profile2)
+
+    switchToUser(FakeUser.FakeUser1)
+    // Initially not blocked
+    val initialBlocked = repo.getBlockedUserIds(profile1.ownerId)
+    assertFalse(profile2.ownerId in initialBlocked)
+
+    // Add blocked user
+    repo.addBlockedUser(profile1.ownerId, profile2.ownerId)
+
+    // Verify user is blocked
+    val blockedIds = repo.getBlockedUserIds(profile1.ownerId)
+    assertTrue(profile2.ownerId in blockedIds)
+
+    // Verify profile is updated correctly
+    val profile = repo.getProfile(profile1.ownerId)
+    assertTrue(profile2.ownerId in profile.userInfo.blockedUserIds)
+  }
+
+  @Test
+  fun canRemoveBlockedUser() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    profile1 =
+        profile1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.createProfile(profile1)
+
+    switchToUser(FakeUser.FakeUser2)
+    profile2 =
+        profile2.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.createProfile(profile2)
+
+    switchToUser(FakeUser.FakeUser1)
+    // First add blocked user
+    repo.addBlockedUser(profile1.ownerId, profile2.ownerId)
+    var blockedIds = repo.getBlockedUserIds(profile1.ownerId)
+    assertTrue(profile2.ownerId in blockedIds)
+
+    // Remove blocked user
+    repo.removeBlockedUser(profile1.ownerId, profile2.ownerId)
+
+    // Verify user is no longer blocked
+    blockedIds = repo.getBlockedUserIds(profile1.ownerId)
+    assertFalse(profile2.ownerId in blockedIds)
+
+    // Verify profile is updated correctly
+    val profile = repo.getProfile(profile1.ownerId)
+    assertFalse(profile2.ownerId in profile.userInfo.blockedUserIds)
+  }
+
+  @Test
+  fun getBlockedUserIds_returnsEmptyList_whenProfileMissing() = runTest {
+    // Should return emptyList when profile doesn't exist (not throw)
+    val blockedIds = repo.getBlockedUserIds("non-existent-uid")
+    assertTrue(blockedIds.isEmpty())
   }
 
   @After

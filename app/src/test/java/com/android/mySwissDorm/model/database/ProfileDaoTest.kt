@@ -244,6 +244,7 @@ class ProfileDaoTest {
         maxSize = 50,
         preferredRoomTypes = preferredRoomTypes,
         bookmarkedListingIds = bookmarkedListingIds,
+        blockedUserIds = emptyList(),
         language = "ENGLISH",
         isPublic = true,
         isPushNotified = true,

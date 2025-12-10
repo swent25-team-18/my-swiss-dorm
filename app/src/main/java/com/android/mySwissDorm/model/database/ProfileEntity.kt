@@ -34,6 +34,7 @@ import com.android.mySwissDorm.model.rental.RoomType
  * @property maxSize Optional maximum size preference in square meters.
  * @property preferredRoomTypes List of preferred room types (stored as comma-separated enum names).
  * @property bookmarkedListingIds List of bookmarked listing IDs (stored using TypeConverter).
+ * @property blockedUserIds List of blocked user IDs (stored using TypeConverter).
  * @property language User's preferred language (stored as enum name string).
  * @property isPublic Whether the user's profile is public.
  * @property isPushNotified Whether the user has push notifications enabled.
@@ -58,6 +59,7 @@ data class ProfileEntity(
     val maxSize: Int? = null,
     val preferredRoomTypes: String, // Comma-separated enum names (e.g., "STUDIO,APARTMENT")
     val bookmarkedListingIds: List<String> = emptyList(),
+    val blockedUserIds: List<String> = emptyList(),
     // UserSettings fields
     val language: String, // Enum name (e.g., "ENGLISH", "FRENCH")
     val isPublic: Boolean = false,
@@ -107,7 +109,8 @@ data class ProfileEntity(
             minSize = minSize,
             maxSize = maxSize,
             preferredRoomTypes = roomTypes,
-            bookmarkedListingIds = bookmarkedListingIds)
+            bookmarkedListingIds = bookmarkedListingIds,
+            blockedUserIds = blockedUserIds)
 
     val userSettings =
         UserSettings(
@@ -146,6 +149,7 @@ data class ProfileEntity(
           maxSize = profile.userInfo.maxSize,
           preferredRoomTypes = roomTypesString,
           bookmarkedListingIds = profile.userInfo.bookmarkedListingIds,
+          blockedUserIds = profile.userInfo.blockedUserIds,
           language = profile.userSettings.language.name,
           isPublic = profile.userSettings.isPublic,
           isPushNotified = profile.userSettings.isPushNotified,

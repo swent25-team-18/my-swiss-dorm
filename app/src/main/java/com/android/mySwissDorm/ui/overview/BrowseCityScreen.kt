@@ -295,23 +295,6 @@ private fun BrowseCityScreenUI(
             },
             actions = {
               if (selectedTab == 1) {
-                IconButton(
-                    onClick = {
-                      val options =
-                          ScanOptions().apply {
-                            setDesiredBarcodeFormats(ScanOptions.QR_CODE) // QR only
-                            setBeepEnabled(true)
-                            setPrompt(context.getString(R.string.settings_qr_prompt))
-                            setCaptureActivity(MyQrCaptureActivity::class.java)
-                          }
-                      qrScanLauncher.launch(options)
-                    },
-                    modifier = Modifier.testTag(C.BrowseCityTags.SCAN_QR_BUTTON)) {
-                      Icon(
-                          imageVector = Icons.Default.QrCode2,
-                          contentDescription = "Scan QR code",
-                          tint = MainColor)
-                    }
                 IconButton(onClick = { onMapClick(listingsState.items) }) {
                   Icon(
                       imageVector = Icons.Default.Map,
@@ -319,6 +302,23 @@ private fun BrowseCityScreenUI(
                       tint = MainColor)
                 }
               }
+              IconButton(
+                  onClick = {
+                    val options =
+                        ScanOptions().apply {
+                          setDesiredBarcodeFormats(ScanOptions.QR_CODE) // QR only
+                          setBeepEnabled(true)
+                          setPrompt(context.getString(R.string.settings_qr_prompt))
+                          setCaptureActivity(MyQrCaptureActivity::class.java)
+                        }
+                    qrScanLauncher.launch(options)
+                  },
+                  modifier = Modifier.testTag(C.BrowseCityTags.SCAN_QR_BUTTON)) {
+                    Icon(
+                        imageVector = Icons.Default.QrCode2,
+                        contentDescription = "Scan QR code",
+                        tint = MainColor)
+                  }
             })
       }) { pd ->
         Column(modifier = Modifier.padding(pd).fillMaxSize().testTag(C.BrowseCityTags.ROOT)) {

@@ -13,6 +13,9 @@ import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
@@ -21,6 +24,9 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class SettingsViewModelTest : FirestoreTest() {
@@ -280,5 +286,49 @@ class SettingsViewModelTest : FirestoreTest() {
       // The important part is that deletion completed successfully
     }
     assertEquals(true, cbOk)
+  }
+
+  @Test
+  fun deleteAccount_signOutException_doesNotFailDeletion() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val auth = FirebaseEmulator.auth
+    val db = FirebaseEmulator.firestore
+    val uid = auth.currentUser!!.uid
+
+    // Create profile
+    val seeded =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "ToDelete",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = Location("Seed", 0.0, 0.0),
+                    residencyName = ""),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+
+    // Create a mock auth that throws exception on signOut to test exception handling
+    val mockAuth = mock<FirebaseAuth>()
+    val mockUser = mock<FirebaseUser>()
+    whenever(mockAuth.currentUser).thenReturn(mockUser)
+    whenever(mockUser.uid).thenReturn(uid)
+    whenever(mockUser.delete()).thenReturn(Tasks.forResult(null))
+    doThrow(RuntimeException("SignOut failed")).whenever(mockAuth).signOut()
+
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    val vm = SettingsViewModel(auth = mockAuth, profiles = repo)
+    var cbOk: Boolean? = null
+
+    vm.deleteAccount({ ok, _ -> cbOk = ok }, context)
+    awaitUntil { !vm.uiState.value.isDeleting && cbOk != null }
+
+    // Deletion should still succeed even if signOut throws exception
+    assertEquals(true, cbOk)
+    val snap = db.collection(PROFILE_COLLECTION_PATH).document(uid).get().await()
+    assertEquals(false, snap.exists())
   }
 }

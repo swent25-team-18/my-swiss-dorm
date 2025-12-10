@@ -186,9 +186,15 @@ class Epic3Test : FirestoreTest() {
         // 6th step is to check that the bookmarks are indeed saved
         composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).performClick()
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.SettingsTags.BOOKMARKS_BUTTON).performScrollTo().isDisplayed()
+          composeTestRule
+              .onNodeWithTag(C.SettingsTags.BOOKMARKS_BUTTON)
+              .performScrollTo()
+              .isDisplayed()
         }
-        composeTestRule.onNodeWithTag(C.SettingsTags.BOOKMARKS_BUTTON).performScrollTo().performClick()
+        composeTestRule
+            .onNodeWithTag(C.SettingsTags.BOOKMARKS_BUTTON)
+            .performScrollTo()
+            .performClick()
 
         composeTestRule.waitUntil(10_000) {
           composeTestRule.onNodeWithTag(C.BrowseCityTags.BOOKMARKED_LISTINGS_ROOT).isDisplayed() &&

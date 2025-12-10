@@ -104,7 +104,7 @@ class Epic4Test : FirestoreTest() {
   }
 
   @Test
-  fun testProfilePictureFiltersAndMap() {
+  fun testProfilePictureFiltersAndGuestMode() {
     val fakePhoneNumber = "774321122"
     val fakeLastName = "lastNameTest"
     val fakeGoogleIdToken =
@@ -236,7 +236,10 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.onNodeWithText("Continue as guest").performClick()
 
     composeTestRule.waitUntil(10_000) {
-      composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.CITIES_LIST)
+          .performScrollTo()
+          .isDisplayed()
     }
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
       composeTestRule
@@ -250,7 +253,7 @@ class Epic4Test : FirestoreTest() {
         .performClick()
 
     composeTestRule.waitUntil(10_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
+      composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).performScrollTo().isDisplayed()
     }
     composeTestRule.onNodeWithText("Expensive listing").assertIsDisplayed().performClick()
     composeTestRule.onNodeWithContentDescription("Back").performClick()

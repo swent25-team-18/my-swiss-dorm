@@ -137,7 +137,7 @@ class Epic3Test : FirestoreTest() {
         // Zurich is the last on the list so we ll wait for it to be displayed to continue
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
           composeTestRule
-              .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Zurich"))
+              .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
               .fetchSemanticsNodes()
               .isNotEmpty()
         }

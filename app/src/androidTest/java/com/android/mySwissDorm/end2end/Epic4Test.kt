@@ -193,7 +193,7 @@ class Epic4Test : FirestoreTest() {
     }
     composeTestRule.waitUntil(10_000) {
       composeTestRule
-          .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Zurich"))
+          .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
@@ -225,9 +225,9 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.onNodeWithTag(C.SettingsTags.PROFILE_BUTTON).performClick()
 
     composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag("profile_logout_button").isDisplayed()
+      composeTestRule.onNodeWithTag("profile_logout_button").performScrollTo().isDisplayed()
     }
-    composeTestRule.onNodeWithTag("profile_logout_button").performClick()
+    composeTestRule.onNodeWithTag("profile_logout_button").performScrollTo().performClick()
 
     // For log in as guest
     composeTestRule.waitUntil(5_000) {
@@ -236,14 +236,11 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.onNodeWithText("Continue as guest").performClick()
 
     composeTestRule.waitUntil(10_000) {
-      composeTestRule
-          .onNodeWithTag(HomePageScreenTestTags.CITIES_LIST)
-          .performScrollTo()
-          .isDisplayed()
+      composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
     }
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
       composeTestRule
-          .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Zurich"))
+          .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
@@ -253,9 +250,13 @@ class Epic4Test : FirestoreTest() {
         .performClick()
 
     composeTestRule.waitUntil(10_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).performScrollTo().isDisplayed()
+      composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
     }
-    composeTestRule.onNodeWithText("Expensive listing").assertIsDisplayed().performClick()
+    composeTestRule
+        .onNodeWithText("Expensive listing")
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
     composeTestRule.onNodeWithContentDescription("Back").performClick()
 
     composeTestRule.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
@@ -267,7 +268,9 @@ class Epic4Test : FirestoreTest() {
       composeTestRule.onNodeWithText("Vortex Review 1").isDisplayed()
     }
     composeTestRule.onNodeWithText("Vortex Review 1").assertHasClickAction().performClick()
-    composeTestRule.waitUntil(5000) { composeTestRule.onNodeWithText("First review").isDisplayed() }
+    composeTestRule.waitUntil(5000) {
+      composeTestRule.onNodeWithText("First review").performScrollTo().isDisplayed()
+    }
     composeTestRule.onNodeWithText("First review").assertIsDisplayed()
   }
 }

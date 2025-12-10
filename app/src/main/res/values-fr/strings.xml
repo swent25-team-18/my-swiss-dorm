@@ -208,6 +208,7 @@
     <string name="view_listing_apply_now">Postuler !</string>
     <string name="view_listing_listing_location">Localisation de l’annonce</string>
     <string name="view_listing_sign_in_to_apply">Connectez-vous pour contacter le propriétaire et postuler.</string>
+    <string name="poi_loading_message">Recherche des points d\'intérêt à proximité…</string>
 
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Impossible de charger l\'annonce :</string>

@@ -129,6 +129,8 @@ object C {
     const val FABSCRIM = "fab_scrim"
     const val RECOMMENDED = "recommendedText"
 
+    const val SCAN_QR_BUTTON = "scanQrButton"
+
     fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
 
     fun residencyCard(residencyName: String) = "browseCityResidencyCard_$residencyName"

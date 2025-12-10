@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
@@ -330,5 +332,51 @@ class SettingsViewModelTest : FirestoreTest() {
     assertEquals(true, cbOk)
     val snap = db.collection(PROFILE_COLLECTION_PATH).document(uid).get().await()
     assertEquals(false, snap.exists())
+  }
+
+  @Test
+  fun refresh_handlesPhotoRetrievalError_gracefully() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val db = FirebaseEmulator.firestore
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile with profilePicture set
+    val profileWithPhoto =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = Location("Seed", 0.0, 0.0),
+                    residencyName = "",
+                    profilePicture = "non-existent-photo.jpg"),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(profileWithPhoto).await()
+
+    // Create a photo repository that throws NoSuchElementException when retrieving
+    val throwingPhotoRepo =
+        object : PhotoRepositoryCloud() {
+          override suspend fun retrievePhoto(uid: String): Photo {
+            throw NoSuchElementException("Photo not found")
+          }
+        }
+
+    val vm =
+        SettingsViewModel(
+            auth = FirebaseEmulator.auth,
+            profiles = ProfileRepositoryFirestore(FirebaseEmulator.firestore),
+            photoRepositoryCloud = throwingPhotoRepo)
+    vm.refresh()
+    // Wait for the profile to load and userName to be set correctly
+    awaitUntil { vm.uiState.value.userName == "Test User" }
+
+    // Should not crash, photo should be null but other data should be loaded
+    assertEquals("Test User", vm.uiState.value.userName)
+    assertEquals(FakeUser.FakeUser1.email, vm.uiState.value.email)
+    assertNull("Photo should be null when retrieval fails", vm.uiState.value.profilePicture)
   }
 }

@@ -504,4 +504,21 @@ class NavigationViewModelTest : FirestoreTest() {
         "Guest user should be directed to Homepage", Screen.Homepage.route, destination.route)
     assertEquals("Destination should be Homepage", Screen.Homepage, destination)
   }
+
+  @Test
+  fun determineInitialDestination_authThrowsException_defaultsToSignIn() = runTest {
+    // Create a mock auth that throws exception when accessing currentUser
+    val mockAuth = mock<FirebaseAuth>()
+    whenever(mockAuth.currentUser).thenThrow(RuntimeException("Auth exception"))
+
+    val viewModel = createViewModel(auth = mockAuth)
+    val state = waitForNavigationState(viewModel)
+
+    assertFalse("Should not be loading", state.isLoading)
+    assertEquals(
+        "Should default to SignIn when auth throws exception",
+        Screen.SignIn.route,
+        state.initialDestination)
+    assertNull("Should not have initial location", state.initialLocation)
+  }
 }

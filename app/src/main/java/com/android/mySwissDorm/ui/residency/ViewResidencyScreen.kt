@@ -23,6 +23,26 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.theme.*
 
+/**
+ * Screen that displays detailed information about a residency, including its description, contact
+ * information, location, and nearby points of interest (POIs).
+ *
+ * The screen shows:
+ * - Residency name and description
+ * - Nearby points of interest (universities and supermarkets) with walking distances
+ * - Contact information (email, phone, website)
+ * - Interactive map preview
+ *
+ * POIs are calculated using the [DistanceService], which fetches universities from the
+ * [UniversitiesRepository] and supermarkets via the [WalkingRouteService]. This matches the
+ * implementation used in the main branch for consistency.
+ *
+ * @param viewResidencyViewModel The [ViewResidencyViewModel] providing residency data and POI
+ *   distances.
+ * @param residencyName The unique identifier of the residency to display.
+ * @param onGoBack Callback invoked when the user taps the back button.
+ * @param onViewMap Callback invoked when the user taps the map preview to open the full map screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewResidencyScreen(
@@ -70,6 +90,17 @@ fun ViewResidencyScreen(
       })
 }
 
+/**
+ * Content composable that handles different UI states (loading, error, success) for the residency
+ * screen.
+ *
+ * @param uiState The current UI state containing loading status, residency data, and error
+ *   messages.
+ * @param residency The residency data to display, or null if not loaded.
+ * @param errorMsg Error message to display if loading failed.
+ * @param paddingValues Padding values from the Scaffold.
+ * @param onViewMap Callback invoked when the map preview is tapped.
+ */
 @Composable
 private fun ViewResidencyContent(
     uiState: ViewResidencyUIState,
@@ -95,6 +126,11 @@ private fun ViewResidencyContent(
   }
 }
 
+/**
+ * Displays a loading indicator while the residency data is being fetched.
+ *
+ * @param paddingValues Padding values from the Scaffold.
+ */
 @Composable
 private fun LoadingView(paddingValues: PaddingValues) {
   Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
@@ -102,6 +138,12 @@ private fun LoadingView(paddingValues: PaddingValues) {
   }
 }
 
+/**
+ * Displays an error message when the residency fails to load.
+ *
+ * @param errorMsg The error message to display, or null to show a default "not found" message.
+ * @param paddingValues Padding values from the Scaffold.
+ */
 @Composable
 private fun ErrorView(errorMsg: String?, paddingValues: PaddingValues) {
   Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
@@ -112,6 +154,14 @@ private fun ErrorView(errorMsg: String?, paddingValues: PaddingValues) {
   }
 }
 
+/**
+ * Displays the main content of the residency screen, including all sections.
+ *
+ * @param residency The residency data to display.
+ * @param poiDistances List of nearby points of interest with their walking distances.
+ * @param paddingValues Padding values from the Scaffold.
+ * @param onViewMap Callback invoked when the map preview is tapped.
+ */
 @Composable
 private fun ResidencyDetailsContent(
     residency: com.android.mySwissDorm.model.residency.Residency,
@@ -136,6 +186,11 @@ private fun ResidencyDetailsContent(
       }
 }
 
+/**
+ * Displays the residency name as a header.
+ *
+ * @param name The name of the residency.
+ */
 @Composable
 private fun ResidencyNameHeader(name: String) {
   Text(
@@ -147,6 +202,11 @@ private fun ResidencyNameHeader(name: String) {
       color = TextColor)
 }
 
+/**
+ * Displays the residency description in a card.
+ *
+ * @param description The description text to display.
+ */
 @Composable
 private fun DescriptionSection(description: String) {
   SectionCard(modifier = Modifier.testTag(C.ViewResidencyTags.DESCRIPTION)) {
@@ -156,6 +216,15 @@ private fun DescriptionSection(description: String) {
   }
 }
 
+/**
+ * Displays the nearby points of interest section with walking distances.
+ *
+ * Shows universities and supermarkets within walking distance, calculated using the same
+ * [DistanceService] implementation as the main branch. If no POIs are found, displays a message
+ * indicating no nearby points of interest.
+ *
+ * @param poiDistances List of nearby points of interest with their walking distances.
+ */
 @Composable
 private fun POIDistancesSection(poiDistances: List<POIDistance>) {
   Text(
@@ -176,6 +245,11 @@ private fun POIDistancesSection(poiDistances: List<POIDistance>) {
   }
 }
 
+/**
+ * Displays a list of POI distances, grouped by walking time.
+ *
+ * @param poiDistances List of POI distances to display.
+ */
 @Composable
 private fun POIDistancesList(poiDistances: List<POIDistance>) {
   Column(
@@ -189,6 +263,12 @@ private fun POIDistancesList(poiDistances: List<POIDistance>) {
       }
 }
 
+/**
+ * Displays a single POI distance item, handling both single and multiple POIs at the same time.
+ *
+ * @param timeMinutes The walking time in minutes.
+ * @param pois List of POIs at this walking time (can be multiple if they have the same time).
+ */
 @Composable
 private fun POIDistanceItem(timeMinutes: Int, pois: List<POIDistance>) {
   val timeText =
@@ -205,6 +285,12 @@ private fun POIDistanceItem(timeMinutes: Int, pois: List<POIDistance>) {
               lineHeight = MaterialTheme.typography.bodySmall.lineHeight))
 }
 
+/**
+ * Formats the walking time text for a single POI.
+ *
+ * @param poiDistance The POI distance to format.
+ * @return Formatted string resource for the walking time.
+ */
 @Composable
 private fun formatSinglePOITimeText(poiDistance: POIDistance): String {
   return when (poiDistance.poiType) {
@@ -222,6 +308,13 @@ private fun formatSinglePOITimeText(poiDistance: POIDistance): String {
   }
 }
 
+/**
+ * Formats the walking time text for multiple POIs at the same time.
+ *
+ * @param timeMinutes The walking time in minutes.
+ * @param pois List of POIs at this walking time.
+ * @return Formatted string resource for the walking time of multiple POIs.
+ */
 @Composable
 private fun formatMultiplePOIsTimeText(timeMinutes: Int, pois: List<POIDistance>): String {
   val poiNames = pois.map { it.poiName }
@@ -244,6 +337,12 @@ private fun formatMultiplePOIsTimeText(timeMinutes: Int, pois: List<POIDistance>
   }
 }
 
+/**
+ * Determines the type label for a group of POIs (e.g., "university").
+ *
+ * @param pois List of POIs to determine the type for.
+ * @return The type label string resource, or empty string if mixed types or supermarkets.
+ */
 @Composable
 private fun determinePOITypeLabel(pois: List<POIDistance>): String {
   return when {
@@ -253,6 +352,13 @@ private fun determinePOITypeLabel(pois: List<POIDistance>): String {
   }
 }
 
+/**
+ * Displays the contact information section in a card.
+ *
+ * Shows email, phone, and website if available, or a message indicating no contact information.
+ *
+ * @param residency The residency data containing contact information.
+ */
 @Composable
 private fun ContactInformationSection(
     residency: com.android.mySwissDorm.model.residency.Residency
@@ -265,16 +371,28 @@ private fun ContactInformationSection(
     } else {
       Text(
           stringResource(R.string.view_residency_no_contact_info),
-          style = MaterialTheme.typography.bodyMedium,
-          color = Gray)
+          style =
+              MaterialTheme.typography.bodyMedium.copy(
+                  color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)))
     }
   }
 }
 
+/**
+ * Checks if the residency has any contact information available.
+ *
+ * @param residency The residency to check.
+ * @return True if the residency has at least one contact method (email, phone, or website).
+ */
 private fun hasContactInfo(residency: com.android.mySwissDorm.model.residency.Residency): Boolean {
   return residency.email != null || residency.phone != null || residency.website != null
 }
 
+/**
+ * Displays all available contact information items for the residency.
+ *
+ * @param residency The residency data containing contact information.
+ */
 @Composable
 private fun ContactInfoItems(residency: com.android.mySwissDorm.model.residency.Residency) {
   if (residency.email != null) {
@@ -288,12 +406,24 @@ private fun ContactInfoItems(residency: com.android.mySwissDorm.model.residency.
   }
 }
 
+/**
+ * Displays a single contact information item (e.g., "Email: example@email.com").
+ *
+ * @param label The label for the contact information (e.g., "Email").
+ * @param value The contact information value.
+ */
 @Composable
 private fun ContactInfoItem(label: String, value: String) {
   Text("$label: $value", style = MaterialTheme.typography.bodyMedium)
   Spacer(Modifier.height(4.dp))
 }
 
+/**
+ * Displays an interactive map preview showing the residency location.
+ *
+ * @param residency The residency data containing location information.
+ * @param onViewMap Callback invoked when the map preview is tapped.
+ */
 @Composable
 private fun LocationSection(
     residency: com.android.mySwissDorm.model.residency.Residency,
@@ -312,6 +442,12 @@ private fun LocationSection(
       })
 }
 
+/**
+ * Reusable card component for grouping related content sections.
+ *
+ * @param modifier Modifier applied to the card.
+ * @param content Composable content displayed inside the card.
+ */
 @Composable
 private fun SectionCard(
     modifier: Modifier = Modifier,

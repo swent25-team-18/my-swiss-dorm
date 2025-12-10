@@ -12,7 +12,6 @@ import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.supermarket.SupermarketsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -87,7 +86,6 @@ open class ViewResidencyViewModel(
       val distanceService =
           DistanceService(
               universitiesRepository = UniversitiesRepositoryProvider.repository,
-              supermarketsRepository = SupermarketsRepositoryProvider.repository,
               walkingRouteService =
                   com.android.mySwissDorm.model.map.WalkingRouteServiceProvider.service)
       val distances =

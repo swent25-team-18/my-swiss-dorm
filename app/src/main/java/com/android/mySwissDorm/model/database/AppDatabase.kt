@@ -94,6 +94,7 @@ abstract class AppDatabase : RoomDatabase() {
                     maxSize INTEGER,
                     preferredRoomTypes TEXT NOT NULL,
                     bookmarkedListingIds TEXT,
+                    blockedUserIds TEXT,
                     language TEXT NOT NULL,
                     isPublic INTEGER NOT NULL,
                     isPushNotified INTEGER NOT NULL,

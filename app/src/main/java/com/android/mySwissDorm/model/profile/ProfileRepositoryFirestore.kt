@@ -4,7 +4,6 @@ import android.util.Log
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RoomType
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.collections.get
 import kotlinx.coroutines.tasks.await
@@ -37,22 +36,30 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
   }
 
   override suspend fun getBlockedUserIds(ownerId: String): List<String> {
-    val doc = db.collection(PROFILE_COLLECTION_PATH).document(ownerId).get().await()
-    @Suppress("UNCHECKED_CAST") return doc.get("blockedUserIds") as? List<String> ?: emptyList()
+    return try {
+      val profile = getProfile(ownerId)
+      profile.userInfo.blockedUserIds
+    } catch (e: NoSuchElementException) {
+      // Return emptyList when profile is missing (maintains backward compatibility
+      // with previous behavior that returned emptyList for missing field)
+      emptyList()
+    }
   }
 
   override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
-    db.collection(PROFILE_COLLECTION_PATH)
-        .document(ownerId)
-        .update("blockedUserIds", FieldValue.arrayUnion(targetUid))
-        .await()
+    val profile = getProfile(ownerId)
+    val updatedBlockedUsers = profile.userInfo.blockedUserIds + targetUid
+    val updatedUserInfo = profile.userInfo.copy(blockedUserIds = updatedBlockedUsers)
+    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+    editProfile(updatedProfile)
   }
 
   override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
-    db.collection(PROFILE_COLLECTION_PATH)
-        .document(ownerId)
-        .update("blockedUserIds", FieldValue.arrayRemove(targetUid))
-        .await()
+    val profile = getProfile(ownerId)
+    val updatedBlockedUsers = profile.userInfo.blockedUserIds - targetUid
+    val updatedUserInfo = profile.userInfo.copy(blockedUserIds = updatedBlockedUsers)
+    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+    editProfile(updatedProfile)
   }
 
   override suspend fun getBookmarkedListingIds(ownerId: String): List<String> {
@@ -117,6 +124,8 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
               } ?: emptyList()
           val bookmarkedListingIds =
               (map["bookmarkedListingIds"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+          val blockedUserIds =
+              (map["blockedUserIds"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
 
           UserInfo(
               name = map["name"] as? String ?: return null,
@@ -153,6 +162,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
               maxSize = (mapNotNull["maxSize"] as? Number)?.toInt(),
               preferredRoomTypes = roomTypes,
               bookmarkedListingIds = bookmarkedListingIds,
+              blockedUserIds = blockedUserIds,
           )
         }
     return userInfo

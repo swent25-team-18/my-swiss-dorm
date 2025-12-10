@@ -21,7 +21,6 @@ import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.firestore.FieldValue
 import io.mockk.unmockkAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
@@ -48,11 +47,15 @@ class SettingsScreenTest : FirestoreTest() {
   @get:Rule val compose = createComposeRule()
   private lateinit var uid: String
   private val context = ApplicationProvider.getApplicationContext<Context>()
+  private lateinit var profileRepo: ProfileRepository
+
+  override fun createRepositories() {
+    profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+  }
 
   /** VM backed by emulator singletons. */
   private fun makeVm(): SettingsViewModel {
-    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = profileRepo)
   }
 
   /** Set content with our explicit VM. */
@@ -71,10 +74,6 @@ class SettingsScreenTest : FirestoreTest() {
             onViewBookmarks = onViewBookmarks)
       }
     }
-  }
-
-  override fun createRepositories() {
-    /* none */
   }
 
   @Before
@@ -242,11 +241,7 @@ class SettingsScreenTest : FirestoreTest() {
 
     // Switch back to current user (FakeUser1) and add blocked user to their list
     switchToUser(FakeUser.FakeUser1)
-    FirebaseEmulator.firestore
-        .collection(PROFILE_COLLECTION_PATH)
-        .document(uid)
-        .update("blockedUserIds", FieldValue.arrayUnion(blockedUserUid))
-        .await()
+    profileRepo.addBlockedUser(uid, blockedUserUid)
 
     setContentWithVm()
     compose.waitForIdle()

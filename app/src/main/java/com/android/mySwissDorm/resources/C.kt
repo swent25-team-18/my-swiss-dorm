@@ -29,6 +29,7 @@ object C {
     const val SIGN_UP_BUTTON = "signUpButton"
     const val SIGN_UP_HELP_TEXT = "signUpHelpText"
     const val SIGN_UP_BACK_BUTTON = "signUpBackButton"
+    const val SKIP = "skip"
 
     fun universityNameTestTag(universityName: String?): String {
       return "${universityName ?: "nullValUniversityName"}TestTag"

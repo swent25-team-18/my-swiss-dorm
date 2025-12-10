@@ -176,6 +176,7 @@
     <string name="add_listing_text">Ajouter une annonce</string>
     <string name="add_listing_select_location">Sélectionner une localisation</string>
     <string name="confirm_listing">Confirmer l’annonce</string>
+    <string name="add_listing_photo_required">Veuillez ajouter une image pour publier votre annonce.</string>
     <string name="add_listing_invalid_form_text">Veuillez compléter tous les champs requis (taille, prix et date de début valides) ou connectez-vous si vous êtes invité.</string>
     <string name="add_listing_invalid_size_text">Entrez 1.0–1000.0 avec un seul décimal (ex : 18.5).</string>
     <string name="add_listing_invalid_price_text">Entrez un entier entre 1 et 10’000.</string>

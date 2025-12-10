@@ -5,11 +5,16 @@ import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
+import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
+import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.ui.profile.MainDispatcherRule
 import com.android.mySwissDorm.utils.FakePhotoRepository
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
@@ -20,6 +25,10 @@ import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import com.google.firebase.Timestamp
 import java.io.File
+import java.net.URL
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -28,6 +37,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -42,19 +52,56 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AddListingViewModelTest : FirestoreTest() {
 
+  @get:Rule val mainDispatcherRule = MainDispatcherRule()
+
   private val context = ApplicationProvider.getApplicationContext<Context>()
+  private val photo1 = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
 
   override fun createRepositories() {
     PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
     RentalListingRepositoryProvider.repository =
         RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+    ResidenciesRepositoryProvider.repository =
+        ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
   private fun freshVM(): AddListingViewModel = AddListingViewModel()
 
   @Before
   override fun setUp() {
-    super.setUp()
+    runTest {
+      super.setUp()
+      switchToUser(FakeUser.FakeUser1)
+      // Seed residencies needed for tests
+      ResidenciesRepositoryProvider.repository.addResidency(
+          Residency(
+              name = "Vortex",
+              description = "Test residency",
+              location = Location(name = "Vortex", latitude = 46.52, longitude = 6.57),
+              city = "Lausanne",
+              email = null,
+              phone = null,
+              website = URL("https://example.com")))
+      ResidenciesRepositoryProvider.repository.addResidency(
+          Residency(
+              name = "Atrium",
+              description = "Test residency",
+              location = Location(name = "Atrium", latitude = 46.52, longitude = 6.57),
+              city = "Lausanne",
+              email = null,
+              phone = null,
+              website = URL("https://example.com")))
+      ResidenciesRepositoryProvider.repository.addResidency(
+          Residency(
+              name = "Private Accommodation",
+              description = "Private flat",
+              location = Location(name = "Lausanne centre", latitude = 46.52, longitude = 6.63),
+              city = "Lausanne",
+              email = null,
+              phone = null,
+              website = null))
+      delay(500) // Wait for residencies to be persisted
+    }
   }
 
   @After
@@ -70,6 +117,7 @@ class AddListingViewModelTest : FirestoreTest() {
     assertFalse("Empty form must not be considered valid", vm.uiState.value.isFormValid)
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun vm_marks_complete_valid_form_as_valid() = runTest {
     switchToUser(FakeUser.FakeUser1)
@@ -83,6 +131,11 @@ class AddListingViewModelTest : FirestoreTest() {
     vm.setSizeSqm("25.0") // one decimal → accepted by size validator
     vm.setPrice("1200.0") // one decimal too, to satisfy any strict regex
     vm.setStartDate(Timestamp.now())
+    vm.addPhoto(photo1)
+
+    // Wait for photo to be added to the state by advancing the test dispatcher
+    advanceUntilIdle()
+    assertTrue("Photo should be added to pickedImages", vm.uiState.value.pickedImages.isNotEmpty())
 
     val s = vm.uiState.value
     assertTrue("Form with all required, correctly formatted fields must be valid", s.isFormValid)
@@ -130,11 +183,17 @@ class AddListingViewModelTest : FirestoreTest() {
     // Lower edge valid
     vm.setSizeSqm("1.0")
     vm.setPrice("1.0")
+    vm.addPhoto(photo1)
+    // Wait for photo to be added
+    advanceUntilIdle()
     assertTrue("Size 1.0 and price 1.0 should be valid", vm.uiState.value.isFormValid)
 
     // Upper edge valid
     vm.setSizeSqm("1000.0")
     vm.setPrice("9999.0")
+    vm.addPhoto(photo1)
+    // Wait for photo to be added
+    advanceUntilIdle()
     assertTrue("Upper bounds inside limit should be valid", vm.uiState.value.isFormValid)
 
     // Size over max (typing clamps to 1000.0)
@@ -144,6 +203,9 @@ class AddListingViewModelTest : FirestoreTest() {
     // Price over max: typing clamps to 10000; submit validator allows 10000 → still valid
     vm.setSizeSqm("10.0")
     vm.setPrice("10001")
+    vm.addPhoto(photo1)
+    // Wait for photo to be added
+    advanceUntilIdle()
     assertTrue(
         "Typing clamps price to 10000; validator should still consider form valid",
         vm.uiState.value.isFormValid)
@@ -193,12 +255,15 @@ class AddListingViewModelTest : FirestoreTest() {
         vm.setHousingType(RoomType.STUDIO)
         vm.setSizeSqm("25.0")
         vm.setPrice("1200")
+        vm.addPhoto(photo1)
         vm.setStartDate(Timestamp.now())
 
         val customLoc =
             com.android.mySwissDorm.model.map.Location(
                 name = "Custom flat", latitude = 46.52, longitude = 6.63)
         vm.setCustomLocation(customLoc)
+        // Wait for photo to be added
+        advanceUntilIdle()
         assertTrue(vm.uiState.value.isFormValid)
         vm.submitForm({}, context)
         assertNotEquals("At least one field is not valid", vm.uiState.value.errorMsg)
@@ -233,6 +298,9 @@ class AddListingViewModelTest : FirestoreTest() {
     vm.setSizeSqm("25.0")
     vm.setPrice("1200.0")
     vm.setStartDate(Timestamp.now())
+    vm.addPhoto(photo1)
+    // Wait for photo to be added
+    advanceUntilIdle()
     assertTrue("Form itself should be valid", vm.uiState.value.isFormValid)
     vm.submitForm({ fail("onConfirm must not be called for guest users") }, context)
     assertEquals("Guest users cannot create listings", vm.uiState.value.errorMsg)

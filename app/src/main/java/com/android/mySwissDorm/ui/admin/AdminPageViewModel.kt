@@ -19,6 +19,7 @@ import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryStorage
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
@@ -37,7 +38,8 @@ class AdminPageViewModel(
         UniversitiesRepositoryProvider.repository,
     private val adminRepo: AdminRepository = AdminRepository(),
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
-    val photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository,
+    val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryStorage(photoSubDir = "cities/"),
     val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository
 ) : BaseLocationSearchViewModel() {
   override val logTag = "AdminPageViewModel"

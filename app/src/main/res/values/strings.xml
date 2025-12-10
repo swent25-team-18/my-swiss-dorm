@@ -206,6 +206,8 @@
     <string name="view_listing_listing_location">Listing Location</string>
     <string name="view_listing_sign_in_to_apply">Sign in to contact the owner and apply.</string>
     <string name="poi_loading_message">Fetching nearby points of interest…</string>
+    <string name="view_listing_translate_listing">Translate listing</string>
+    <string name="view_listing_see_original">See original</string>
 
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Failed to load listing:</string>

@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -91,6 +92,7 @@ fun ViewListingScreen(
   val isBookmarked = listingUIState.isBookmarked
   val hasExistingMessage = listingUIState.hasExistingMessage
   var showShareDialog by remember { mutableStateOf(false) }
+  var isTranslated by remember { mutableStateOf(false) }
 
   // Button is enabled only if there's a message, user is not blocked, and no existing message
   val canApply = hasMessage && !isBlockedByOwner && !hasExistingMessage
@@ -107,6 +109,8 @@ fun ViewListingScreen(
       viewListingViewModel.clearErrorMsg()
     }
   }
+
+  LaunchedEffect(listing) { viewListingViewModel.translateListing(context) }
 
   if (listingUIState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -197,8 +201,20 @@ fun ViewListingScreen(
                       .imePadding()
                       .testTag(C.ViewListingTags.ROOT),
               verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                val clickableText =
+                    if (isTranslated) {
+                      context.getString(R.string.view_listing_see_original)
+                    } else {
+                      context.getString(R.string.view_listing_translate_listing)
+                    }
                 Text(
-                    text = listing.title,
+                    text = clickableText,
+                    modifier = Modifier.clickable(onClick = { isTranslated = !isTranslated }),
+                    color = MainColor)
+                val titleToDisplay =
+                    if (isTranslated) listingUIState.translatedTitle else listing.title
+                Text(
+                    text = titleToDisplay,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.SemiBold,
                     lineHeight = 32.sp,
@@ -372,7 +388,10 @@ fun ViewListingScreen(
                   Text(
                       "${stringResource(R.string.description)} :", fontWeight = FontWeight.SemiBold)
                   Spacer(Modifier.height(3.dp))
-                  Text(listing.description, style = MaterialTheme.typography.bodyLarge)
+                  val descriptionToDisplay =
+                      if (isTranslated) listingUIState.translatedDescription
+                      else listing.description
+                  Text(descriptionToDisplay, style = MaterialTheme.typography.bodyLarge)
                 }
 
                 ImageGrid(

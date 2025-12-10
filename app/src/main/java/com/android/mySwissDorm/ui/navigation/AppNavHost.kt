@@ -468,7 +468,7 @@ fun AppNavHost(
                                   context.getString(R.string.view_listing_message_sent),
                                   Toast.LENGTH_LONG)
                               .show()
-                          navActions.goBack()
+                          navActions.navigateTo(Screen.ListingOverview(listingUid))
                         }
                       }
                     }

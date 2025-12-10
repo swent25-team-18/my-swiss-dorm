@@ -13,9 +13,20 @@ import io.getstream.chat.android.state.plugin.config.StatePluginConfig
 import io.getstream.chat.android.state.plugin.factory.StreamStatePluginFactory
 import io.getstream.result.Result
 
+/**
+ * Thin wrapper around Stream Chat SDK to centralize initialization, connection, and channel
+ * creation. This provider is intentionally minimal to keep Stream-specific logic in one place and
+ * make it easier to stub in tests.
+ */
 object StreamChatProvider {
   private var client: ChatClient? = null
 
+  /**
+   * Initializes Stream Chat with offline/state plugins and stores the singleton client. Safe to
+   * call multiple times; initialization only happens once.
+   *
+   * @throws IllegalStateException if the STREAM_API_KEY meta-data entry is missing or blank.
+   */
   fun initialize(context: Context) {
     if (client == null) {
       val apiKey = getApiKeyFromManifest(context)
@@ -39,6 +50,7 @@ object StreamChatProvider {
     }
   }
 
+  /** Returns the singleton [ChatClient] or throws if not initialized. */
   fun getClient(): ChatClient {
     return client ?: throw IllegalStateException("Stream Chat not initialized.")
   }
@@ -53,6 +65,10 @@ object StreamChatProvider {
     client = null
   }
 
+  /**
+   * Connects the given user if no user is currently connected. Uses dev token (suitable for
+   * development and emulator environments).
+   */
   suspend fun connectUser(firebaseUserId: String, displayName: String, imageUrl: String) {
     val user = User(id = firebaseUserId, name = displayName, image = imageUrl)
 
@@ -66,6 +82,10 @@ object StreamChatProvider {
   /**
    * Creates or updates a user in Stream Chat by temporarily connecting as them. This is a
    * development-mode workaround since client-side upsertUsers might be restricted or unavailable.
+   */
+  /**
+   * Creates or updates a user by temporarily connecting as them (development-mode workaround).
+   * Reconnects the previous user when finished.
    */
   suspend fun upsertUser(userId: String, name: String, image: String = "") {
     val client = getClient()
@@ -98,10 +118,12 @@ object StreamChatProvider {
     }
   }
 
+  /** Disconnects the current user. */
   suspend fun disconnectUser(flushPersistence: Boolean = false) {
     getClient().disconnect(flushPersistence = flushPersistence).await()
   }
 
+  /** Reads the Stream API key from AndroidManifest meta-data (STREAM_API_KEY). */
   private fun getApiKeyFromManifest(context: Context): String {
     return try {
       val appInfo =
@@ -113,8 +135,15 @@ object StreamChatProvider {
     }
   }
 
+  /** Returns true when the Stream Chat client has been initialized. */
   fun isInitialized(): Boolean = client != null
 
+  /**
+   * Creates (and watches) a messaging channel, optionally sending an initial message when empty.
+   *
+   * @return the CID in `type:id` format (e.g., `messaging:uid1-uid2`).
+   * @throws IllegalStateException if creation fails.
+   */
   suspend fun createChannel(
       channelType: String = "messaging",
       channelId: String? = null,

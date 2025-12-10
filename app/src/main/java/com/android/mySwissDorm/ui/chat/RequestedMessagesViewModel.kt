@@ -42,7 +42,15 @@ data class RequestedMessagesUiState(
     val successMessage: String? = null
 )
 
-/** ViewModel for managing requested messages screen state and operations. */
+/**
+ * ViewModel for the Requested Messages screen.
+ *
+ * Responsibilities:
+ * - Load pending requested messages for the current user.
+ * - Enrich messages with sender profile info (name/photo).
+ * - Approve messages by creating/connecting Stream Chat users and channels.
+ * - Reject messages by updating status and deleting the request.
+ */
 class RequestedMessagesViewModel(
     private val requestedMessageRepository: RequestedMessageRepository =
         RequestedMessageRepositoryProvider.repository,
@@ -73,6 +81,10 @@ class RequestedMessagesViewModel(
     _uiState.value = _uiState.value.copy(successMessage = message)
   }
 
+  /**
+   * Loads pending messages for the current user and enriches them with sender profile info. Updates
+   * UI state with loading/error as needed.
+   */
   fun loadMessages(context: Context) {
     val currentUser = auth.currentUser
     if (currentUser == null) {
@@ -120,10 +132,17 @@ class RequestedMessagesViewModel(
     }
   }
 
+  /** Convenience to reload messages. */
   fun refreshMessages(context: Context) {
     loadMessages(context)
   }
 
+  /**
+   * Approves a requested message:
+   * - Marks the message APPROVED and refreshes list
+   * - If user is signed in and Stream is available, connects current user, upserts sender, creates
+   *   a chat channel, and sets success messaging. Falls back gracefully on failures.
+   */
   fun approveMessage(messageId: String, context: Context) {
     viewModelScope.launch {
       try {
@@ -188,6 +207,10 @@ class RequestedMessagesViewModel(
     }
   }
 
+  /**
+   * Rejects a requested message:
+   * - Marks the message REJECTED, attempts deletion, refreshes list, and sets success messaging.
+   */
   fun rejectMessage(messageId: String, context: Context) {
     viewModelScope.launch {
       try {

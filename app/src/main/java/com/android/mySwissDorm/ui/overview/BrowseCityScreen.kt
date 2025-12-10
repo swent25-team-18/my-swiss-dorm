@@ -305,7 +305,8 @@ private fun BrowseCityScreenUI(
                             setCaptureActivity(MyQrCaptureActivity::class.java)
                           }
                       qrScanLauncher.launch(options)
-                    }) {
+                    },
+                    modifier = Modifier.testTag(C.BrowseCityTags.SCAN_QR_BUTTON)) {
                       Icon(
                           imageVector = Icons.Default.QrCode2,
                           contentDescription = "Scan QR code",

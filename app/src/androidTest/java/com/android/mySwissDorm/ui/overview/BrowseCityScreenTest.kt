@@ -1163,4 +1163,60 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     assertFalse(items.find { it.listingUid == "small" }!!.isRecommended)
     assertFalse(items.find { it.listingUid == "wrongType" }!!.isRecommended)
   }
+
+  // ---------- QR scan tests ----------
+
+  @Test
+  fun qrScanResult_nullOrBlank_doesNotNavigate() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    var navigated = false
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(null, context) { navigated = true }
+      handleQrScanResult("", context) { navigated = true }
+    }
+
+    assert(!navigated) { "QR navigation should not be triggered for null or blank contents" }
+  }
+
+  @Test
+  fun qrScanResult_invalidDomain_doesNotNavigate() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    var navigated = false
+    val invalidUrl = "https://example.com/some/path"
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(invalidUrl, context) { navigated = true }
+    }
+
+    assert(!navigated) { "QR navigation should not be triggered for invalid domain" }
+  }
+
+  @Test
+  fun qrScanResult_validMySwissDormLink_triggersNavigation() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val validUrl = "https://my-swiss-dorm.web.app/some/path?foo=bar"
+    var navigatedUrl: String? = null
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(validUrl, context) { navigatedUrl = it }
+    }
+
+    assert(navigatedUrl == validUrl) {
+      "QR navigation should be triggered with the scanned MySwissDorm URL"
+    }
+  }
+
+  @Test
+  fun qrScanButton_isDisplayedAndClickable() {
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation, onSelectListing = {})
+    }
+    compose.waitForIdle()
+
+    compose
+        .onNodeWithTag(C.BrowseCityTags.SCAN_QR_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+  }
 }

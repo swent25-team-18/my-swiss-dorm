@@ -439,10 +439,12 @@
 
     <!-- CameraButton -->
     <string name="camera_button_default_text">Take a picture</string>
+    <string name="camera_button_permission_denied_text">This application has no access to the camera</string>
 
     <!-- GalleryButton -->
     <string name="gallery_button_default_text">Choose a picture</string>
     <string name="gallery_button_default_multiple_text">Choose pictures</string>
+    <string name="gallery_button_permission_denied_text">This application has no access to the media</string>
 
     <!-- SanitizedTextFields -->
     <string name="sanitized_text_fields_email_placeholder">name@domain.com</string>

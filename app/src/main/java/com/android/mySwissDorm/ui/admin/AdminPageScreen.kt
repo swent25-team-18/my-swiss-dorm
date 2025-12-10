@@ -41,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -52,6 +53,7 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.InputSanitizers
 import com.android.mySwissDorm.ui.SanitizedOutlinedTextField
+import com.android.mySwissDorm.ui.homepage.HomePageScreenSizes
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -60,6 +62,11 @@ import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
+
+object AdminPageScreenSizes {
+  val CITY_IMAGE_HEIGHT = 120.dp
+  val VERTICAL_SPACE_EL = 14.dp
+}
 
 // Documentation was made with the help of AI
 /**
@@ -154,7 +161,8 @@ fun AdminPageScreen(
             Modifier.padding(pad)
                 .padding(horizontal = 16.dp, vertical = 10.dp)
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(AdminPageScreenSizes.VERTICAL_SPACE_EL)) {
               // First row: City, Residency, University
               Row(
                   modifier = Modifier.fillMaxWidth(),
@@ -226,17 +234,29 @@ fun AdminPageScreen(
                       fieldType = InputSanitizers.FieldType.Description,
                       placeholder = stringResource(R.string.description),
                       imeAction = ImeAction.Next)
-                  DefaultAddPhotoButton(onSelectPhoto = vm::onImage)
-                  if (ui.image != null) {
-                    ImageGrid(
-                        imageUris = setOf(ui.image.image),
-                        isEditingMode = true,
-                        onRemove = { vm.onImage(null) },
-                        onImageClick = {
-                          fullScreenImage = ui.image.image
-                          isFullScreen = true
-                        })
-                  }
+                  Column(
+                      verticalArrangement =
+                          Arrangement.spacedBy(AdminPageScreenSizes.VERTICAL_SPACE_EL),
+                      horizontalAlignment = Alignment.CenterHorizontally) {
+                        DefaultAddPhotoButton(onSelectPhoto = vm::onImage)
+                        if (ui.image != null) {
+                          val cityHomePageWidth = LocalConfiguration.current.screenWidthDp
+                          val cityNormalRate =
+                              HomePageScreenSizes.CITY_IMAGE_HEIGHT.value / cityHomePageWidth
+                          val cityNormalWidth =
+                              (AdminPageScreenSizes.CITY_IMAGE_HEIGHT.value / cityNormalRate).dp
+                          ImageGrid(
+                              imageUris = setOf(ui.image.image),
+                              imageHeight = AdminPageScreenSizes.CITY_IMAGE_HEIGHT,
+                              imageWidth = cityNormalWidth,
+                              isEditingMode = true,
+                              onRemove = { vm.onImage(null) },
+                              onImageClick = {
+                                fullScreenImage = ui.image.image
+                                isFullScreen = true
+                              })
+                        }
+                      }
                 }
                 // Residency fields
                 AdminPageViewModel.EntityType.RESIDENCY -> {

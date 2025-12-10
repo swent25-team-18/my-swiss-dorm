@@ -35,7 +35,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.screen.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
@@ -126,10 +126,8 @@ class Epic4Test : FirestoreTest() {
       }
     }
 
-    composeTestRule.waitUntil(10_000) {
-      composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).isDisplayed()
-    }
-    composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).performClick()
+    composeTestRule.waitUntil(10_000) { composeTestRule.onNodeWithTag(SKIP).isDisplayed() }
+    composeTestRule.onNodeWithTag(SKIP).performClick()
     composeTestRule.waitUntil(10_000) {
       composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
     }
@@ -191,7 +189,6 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.waitUntil(10_000) {
       composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
     }
-    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
 
     composeTestRule.waitUntil(timeoutMillis = 15_000) {
       composeTestRule
@@ -199,6 +196,8 @@ class Epic4Test : FirestoreTest() {
           .performScrollTo()
           .isDisplayed()
     }
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+
     composeTestRule
         .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
         .performClick()
@@ -239,7 +238,6 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.waitUntil(10_000) {
       composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
     }
-    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
       composeTestRule
@@ -248,6 +246,8 @@ class Epic4Test : FirestoreTest() {
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+
     composeTestRule
         .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
         .performClick()

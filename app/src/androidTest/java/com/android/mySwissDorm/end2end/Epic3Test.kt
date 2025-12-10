@@ -22,7 +22,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
+import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.screen.SignUpScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreenTestTags
@@ -124,10 +124,8 @@ class Epic3Test : FirestoreTest() {
           }
         }
 
-        composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).isDisplayed()
-        }
-        composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES).performClick()
+        composeTestRule.waitUntil(5_000) { composeTestRule.onNodeWithTag(SKIP).isDisplayed() }
+        composeTestRule.onNodeWithTag(SKIP).performClick()
         composeTestRule.waitUntil(5_000) {
           composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
         }
@@ -172,8 +170,8 @@ class Epic3Test : FirestoreTest() {
           composeTestRule.onNodeWithTag(C.ViewListingTags.APPLY_BTN).performScrollTo().isDisplayed()
         }
         composeTestRule.onNodeWithTag(C.ViewListingTags.APPLY_BTN).performClick()
-
-        composeTestRule.waitUntil(10_000) {
+        composeTestRule.onNodeWithContentDescription("Back").performClick()
+        composeTestRule.waitUntil(12_000) {
           composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
         }
 

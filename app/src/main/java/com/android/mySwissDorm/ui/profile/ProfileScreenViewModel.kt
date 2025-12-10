@@ -349,4 +349,15 @@ class ProfileScreenViewModel(
       }
     }
   }
+
+  fun clearPreferences() {
+    _uiState.update { currentState ->
+      currentState.copy(
+          minPrice = null,
+          maxPrice = null,
+          minSize = null,
+          maxSize = null,
+          selectedRoomTypes = emptySet())
+    }
+  }
 }

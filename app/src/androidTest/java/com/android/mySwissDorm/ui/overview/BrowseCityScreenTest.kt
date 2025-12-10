@@ -1112,7 +1112,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val currentProfile = profileRepo.getProfile(ownerUid)
     val updatedUserInfo =
         currentProfile.userInfo.copy(
-            maxPrice = 1500.0, minSize = 0, preferredRoomTypes = emptyList())
+            maxPrice = 1500.0, minSize = 0, preferredRoomTypes = listOf(RoomType.STUDIO))
     profileRepo.editProfile(currentProfile.copy(userInfo = updatedUserInfo))
     val expensiveListing =
         listingLaus1.copy(

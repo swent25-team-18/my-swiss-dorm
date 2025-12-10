@@ -1,5 +1,8 @@
 package com.android.mySwissDorm.ui.overview
 
+import android.content.Context
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +16,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
@@ -29,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
@@ -38,6 +43,7 @@ import com.android.mySwissDorm.ui.listing.ListingCard
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
+import com.android.mySwissDorm.ui.qr.MyQrCaptureActivity
 import com.android.mySwissDorm.ui.review.DisplayGrade
 import com.android.mySwissDorm.ui.review.truncateText
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -53,6 +59,31 @@ import com.android.mySwissDorm.ui.utils.PriceFilterContent
 import com.android.mySwissDorm.ui.utils.SizeFilterContent
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 import com.google.firebase.Timestamp
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+
+/** Handles the result of a QR scan from the settings screen. */
+internal fun handleQrScanResult(
+    contents: String?,
+    context: Context,
+    onQrNavigate: (String) -> Unit
+) {
+  if (contents.isNullOrBlank()) {
+    Toast.makeText(
+            context, context.getString(R.string.settings_qr_scan_cancelled), Toast.LENGTH_SHORT)
+        .show()
+  } else {
+    val uri = runCatching { contents.toUri() }.getOrNull()
+    if (uri == null || uri.host != "my-swiss-dorm.web.app") {
+      Toast.makeText(
+              context, context.getString(R.string.settings_qr_invalid_domain), Toast.LENGTH_SHORT)
+          .show()
+    } else {
+      // Valid MySwissDorm link – bubble up so navigation layer can handle it
+      onQrNavigate(contents)
+    }
+  }
+}
 
 /**
  * The main screen for browsing listings and reviews in a specific location.
@@ -82,7 +113,8 @@ fun BrowseCityScreen(
     onAddListingClick: () -> Unit = {},
     onAddReviewClick: () -> Unit = {},
     navigationActions: NavigationActions? = null,
-    onMapClick: (List<ListingCardUI>) -> Unit = {}
+    onMapClick: (List<ListingCardUI>) -> Unit = {},
+    onQrNavigate: (String) -> Unit = {},
 ) {
   val context = LocalContext.current
 
@@ -143,7 +175,8 @@ fun BrowseCityScreen(
       onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
       navigationActions = navigationActions,
       isGuest = uiState.isGuest,
-      onMapClick = onMapClick)
+      onMapClick = onMapClick,
+      onQrNavigate = onQrNavigate)
 
   if (uiState.showCustomLocationDialog) {
     CustomLocationDialog(
@@ -211,9 +244,17 @@ private fun BrowseCityScreenUI(
     navigationActions: NavigationActions? = null,
     startTab: Int = 1,
     isGuest: Boolean,
-    onMapClick: (List<ListingCardUI>) -> Unit = {}
+    onMapClick: (List<ListingCardUI>) -> Unit = {},
+    onQrNavigate: (String) -> Unit = {},
 ) {
   var selectedTab by rememberSaveable { mutableIntStateOf(startTab) } // 0 Reviews, 1 Listings
+  val context = LocalContext.current
+
+  // Launcher for ZXing QR scan
+  val qrScanLauncher =
+      rememberLauncherForActivityResult(ScanContract()) { result ->
+        handleQrScanResult(result.contents, context, onQrNavigate)
+      }
 
   Scaffold(
       bottomBar = { BottomBarFromNav(navigationActions) },
@@ -261,6 +302,23 @@ private fun BrowseCityScreenUI(
                       tint = MainColor)
                 }
               }
+              IconButton(
+                  onClick = {
+                    val options =
+                        ScanOptions().apply {
+                          setDesiredBarcodeFormats(ScanOptions.QR_CODE) // QR only
+                          setBeepEnabled(true)
+                          setPrompt(context.getString(R.string.settings_qr_prompt))
+                          setCaptureActivity(MyQrCaptureActivity::class.java)
+                        }
+                    qrScanLauncher.launch(options)
+                  },
+                  modifier = Modifier.testTag(C.BrowseCityTags.SCAN_QR_BUTTON)) {
+                    Icon(
+                        imageVector = Icons.Default.QrCode2,
+                        contentDescription = "Scan QR code",
+                        tint = MainColor)
+                  }
             })
       }) { pd ->
         Column(modifier = Modifier.padding(pd).fillMaxSize().testTag(C.BrowseCityTags.ROOT)) {

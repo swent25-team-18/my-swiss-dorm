@@ -390,6 +390,10 @@ class SettingsScreenTest : FirestoreTest() {
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
     compose.waitUntilTagExists(darkModeTag)
 
+    // Ensure the toggle is fully visible and clickable by scrolling to it
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performScrollTo()
+    compose.waitForIdle()
+
     // Get initial state - should be following system (could be On or Off)
     val initialState = compose.onNodeWithTag(darkModeTag, useUnmergedTree = true)
     val wasInitiallyOn =
@@ -400,20 +404,33 @@ class SettingsScreenTest : FirestoreTest() {
           false
         }
 
-    // Toggle dark mode ON
-    if (!wasInitiallyOn) {
+    // Always click to ensure preference is explicitly set to true
+    // If already ON, click OFF then ON to force explicit setting
+    if (wasInitiallyOn) {
+      // Click OFF first
       compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
       compose.waitForIdle()
-      // Wait for the state to update
       compose.waitUntil(2_000) {
         try {
           compose
               .onNodeWithTag(darkModeTag, useUnmergedTree = true)
-              .assert(hasStateDescription("On"))
+              .assert(hasStateDescription("Off"))
           true
         } catch (e: AssertionError) {
           false
         }
+      }
+    }
+    // Now click ON to explicitly set preference to true
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    // Wait for the state to update
+    compose.waitUntil(2_000) {
+      try {
+        compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).assert(hasStateDescription("On"))
+        true
+      } catch (e: AssertionError) {
+        false
       }
     }
 
@@ -421,13 +438,21 @@ class SettingsScreenTest : FirestoreTest() {
     compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).assert(hasStateDescription("On"))
 
     // Wait for the save operation to complete
+    // setPreference uses apply() which is async, so we need to wait for it
     compose.waitForIdle()
 
-    // Verify preference is saved in SharedPreferences (primary storage) - this is synchronous
-    compose.waitUntil(5_000) {
-      val savedPreference = DarkModePreferenceHelper.getPreference(context)
-      savedPreference == true
+    // Wait for preference to be saved in SharedPreferences
+    // The apply() call is async, so we poll until it's written
+    compose.waitUntil(10_000) {
+      try {
+        val savedPreference = DarkModePreferenceHelper.getPreference(context)
+        savedPreference == true
+      } catch (e: Exception) {
+        false
+      }
     }
+
+    // Final verification
     val savedPreference = DarkModePreferenceHelper.getPreference(context)
     assertEquals(
         "Dark mode preference should be saved as true in SharedPreferences", true, savedPreference)
@@ -466,6 +491,10 @@ class SettingsScreenTest : FirestoreTest() {
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
     compose.waitUntilTagExists(darkModeTag)
 
+    // Ensure the toggle is fully visible and clickable by scrolling to it
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performScrollTo()
+    compose.waitForIdle()
+
     // Get initial state
     val initialState = compose.onNodeWithTag(darkModeTag, useUnmergedTree = true)
     val wasInitiallyOff =
@@ -476,20 +505,35 @@ class SettingsScreenTest : FirestoreTest() {
           false
         }
 
-    // Toggle dark mode OFF (light mode ON)
-    if (!wasInitiallyOff) {
+    // Always click to ensure preference is explicitly set to false
+    // If already OFF, click ON then OFF to force explicit setting
+    if (wasInitiallyOff) {
+      // Click ON first
       compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
       compose.waitForIdle()
-      // Wait for the state to update
       compose.waitUntil(2_000) {
         try {
           compose
               .onNodeWithTag(darkModeTag, useUnmergedTree = true)
-              .assert(hasStateDescription("Off"))
+              .assert(hasStateDescription("On"))
           true
         } catch (e: AssertionError) {
           false
         }
+      }
+    }
+    // Now click OFF to explicitly set preference to false
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    // Wait for the state to update
+    compose.waitUntil(2_000) {
+      try {
+        compose
+            .onNodeWithTag(darkModeTag, useUnmergedTree = true)
+            .assert(hasStateDescription("Off"))
+        true
+      } catch (e: AssertionError) {
+        false
       }
     }
 
@@ -497,13 +541,21 @@ class SettingsScreenTest : FirestoreTest() {
     compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).assert(hasStateDescription("Off"))
 
     // Wait for the save operation to complete
+    // setPreference uses apply() which is async, so we need to wait for it
     compose.waitForIdle()
 
-    // Verify preference is saved in SharedPreferences (primary storage) - this is synchronous
-    compose.waitUntil(5_000) {
-      val savedPreference = DarkModePreferenceHelper.getPreference(context)
-      savedPreference == false
+    // Wait for preference to be saved in SharedPreferences
+    // The apply() call is async, so we poll until it's written
+    compose.waitUntil(10_000) {
+      try {
+        val savedPreference = DarkModePreferenceHelper.getPreference(context)
+        savedPreference == false
+      } catch (e: Exception) {
+        false
+      }
     }
+
+    // Final verification
     val savedPreference = DarkModePreferenceHelper.getPreference(context)
     assertEquals(
         "Dark mode preference should be saved as false in SharedPreferences",
@@ -544,6 +596,10 @@ class SettingsScreenTest : FirestoreTest() {
     // Scroll to dark mode toggle
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
     compose.waitUntilTagExists(darkModeTag)
+
+    // Ensure the toggle is fully visible and clickable by scrolling to it
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performScrollTo()
+    compose.waitForIdle()
 
     // Get initial state - could be On or Off depending on system theme
     val initialState = compose.onNodeWithTag(darkModeTag, useUnmergedTree = true)

@@ -84,7 +84,7 @@
     <string name="admin_page_name_required">Le nom est requis.</string>
     <string name="admin_page_location_required">La localisation est requise.</string>
     <string name="admin_page_description_required_city">La description est requise pour une ville.</string>
-    <string name="admin_page_image_id_required_city">L\'ID de l\'image est requis pour une ville.</string>
+    <string name="admin_page_image_id_required_city">Une image est requise pour une ville.</string>
     <string name="admin_page_city_name_required_residency">Le nom de la ville est requis pour une résidence.</string>
     <string name="admin_page_city_name_required_university">Le nom de la ville est requis pour une université.</string>
     <string name="admin_page_email_required_university">L\'e-mail est requis pour une université.</string>

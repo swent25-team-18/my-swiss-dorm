@@ -82,7 +82,7 @@
     <string name="admin_page_name_required">Name is required.</string>
     <string name="admin_page_location_required">Location is required.</string>
     <string name="admin_page_description_required_city">Description is required for a City.</string>
-    <string name="admin_page_image_id_required_city">Image ID is required for a City.</string>
+    <string name="admin_page_image_id_required_city">Image is required for a City.</string>
     <string name="admin_page_city_name_required_residency">City name is required for a Residency.</string>
     <string name="admin_page_city_name_required_university">City name is required for a University.</string>
     <string name="admin_page_email_required_university">Email is required for a University.</string>

@@ -255,7 +255,7 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onTypeChange(AdminPageViewModel.EntityType.CITY)
     viewModel.onName("Test City")
     viewModel.onDescription("Description")
-    viewModel.onImageId("123")
+    viewModel.onImage(photo)
     // No location set
 
     viewModel.submit(context)

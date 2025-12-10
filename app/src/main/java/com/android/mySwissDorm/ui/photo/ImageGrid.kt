@@ -33,7 +33,8 @@ import com.android.mySwissDorm.ui.theme.MainColor
  * @param isEditingMode indicate if an option to remove the image is available
  * @param onRemove the action on removing an image of the grid
  * @param modifier the modifier of the grid
- * @param imageSize the size of an image
+ * @param imageWidth the width of an image
+ * @param imageHeight the height of an image
  *
  * Note: onRemove should update the list of images given to the function in order the displays only
  * the non deleted images.
@@ -45,35 +46,39 @@ fun ImageGrid(
     onImageClick: (Uri) -> Unit = {},
     onRemove: (Uri) -> Unit = {},
     modifier: Modifier = Modifier,
-    imageSize: Dp = 120.dp
+    imageWidth: Dp = 120.dp,
+    imageHeight: Dp = 120.dp,
 ) {
   LazyRow(
       modifier = modifier,
       horizontalArrangement = Arrangement.spacedBy(8.dp),
       contentPadding = PaddingValues(horizontal = 16.dp)) {
         items(imageUris.toList()) { uri ->
-          Box(modifier = Modifier.size(imageSize).testTag(C.ImageGridTags.imageTag(uri))) {
-            AsyncImage(
-                model = uri,
-                contentDescription = null,
-                modifier =
-                    Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).clickable {
-                      onImageClick(uri)
-                    },
-                contentScale = ContentScale.Crop)
-            if (isEditingMode) {
-              FloatingActionButton(
-                  onClick = { onRemove(uri) },
-                  modifier = Modifier.offset(x = 8.dp, y = (-8).dp).size(32.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = C.ImageGridTags.ICON_DELETE_CONTENT_DESC,
-                        modifier =
-                            Modifier.size(20.dp).testTag(C.ImageGridTags.deleteButtonTag(uri)),
-                        tint = MainColor)
-                  }
-            }
-          }
+          Box(
+              modifier =
+                  Modifier.size(width = imageWidth, height = imageHeight)
+                      .testTag(C.ImageGridTags.imageTag(uri))) {
+                AsyncImage(
+                    model = uri,
+                    contentDescription = null,
+                    modifier =
+                        Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).clickable {
+                          onImageClick(uri)
+                        },
+                    contentScale = ContentScale.Crop)
+                if (isEditingMode) {
+                  FloatingActionButton(
+                      onClick = { onRemove(uri) },
+                      modifier = Modifier.offset(x = 8.dp, y = (-8).dp).size(32.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = C.ImageGridTags.ICON_DELETE_CONTENT_DESC,
+                            modifier =
+                                Modifier.size(20.dp).testTag(C.ImageGridTags.deleteButtonTag(uri)),
+                            tint = MainColor)
+                      }
+                }
+              }
         }
       }
 }

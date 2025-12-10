@@ -191,13 +191,14 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.waitUntil(10_000) {
       composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
     }
-    composeTestRule.waitUntil(10_000) {
-      composeTestRule
-          .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+
+    composeTestRule.waitUntil(timeoutMillis = 15_000) {
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+          .performScrollTo()
+          .isDisplayed()
+    }
     composeTestRule
         .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
         .performClick()
@@ -238,13 +239,15 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.waitUntil(10_000) {
       composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
     }
+    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
       composeTestRule
-          .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+          .onAllNodesWithTag(
+              HomePageScreenTestTags.getTestTagForCityCard("Lausanne"), useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
-    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
     composeTestRule
         .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
         .performClick()

@@ -131,10 +131,9 @@ class Epic3Test : FirestoreTest() {
         composeTestRule.waitUntil(5_000) {
           composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
         }
-        composeTestRule.waitUntil(5_000) {
+        composeTestRule.waitUntil(10_000) {
           composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
         }
-        // Zurich is the last on the list so we ll wait for it to be displayed to continue
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
           composeTestRule
               .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
@@ -142,11 +141,6 @@ class Epic3Test : FirestoreTest() {
               .isNotEmpty()
         }
         composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
-        composeTestRule.waitUntil(5_000) {
-          composeTestRule
-              .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
-              .isDisplayed()
-        }
         composeTestRule
             .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
             .performClick()

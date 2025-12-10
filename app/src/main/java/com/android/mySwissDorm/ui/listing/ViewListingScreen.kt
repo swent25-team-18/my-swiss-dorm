@@ -31,6 +31,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.ViewListingTags.EXISTING_MSG
+import com.android.mySwissDorm.resources.C.ViewListingTags.LOADING_POI
 import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
@@ -260,7 +262,9 @@ fun ViewListingScreen(
                       verticalAlignment = Alignment.CenterVertically,
                       horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MainColor)
+                            modifier = Modifier.size(16.dp).testTag(LOADING_POI),
+                            strokeWidth = 2.dp,
+                            color = MainColor)
                         Text(
                             stringResource(R.string.poi_loading_message),
                             style =
@@ -438,7 +442,8 @@ fun ViewListingScreen(
                   if (hasExistingMessage) {
                     // Show message that user has already sent a message
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        modifier =
+                            Modifier.fillMaxWidth().padding(vertical = 16.dp).testTag(EXISTING_MSG),
                         contentAlignment = Alignment.Center) {
                           Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(

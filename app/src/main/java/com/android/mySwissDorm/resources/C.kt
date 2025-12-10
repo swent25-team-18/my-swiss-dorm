@@ -63,6 +63,8 @@ object C {
     const val BLOCKED_BACK_BTN = "viewListingBlockedBackBtn"
     const val BACK_BTN = "viewListingBackBtn"
     const val BOOKMARK_BTN = "viewListingBookmarkBtn"
+    const val LOADING_POI = "loadingPoi"
+    const val EXISTING_MSG = "existingMessage"
   }
 
   object ViewReviewTags {

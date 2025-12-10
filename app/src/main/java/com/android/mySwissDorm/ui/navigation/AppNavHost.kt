@@ -78,10 +78,22 @@ import io.getstream.chat.android.models.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import java.net.URLEncoder
 
 // Shared state for refreshing channels when returning from RequestedMessagesScreen
 private object ChannelsRefreshState {
   val refreshKey = mutableIntStateOf(0)
+}
+
+/**
+ * Encodes the provided channel ID and navigates to the chat screen.
+ *
+ * The Stream CID can contain characters that are unsafe in navigation routes (such as ":" or "/"),
+ * so we URL-encode it before pushing it into the NavController.
+ */
+private fun openChatChannel(channelId: String, navActions: NavigationActions) {
+  val encodedChannelId = URLEncoder.encode(channelId, "UTF-8")
+  navActions.navigateTo(Screen.ChatChannel(encodedChannelId))
 }
 
 /**
@@ -226,10 +238,7 @@ fun AppNavHost(
                 }) { paddingValues ->
                   ChannelsScreen(
                       onChannelClick = { channelId ->
-                        // navActions.navigateTo(Screen.ChatChannel(channelId))
-                        Toast.makeText(
-                                context, "Chat screen not implemented yet", Toast.LENGTH_SHORT)
-                            .show()
+                        openChatChannel(channelId, navActions)
                       },
                       onRequestedMessagesClick = {
                         navActions.navigateTo(Screen.RequestedMessages)
@@ -692,7 +701,7 @@ fun AppNavHost(
             SelectUserToChatScreen(
                 onBackClick = { navActions.goBack() },
                 onUserSelected = { channelCid ->
-                  navActions.navigateTo(Screen.ChatChannel(channelCid))
+                  openChatChannel(channelCid, navActions)
                 })
           }
 

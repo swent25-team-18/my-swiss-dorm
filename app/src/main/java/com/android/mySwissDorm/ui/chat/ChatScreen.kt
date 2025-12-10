@@ -1,7 +1,13 @@
 // MyChatScreen.kt
 package com.android.mySwissDorm.ui.chat
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,9 +27,12 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.compose.ui.messages.MessagesScreen
 import io.getstream.chat.android.compose.ui.theme.ChatTheme
 import io.getstream.chat.android.compose.viewmodel.messages.MessagesViewModelFactory
+import io.getstream.chat.android.models.User
 import kotlinx.coroutines.delay
 
 /**
@@ -62,9 +71,38 @@ import kotlinx.coroutines.delay
  * @param onBackClick Callback invoked when the user presses the back button. This should navigate
  *   back to the channels list screen.
  * @param modifier The modifier to be applied to the root composable.
+ * @param isConnectedOverride Optional override used in tests to bypass connection logic.
+ * @param chatClientProvider Provides a [ChatClient]; defaults to [StreamChatProvider.getClient].
+ * @param currentUserProvider Provides the current Firebase user; defaults to [FirebaseAuth].
+ * @param userStateProvider Reads the current Stream user from the client.
+ * @param connectUser Connects the Firebase user to Stream; defaults to [StreamChatProvider].
+ * @param chatTheme Wrapper used to provide Stream theming; defaults to [ChatTheme].
+ * @param messagesScreen Composable used to show the message list and input; defaults to
+ *   [MessagesScreen].
+ * @param messageLimit Limits how many messages are initially loaded.
  */
 @Composable
-fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier = Modifier) {
+fun MyChatScreen(
+    channelId: String,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isConnectedOverride: Boolean? = null,
+    chatClientProvider: () -> ChatClient = { StreamChatProvider.getClient() },
+    currentUserProvider: () -> FirebaseUser? = { FirebaseAuth.getInstance().currentUser },
+    userStateProvider: (ChatClient) -> User? = { it.clientState.user.value },
+    connectUser: suspend (FirebaseUser, ChatClient) -> Unit = { firebaseUser, _ ->
+      val profile = ProfileRepositoryProvider.repository.getProfile(firebaseUser.uid)
+      StreamChatProvider.connectUser(
+          firebaseUserId = firebaseUser.uid,
+          displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
+          imageUrl = "")
+    },
+    chatTheme: @Composable (@Composable () -> Unit) -> Unit = { content -> ChatTheme(content = content) },
+    messagesScreen: @Composable (MessagesViewModelFactory, () -> Unit) -> Unit = { viewModelFactory, onBack ->
+      MessagesScreen(viewModelFactory = viewModelFactory, onBackPressed = onBack)
+    },
+    messageLimit: Int = 30,
+) {
   val isPreview = LocalInspectionMode.current
 
   if (isPreview) {
@@ -77,38 +115,37 @@ fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier 
         }
   } else {
     val context = LocalContext.current
-    val chatClient = StreamChatProvider.getClient()
-    val currentUser = FirebaseAuth.getInstance().currentUser
+    val chatClient = chatClientProvider()
+    val currentUser = currentUserProvider()
 
-    var isConnected by remember { mutableStateOf(false) }
+    var isConnected by remember {
+      mutableStateOf(isConnectedOverride ?: (userStateProvider(chatClient) != null))
+    }
     var isConnecting by remember { mutableStateOf(false) }
 
     // Check connection and connect if needed
-    LaunchedEffect(channelId) {
-      val user = chatClient.clientState.user.value
+    LaunchedEffect(channelId, isConnectedOverride) {
+      // Skip connection logic when overridden (tests)
+      if (isConnectedOverride != null) return@LaunchedEffect
+
+      val user = userStateProvider(chatClient)
       if (user != null) {
         isConnected = true
-      } else {
+      } else if (currentUser != null && !isConnecting) {
         // User not connected, try to connect
-        if (currentUser != null && !isConnecting) {
-          isConnecting = true
-          try {
-            val profile = ProfileRepositoryProvider.repository.getProfile(currentUser.uid)
-            StreamChatProvider.connectUser(
-                firebaseUserId = currentUser.uid,
-                displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
-                imageUrl = "")
-            // Wait for connection to establish
-            delay(1500)
-            isConnected = true
-          } catch (e: Exception) {
-            android.util.Log.e("MyChatScreen", "Failed to connect to Stream Chat", e)
-            // Still try to proceed, might work if connection was already in progress
-            delay(1000)
-            isConnected = chatClient.clientState.user.value != null
-          } finally {
-            isConnecting = false
-          }
+        isConnecting = true
+        try {
+          connectUser(currentUser, chatClient)
+          // Wait for connection to establish
+          delay(1500)
+          isConnected = true
+        } catch (e: Exception) {
+          android.util.Log.e("MyChatScreen", "Failed to connect to Stream Chat", e)
+          // Still try to proceed, might work if connection was already in progress
+          delay(1000)
+          isConnected = userStateProvider(chatClient) != null
+        } finally {
+          isConnecting = false
         }
       }
     }
@@ -129,13 +166,10 @@ fun MyChatScreen(channelId: String, onBackClick: () -> Unit, modifier: Modifier 
                 context = context,
                 chatClient = chatClient,
                 channelId = channelId,
-                messageLimit = 30)
+                messageLimit = messageLimit)
           }
 
-      MessagesScreen(
-          viewModelFactory = viewModelFactory,
-          onBackPressed = onBackClick,
-      )
+      chatTheme { messagesScreen(viewModelFactory, onBackClick) }
     }
   }
 }

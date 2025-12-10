@@ -65,6 +65,8 @@ fun GalleryButton(
     interactionSource: MutableInteractionSource? = null,
     choosePictureContract: ActivityResultContract<String, Uri?> =
         ActivityResultContracts.GetContent(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
@@ -75,7 +77,7 @@ fun GalleryButton(
         }
       }
   val permissionLauncher =
-      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+      rememberLauncherForActivityResult(permissionContract) { isGranted ->
         if (isGranted) {
           galleryLauncher.launch("image/*")
         } else {
@@ -127,6 +129,8 @@ fun GalleryButtonMultiplePick(
     choosePicturesContract:
         ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>> =
         ActivityResultContracts.PickMultipleVisualMedia(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
@@ -140,7 +144,7 @@ fun GalleryButtonMultiplePick(
         }
       }
   val permissionLauncher =
-      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+      rememberLauncherForActivityResult(permissionContract) { isGranted ->
         if (isGranted) {
           galleryLauncher.launch(
               PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -191,6 +195,8 @@ fun DefaultGalleryButton(
     interactionSource: MutableInteractionSource? = null,
     choosePictureContract: ActivityResultContract<String, Uri?> =
         ActivityResultContracts.GetContent(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
 ) {
   GalleryButton(
       onSelect = onSelect,
@@ -202,6 +208,7 @@ fun DefaultGalleryButton(
       border = border,
       contentPadding = contentPadding,
       interactionSource = interactionSource,
+      permissionContract = permissionContract,
       choosePictureContract = choosePictureContract) {
         Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
         Spacer(Modifier.width(8.dp))
@@ -229,6 +236,8 @@ fun DefaultGalleryButtonMultiplePick(
     choosePicturesContract:
         ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>> =
         ActivityResultContracts.PickMultipleVisualMedia(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
 ) {
   GalleryButtonMultiplePick(
       onSelect = onSelect,
@@ -240,6 +249,7 @@ fun DefaultGalleryButtonMultiplePick(
       border = border,
       contentPadding = contentPadding,
       interactionSource = interactionSource,
+      permissionContract = permissionContract,
       choosePicturesContract = choosePicturesContract) {
         Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
         Spacer(Modifier.width(8.dp))

@@ -67,6 +67,8 @@ fun CameraButton(
     interactionSource: MutableInteractionSource? = null,
     takePictureContract: ActivityResultContract<Uri, Boolean> =
         ActivityResultContracts.TakePicture(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
@@ -80,7 +82,7 @@ fun CameraButton(
         }
       }
   val permissionLauncher =
-      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+      rememberLauncherForActivityResult(permissionContract) { isGranted ->
         if (isGranted) {
           cameraLauncher.launch(photoCaptured?.image ?: return@rememberLauncherForActivityResult)
         } else {
@@ -130,11 +132,14 @@ fun DefaultCameraButton(
     interactionSource: MutableInteractionSource? = null,
     takePictureContract: ActivityResultContract<Uri, Boolean> =
         ActivityResultContracts.TakePicture(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
 ) {
   CameraButton(
       onSave = onSave,
       modifier = modifier,
       takePictureContract = takePictureContract,
+      permissionContract = permissionContract,
       enabled = enabled,
       shape = shape,
       colors = colors,

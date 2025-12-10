@@ -1,9 +1,5 @@
 package com.android.mySwissDorm.ui
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -15,6 +11,8 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.utils.FakeRequestPermissionContract
+import com.android.mySwissDorm.utils.FakeTakePictureContract
 import junit.framework.TestCase.assertTrue
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
@@ -23,29 +21,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CameraButtonTest {
-  private class FakeTakePictureContract
-  private constructor(private val shouldSucceed: Boolean = true) :
-      ActivityResultContract<Uri, Boolean>() {
-
-    override fun createIntent(context: Context, input: Uri): Intent {
-      return Intent("FAKE")
-    }
-
-    override fun getSynchronousResult(context: Context, input: Uri): SynchronousResult<Boolean>? {
-      return SynchronousResult(shouldSucceed)
-    }
-
-    override fun parseResult(resultCode: Int, intent: Intent?): Boolean {
-      return shouldSucceed
-    }
-
-    companion object {
-      fun success() = FakeTakePictureContract(true)
-
-      fun failure() = FakeTakePictureContract(false)
-    }
-  }
-
   val simpleTestTag = "simpleTestTag"
 
   @get:Rule val composeTestRule = createComposeRule()
@@ -68,6 +43,7 @@ class CameraButtonTest {
     composeTestRule.setContent {
       CameraButton(
           onSave = { clicked.value = true },
+          permissionContract = FakeRequestPermissionContract.success(),
           takePictureContract = FakeTakePictureContract.success())
     }
     val cameraButtonNode = composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG)
@@ -83,6 +59,7 @@ class CameraButtonTest {
     composeTestRule.setContent {
       DefaultCameraButton(
           onSave = { notClicked.value = false },
+          permissionContract = FakeRequestPermissionContract.success(),
           takePictureContract = FakeTakePictureContract.failure())
     }
     val cameraButtonNode = composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG)
@@ -100,6 +77,7 @@ class CameraButtonTest {
     composeTestRule.setContent {
       CameraButton(
           onSave = { photoCaptured.value = it },
+          permissionContract = FakeRequestPermissionContract.success(),
           takePictureContract = FakeTakePictureContract.success())
     }
     val cameraButtonNode = composeTestRule.onNodeWithTag(C.CameraButtonTag.TAG)

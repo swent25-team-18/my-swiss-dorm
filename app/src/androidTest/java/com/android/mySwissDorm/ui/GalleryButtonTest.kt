@@ -20,6 +20,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.utils.FakeGetContentContract
+import com.android.mySwissDorm.utils.FakeRequestPermissionContract
 import junit.framework.TestCase.assertTrue
 import kotlin.collections.emptyList
 import org.junit.After
@@ -72,30 +74,6 @@ class GalleryButtonTest {
     }
   }
 
-  private inner class FakeGetContentContract(private val shouldSucceed: Boolean = true) :
-      ActivityResultContract<String, Uri?>() {
-
-    override fun createIntent(context: Context, input: String): Intent {
-      return Intent("FAKE")
-    }
-
-    override fun getSynchronousResult(context: Context, input: String): SynchronousResult<Uri?>? {
-      return if (shouldSucceed) {
-        SynchronousResult(Uri.parse(fakeUri))
-      } else {
-        SynchronousResult(null)
-      }
-    }
-
-    override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
-      return if (shouldSucceed) {
-        Uri.parse(fakeUri)
-      } else {
-        null
-      }
-    }
-  }
-
   val simpleTestTag = "simpleTestTag"
 
   @get:Rule val composeTestRule = createComposeRule()
@@ -122,7 +100,8 @@ class GalleryButtonTest {
             clicked.value = true
             photo.value = it
           },
-          choosePictureContract = FakeGetContentContract(true))
+          permissionContract = FakeRequestPermissionContract.success(),
+          choosePictureContract = FakeGetContentContract(true, fakeUri))
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG)
     galleryButtonNode.assertIsDisplayed()
@@ -137,7 +116,8 @@ class GalleryButtonTest {
     composeTestRule.setContent {
       DefaultGalleryButton(
           onSelect = { notClicked.value = false },
-          choosePictureContract = FakeGetContentContract(false))
+          permissionContract = FakeRequestPermissionContract.success(),
+          choosePictureContract = FakeGetContentContract(false, fakeUri))
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG)
     galleryButtonNode.assertIsDisplayed()
@@ -196,6 +176,7 @@ class GalleryButtonTest {
             clicked.value = true
             photos.addAll(it)
           },
+          permissionContract = FakeRequestPermissionContract.success(),
           choosePicturesContract = FakePickMultipleVisualMediaContract(true))
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
@@ -215,6 +196,7 @@ class GalleryButtonTest {
     composeTestRule.setContent {
       DefaultGalleryButtonMultiplePick(
           onSelect = { notClicked.value = false },
+          permissionContract = FakeRequestPermissionContract.success(),
           choosePicturesContract = FakePickMultipleVisualMediaContract(false))
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
@@ -232,6 +214,7 @@ class GalleryButtonTest {
     composeTestRule.setContent {
       GalleryButtonMultiplePick(
           onSelect = { photos.addAll(it) },
+          permissionContract = FakeRequestPermissionContract.success(),
           choosePicturesContract = FakePickMultipleVisualMediaContract(true))
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.MULTIPLE_TAG)
@@ -249,7 +232,9 @@ class GalleryButtonTest {
     val photo = mutableStateOf<Photo>(Photo(image = Uri.EMPTY, fileName = "incorrect"))
     composeTestRule.setContent {
       GalleryButton(
-          onSelect = { photo.value = it }, choosePictureContract = FakeGetContentContract(true))
+          onSelect = { photo.value = it },
+          permissionContract = FakeRequestPermissionContract.success(),
+          choosePictureContract = FakeGetContentContract(true, fakeUri))
     }
     val galleryButtonNode = composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG)
     galleryButtonNode.assertIsDisplayed()

@@ -128,6 +128,7 @@ fun ProfileScreen(
  * @param state Immutable UI state from the VM.
  * @param onFirstNameChange Pushes final first name to VM on save.
  * @param onLastNameChange Pushes final last name to VM on save.
+ * @param onUniversityChange Pushes final university to VM on save.
  * @param onLanguageChange Pushes final language to VM on save.
  * @param onResidenceChange Pushes final residence to VM on save.
  * @param onLogout Invoked in view mode by the "LOGOUT" button.
@@ -485,6 +486,8 @@ private fun DropdownField(
             enabled = enabled,
             singleLine = true,
             label = { Text(label, color = Gray) },
+            // Only show trailing dropdown icon when enabled (edit mode) to avoid confusion in view
+            // mode
             trailingIcon =
                 if (enabled) {
                   { ExposedDropdownMenuDefaults.TrailingIcon(expanded) }

@@ -39,12 +39,14 @@ import kotlinx.coroutines.launch
  * @property language The user's preferred language (string label shown by the dropdown).
  * @property residence The user's residence label (string from
  *   [com.android.mySwissDorm.model.residency.ResidencyName]).
+ * @property university The user's university name (displayed/edited in the UI).
  * @property isEditing True when the screen is in edit mode (fields enabled, Save button visible).
  * @property isSaving True while a save operation is in progress (use to disable Save/show progress
  *   text).
  * @property errorMsg Optional error message to surface to the UI (e.g., auth or Firestore
  *   failures).
  * @property profilePicture the user's profile picture
+ * @property allUniversities List of all available universities for selection in the UI.
  */
 data class ProfileUiState(
     val firstName: String = "",
@@ -74,7 +76,7 @@ data class ProfileUiState(
  *
  * Responsibilities:
  * - Holds and exposes [ProfileUiState] via [uiState].
- * - Handles user edits (first/last name, language, residence).
+ * - Handles user edits (first/last name, university, language, residence).
  * - Toggles edit/view mode.
  * - Persists changes to Firestore under `profiles/{uid}`.
  *

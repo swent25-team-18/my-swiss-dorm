@@ -18,7 +18,8 @@ class ProfileRepositoryFirestoreTest : FirestoreTest() {
         ProfileRepositoryFirestore(db = FirebaseEmulator.firestore)
   }
 
-  private val repo = ProfileRepositoryProvider.repository
+  private val repo: ProfileRepository
+    get() = ProfileRepositoryProvider.repository
 
   @Before
   override fun setUp() {

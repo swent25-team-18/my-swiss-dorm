@@ -214,6 +214,13 @@ class Epic1Test : FirestoreTest() {
           composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
         }
 
+        // Wait for at least one city card to be displayed to ensure the list has items loaded
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+          composeTestRule
+              .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+              .isDisplayed()
+        }
+
         // Scroll the cities list to Lausanne's index (third city, index 2) to bring it into view
         composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
 

@@ -444,10 +444,12 @@
 
     <!-- CameraButton -->
     <string name="camera_button_default_text">Prendre une photo</string>
+    <string name="camera_button_permission_denied_text">Cette application n\'a pas accès à la caméra</string>
 
     <!-- GalleryButton -->
     <string name="gallery_button_default_text">Choisir une photo</string>
     <string name="gallery_button_default_multiple_text">Choisir des photos</string>
+    <string name="gallery_button_permission_denied_text">Cette application n\'a pas accès aux médias</string>
 
     <!-- SanitizedTextFields -->
     <string name="sanitized_text_fields_email_placeholder">nom@domaine.com</string>

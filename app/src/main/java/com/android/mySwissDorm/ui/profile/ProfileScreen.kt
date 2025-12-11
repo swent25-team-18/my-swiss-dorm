@@ -59,7 +59,7 @@ import com.android.mySwissDorm.ui.theme.White
  * Test tags used in this file (stable for tests):
  * - "profile_title", "profile_back_button", "profile_edit_toggle", "profile_list"
  * - "profile_picture_box", "profile_logout_button", "profile_save_button"
- * - "field_first_name", "field_last_name", "field_language", "field_residence"
+ * - "field_first_name", "field_last_name", "field_university", "field_language", "field_residence"
  */
 @Composable
 fun ProfileScreen(
@@ -81,6 +81,7 @@ fun ProfileScreen(
       state = state,
       onFirstNameChange = viewModel::onFirstNameChange,
       onLastNameChange = viewModel::onLastNameChange,
+      onUniversityChange = viewModel::onUniversityChange,
       onLanguageChange = {
         if (state.language != it) {
           newLanguage = it
@@ -127,6 +128,7 @@ fun ProfileScreen(
  * @param state Immutable UI state from the VM.
  * @param onFirstNameChange Pushes final first name to VM on save.
  * @param onLastNameChange Pushes final last name to VM on save.
+ * @param onUniversityChange Pushes final university to VM on save.
  * @param onLanguageChange Pushes final language to VM on save.
  * @param onResidenceChange Pushes final residence to VM on save.
  * @param onLogout Invoked in view mode by the "LOGOUT" button.
@@ -141,6 +143,7 @@ private fun ProfileScreenContent(
     state: ProfileUiState,
     onFirstNameChange: (String) -> Unit,
     onLastNameChange: (String) -> Unit,
+    onUniversityChange: (String) -> Unit,
     onLanguageChange: (String) -> Unit,
     onResidenceChange: (String) -> Unit,
     onLogout: () -> Unit,
@@ -153,6 +156,7 @@ private fun ProfileScreenContent(
   // Local editable buffers used ONLY in edit mode (remembered across recompositions)
   var firstLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.firstName) }
   var lastLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.lastName) }
+  var universityLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.university) }
   var languageLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.language) }
   var residenceLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.residence) }
   var displayPhotoDialog by rememberSaveable(state.isEditing) { mutableStateOf(false) }
@@ -165,6 +169,7 @@ private fun ProfileScreenContent(
     if (state.isEditing) {
       firstLocal = state.firstName
       lastLocal = state.lastName
+      universityLocal = state.university
       languageLocal = state.language
       residenceLocal = state.residence
       displayPhotoDialog = false
@@ -299,6 +304,15 @@ private fun ProfileScreenContent(
                         modifier = Modifier.weight(1f))
                   }
 
+              DropdownField(
+                  label = stringResource(R.string.university),
+                  value = if (state.isEditing) universityLocal else state.university,
+                  onValueChange = { universityLocal = it },
+                  tag = "field_university",
+                  enabled = state.isEditing,
+                  modifier = Modifier.fillMaxWidth(),
+                  options = state.allUniversities.map { it.name })
+
               // Language dropdown (from Language enum)
               DropdownField(
                   label = stringResource(R.string.language),
@@ -342,6 +356,7 @@ private fun ProfileScreenContent(
                       // Push local edits to VM, then persist
                       onFirstNameChange(firstLocal)
                       onLastNameChange(lastLocal)
+                      onUniversityChange(universityLocal)
                       onLanguageChange(languageLocal)
                       onResidenceChange(residenceLocal)
                       onSave()
@@ -471,7 +486,14 @@ private fun DropdownField(
             enabled = enabled,
             singleLine = true,
             label = { Text(label, color = Gray) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            // Only show trailing dropdown icon when enabled (edit mode) to avoid confusion in view
+            // mode
+            trailingIcon =
+                if (enabled) {
+                  { ExposedDropdownMenuDefaults.TrailingIcon(expanded) }
+                } else {
+                  null
+                },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.menuAnchor().fillMaxWidth().height(64.dp).testTag(tag),
             colors =
@@ -570,6 +592,7 @@ private fun Preview_Profile_Interactive() {
   var isEditing by rememberSaveable { mutableStateOf(false) }
   var firstName by rememberSaveable { mutableStateOf("Mansour") }
   var lastName by rememberSaveable { mutableStateOf("Kanaan") }
+  var university by rememberSaveable { mutableStateOf("EPFL") }
   var language by rememberSaveable { mutableStateOf("English") }
   var residence by rememberSaveable { mutableStateOf("Vortex, Coloc") }
 
@@ -577,6 +600,7 @@ private fun Preview_Profile_Interactive() {
       ProfileUiState(
           firstName = firstName,
           lastName = lastName,
+          university = university,
           language = language,
           residence = residence,
           isEditing = isEditing,
@@ -588,6 +612,7 @@ private fun Preview_Profile_Interactive() {
         state = ui,
         onFirstNameChange = { firstName = it },
         onLastNameChange = { lastName = it },
+        onUniversityChange = { university = it },
         onLanguageChange = { language = it },
         onResidenceChange = { residence = it },
         onLogout = {},

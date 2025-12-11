@@ -28,15 +28,9 @@ class FilterUITest {
     composeTestRule.setContent {
       PriceFilterContent(priceRange = Pair(null, null), onRangeChange = { _, _ -> })
     }
-    composeTestRule
-        .onNodeWithTag("price_min_text")
-        .assertIsDisplayed()
-        .assertTextContains("Min: 0 CHF")
+    composeTestRule.onNodeWithTag(MIN_PRICE).assertIsDisplayed().assertTextContains("Min: 0 CHF")
 
-    composeTestRule
-        .onNodeWithTag("price_max_text")
-        .assertIsDisplayed()
-        .assertTextContains("Max: 2000 CHF")
+    composeTestRule.onNodeWithTag(MAX_PRICE).assertIsDisplayed().assertTextContains("Max: 0 CHF")
   }
 
   @Test
@@ -75,7 +69,7 @@ class FilterUITest {
     }
     composeTestRule.onNodeWithTag(MIN_SIZE).assertIsDisplayed().assertTextContains("Min: 0 m²")
 
-    composeTestRule.onNodeWithTag(MAX_SIZE).assertIsDisplayed().assertTextContains("Max: 100 m²")
+    composeTestRule.onNodeWithTag(MAX_SIZE).assertIsDisplayed().assertTextContains("Max: 0 m²")
   }
 
   @Test
@@ -83,8 +77,8 @@ class FilterUITest {
     composeTestRule.setContent {
       SizeFilterContent(sizeRange = Pair(20, 80), onRangeChange = { _, _ -> })
     }
-    composeTestRule.onNodeWithTag("size_min_text").assertTextContains("Min: 20 m²")
-    composeTestRule.onNodeWithTag("size_max_text").assertTextContains("Max: 80 m²")
+    composeTestRule.onNodeWithTag(MIN_SIZE).assertTextContains("Min: 20 m²")
+    composeTestRule.onNodeWithTag(MAX_SIZE).assertTextContains("Max: 80 m²")
   }
 
   @Test

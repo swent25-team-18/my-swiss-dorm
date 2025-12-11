@@ -1,7 +1,10 @@
 package com.android.mySwissDorm.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,6 +35,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
@@ -63,6 +67,8 @@ fun CameraButton(
     interactionSource: MutableInteractionSource? = null,
     takePictureContract: ActivityResultContract<Uri, Boolean> =
         ActivityResultContracts.TakePicture(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
@@ -74,13 +80,30 @@ fun CameraButton(
         if (it && photoCaptured != null && uriCaptured.path?.isNotEmpty() ?: false) {
           onSave(photoCaptured!!)
         }
-      } //
+      }
+  val permissionLauncher =
+      rememberLauncherForActivityResult(permissionContract) { isGranted ->
+        if (isGranted) {
+          cameraLauncher.launch(photoCaptured?.image ?: return@rememberLauncherForActivityResult)
+        } else {
+          if (Uri.EMPTY != uriCaptured) {
+            Photo.deleteCapturablePhoto(context, uriCaptured)
+          }
+          Toast.makeText(context, R.string.camera_button_permission_denied_text, Toast.LENGTH_SHORT)
+              .show()
+        }
+      }
   Button(
       onClick = {
         val photo = Photo.createCapturablePhoto(context, UUID.randomUUID().toString() + ".jpg")
         uriCaptured = photo.image
         photoCaptured = photo
-        cameraLauncher.launch(input = photo.image)
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
+            PackageManager.PERMISSION_GRANTED) {
+          permissionLauncher.launch(Manifest.permission.CAMERA)
+        } else {
+          cameraLauncher.launch(input = photo.image)
+        }
       },
       modifier = modifier.testTag(tag = C.CameraButtonTag.TAG),
       enabled = enabled,
@@ -112,11 +135,14 @@ fun DefaultCameraButton(
     interactionSource: MutableInteractionSource? = null,
     takePictureContract: ActivityResultContract<Uri, Boolean> =
         ActivityResultContracts.TakePicture(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
 ) {
   CameraButton(
       onSave = onSave,
       modifier = modifier,
       takePictureContract = takePictureContract,
+      permissionContract = permissionContract,
       enabled = enabled,
       shape = shape,
       colors = colors,

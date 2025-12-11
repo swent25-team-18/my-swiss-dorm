@@ -1,10 +1,11 @@
 package com.android.mySwissDorm.ui.settings
 
+import android.content.Context
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
@@ -13,12 +14,12 @@ import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.DarkModePreferenceHelper
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.google.firebase.firestore.FieldValue
 import io.mockk.unmockkAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
@@ -27,6 +28,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -45,11 +47,16 @@ class SettingsScreenTest : FirestoreTest() {
 
   @get:Rule val compose = createComposeRule()
   private lateinit var uid: String
+  private val context = ApplicationProvider.getApplicationContext<Context>()
+  private lateinit var profileRepo: ProfileRepository
+
+  override fun createRepositories() {
+    profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+  }
 
   /** VM backed by emulator singletons. */
   private fun makeVm(): SettingsViewModel {
-    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+    return SettingsViewModel(auth = FirebaseEmulator.auth, profiles = profileRepo)
   }
 
   /** Set content with our explicit VM. */
@@ -68,10 +75,6 @@ class SettingsScreenTest : FirestoreTest() {
             onViewBookmarks = onViewBookmarks)
       }
     }
-  }
-
-  override fun createRepositories() {
-    /* none */
   }
 
   @Before
@@ -239,11 +242,7 @@ class SettingsScreenTest : FirestoreTest() {
 
     // Switch back to current user (FakeUser1) and add blocked user to their list
     switchToUser(FakeUser.FakeUser1)
-    FirebaseEmulator.firestore
-        .collection(PROFILE_COLLECTION_PATH)
-        .document(uid)
-        .update("blockedUserIds", FieldValue.arrayUnion(blockedUserUid))
-        .await()
+    profileRepo.addBlockedUser(uid, blockedUserUid)
 
     setContentWithVm()
     compose.waitForIdle()
@@ -490,7 +489,7 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun darkModeToggle_savesToFirebaseAndAppliesDarkTheme() = runTest {
+  fun darkModeToggle_savesToSharedPreferencesAndFirestoreAndAppliesDarkTheme() = runTest {
     setContentWithVm()
     compose.waitForIdle()
 
@@ -500,6 +499,10 @@ class SettingsScreenTest : FirestoreTest() {
     // Scroll to dark mode toggle
     compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
     compose.waitUntilTagExists(darkModeTag)
+
+    // Ensure the toggle is fully visible and clickable by scrolling to it
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performScrollTo()
+    compose.waitForIdle()
 
     // Get initial state - should be following system (could be On or Off)
     val initialState = compose.onNodeWithTag(darkModeTag, useUnmergedTree = true)
@@ -511,73 +514,12 @@ class SettingsScreenTest : FirestoreTest() {
           false
         }
 
-    // Toggle dark mode ON
-    if (!wasInitiallyOn) {
+    // Always click to ensure preference is explicitly set to true
+    // If already ON, click OFF then ON to force explicit setting
+    if (wasInitiallyOn) {
+      // Click OFF first
       compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
       compose.waitForIdle()
-      // Wait for the state to update
-      compose.waitUntil(2_000) {
-        try {
-          compose
-              .onNodeWithTag(darkModeTag, useUnmergedTree = true)
-              .assert(hasStateDescription("On"))
-          true
-        } catch (e: AssertionError) {
-          false
-        }
-      }
-    }
-
-    // Verify toggle is ON
-    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).assert(hasStateDescription("On"))
-
-    // Wait for the save operation to complete
-    // The save happens in a coroutine on Dispatchers.IO, so we need to wait for it
-    compose.waitForIdle()
-
-    // Directly trigger the save operation to ensure it completes
-    // Since the fire-and-forget coroutine might not complete in tests, we'll save directly
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    val existingProfile = profileRepo.getProfile(uid)
-    val updatedProfile =
-        existingProfile.copy(userSettings = existingProfile.userSettings.copy(darkMode = true))
-    profileRepo.editProfile(updatedProfile)
-
-    // Verify preference is saved in Firebase
-    val savedProfile = profileRepo.getProfile(uid)
-    org.junit.Assert.assertEquals(
-        "Dark mode preference should be saved as true in Firebase",
-        true,
-        savedProfile.userSettings.darkMode)
-  }
-
-  @Test
-  fun darkModeToggle_savesToFirebaseAndAppliesLightTheme() = runTest {
-    setContentWithVm()
-    compose.waitForIdle()
-
-    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
-    val darkModeTag = C.SettingsTags.switch("Dark mode")
-
-    // Scroll to dark mode toggle
-    compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
-    compose.waitUntilTagExists(darkModeTag)
-
-    // Get initial state
-    val initialState = compose.onNodeWithTag(darkModeTag, useUnmergedTree = true)
-    val wasInitiallyOff =
-        try {
-          initialState.assert(hasStateDescription("Off"))
-          true
-        } catch (e: AssertionError) {
-          false
-        }
-
-    // Toggle dark mode OFF (light mode ON)
-    if (!wasInitiallyOff) {
-      compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
-      compose.waitForIdle()
-      // Wait for the state to update
       compose.waitUntil(2_000) {
         try {
           compose
@@ -589,28 +531,233 @@ class SettingsScreenTest : FirestoreTest() {
         }
       }
     }
+    // Now click ON to explicitly set preference to true
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    // Wait for the state to update
+    compose.waitUntil(2_000) {
+      try {
+        compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).assert(hasStateDescription("On"))
+        true
+      } catch (e: AssertionError) {
+        false
+      }
+    }
+
+    // Verify toggle is ON
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).assert(hasStateDescription("On"))
+
+    // Wait for the save operation to complete
+    // setPreference uses apply() which is async, so we need to wait for it
+    compose.waitForIdle()
+
+    // Wait for preference to be saved in SharedPreferences
+    // The apply() call is async, so we poll until it's written
+    compose.waitUntil(10_000) {
+      try {
+        val savedPreference = DarkModePreferenceHelper.getPreference(context)
+        savedPreference == true
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    // Final verification
+    val savedPreference = DarkModePreferenceHelper.getPreference(context)
+    assertEquals(
+        "Dark mode preference should be saved as true in SharedPreferences", true, savedPreference)
+
+    // Wait for Firestore sync to complete (poll until value appears)
+    // The sync happens in a fire-and-forget coroutine, so we need to wait for it
+    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    compose.waitUntil(10_000) {
+      try {
+        runBlocking {
+          val savedProfile = profileRepo.getProfile(uid)
+          savedProfile.userSettings.darkMode == true
+        }
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    // Verify preference is also synced to Firestore (for logged-in users)
+    val savedProfile = runBlocking { profileRepo.getProfile(uid) }
+    assertEquals(
+        "Dark mode preference should be synced to Firestore",
+        true,
+        savedProfile.userSettings.darkMode)
+  }
+
+  @Test
+  fun darkModeToggle_savesToSharedPreferencesAndFirestoreAndAppliesLightTheme() = runTest {
+    setContentWithVm()
+    compose.waitForIdle()
+
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val darkModeTag = C.SettingsTags.switch("Dark mode")
+
+    // Scroll to dark mode toggle
+    compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
+    compose.waitUntilTagExists(darkModeTag)
+
+    // Ensure the toggle is fully visible and clickable by scrolling to it
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performScrollTo()
+    compose.waitForIdle()
+
+    // Get initial state
+    val initialState = compose.onNodeWithTag(darkModeTag, useUnmergedTree = true)
+    val wasInitiallyOff =
+        try {
+          initialState.assert(hasStateDescription("Off"))
+          true
+        } catch (e: AssertionError) {
+          false
+        }
+
+    // Always click to ensure preference is explicitly set to false
+    // If already OFF, click ON then OFF to force explicit setting
+    if (wasInitiallyOff) {
+      // Click ON first
+      compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
+      compose.waitForIdle()
+      compose.waitUntil(2_000) {
+        try {
+          compose
+              .onNodeWithTag(darkModeTag, useUnmergedTree = true)
+              .assert(hasStateDescription("On"))
+          true
+        } catch (e: AssertionError) {
+          false
+        }
+      }
+    }
+    // Now click OFF to explicitly set preference to false
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    // Wait for the state to update
+    compose.waitUntil(2_000) {
+      try {
+        compose
+            .onNodeWithTag(darkModeTag, useUnmergedTree = true)
+            .assert(hasStateDescription("Off"))
+        true
+      } catch (e: AssertionError) {
+        false
+      }
+    }
 
     // Verify toggle is OFF
     compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).assert(hasStateDescription("Off"))
 
     // Wait for the save operation to complete
-    // The save happens in a coroutine on Dispatchers.IO, so we need to wait for it
+    // setPreference uses apply() which is async, so we need to wait for it
     compose.waitForIdle()
 
-    // Directly trigger the save operation to ensure it completes
-    // Since the fire-and-forget coroutine might not complete in tests, we'll save directly
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    val existingProfile = profileRepo.getProfile(uid)
-    val updatedProfile =
-        existingProfile.copy(userSettings = existingProfile.userSettings.copy(darkMode = false))
-    profileRepo.editProfile(updatedProfile)
+    // Wait for preference to be saved in SharedPreferences
+    // The apply() call is async, so we poll until it's written
+    compose.waitUntil(10_000) {
+      try {
+        val savedPreference = DarkModePreferenceHelper.getPreference(context)
+        savedPreference == false
+      } catch (e: Exception) {
+        false
+      }
+    }
 
-    // Verify preference is saved in Firebase
-    val savedProfile = profileRepo.getProfile(uid)
-    org.junit.Assert.assertEquals(
-        "Dark mode preference should be saved as false in Firebase",
+    // Final verification
+    val savedPreference = DarkModePreferenceHelper.getPreference(context)
+    assertEquals(
+        "Dark mode preference should be saved as false in SharedPreferences",
+        false,
+        savedPreference)
+
+    // Wait for Firestore sync to complete (poll until value appears)
+    // The sync happens in a fire-and-forget coroutine, so we need to wait for it
+    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    compose.waitUntil(10_000) {
+      try {
+        runBlocking {
+          val savedProfile = profileRepo.getProfile(uid)
+          savedProfile.userSettings.darkMode == false
+        }
+      } catch (e: Exception) {
+        false
+      }
+    }
+
+    // Verify preference is also synced to Firestore (for logged-in users)
+    val savedProfile = runBlocking { profileRepo.getProfile(uid) }
+    assertEquals(
+        "Dark mode preference should be synced to Firestore",
         false,
         savedProfile.userSettings.darkMode)
+  }
+
+  @Test
+  fun darkModeToggle_anonymousUser_savesOnlyToSharedPreferences() = runTest {
+    signInAnonymous()
+    setContentWithVm()
+    compose.waitForIdle()
+
+    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
+    val darkModeTag = C.SettingsTags.switch("Dark mode")
+
+    // Scroll to dark mode toggle
+    compose.scrollUntilTextDisplayed(scrollTag, "Accessibility")
+    compose.waitUntilTagExists(darkModeTag)
+
+    // Ensure the toggle is fully visible and clickable by scrolling to it
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performScrollTo()
+    compose.waitForIdle()
+
+    // Get initial state - could be On or Off depending on system theme
+    val initialState = compose.onNodeWithTag(darkModeTag, useUnmergedTree = true)
+    val wasInitiallyOn =
+        try {
+          initialState.assert(hasStateDescription("On"))
+          true
+        } catch (e: AssertionError) {
+          false
+        }
+
+    // Toggle dark mode (if it was off, turn it on; if it was on, turn it off)
+    compose.onNodeWithTag(darkModeTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+
+    // Wait for state to update - verify it changed from initial state
+    val expectedState = if (wasInitiallyOn) "Off" else "On"
+    compose.waitUntil(5_000) {
+      try {
+        compose
+            .onNodeWithTag(darkModeTag, useUnmergedTree = true)
+            .assert(hasStateDescription(expectedState))
+        true
+      } catch (e: AssertionError) {
+        false
+      }
+    }
+
+    // Wait for save operation to complete
+    compose.waitForIdle()
+
+    // Verify preference is saved in SharedPreferences
+    val expectedPreference =
+        !wasInitiallyOn // If was off, now should be on (true), if was on, now should be off (false)
+    compose.waitUntil(5_000) {
+      val savedPreference = DarkModePreferenceHelper.getPreference(context)
+      savedPreference == expectedPreference
+    }
+    val savedPreference = DarkModePreferenceHelper.getPreference(context)
+    assertEquals(
+        "Dark mode preference should be saved in SharedPreferences for anonymous users",
+        expectedPreference,
+        savedPreference)
+
+    // Verify anonymous users don't have a profile in Firestore (so no sync happens)
+    // Anonymous users should not sync to Firestore
+    val auth = FirebaseEmulator.auth
+    assertTrue("User should be anonymous", auth.currentUser?.isAnonymous == true)
   }
 
   @Test
@@ -681,59 +828,5 @@ class SettingsScreenTest : FirestoreTest() {
     compose.waitUntil("The profile picture is not displayed in the settings", 5_000) {
       compose.onNodeWithTag(C.SettingsTags.avatarTag(null), useUnmergedTree = true).isDisplayed()
     }
-  }
-  // ---------- QR scan tests ----------
-
-  @Test
-  fun qrScanResult_nullOrBlank_doesNotNavigate() {
-    val context = InstrumentationRegistry.getInstrumentation().targetContext
-    var navigated = false
-
-    InstrumentationRegistry.getInstrumentation().runOnMainSync {
-      handleQrScanResult(null, context) { navigated = true }
-      handleQrScanResult("", context) { navigated = true }
-    }
-
-    assert(!navigated) { "QR navigation should not be triggered for null or blank contents" }
-  }
-
-  @Test
-  fun qrScanResult_invalidDomain_doesNotNavigate() {
-    val context = InstrumentationRegistry.getInstrumentation().targetContext
-    var navigated = false
-    val invalidUrl = "https://example.com/some/path"
-
-    InstrumentationRegistry.getInstrumentation().runOnMainSync {
-      handleQrScanResult(invalidUrl, context) { navigated = true }
-    }
-
-    assert(!navigated) { "QR navigation should not be triggered for invalid domain" }
-  }
-
-  @Test
-  fun qrScanResult_validMySwissDormLink_triggersNavigation() {
-    val context = InstrumentationRegistry.getInstrumentation().targetContext
-    val validUrl = "https://my-swiss-dorm.web.app/some/path?foo=bar"
-    var navigatedUrl: String? = null
-
-    InstrumentationRegistry.getInstrumentation().runOnMainSync {
-      handleQrScanResult(validUrl, context) { navigatedUrl = it }
-    }
-
-    assert(navigatedUrl == validUrl) {
-      "QR navigation should be triggered with the scanned MySwissDorm URL"
-    }
-  }
-
-  @Test
-  fun qrScanButton_isDisplayedAndClickable() {
-    setContentWithVm()
-    compose.waitForIdle()
-
-    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
-    val buttonTag = "SETTINGS_SCAN_QR_BUTTON"
-
-    compose.scrollUntilDisplayed(scrollTag, buttonTag)
-    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).assertIsDisplayed().performClick()
   }
 }

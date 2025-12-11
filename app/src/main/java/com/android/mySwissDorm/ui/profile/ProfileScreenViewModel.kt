@@ -21,6 +21,8 @@ import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
+import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
+import com.android.mySwissDorm.model.university.University
 import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BaseLocationSearchViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -37,23 +39,27 @@ import kotlinx.coroutines.launch
  * @property language The user's preferred language (string label shown by the dropdown).
  * @property residence The user's residence label (string from
  *   [com.android.mySwissDorm.model.residency.ResidencyName]).
+ * @property university The user's university name (displayed/edited in the UI).
  * @property isEditing True when the screen is in edit mode (fields enabled, Save button visible).
  * @property isSaving True while a save operation is in progress (use to disable Save/show progress
  *   text).
  * @property errorMsg Optional error message to surface to the UI (e.g., auth or Firestore
  *   failures).
  * @property profilePicture the user's profile picture
+ * @property allUniversities List of all available universities for selection in the UI.
  */
 data class ProfileUiState(
     val firstName: String = "",
     val lastName: String = "",
     val language: String = "",
     val residence: String = "",
+    val university: String = "",
     val profilePicture: Photo? = null,
     val isEditing: Boolean = false,
     val isSaving: Boolean = false,
     val errorMsg: String? = null,
     val allResidencies: List<Residency> = emptyList(),
+    val allUniversities: List<University> = emptyList(),
     val prefLocation: Location? = null,
     val minPrice: Double? = null,
     val maxPrice: Double? = null,
@@ -70,7 +76,7 @@ data class ProfileUiState(
  *
  * Responsibilities:
  * - Holds and exposes [ProfileUiState] via [uiState].
- * - Handles user edits (first/last name, language, residence).
+ * - Handles user edits (first/last name, university, language, residence).
  * - Toggles edit/view mode.
  * - Persists changes to Firestore under `profiles/{uid}`.
  *
@@ -99,7 +105,9 @@ class ProfileScreenViewModel(
   init {
     viewModelScope.launch {
       _uiState.update {
-        it.copy(allResidencies = ResidenciesRepositoryProvider.repository.getAllResidencies())
+        it.copy(
+            allResidencies = ResidenciesRepositoryProvider.repository.getAllResidencies(),
+            allUniversities = UniversitiesRepositoryProvider.repository.getAllUniversities())
       }
     }
   }
@@ -124,6 +132,7 @@ class ProfileScreenViewModel(
               firstName = profile.userInfo.name,
               lastName = profile.userInfo.lastName,
               residence = profile.userInfo.residencyName ?: "",
+              university = profile.userInfo.universityName ?: "",
               profilePicture = profilePicture,
               language = profile.userSettings.language.displayLanguage,
               prefLocation = profile.userInfo.location,
@@ -157,6 +166,11 @@ class ProfileScreenViewModel(
   /** Update residence in UI state and clear any transient error. */
   fun onResidenceChange(value: String) {
     _uiState.value = _uiState.value.copy(residence = value, errorMsg = null)
+  }
+
+  /** Update university in UI state and clear any transient error. */
+  fun onUniversityChange(value: String) {
+    _uiState.value = _uiState.value.copy(university = value, errorMsg = null)
   }
 
   /**
@@ -290,6 +304,7 @@ class ProfileScreenViewModel(
                       existingProfile.userInfo.copy(
                           name = state.firstName,
                           lastName = state.lastName,
+                          universityName = state.university,
                           profilePicture = state.profilePicture?.fileName,
                           residencyName = state.residence),
                   userSettings = existingProfile.userSettings.copy(language = languageEnum))
@@ -306,6 +321,7 @@ class ProfileScreenViewModel(
                           lastName = state.lastName,
                           email = auth.currentUser?.email ?: "",
                           phoneNumber = "", // Not in UI
+                          universityName = state.university,
                           residencyName = state.residence),
                   userSettings = UserSettings(language = languageEnum))
           profileRepo.createProfile(newProfile)
@@ -347,6 +363,17 @@ class ProfileScreenViewModel(
         Log.e(logTag, "Failed to save preferences", e)
         _uiState.update { it.copy(isSaving = false, errorMsg = e.message) }
       }
+    }
+  }
+
+  fun clearPreferences() {
+    _uiState.update { currentState ->
+      currentState.copy(
+          minPrice = null,
+          maxPrice = null,
+          minSize = null,
+          maxSize = null,
+          selectedRoomTypes = emptySet())
     }
   }
 }

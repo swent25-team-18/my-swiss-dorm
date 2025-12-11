@@ -29,6 +29,7 @@ object C {
     const val SIGN_UP_BUTTON = "signUpButton"
     const val SIGN_UP_HELP_TEXT = "signUpHelpText"
     const val SIGN_UP_BACK_BUTTON = "signUpBackButton"
+    const val SKIP = "skip"
 
     fun universityNameTestTag(universityName: String?): String {
       return "${universityName ?: "nullValUniversityName"}TestTag"
@@ -127,6 +128,8 @@ object C {
 
     const val FABSCRIM = "fab_scrim"
     const val RECOMMENDED = "recommendedText"
+
+    const val SCAN_QR_BUTTON = "scanQrButton"
 
     fun listingCard(listingUid: String) = "browseCityListingCard_$listingUid"
 
@@ -368,6 +371,12 @@ object C {
     const val QR_ERROR = "shareLinkDialogQrError"
     const val COPY_LINK_BUTTON = "shareLinkDialogCopyLinkButton"
     const val CANCEL_TEXT = "shareLinkDialogCancelText"
+  }
+
+  object TranslatableTextTestTags {
+    const val TRANSLATABLE_TEXT = "translatable_text"
+
+    const val TRANSLATE_BUTTON = "translate_button"
   }
 
   object OfflineBannerTags {

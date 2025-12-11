@@ -41,6 +41,52 @@ enum class FakeUser(val userName: String, val email: String) {
 abstract class FirestoreTest : TestCase() {
   var currentFakeUser: FakeUser = FakeUser.FakeUser1
 
+  // Common test credentials for ad-hoc email users (e.g., secondary test user)
+  protected val otherTestEmail = "other@example.com"
+  protected val otherTestPassword = "password123"
+
+  /** Sign in (creating if needed) a Firebase Auth user with email/password. */
+  protected suspend fun signInEmailUser(email: String, password: String): String {
+    val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+    return authResult.user?.uid
+        ?: throw IllegalStateException("Failed to create/sign in user with email: $email")
+  }
+
+  /** Create a Profile document for the given user. Requires caller to be signed in as that user. */
+  protected suspend fun createProfileForUser(
+      userId: String,
+      name: String = "Test",
+      lastName: String = "User",
+      email: String = "user@example.com",
+      phone: String = "+41000000000"
+  ) {
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = name,
+                    lastName = lastName,
+                    email = email,
+                    phoneNumber = phone,
+                    universityName = null,
+                    location = null,
+                    residencyName = null,
+                    profilePicture = null),
+            userSettings =
+                UserSettings(
+                    language = Language.ENGLISH,
+                    isPublic = false,
+                    isPushNotified = true,
+                    darkMode = null),
+            ownerId = userId)
+
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(userId)
+        .set(profile)
+        .await()
+  }
+
   /** This function allows to switch easily the current user to a [FakeUser]. */
   suspend fun switchToUser(fakeUser: FakeUser) {
     currentFakeUser = fakeUser

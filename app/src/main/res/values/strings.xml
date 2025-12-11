@@ -82,7 +82,7 @@
     <string name="admin_page_name_required">Name is required.</string>
     <string name="admin_page_location_required">Location is required.</string>
     <string name="admin_page_description_required_city">Description is required for a City.</string>
-    <string name="admin_page_image_id_required_city">Image ID is required for a City.</string>
+    <string name="admin_page_image_id_required_city">Image is required for a City.</string>
     <string name="admin_page_city_name_required_residency">City name is required for a Residency.</string>
     <string name="admin_page_city_name_required_university">City name is required for a University.</string>
     <string name="admin_page_email_required_university">Email is required for a University.</string>
@@ -128,7 +128,7 @@
     <string name="sign_up_phone_number_placeholder">Phone Number</string>
     <string name="sign_up_residency">Residency</string>
     <string name="sign_up_university">University</string>
-    <string name="sign_up_button_text">Sign Up with Google</string>
+    <string name="sign_up_button_text">Confirm and Sign Up with Google</string>
     <string name="sign_up_button_help_text">Please fill in the fields correctly</string>
     <string name="sign_up_button_not_specified">Not specified</string>
     <string name="sign_up_name_help">Your first name should be less than 20 characters long</string>
@@ -142,6 +142,7 @@
     <string name="budget">Budget</string>
     <string name="preferred_size">Preferred Size</string>
     <string name="preferred_room_type">Preferred Room Type</string>
+    <string name="skip">Skip</string>
     <!-- SignUpViewModel -->
     <string name="sign_up_vm_auth_cancelled">Authentification cancelled</string>
     <string name="sign_up_vm_failed_to_get_credentials">Failed to get credentials:</string>
@@ -172,6 +173,7 @@
     <string name="add_listing_select_location">Select location</string>
     <string name="confirm_listing">Confirm listing</string>
     <string name="add_listing_invalid_form_text">Please complete all required fields (valid size, price, and starting date) or Sign-in if you\'re a guest.</string>
+    <string name="add_listing_photo_required">Add at least one photo to publish your listing.</string>
     <string name="add_listing_invalid_size_text">Enter 1.0–1000.0 with one decimal (e.g., 18.5).</string>
     <string name="add_listing_invalid_price_text">Enter an integer between 1 and 10\'000.</string>
     <!-- ListingCard -->
@@ -205,6 +207,7 @@
     <string name="view_listing_apply_now">Apply now !</string>
     <string name="view_listing_listing_location">Listing Location</string>
     <string name="view_listing_sign_in_to_apply">Sign in to contact the owner and apply.</string>
+    <string name="poi_loading_message">Fetching nearby points of interest…</string>
 
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Failed to load listing:</string>
@@ -291,7 +294,7 @@
     <string name="browse_city_vm_failed_to_load_residencies">Failed to load listings</string>
     <string name="browse_city_vm_price_per_month">.-/month</string>
     <!-- EditPreferencesScreen -->
-    <string name="listing_preferences">Listing Preferences</string>
+    <string name="listing_preferences">Preferences</string>
     <string name="save_preferences">Save Preferences</string>
 
     <!-- BookmarkedListingsScreen -->
@@ -425,6 +428,10 @@
     <string name="guest_sign_in_pop_up_sign_in_to_create_profile">Sign in to create a profile</string>
     <string name="guest_sign_in_pop_up_sign_in">Sign In</string>
 
+    <!-- TranslatableText -->
+    <string name="translatable_text_translate_button">Translate</string>
+    <string name="translatable_text_see_original_button">See original</string>
+
     <!-- AddPhotoButton -->
     <string name="add_photo_button_take_photo">Take a photo</string>
     <string name="add_photo_button_from_gallery">Choose from gallery</string>
@@ -432,10 +439,12 @@
 
     <!-- CameraButton -->
     <string name="camera_button_default_text">Take a picture</string>
+    <string name="camera_button_permission_denied_text">This application has no access to the camera</string>
 
     <!-- GalleryButton -->
     <string name="gallery_button_default_text">Choose a picture</string>
     <string name="gallery_button_default_multiple_text">Choose pictures</string>
+    <string name="gallery_button_permission_denied_text">This application has no access to the media</string>
 
     <!-- SanitizedTextFields -->
     <string name="sanitized_text_fields_email_placeholder">name@domain.com</string>

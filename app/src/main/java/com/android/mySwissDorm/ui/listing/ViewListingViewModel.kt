@@ -11,6 +11,7 @@ import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.WalkingRouteServiceProvider
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
@@ -25,7 +26,6 @@ import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
-import com.android.mySwissDorm.model.supermarket.SupermarketsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
@@ -69,7 +69,8 @@ data class ViewListingUIState(
     val isGuest: Boolean = false,
     val isBookmarked: Boolean = false,
     val poiDistances: List<POIDistance> = emptyList(),
-    val hasExistingMessage: Boolean = false
+    val hasExistingMessage: Boolean = false,
+    val isLoadingPOIs: Boolean = false
 )
 
 class ViewListingViewModel(
@@ -184,8 +185,6 @@ class ViewListingViewModel(
 
         photoManager.initialize(listing.imageUrls)
         val photos = photoManager.photoLoaded
-        val userUniversityName = getUserUniversityName(currentUserId, isGuest)
-        val poiDistances = calculatePOIDistances(listing, userUniversityName)
 
         val uiData =
             UIUpdateData(
@@ -195,9 +194,19 @@ class ViewListingViewModel(
                 photos = photos,
                 isGuest = isGuest,
                 isBookmarked = isBookmarked,
-                poiDistances = poiDistances,
+                poiDistances = emptyList(),
                 hasExistingMessage = hasExistingMessage)
-        updateUIState(listing, uiData)
+        updateUIState(listing, uiData, isLoadingPOIs = true)
+        launch {
+          try {
+            val userUniversityName = getUserUniversityName(currentUserId, isGuest)
+            val poiDistances = calculatePOIDistances(listing, userUniversityName)
+            _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIs = false) }
+          } catch (e: Exception) {
+            Log.e("ViewListingViewModel", "Error calculating POI distances asynchronously", e)
+            _uiState.update { it.copy(isLoadingPOIs = false) }
+          }
+        }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
         setErrorMsg(
@@ -230,9 +239,7 @@ class ViewListingViewModel(
       val distanceService =
           DistanceService(
               universitiesRepository = UniversitiesRepositoryProvider.repository,
-              supermarketsRepository = SupermarketsRepositoryProvider.repository,
-              walkingRouteService =
-                  com.android.mySwissDorm.model.map.WalkingRouteServiceProvider.service)
+              walkingRouteService = WalkingRouteServiceProvider.service)
       val distances = distanceService.calculateDistancesToPOIs(listing.location, userUniversityName)
       Log.d(
           "ViewListingViewModel",
@@ -256,7 +263,11 @@ class ViewListingViewModel(
       val hasExistingMessage: Boolean
   )
 
-  private fun updateUIState(listing: RentalListing, uiData: UIUpdateData) {
+  private fun updateUIState(
+      listing: RentalListing,
+      uiData: UIUpdateData,
+      isLoadingPOIs: Boolean = false
+  ) {
     _uiState.update {
       it.copy(
           listing = listing,
@@ -268,7 +279,8 @@ class ViewListingViewModel(
           isGuest = uiData.isGuest,
           isBookmarked = uiData.isBookmarked,
           poiDistances = uiData.poiDistances,
-          hasExistingMessage = uiData.hasExistingMessage)
+          hasExistingMessage = uiData.hasExistingMessage,
+          isLoadingPOIs = isLoadingPOIs)
     }
   }
 

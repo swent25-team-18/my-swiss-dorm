@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
@@ -39,6 +40,7 @@ import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -481,36 +483,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     compose
         .onNodeWithTag(C.ViewListingTags.POI_DISTANCES, useUnmergedTree = true)
         .assertIsDisplayed()
-  }
-
-  @Test
-  fun poiDistances_displaysNoPOIsMessage_whenEmpty() = runTest {
-    switchToUser(FakeUser.FakeUser2)
-    // Create listing with invalid coordinates (0.0, 0.0) which should result in no POIs
-    val invalidLocationListing =
-        rentalListing2.copy(
-            uid = listingsRepo.getNewUid(),
-            location = Location("Invalid", 0.0, 0.0),
-            ownerId = FirebaseEmulator.auth.currentUser!!.uid)
-    listingsRepo.addRentalListing(invalidLocationListing)
-
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(viewListingViewModel = vm, listingUid = invalidLocationListing.uid)
-    }
-    waitForScreenRoot()
-
-    compose.waitUntil(10_000) {
-      val s = vm.uiState.value
-      s.listing.uid == invalidLocationListing.uid && s.poiDistances.isEmpty()
-    }
-
-    scrollListTo(C.ViewListingTags.POI_DISTANCES)
-    compose
-        .onNodeWithTag(C.ViewListingTags.POI_DISTANCES, useUnmergedTree = true)
-        .assertIsDisplayed()
-    // The "No nearby points of interest" message should be displayed
-    compose.onNodeWithText("No nearby points of interest", substring = true).assertIsDisplayed()
   }
 
   @Test
@@ -971,5 +943,53 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
     scrollListTo(C.ViewListingTags.LOCATION)
     compose.onNodeWithTag(C.ViewListingTags.LOCATION, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun poiSection_showsLoadingState() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+    updateUiState(vm) { it.copy(isLoadingPOIs = true, poiDistances = emptyList()) }
+    compose.waitForIdle()
+    scrollListTo(C.ViewListingTags.POI_DISTANCES)
+    val loadingText = context.getString(R.string.poi_loading_message)
+    compose.onNodeWithText(loadingText).assertIsDisplayed()
+  }
+
+  @Test
+  fun poiSection_showsEmptyMessage_whenNoPOIs() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+    updateUiState(vm) { it.copy(isLoadingPOIs = false, poiDistances = emptyList()) }
+    compose.waitForIdle()
+    scrollListTo(C.ViewListingTags.POI_DISTANCES)
+    val emptyText = context.getString(R.string.view_listing_no_points_of_interest)
+    compose.onNodeWithText(emptyText).assertIsDisplayed()
+  }
+}
+/**
+ * Helper to force the ViewModel into a specific state using reflection. This allows us to test the
+ * UI without relying on the real async data loading.
+ */
+private fun updateUiState(
+    vm: ViewListingViewModel,
+    update: (ViewListingUIState) -> ViewListingUIState
+) {
+  try {
+    val field = ViewListingViewModel::class.java.getDeclaredField("_uiState")
+    field.isAccessible = true
+    @Suppress("UNCHECKED_CAST")
+    val stateFlow = field.get(vm) as MutableStateFlow<ViewListingUIState>
+    stateFlow.value = update(stateFlow.value)
+  } catch (e: Exception) {
+    throw RuntimeException("Failed to update UI state via reflection", e)
   }
 }

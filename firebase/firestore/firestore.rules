@@ -27,12 +27,7 @@ service cloud.firestore {
     match /cities/{cityId} {
         allow read, write: if true;
     }
-    match /supermarkets/{supermarketId} {
-        allow read, write: if true;
-    }
-    match /markets/{marketId} {
-        allow read, write: if true;
-    }
+
     match /admins/{email} {
        allow read: if true;
        allow write: if true;

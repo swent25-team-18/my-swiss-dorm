@@ -34,6 +34,11 @@ class EditListingViewModel(
         photoRepositoryLocal = photoRepositoryLocal,
         photoRepositoryCloud = photoRepositoryCloud) {
 
+  init {
+    // For Edit, require at least one photo before allowing the user to save changes
+    _uiState.value = _uiState.value.copy(requireAtLeastOnePhoto = true)
+  }
+
   override val logTag = "EditListingViewModel"
 
   fun getRentalListing(rentalPostID: String, context: Context) {

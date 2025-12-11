@@ -291,11 +291,7 @@ fun AppNavHost(
                     navActions.navigateTo(Screen.ProfileContributions)
                   }
                 },
-                onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) },
-                onQrNavigate = { scannedUrl ->
-                  handleScannedQrUrl(
-                      scannedUrl = scannedUrl, navigationActions = navActions, context = context)
-                })
+                onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
           }
 
           // --- Secondary destinations ---
@@ -362,6 +358,10 @@ fun AppNavHost(
                     MapNavigationData.currentListings = listings
                     MapNavigationData.browseLocation = location
                     navActions.navigateTo(Screen.CityMapOverview)
+                  },
+                  onQrNavigate = { scannedUrl ->
+                    handleScannedQrUrl(
+                        scannedUrl = scannedUrl, navigationActions = navActions, context = context)
                   })
             }
           }

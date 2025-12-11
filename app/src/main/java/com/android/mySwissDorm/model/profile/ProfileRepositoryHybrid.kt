@@ -12,10 +12,10 @@ import com.android.mySwissDorm.utils.NetworkUtils
  * - When offline: Uses [ProfileRepositoryLocal] for all operations
  * - When online: Uses [ProfileRepositoryFirestore] for remote operations and syncs data
  *
- * For blocked users, this repository automatically syncs local and remote lists when online:
- * - When reading: Merges local and remote blocked lists (union)
- * - When writing: Saves to both local and remote (if online)
- * - Sync happens automatically when operations are performed while online
+ * Sync strategy: Local is the source of truth for offline changes. When going online, the entire
+ * local profile is pushed to remote, ensuring all offline changes (name, settings, bookmarks,
+ * blocked users, etc.) are synced. This prevents remote data from overwriting local offline
+ * changes.
  */
 class ProfileRepositoryHybrid(
     context: Context,
@@ -46,29 +46,38 @@ class ProfileRepositoryHybrid(
   /**
    * Retrieves a profile from remote or local repository.
    *
-   * Tries remote first if online (with timeout), falls back to local on network errors or when
-   * offline. Syncs successful remote results to local storage.
+   * When online: Syncs local profile to remote first (local is source of truth for offline
+   * changes), then returns local profile. If local profile doesn't exist, fetches from remote and
+   * syncs to local.
+   *
+   * When offline: Returns local profile only.
    *
    * @param ownerId The identifier of the profile to retrieve.
    * @return The profile with the specified identifier.
    * @throws NoSuchElementException if the profile is not found in either repository.
    */
-  override suspend fun getProfile(ownerId: String): Profile =
-      performRead(
-          operationName = "getProfile",
-          remoteCall = { remoteRepo.getProfile(ownerId) },
-          localFallback = { localRepo.getProfile(ownerId) },
-          syncToLocal = { profile ->
-            try {
-              localRepo.editProfile(profile)
-            } catch (_: NoSuchElementException) {
-              // Profile doesn't exist locally, try to create it
-              syncProfileToLocal(profile)
-            } catch (_: IllegalArgumentException) {
-              // Profile exists but belongs to different user (user switched), try to create new one
-              syncProfileToLocal(profile)
-            }
-          })
+  override suspend fun getProfile(ownerId: String): Profile {
+    if (NetworkUtils.isNetworkAvailable(context)) {
+      syncProfile(ownerId)
+    }
+
+    return try {
+      localRepo.getProfile(ownerId)
+    } catch (e: NoSuchElementException) {
+      if (NetworkUtils.isNetworkAvailable(context)) {
+        try {
+          val remoteProfile = remoteRepo.getProfile(ownerId)
+          // Sync remote to local for future offline access
+          syncProfileToLocal(remoteProfile)
+          remoteProfile
+        } catch (remoteException: Exception) {
+          throw e // Throw original NoSuchElementException
+        }
+      } else {
+        throw e
+      }
+    }
+  }
 
   /**
    * Retrieves all profiles from the remote repository.
@@ -129,6 +138,39 @@ class ProfileRepositoryHybrid(
   }
 
   /**
+   * Syncs the entire profile between local and remote repositories.
+   *
+   * Strategy: Local is the source of truth for offline changes. When going online, push local
+   * profile to remote to sync all offline changes (name, settings, bookmarks, blocked users, etc.).
+   *
+   * @param ownerId The identifier of the profile to sync.
+   */
+  private suspend fun syncProfile(ownerId: String) {
+    if (!NetworkUtils.isNetworkAvailable(context)) {
+      Log.d(TAG, "[syncProfile] No network available, skipping sync")
+      return
+    }
+
+    try {
+      val localProfile = localRepo.getProfile(ownerId)
+      Log.d(TAG, "[syncProfile] Pushing local profile to remote for ownerId: $ownerId")
+
+      // Push local profile to remote (local is source of truth for offline changes)
+      try {
+        remoteRepo.editProfile(localProfile)
+        Log.d(TAG, "[syncProfile] Successfully pushed local profile to remote")
+      } catch (e: Exception) {
+        Log.w(TAG, "[syncProfile] Failed to push local profile to remote", e)
+      }
+    } catch (e: NoSuchElementException) {
+      // Local profile doesn't exist, nothing to sync
+      Log.d(TAG, "[syncProfile] Local profile doesn't exist, nothing to sync")
+    } catch (e: Exception) {
+      Log.w(TAG, "[syncProfile] Failed to sync profile", e)
+    }
+  }
+
+  /**
    * Attempts to sync a profile to local storage, catching all exceptions.
    *
    * If syncing fails (e.g., profile belongs to different user, no user logged in), logs the error
@@ -148,95 +190,17 @@ class ProfileRepositoryHybrid(
   }
 
   /**
-   * Generic sync function for merging lists between local and remote repositories.
-   *
-   * Merges lists from both sources (union) and saves the merged result to both local and remote
-   * storage. Only syncs if there are differences.
-   *
-   * @param ownerId The identifier of the profile to sync.
-   * @param getLocalList Function to get the list from local repository.
-   * @param getRemoteList Function to get the list from remote repository.
-   * @param updateUserInfo Function to update UserInfo with the merged list.
-   * @param logPrefix Prefix for log messages (e.g., "blocked users", "bookmarks").
-   */
-  private suspend fun syncList(
-      ownerId: String,
-      getLocalList: suspend (String) -> List<String>,
-      getRemoteList: suspend (String) -> List<String>,
-      updateUserInfo: (UserInfo, List<String>) -> UserInfo,
-      logPrefix: String
-  ) {
-    if (!NetworkUtils.isNetworkAvailable(context)) {
-      return
-    }
-
-    try {
-      val localList =
-          try {
-            getLocalList(ownerId)
-          } catch (_: Exception) {
-            emptyList()
-          }
-
-      val remoteList =
-          try {
-            getRemoteList(ownerId)
-          } catch (_: Exception) {
-            emptyList()
-          }
-
-      val mergedList = (localList + remoteList).distinct()
-
-      if (mergedList != localList || mergedList != remoteList) {
-        try {
-          val localProfile = localRepo.getProfile(ownerId)
-          val updatedProfile =
-              localProfile.copy(userInfo = updateUserInfo(localProfile.userInfo, mergedList))
-          localRepo.editProfile(updatedProfile)
-        } catch (e: Exception) {
-          Log.w(TAG, "Failed to update local $logPrefix", e)
-        }
-
-        try {
-          val remoteProfile = remoteRepo.getProfile(ownerId)
-          val updatedProfile =
-              remoteProfile.copy(userInfo = updateUserInfo(remoteProfile.userInfo, mergedList))
-          remoteRepo.editProfile(updatedProfile)
-        } catch (e: Exception) {
-          Log.w(TAG, "Failed to update remote $logPrefix", e)
-        }
-      }
-    } catch (e: Exception) {
-      Log.w(TAG, "Failed to sync $logPrefix", e)
-    }
-  }
-
-  /**
-   * Syncs blocked users between local and remote repositories.
-   *
-   * @param ownerId The identifier of the profile to sync.
-   */
-  private suspend fun syncBlockedUsers(ownerId: String) {
-    syncList(
-        ownerId = ownerId,
-        getLocalList = { localRepo.getBlockedUserIds(it) },
-        getRemoteList = { remoteRepo.getBlockedUserIds(it) },
-        updateUserInfo = { userInfo, list -> userInfo.copy(blockedUserIds = list) },
-        logPrefix = "blocked users")
-  }
-
-  /**
    * Returns the list of blocked user IDs for the given profile.
    *
-   * If online, syncs local and remote lists first to merge any differences. Returns the merged list
-   * from local storage.
+   * If online, syncs the entire profile first (pushes local offline changes to remote). Returns the
+   * list from local storage.
    *
    * @param ownerId The identifier of the profile.
    * @return The list of blocked user IDs, or empty list if profile not found.
    */
   override suspend fun getBlockedUserIds(ownerId: String): List<String> {
     if (NetworkUtils.isNetworkAvailable(context)) {
-      syncBlockedUsers(ownerId)
+      syncProfile(ownerId)
     }
 
     return try {
@@ -249,8 +213,8 @@ class ProfileRepositoryHybrid(
   /**
    * Adds a user to the blocked list in both local and remote repositories.
    *
-   * Adds to local first (offline-first), then to remote if online. Syncs after remote operation to
-   * ensure consistency. If remote operation fails, the local change is preserved.
+   * Adds to local first (offline-first), then to remote if online. If remote operation fails, the
+   * local change is preserved.
    *
    * @param ownerId The identifier of the profile.
    * @param targetUid The identifier of the user to block.
@@ -261,7 +225,6 @@ class ProfileRepositoryHybrid(
     if (NetworkUtils.isNetworkAvailable(context)) {
       try {
         remoteRepo.addBlockedUser(ownerId, targetUid)
-        syncBlockedUsers(ownerId)
       } catch (e: Exception) {
         Log.w(TAG, "Failed to add blocked user remotely, but saved locally", e)
       }
@@ -271,8 +234,8 @@ class ProfileRepositoryHybrid(
   /**
    * Removes a user from the blocked list in both local and remote repositories.
    *
-   * Removes from local first (offline-first), then from remote if online. Syncs after remote
-   * operation to ensure consistency. If remote operation fails, the local change is preserved.
+   * Removes from local first (offline-first), then from remote if online. If remote operation
+   * fails, the local change is preserved.
    *
    * @param ownerId The identifier of the profile.
    * @param targetUid The identifier of the user to unblock.
@@ -283,7 +246,6 @@ class ProfileRepositoryHybrid(
     if (NetworkUtils.isNetworkAvailable(context)) {
       try {
         remoteRepo.removeBlockedUser(ownerId, targetUid)
-        syncBlockedUsers(ownerId)
       } catch (e: Exception) {
         Log.w(TAG, "Failed to remove blocked user remotely, but saved locally", e)
       }
@@ -291,36 +253,24 @@ class ProfileRepositoryHybrid(
   }
 
   /**
-   * Syncs bookmarks between local and remote repositories.
-   *
-   * @param ownerId The identifier of the profile to sync.
-   */
-  private suspend fun syncBookmarks(ownerId: String) {
-    syncList(
-        ownerId = ownerId,
-        getLocalList = { localRepo.getBookmarkedListingIds(it) },
-        getRemoteList = { remoteRepo.getBookmarkedListingIds(it) },
-        updateUserInfo = { userInfo, list -> userInfo.copy(bookmarkedListingIds = list) },
-        logPrefix = "bookmarks")
-  }
-
-  /**
    * Returns the list of bookmarked listing IDs for the given profile.
    *
-   * If online, syncs local and remote lists first to merge any differences. Returns the merged list
-   * from local storage.
+   * If online, syncs the entire profile first (pushes local offline changes to remote). Returns the
+   * list from local storage.
    *
    * @param ownerId The identifier of the profile.
    * @return The list of bookmarked listing IDs, or empty list if profile not found.
    */
   override suspend fun getBookmarkedListingIds(ownerId: String): List<String> {
     if (NetworkUtils.isNetworkAvailable(context)) {
-      syncBookmarks(ownerId)
+      syncProfile(ownerId)
     }
 
     return try {
-      localRepo.getBookmarkedListingIds(ownerId)
+      val result = localRepo.getBookmarkedListingIds(ownerId)
+      result
     } catch (e: Exception) {
+      Log.w(TAG, "[getBookmarkedListingIds] Failed to get local bookmarks", e)
       emptyList()
     }
   }
@@ -328,8 +278,8 @@ class ProfileRepositoryHybrid(
   /**
    * Adds a listing to the bookmarked list in both local and remote repositories.
    *
-   * Adds to local first (offline-first), then to remote if online. Syncs after remote operation to
-   * ensure consistency. If remote operation fails, the local change is preserved.
+   * Adds to local first (offline-first), then to remote if online. If remote operation fails, the
+   * local change is preserved.
    *
    * @param ownerId The identifier of the profile.
    * @param listingId The identifier of the listing to bookmark.
@@ -340,9 +290,8 @@ class ProfileRepositoryHybrid(
     if (NetworkUtils.isNetworkAvailable(context)) {
       try {
         remoteRepo.addBookmark(ownerId, listingId)
-        syncBookmarks(ownerId)
       } catch (e: Exception) {
-        Log.w(TAG, "Failed to add bookmark remotely, but saved locally", e)
+        Log.w(TAG, "[addBookmark] Failed to add bookmark remotely, but saved locally", e)
       }
     }
   }
@@ -350,8 +299,8 @@ class ProfileRepositoryHybrid(
   /**
    * Removes a listing from the bookmarked list in both local and remote repositories.
    *
-   * Removes from local first (offline-first), then from remote if online. Syncs after remote
-   * operation to ensure consistency. If remote operation fails, the local change is preserved.
+   * Removes from local first (offline-first), then from remote if online. If remote operation
+   * fails, the local change is preserved.
    *
    * @param ownerId The identifier of the profile.
    * @param listingId The identifier of the listing to unbookmark.
@@ -362,9 +311,8 @@ class ProfileRepositoryHybrid(
     if (NetworkUtils.isNetworkAvailable(context)) {
       try {
         remoteRepo.removeBookmark(ownerId, listingId)
-        syncBookmarks(ownerId)
       } catch (e: Exception) {
-        Log.w(TAG, "Failed to remove bookmark remotely, but saved locally", e)
+        Log.w(TAG, "[removeBookmark] Failed to remove bookmark remotely, but saved locally", e)
       }
     }
   }

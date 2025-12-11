@@ -93,6 +93,7 @@ fun ViewReviewScreen(
   val errorMsg = uiState.errorMsg //
   val isOwner = uiState.isOwner
   var showShareDialog by remember { mutableStateOf(false) }
+  var isTranslated by remember { mutableStateOf(false) }
 
   // Generate share link
   val shareLink = "https://my-swiss-dorm.web.app/review/$reviewUid"
@@ -104,6 +105,8 @@ fun ViewReviewScreen(
       viewReviewViewModel.clearErrorMsg()
     }
   }
+
+  LaunchedEffect(review) { viewReviewViewModel.translateReview(context) }
 
   if (uiState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -143,8 +146,19 @@ fun ViewReviewScreen(
                     .imePadding()
                     .testTag(C.ViewReviewTags.ROOT),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
+              val clickableText =
+                  if (isTranslated) {
+                    context.getString(R.string.view_listing_see_original)
+                  } else {
+                    context.getString(R.string.view_listing_translate_listing)
+                  }
               Text(
-                  text = review.title,
+                  text = clickableText,
+                  modifier = Modifier.clickable(onClick = { isTranslated = !isTranslated }),
+                  color = MainColor)
+              val titleToDisplay = if (isTranslated) uiState.translatedTitle else review.title
+              Text(
+                  text = titleToDisplay,
                   style =
                       MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                   modifier = Modifier.testTag(C.ViewReviewTags.TITLE),
@@ -201,7 +215,9 @@ fun ViewReviewScreen(
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.REVIEW_TEXT)) {
                 Text("${stringResource(R.string.review)}:", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(3.dp))
-                Text(review.reviewText, style = MaterialTheme.typography.bodyLarge)
+                val descriptionToDisplay =
+                    if (isTranslated) uiState.translatedDescription else review.reviewText
+                Text(descriptionToDisplay, style = MaterialTheme.typography.bodyLarge)
               }
 
               ImageGrid(

@@ -23,8 +23,11 @@ import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.model.review.computeDownvoteChange
 import com.android.mySwissDorm.model.review.computeUpvoteChange
 import com.android.mySwissDorm.ui.photo.PhotoManager
+import com.android.mySwissDorm.utils.Translator
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import java.util.Locale
+import kotlin.use
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,6 +61,8 @@ data class ViewReviewUIState(
     val images: List<Photo> = emptyList(),
     val showFullScreenImages: Boolean = false,
     val fullScreenImagesIndex: Int = 0,
+    val translatedTitle: String = "",
+    val translatedDescription: String = ""
 )
 
 class ViewReviewViewModel(
@@ -94,6 +99,37 @@ class ViewReviewViewModel(
   /** Sets an error message in the UI state. */
   private fun setErrorMsg(errorMsg: String) {
     _uiState.update { it.copy(errorMsg = errorMsg) }
+  }
+
+  fun translateReview(context: Context) {
+    val title = _uiState.value.review.title
+    val description = _uiState.value.review.reviewText
+
+    if (title.isNotBlank()) {
+      viewModelScope.launch {
+        _uiState.update {
+          it.copy(translatedTitle = context.getString(R.string.translator_translating))
+        }
+        val translated = translateSingleText(title, context)
+        _uiState.update { it.copy(translatedTitle = translated) }
+      }
+    }
+
+    if (description.isNotBlank()) {
+      viewModelScope.launch {
+        _uiState.update {
+          it.copy(translatedDescription = context.getString(R.string.translator_translating))
+        }
+        val translated = translateSingleText(description, context)
+        _uiState.update { it.copy(translatedDescription = translated) }
+      }
+    }
+  }
+
+  private suspend fun translateSingleText(text: String, context: Context): String {
+    val translator = Translator()
+    val code = Locale.getDefault().language
+    return translator.use { it.translateText(text, code, context) }
   }
 
   /**

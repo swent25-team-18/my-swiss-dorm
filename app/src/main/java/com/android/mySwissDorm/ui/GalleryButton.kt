@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.OpenableColumns
 import android.util.Log
 import android.widget.Toast
@@ -70,6 +71,14 @@ fun GalleryButton(
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
+  val permission =
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        // Android 12 and below
+        Manifest.permission.READ_EXTERNAL_STORAGE
+      } else {
+        // Android 13+
+        Manifest.permission.READ_MEDIA_IMAGES
+      }
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePictureContract) {
         it?.let { uri ->
@@ -88,9 +97,9 @@ fun GalleryButton(
       }
   Button(
       onClick = {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) !=
+        if (ContextCompat.checkSelfPermission(context, permission) !=
             PackageManager.PERMISSION_GRANTED) {
-          permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+          permissionLauncher.launch(permission)
         } else {
           galleryLauncher.launch("image/*")
         }
@@ -134,6 +143,12 @@ fun GalleryButtonMultiplePick(
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
+  val permission =
+      if (Build.VERSION.SDK_INT < 33) {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+      } else {
+        Manifest.permission.READ_MEDIA_IMAGES
+      }
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePicturesContract) { uris ->
         if (uris.isNotEmpty()) {
@@ -156,9 +171,9 @@ fun GalleryButtonMultiplePick(
       }
   Button(
       onClick = {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) !=
+        if (ContextCompat.checkSelfPermission(context, permission) !=
             PackageManager.PERMISSION_GRANTED) {
-          permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+          permissionLauncher.launch(permission)
         } else {
           galleryLauncher.launch(
               PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))

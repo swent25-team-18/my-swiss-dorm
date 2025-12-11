@@ -6,28 +6,37 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.models.User
+import io.mockk.clearAllMocks
 import io.mockk.mockk
+import io.mockk.unmockkAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Instrumented tests for [MyChatScreen] covering connection branches without mocking Stream
- * internals at runtime. We inject a fake ChatClient and user state to drive the UI.
+ * Instrumented tests for [MyChatScreen] covering connection branches without touching Stream
+ * internals that trigger class-change issues.
  */
 @RunWith(AndroidJUnit4::class)
 class ChatScreenConnectionTest {
 
   @get:Rule val composeRule = createComposeRule()
 
+  @After
+  fun tearDown() {
+    clearAllMocks()
+    unmockkAll()
+  }
+
   @Test
   fun showsLoadingWhileConnecting_thenRendersMessages_whenUserNotConnected() {
     val fakeClient = mockk<ChatClient>(relaxed = true)
     val userStateFlow = MutableStateFlow<User?>(null)
     var messagesShown = false
-
     var connectCalled = false
+
     composeRule.setContent {
       MySwissDormAppTheme {
         MyChatScreen(
@@ -45,7 +54,6 @@ class ChatScreenConnectionTest {
       }
     }
 
-    // Verify connectUser invoked and then the messages composable rendered
     composeRule.waitUntil(timeoutMillis = 5_000) { connectCalled && userStateFlow.value != null }
     composeRule.waitUntil(timeoutMillis = 5_000) { messagesShown }
   }
@@ -71,7 +79,6 @@ class ChatScreenConnectionTest {
       }
     }
 
-    // Loading should not show; ensure connectUser never called and messages rendered
     composeRule.onNodeWithText("Connecting to chat...", substring = true).assertDoesNotExist()
     composeRule.waitUntil(timeoutMillis = 3_000) { messagesShown }
     composeRule.runOnIdle { assert(!connectCalled) }

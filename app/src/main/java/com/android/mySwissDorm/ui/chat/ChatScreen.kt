@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -94,11 +95,7 @@ fun MyChatScreen(
     currentUserProvider: () -> FirebaseUser? = { FirebaseAuth.getInstance().currentUser },
     userStateProvider: (ChatClient) -> User? = { it.clientState.user.value },
     connectUser: suspend (FirebaseUser, ChatClient) -> Unit = { firebaseUser, _ ->
-      val profile = ProfileRepositoryProvider.repository.getProfile(firebaseUser.uid)
-      StreamChatProvider.connectUser(
-          firebaseUserId = firebaseUser.uid,
-          displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
-          imageUrl = "")
+      connectUserById(firebaseUser.uid)
     },
     chatTheme: @Composable (@Composable () -> Unit) -> Unit = { content ->
       ChatTheme(content = content)
@@ -179,6 +176,21 @@ fun MyChatScreen(
       chatTheme { messagesScreen(viewModelFactory, onBackClick) }
     }
   }
+}
+
+/**
+ * Default connector reused in tests without needing a FirebaseUser mock. Allows injecting a fake
+ * repository/connector to avoid initializing Firebase/Stream in unit tests.
+ */
+internal suspend fun connectUserById(
+    firebaseUserId: String,
+    repository: ProfileRepository = ProfileRepositoryProvider.repository,
+    connector: suspend (String, String, String) -> Unit = { id, name, image ->
+      StreamChatProvider.connectUser(firebaseUserId = id, displayName = name, imageUrl = image)
+    }
+) {
+  val profile = repository.getProfile(firebaseUserId)
+  connector(firebaseUserId, "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(), "")
 }
 
 /**

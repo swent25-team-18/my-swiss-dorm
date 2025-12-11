@@ -75,10 +75,10 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.utils.SignInPopUp
 import com.google.firebase.auth.FirebaseAuth
 import io.getstream.chat.android.models.Channel
+import java.net.URLEncoder
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.net.URLEncoder
 
 // Shared state for refreshing channels when returning from RequestedMessagesScreen
 private object ChannelsRefreshState {
@@ -237,9 +237,7 @@ fun AppNavHost(
                       selectedScreen = Screen.Inbox, onTabSelected = { navActions.navigateTo(it) })
                 }) { paddingValues ->
                   ChannelsScreen(
-                      onChannelClick = { channelId ->
-                        openChatChannel(channelId, navActions)
-                      },
+                      onChannelClick = { channelId -> openChatChannel(channelId, navActions) },
                       onRequestedMessagesClick = {
                         navActions.navigateTo(Screen.RequestedMessages)
                       },
@@ -700,9 +698,7 @@ fun AppNavHost(
           composable(Screen.SelectUserToChat.route) {
             SelectUserToChatScreen(
                 onBackClick = { navActions.goBack() },
-                onUserSelected = { channelCid ->
-                  openChatChannel(channelCid, navActions)
-                })
+                onUserSelected = { channelCid -> openChatChannel(channelCid, navActions) })
           }
 
           composable(Screen.RequestedMessages.route) {

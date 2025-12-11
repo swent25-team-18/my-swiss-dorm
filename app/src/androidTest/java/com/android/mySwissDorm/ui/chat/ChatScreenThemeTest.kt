@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.chat
 
+import android.content.Context
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import io.getstream.chat.android.client.ChatClient
@@ -28,6 +29,9 @@ class ChatScreenThemeTest {
             currentUserProvider = { null },
             userStateProvider = { null },
             connectUser = { _, _ -> },
+            viewModelFactoryProvider = { _: Context, _: ChatClient, _: String, _: Int ->
+              mockk(relaxed = true)
+            },
             chatTheme = { content ->
               themeApplied = true
               content()

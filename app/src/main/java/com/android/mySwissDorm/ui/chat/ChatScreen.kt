@@ -1,6 +1,7 @@
 // MyChatScreen.kt
 package com.android.mySwissDorm.ui.chat
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,6 +80,8 @@ import kotlinx.coroutines.delay
  * @param chatTheme Wrapper used to provide Stream theming; defaults to [ChatTheme].
  * @param messagesScreen Composable used to show the message list and input; defaults to
  *   [MessagesScreen].
+ * @param viewModelFactoryProvider Creates the [MessagesViewModelFactory]; defaults to Stream
+ *   factory. Tests can inject a fake to avoid touching Stream internals.
  * @param messageLimit Limits how many messages are initially loaded.
  */
 @Composable
@@ -97,10 +100,18 @@ fun MyChatScreen(
           displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
           imageUrl = "")
     },
-    chatTheme: @Composable (@Composable () -> Unit) -> Unit = { content -> ChatTheme(content = content) },
-    messagesScreen: @Composable (MessagesViewModelFactory, () -> Unit) -> Unit = { viewModelFactory, onBack ->
-      MessagesScreen(viewModelFactory = viewModelFactory, onBackPressed = onBack)
+    chatTheme: @Composable (@Composable () -> Unit) -> Unit = { content ->
+      ChatTheme(content = content)
     },
+    messagesScreen: @Composable (MessagesViewModelFactory, () -> Unit) -> Unit =
+        { viewModelFactory, onBack ->
+          MessagesScreen(viewModelFactory = viewModelFactory, onBackPressed = onBack)
+        },
+    viewModelFactoryProvider: (Context, ChatClient, String, Int) -> MessagesViewModelFactory =
+        { ctx, chatClient, cid, limit ->
+          MessagesViewModelFactory(
+              context = ctx, chatClient = chatClient, channelId = cid, messageLimit = limit)
+        },
     messageLimit: Int = 30,
 ) {
   val isPreview = LocalInspectionMode.current
@@ -162,11 +173,7 @@ fun MyChatScreen(
     } else {
       val viewModelFactory =
           remember(channelId) {
-            MessagesViewModelFactory(
-                context = context,
-                chatClient = chatClient,
-                channelId = channelId,
-                messageLimit = messageLimit)
+            viewModelFactoryProvider(context, chatClient, channelId, messageLimit)
           }
 
       chatTheme { messagesScreen(viewModelFactory, onBackClick) }

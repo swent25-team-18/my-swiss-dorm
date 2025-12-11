@@ -34,10 +34,9 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
         auth.currentUser?.uid
             ?: throw IllegalStateException(
                 "ProfileRepositoryLocal: Cannot create profile. No user is currently logged in.")
-    if (profile.ownerId != currentUserId) {
-      throw IllegalArgumentException(
-          "ProfileRepositoryLocal: Cannot create profile for ownerId ${profile.ownerId}. " +
-              "Only the current user's profile (${currentUserId}) can be created locally.")
+    require(profile.ownerId == currentUserId) {
+      "ProfileRepositoryLocal: Cannot create profile for ownerId ${profile.ownerId}. " +
+          "Only the current user's profile (${currentUserId}) can be created locally."
     }
 
     // Clear any existing profile before inserting (handles user switching)
@@ -103,10 +102,9 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
                 "ProfileRepositoryLocal: Profile not found. Cannot edit non-existent profile.")
 
     // Verify the profile being edited matches the stored profile
-    if (existingEntity.ownerId != profile.ownerId) {
-      throw IllegalArgumentException(
-          "ProfileRepositoryLocal: Cannot edit profile with ownerId ${profile.ownerId}. " +
-              "Only the current user's profile (${existingEntity.ownerId}) can be edited locally.")
+    require(existingEntity.ownerId == profile.ownerId) {
+      "ProfileRepositoryLocal: Cannot edit profile with ownerId ${profile.ownerId}. " +
+          "Only the current user's profile (${existingEntity.ownerId}) can be edited locally."
     }
 
     profileDao.updateProfile(ProfileEntity.fromProfile(profile))

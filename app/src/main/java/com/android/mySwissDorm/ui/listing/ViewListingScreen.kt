@@ -209,7 +209,9 @@ fun ViewListingScreen(
                     }
                 Text(
                     text = clickableText,
-                    modifier = Modifier.clickable(onClick = { isTranslated = !isTranslated }),
+                    modifier =
+                        Modifier.clickable(onClick = { isTranslated = !isTranslated })
+                            .testTag(C.ViewListingTags.TRANSLATE_BTN),
                     color = MainColor)
                 val titleToDisplay =
                     if (isTranslated) listingUIState.translatedTitle else listing.title
@@ -391,7 +393,10 @@ fun ViewListingScreen(
                   val descriptionToDisplay =
                       if (isTranslated) listingUIState.translatedDescription
                       else listing.description
-                  Text(descriptionToDisplay, style = MaterialTheme.typography.bodyLarge)
+                  Text(
+                      descriptionToDisplay,
+                      style = MaterialTheme.typography.bodyLarge,
+                      modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION_TEXT))
                 }
 
                 ImageGrid(

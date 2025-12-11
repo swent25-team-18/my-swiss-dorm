@@ -12,7 +12,8 @@ import com.android.mySwissDorm.model.database.ProfileEntity
  *
  * Note: This repository only stores the current logged-in user's profile. Operations that require
  * other users' profiles (e.g., [getAllProfile], [getBlockedUserIds] for other users) are not
- * supported offline and will throw [UnsupportedOperationException].
+ * supported offline and will throw [UnsupportedOperationException]. Blocking users is supported
+ * offline for the current user's profile.
  */
 class ProfileRepositoryLocal(private val profileDao: ProfileDao) : ProfileRepository {
 
@@ -126,41 +127,55 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao) : ProfileReposi
   /**
    * Returns the list of blocked user IDs for the given ownerId.
    *
-   * This method only works for the current user's profile. Blocked users are not stored locally as
-   * they are not part of the Profile entity structure.
+   * This method only works for the current user's profile, as blocked users are stored as part of
+   * the profile.
    *
-   * @throws UnsupportedOperationException Always, as blocked users are not stored locally.
+   * @param ownerId The identifier of the profile.
+   * @return The list of blocked user IDs.
+   * @throws NoSuchElementException if the profile is not found or doesn't match the requested
+   *   ownerId.
    */
   override suspend fun getBlockedUserIds(ownerId: String): List<String> {
-    throw UnsupportedOperationException(
-        "ProfileRepositoryLocal: Cannot retrieve blocked users offline. " +
-            "Blocked users are not stored locally. Please connect to the internet.")
+    val profile = getProfile(ownerId)
+    return profile.userInfo.blockedUserIds
   }
 
   /**
    * Adds a user to the blocked list.
    *
-   * This method is not supported in the local repository, as blocked users are not stored locally.
+   * This method only works for the current user's profile. It retrieves the profile, adds the
+   * blocked user, and saves it back to local storage.
    *
-   * @throws UnsupportedOperationException Always, as blocked users cannot be managed offline.
+   * @param ownerId The identifier of the profile.
+   * @param targetUid The identifier of the user to block.
+   * @throws NoSuchElementException if the profile is not found or doesn't match the requested
+   *   ownerId.
    */
   override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
-    throw UnsupportedOperationException(
-        "ProfileRepositoryLocal: Cannot block users offline. " +
-            "Please connect to the internet to manage blocked users.")
+    val profile = getProfile(ownerId)
+    val updatedBlockedUsers = profile.userInfo.blockedUserIds + targetUid
+    val updatedUserInfo = profile.userInfo.copy(blockedUserIds = updatedBlockedUsers)
+    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+    editProfile(updatedProfile)
   }
 
   /**
    * Removes a user from the blocked list.
    *
-   * This method is not supported in the local repository, as blocked users are not stored locally.
+   * This method only works for the current user's profile. It retrieves the profile, removes the
+   * blocked user, and saves it back to local storage.
    *
-   * @throws UnsupportedOperationException Always, as blocked users cannot be managed offline.
+   * @param ownerId The identifier of the profile.
+   * @param targetUid The identifier of the user to unblock.
+   * @throws NoSuchElementException if the profile is not found or doesn't match the requested
+   *   ownerId.
    */
   override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
-    throw UnsupportedOperationException(
-        "ProfileRepositoryLocal: Cannot unblock users offline. " +
-            "Please connect to the internet to manage blocked users.")
+    val profile = getProfile(ownerId)
+    val updatedBlockedUsers = profile.userInfo.blockedUserIds - targetUid
+    val updatedUserInfo = profile.userInfo.copy(blockedUserIds = updatedBlockedUsers)
+    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+    editProfile(updatedProfile)
   }
 
   /**

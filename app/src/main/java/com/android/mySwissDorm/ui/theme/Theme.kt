@@ -7,8 +7,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -50,7 +48,7 @@ private val DarkColors =
         tertiary = Red,
         background = Dark,
         surface = Dark,
-        surfaceVariant = Color(0xFF2A2A2A),
+        surfaceVariant = AlmostBlack,
         onPrimary = Dark,
         onSecondary = White,
         onTertiary = White,
@@ -63,27 +61,17 @@ private val DarkColors =
 fun MySwissDormAppTheme(content: @Composable () -> Unit) {
   val context = LocalContext.current
 
-  // Load preference synchronously from SharedPreferences as fallback
-  // MainActivity should have already set it in ThemePreferenceState, but this is a safety net
-  val savedPreference = remember { ThemePreferenceManager.getLocalPreferenceSync(context) }
-
-  // Ensure global state is initialized from saved preference if it's null
+  // Ensure global state is initialized if it's null
   // This is a fallback in case MainActivity initialization didn't work
-  // Use SideEffect since we're performing a side effect (updating state), not remembering a value
   SideEffect {
     if (ThemePreferenceState.darkModePreference.value == null) {
-      // If global state is null, initialize it from SharedPreferences
-      // This ensures the preference is available even if MainActivity didn't set it
+      val savedPreference = DarkModePreferenceHelper.getPreference(context)
       ThemePreferenceState.updatePreference(savedPreference)
     }
   }
 
   // Observe the global state - this will trigger recomposition when it changes
-  val globalPreference by ThemePreferenceState.darkModePreference
-
-  // Use global preference (set by MainActivity or fallback), or savedPreference as last resort
-  // MainActivity should have already set globalPreference, so this should use that
-  val userPreference = globalPreference ?: savedPreference
+  val userPreference by ThemePreferenceState.darkModePreference
   val systemDarkTheme = isSystemInDarkTheme()
 
   // CRITICAL: Use user preference ONLY if it's explicitly set (true or false)

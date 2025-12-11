@@ -220,7 +220,7 @@ class GalleryButtonTest {
       DefaultGalleryButton(
           onSelect = { selected.value = true },
           permissionContract = FakeRequestPermissionContract.failure(),
-          choosePictureContract = FakeGetContentContract(false, fakeUri))
+          choosePictureContract = FakeGetContentContract(true, fakeUri))
     }
     composeTestRule.onNodeWithTag(C.GalleryButtonTag.SINGLE_TAG).assertIsDisplayed().performClick()
     composeTestRule.waitForIdle()

@@ -86,6 +86,9 @@ fun CameraButton(
         if (isGranted) {
           cameraLauncher.launch(photoCaptured?.image ?: return@rememberLauncherForActivityResult)
         } else {
+          if (Uri.EMPTY != uriCaptured) {
+            Photo.deleteCapturablePhoto(context, uriCaptured)
+          }
           Toast.makeText(context, R.string.camera_button_permission_denied_text, Toast.LENGTH_SHORT)
               .show()
         }

@@ -31,5 +31,9 @@ data class Photo(val image: Uri, val fileName: String) {
       val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
       return Photo(image = uri, fileName = fileName)
     }
+
+    fun deleteCapturablePhoto(context: Context, uri: Uri): Int {
+      return context.contentResolver.delete(uri, null, null)
+    }
   }
 }

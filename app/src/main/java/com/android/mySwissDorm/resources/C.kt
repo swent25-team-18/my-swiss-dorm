@@ -40,7 +40,6 @@ object C {
     }
 
     const val PROFILE_SCREEN_TITLE = "profile_title"
-    const val PROFILE_SCREEN_BACK_BUTTON = "profile_back_button"
 
     fun buttonNavBarTestTag(screen: Screen): String {
       return "bottom_nav_${screen.route}"
@@ -295,18 +294,10 @@ object C {
   object SettingsTags {
     const val SETTINGS_SCROLL = "SettingsScroll"
     const val PROFILE_BUTTON = "ProfileButton"
-    const val EMAIL_FIELD = "EmailField"
     const val DELETE_ACCOUNT_BUTTON = "DeleteAccountButton"
     const val BLOCKED_CONTACTS_TOGGLE = "BlockedContactsToggle"
     const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
-    const val BOTTOM_BAR = "bottom_nav"
-    const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
-    const val QR_SECTION_TITLE = "SettingsQrSectionTitle"
-    const val QR_SECTION_SUBTITLE = "SettingsQrSectionSubtitle"
-    const val QR_SCAN_BUTTON = "SettingsScanQrButton"
-    const val BOOKMARKS_BUTTON = "BookmarksButton"
-
-    fun avatarTag(uri: Uri?) = "SettingsAvatarTag$uri"
+    const val BACK_BUTTON = "settingsBackButton"
 
     fun switch(label: String): String = "SettingSwitch_$label"
   }
@@ -346,8 +337,14 @@ object C {
   object ProfileTags {
     fun profilePictureTag(uri: Uri?) = "profileScreenProfilePictureTag$uri"
 
+    const val ACCOUNT_CARD = "profilAccountCard"
+    const val PREFERENCES_BUTTON = "profilPreferencesButton"
     const val SAVE_BUTTON = "profile_save_button"
     const val DELETE_PP_BUTTON = "profilePictureDeleteButton"
+    const val EMAIL_FIELD = "profileEmailField"
+    const val CONTRIBUTIONS_BUTTON = "profileContributionsButton"
+    const val BOOKMARKS_BUTTON = "profileBookmarksButton"
+    const val SETTINGS_ICON = "profileSettingsIcon"
   }
 
   object FilterTestTags {

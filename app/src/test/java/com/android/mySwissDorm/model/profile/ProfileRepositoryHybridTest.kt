@@ -163,6 +163,28 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
+  fun getProfile_online_handlesSyncFailureWhenProfileBelongsToDifferentUser() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Create a profile for user-1 locally (current user)
+    val localProfile = createTestProfile("user-1")
+    localRepository.createProfile(localProfile)
+
+    // Try to get profile for user-2 from remote (different user)
+    val remoteProfile = createTestProfile("user-2")
+    coEvery { remoteRepository.getProfile("user-2") } returns remoteProfile
+
+    // Should still return remote profile even if sync fails (can't create user-2's profile when
+    // current user is user-1)
+    val result = hybridRepository.getProfile("user-2")
+
+    assertEquals(remoteProfile, result)
+    // Local should still have user-1's profile (sync failed, so it wasn't replaced)
+    assertEquals(localProfile, localRepository.getProfile("user-1"))
+  }
+
+  @Test
   fun editProfile_online_savesToBothRepositories() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
@@ -195,6 +217,23 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
+  fun editProfile_online_handlesRemoteFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val profile = createTestProfile("user-1", name = "John")
+    localRepository.createProfile(profile)
+
+    val updated = profile.copy(userInfo = profile.userInfo.copy(name = "Jane"))
+    coEvery { remoteRepository.editProfile(updated) } throws IOException("Network error")
+
+    hybridRepository.editProfile(updated)
+
+    // Local save should still succeed
+    assertEquals("Jane", localRepository.getProfile("user-1").userInfo.name)
+  }
+
+  @Test
   fun deleteProfile_online_deletesFromBothRepositories() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
@@ -206,6 +245,22 @@ class ProfileRepositoryHybridTest {
     hybridRepository.deleteProfile("user-1")
 
     coVerify { remoteRepository.deleteProfile("user-1") }
+    val result = runCatching { localRepository.getProfile("user-1") }
+    assertTrue(result.isFailure)
+  }
+
+  @Test
+  fun deleteProfile_online_handlesRemoteFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val profile = createTestProfile("user-1")
+    localRepository.createProfile(profile)
+    coEvery { remoteRepository.deleteProfile("user-1") } throws IOException("Network error")
+
+    hybridRepository.deleteProfile("user-1")
+
+    // Local delete should still succeed
     val result = runCatching { localRepository.getProfile("user-1") }
     assertTrue(result.isFailure)
   }
@@ -384,6 +439,98 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
+  fun addBookmark_online_handlesRemoteFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val profile = createTestProfile("user-1", bookmarkedListingIds = listOf("listing-1"))
+    localRepository.createProfile(profile)
+
+    coEvery { remoteRepository.addBookmark("user-1", "listing-2") } throws
+        IOException("Network error")
+
+    hybridRepository.addBookmark("user-1", "listing-2")
+
+    // Local save should still succeed
+    val bookmarks = localRepository.getBookmarkedListingIds("user-1")
+    assertTrue(bookmarks.contains("listing-1"))
+    assertTrue(bookmarks.contains("listing-2"))
+  }
+
+  @Test
+  fun removeBookmark_online_handlesRemoteFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val profile =
+        createTestProfile("user-1", bookmarkedListingIds = listOf("listing-1", "listing-2"))
+    localRepository.createProfile(profile)
+
+    coEvery { remoteRepository.removeBookmark("user-1", "listing-1") } throws
+        IOException("Network error")
+
+    hybridRepository.removeBookmark("user-1", "listing-1")
+
+    // Local save should still succeed
+    val bookmarks = localRepository.getBookmarkedListingIds("user-1")
+    assertFalse(bookmarks.contains("listing-1"))
+    assertTrue(bookmarks.contains("listing-2"))
+  }
+
+  @Test
+  fun syncList_handlesLocalListRetrievalFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Don't create local profile, so getBlockedUserIds will throw
+    coEvery { remoteRepository.getBlockedUserIds("user-1") } returns listOf("user-2")
+    coEvery { remoteRepository.getProfile("user-1") } returns
+        createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    coEvery { remoteRepository.editProfile(any()) } returns Unit
+
+    // Should not throw, should handle gracefully
+    val result = hybridRepository.getBlockedUserIds("user-1")
+
+    // Should return empty list when local fails
+    assertEquals(emptyList<String>(), result)
+  }
+
+  @Test
+  fun syncList_handlesRemoteListRetrievalFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val localProfile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    localRepository.createProfile(localProfile)
+
+    coEvery { remoteRepository.getBlockedUserIds("user-1") } throws IOException("Network error")
+
+    // Should not throw, should return local data
+    val result = hybridRepository.getBlockedUserIds("user-1")
+
+    assertEquals(listOf("user-2"), result)
+  }
+
+  @Test
+  fun syncList_handlesLocalProfileUpdateFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val localProfile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    localRepository.createProfile(localProfile)
+
+    coEvery { remoteRepository.getBlockedUserIds("user-1") } returns listOf("user-3")
+    // Make getProfile fail to trigger exception in syncList
+    coEvery { remoteRepository.getProfile("user-1") } throws IOException("Network error")
+
+    // Should not throw, should handle gracefully
+    val result = hybridRepository.getBlockedUserIds("user-1")
+
+    // Should still return local data
+    assertTrue(result.contains("user-2"))
+  }
+
+  @Test
   fun addBlockedUser_offline_savesLocallyOnly() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns false
@@ -397,6 +544,44 @@ class ProfileRepositoryHybridTest {
     assertTrue(blocked.contains("user-2"))
     assertTrue(blocked.contains("user-3"))
     coVerify(exactly = 0) { remoteRepository.addBlockedUser(any(), any()) }
+  }
+
+  @Test
+  fun addBlockedUser_online_handlesRemoteFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    localRepository.createProfile(profile)
+
+    coEvery { remoteRepository.addBlockedUser("user-1", "user-3") } throws
+        IOException("Network error")
+
+    hybridRepository.addBlockedUser("user-1", "user-3")
+
+    // Local save should still succeed
+    val blocked = localRepository.getBlockedUserIds("user-1")
+    assertTrue(blocked.contains("user-2"))
+    assertTrue(blocked.contains("user-3"))
+  }
+
+  @Test
+  fun removeBlockedUser_online_handlesRemoteFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2", "user-3"))
+    localRepository.createProfile(profile)
+
+    coEvery { remoteRepository.removeBlockedUser("user-1", "user-2") } throws
+        IOException("Network error")
+
+    hybridRepository.removeBlockedUser("user-1", "user-2")
+
+    // Local save should still succeed
+    val blocked = localRepository.getBlockedUserIds("user-1")
+    assertFalse(blocked.contains("user-2"))
+    assertTrue(blocked.contains("user-3"))
   }
 
   private fun createTestProfile(

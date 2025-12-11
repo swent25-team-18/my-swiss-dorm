@@ -470,9 +470,6 @@ fun AppNavHost(
                   viewListingViewModel = viewListingViewModel,
                   listingUid = it,
                   onGoBack = { navActions.goBack() },
-                  onViewResidency = { residencyName ->
-                    navActions.navigateTo(Screen.ResidencyDetails(residencyName))
-                  },
                   onApply = {
                     coroutineScope.launch {
                       val success = viewListingViewModel.submitContactMessage(context)

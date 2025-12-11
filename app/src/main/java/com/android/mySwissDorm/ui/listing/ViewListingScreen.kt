@@ -77,8 +77,7 @@ fun ViewListingScreen(
     onViewProfile: (ownerId: String) -> Unit = {},
     onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit =
         { _, _, _, _ ->
-        },
-    onViewResidency: (residencyName: String) -> Unit = {}
+        }
 ) {
   val context = LocalContext.current
   LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid, context) }

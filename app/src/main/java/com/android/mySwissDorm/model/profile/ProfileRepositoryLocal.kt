@@ -155,6 +155,19 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
   }
 
   /**
+   * Updates a list field in UserInfo and saves the profile.
+   *
+   * @param ownerId The identifier of the profile.
+   * @param updateUserInfo Function to create updated UserInfo with the new list value.
+   */
+  private suspend fun updateListField(ownerId: String, updateUserInfo: (UserInfo) -> UserInfo) {
+    val profile = getProfile(ownerId)
+    val updatedUserInfo = updateUserInfo(profile.userInfo)
+    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+    editProfile(updatedProfile)
+  }
+
+  /**
    * Adds a user to the blocked list.
    *
    * This method only works for the current user's profile. It retrieves the profile, adds the
@@ -166,11 +179,7 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
    *   ownerId.
    */
   override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
-    val profile = getProfile(ownerId)
-    val updatedBlockedUsers = profile.userInfo.blockedUserIds + targetUid
-    val updatedUserInfo = profile.userInfo.copy(blockedUserIds = updatedBlockedUsers)
-    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
-    editProfile(updatedProfile)
+    updateListField(ownerId) { it.copy(blockedUserIds = it.blockedUserIds + targetUid) }
   }
 
   /**
@@ -185,11 +194,7 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
    *   ownerId.
    */
   override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
-    val profile = getProfile(ownerId)
-    val updatedBlockedUsers = profile.userInfo.blockedUserIds - targetUid
-    val updatedUserInfo = profile.userInfo.copy(blockedUserIds = updatedBlockedUsers)
-    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
-    editProfile(updatedProfile)
+    updateListField(ownerId) { it.copy(blockedUserIds = it.blockedUserIds - targetUid) }
   }
 
   /**
@@ -220,11 +225,7 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
    *   ownerId.
    */
   override suspend fun addBookmark(ownerId: String, listingId: String) {
-    val profile = getProfile(ownerId)
-    val updatedBookmarks = profile.userInfo.bookmarkedListingIds + listingId
-    val updatedUserInfo = profile.userInfo.copy(bookmarkedListingIds = updatedBookmarks)
-    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
-    editProfile(updatedProfile)
+    updateListField(ownerId) { it.copy(bookmarkedListingIds = it.bookmarkedListingIds + listingId) }
   }
 
   /**
@@ -239,10 +240,6 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
    *   ownerId.
    */
   override suspend fun removeBookmark(ownerId: String, listingId: String) {
-    val profile = getProfile(ownerId)
-    val updatedBookmarks = profile.userInfo.bookmarkedListingIds - listingId
-    val updatedUserInfo = profile.userInfo.copy(bookmarkedListingIds = updatedBookmarks)
-    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
-    editProfile(updatedProfile)
+    updateListField(ownerId) { it.copy(bookmarkedListingIds = it.bookmarkedListingIds - listingId) }
   }
 }

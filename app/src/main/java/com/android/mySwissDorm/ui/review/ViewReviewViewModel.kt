@@ -101,6 +101,11 @@ class ViewReviewViewModel(
     _uiState.update { it.copy(errorMsg = errorMsg) }
   }
 
+  /**
+   * Translates the review's title and description to the user's app language.
+   *
+   * @param context The Android context, mainly used for accessing string resources.
+   */
   fun translateReview(context: Context) {
     val title = _uiState.value.review.title
     val description = _uiState.value.review.reviewText
@@ -126,6 +131,13 @@ class ViewReviewViewModel(
     }
   }
 
+  /**
+   * Suspend utility function to translate a single piece of text.
+   *
+   * @param text The source string to be translated.
+   * @param context The Android context required by the [Translator] for internal resource access.
+   * @return The translated string.
+   */
   private suspend fun translateSingleText(text: String, context: Context): String {
     val translator = Translator()
     val code = Locale.getDefault().language

@@ -105,6 +105,11 @@ class ViewListingViewModel(
     _uiState.value = _uiState.value.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
   }
 
+  /**
+   * Translates the listing's title and description to the user's app language.
+   *
+   * @param context The Android context, mainly used for accessing string resources.
+   */
   fun translateListing(context: Context) {
     val title = _uiState.value.listing.title
     val description = _uiState.value.listing.description
@@ -130,6 +135,13 @@ class ViewListingViewModel(
     }
   }
 
+  /**
+   * Suspend utility function to translate a single piece of text.
+   *
+   * @param text The source string to be translated.
+   * @param context The Android context required by the [Translator] for internal resource access.
+   * @return The translated string.
+   */
   private suspend fun translateSingleText(text: String, context: Context): String {
     val translator = Translator()
     val code = Locale.getDefault().language

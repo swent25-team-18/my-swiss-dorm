@@ -148,13 +148,15 @@ fun ViewReviewScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               val clickableText =
                   if (isTranslated) {
-                    context.getString(R.string.view_listing_see_original)
+                    context.getString(R.string.see_original)
                   } else {
-                    context.getString(R.string.view_listing_translate_listing)
+                    context.getString(R.string.view_review_translate_review)
                   }
               Text(
                   text = clickableText,
-                  modifier = Modifier.clickable(onClick = { isTranslated = !isTranslated }),
+                  modifier =
+                      Modifier.clickable(onClick = { isTranslated = !isTranslated })
+                          .testTag(C.ViewReviewTags.TRANSLATE_BTN),
                   color = MainColor)
               val titleToDisplay = if (isTranslated) uiState.translatedTitle else review.title
               Text(
@@ -217,7 +219,10 @@ fun ViewReviewScreen(
                 Spacer(Modifier.height(3.dp))
                 val descriptionToDisplay =
                     if (isTranslated) uiState.translatedDescription else review.reviewText
-                Text(descriptionToDisplay, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    descriptionToDisplay,
+                    modifier = Modifier.testTag(C.ViewReviewTags.DESCRIPTION_TEXT),
+                    style = MaterialTheme.typography.bodyLarge)
               }
 
               ImageGrid(

@@ -84,6 +84,8 @@ object C {
     const val VOTE_UPVOTE_BUTTON = "viewReviewVoteUpvoteButton"
     const val VOTE_DOWNVOTE_BUTTON = "viewReviewVoteDownvoteButton"
     const val VOTE_SCORE = "viewReviewVoteScore"
+    const val TRANSLATE_BTN = "viewReviewTranslateButton"
+    const val DESCRIPTION_TEXT = "viewReviewDescriptionText"
   }
 
   object ViewUserProfileTags {

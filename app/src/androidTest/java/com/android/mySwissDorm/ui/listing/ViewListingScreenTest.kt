@@ -996,7 +996,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
     compose
         .onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN)
-        .assertTextEquals(context.getString(R.string.view_listing_see_original))
+        .assertTextEquals(context.getString(R.string.see_original))
   }
 
   @Test

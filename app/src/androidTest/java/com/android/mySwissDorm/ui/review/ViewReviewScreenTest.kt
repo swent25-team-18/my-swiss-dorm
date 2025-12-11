@@ -20,6 +20,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
@@ -42,6 +43,7 @@ import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import java.util.Date
+import java.util.Locale
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
@@ -108,7 +110,7 @@ class ViewReviewScreenTest : FirestoreTest() {
               ownerId = ownerId,
               ownerName = profile1.userInfo.name + " " + profile1.userInfo.lastName,
               postedAt = Timestamp.now(),
-              title = "First Title",
+              title = "First title",
               reviewText = "My first review",
               grade = 3.5,
               residencyName = "Vortex",
@@ -124,7 +126,7 @@ class ViewReviewScreenTest : FirestoreTest() {
               ownerId = otherId,
               ownerName = profile2.userInfo.name + " " + profile2.userInfo.lastName,
               postedAt = Timestamp(Date(1678886400000L)),
-              title = "Second Title",
+              title = "Second title",
               reviewText = "My second review",
               grade = 4.5,
               residencyName = "Atrium",
@@ -816,5 +818,52 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.waitUntil("The listing page is not shown after leaving the full screen mode", 5_000) {
       compose.onNodeWithTag(C.ImageGridTags.imageTag(photo.image)).isDisplayed()
     }
+  }
+
+  @Test
+  fun translateButtonTextUpdatesWhenClicked() {
+    setOwnerReview()
+    waitForScreenRoot()
+
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN)
+        .assertTextEquals(context.getString(R.string.view_review_translate_review))
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).performClick()
+
+    compose.waitForIdle()
+
+    compose
+        .onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN)
+        .assertTextEquals(context.getString(R.string.see_original))
+  }
+
+  @Test
+  fun translateButtonSuccessfullyTranslatesReview() {
+    // Set the locale to French so it translates the review in French
+    Locale.setDefault(Locale.FRENCH)
+
+    setOtherReview()
+    waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review2.uid }
+
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewReviewTags.DESCRIPTION_TEXT).assertIsDisplayed()
+
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).performClick()
+
+    compose.waitForIdle()
+
+    compose.waitUntil(20_000) {
+      compose.onNodeWithText("Deuxième titre").isDisplayed() &&
+          compose.onNodeWithText("Ma deuxième critique").isDisplayed()
+    }
+
+    compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertTextEquals("Deuxième titre")
+    compose
+        .onNodeWithTag(C.ViewReviewTags.DESCRIPTION_TEXT)
+        .assertTextEquals("Ma deuxième critique")
   }
 }

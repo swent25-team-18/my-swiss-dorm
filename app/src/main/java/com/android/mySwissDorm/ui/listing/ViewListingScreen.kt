@@ -203,7 +203,7 @@ fun ViewListingScreen(
               verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 val clickableText =
                     if (isTranslated) {
-                      context.getString(R.string.view_listing_see_original)
+                      context.getString(R.string.see_original)
                     } else {
                       context.getString(R.string.view_listing_translate_listing)
                     }

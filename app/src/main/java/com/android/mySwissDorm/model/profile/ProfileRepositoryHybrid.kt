@@ -62,12 +62,11 @@ class ProfileRepositoryHybrid(
             try {
               localRepo.editProfile(profile)
             } catch (_: NoSuchElementException) {
-              // Profile doesn't exist locally, create it
-              localRepo.createProfile(profile)
+              // Profile doesn't exist locally, try to create it
+              syncProfileToLocal(profile)
             } catch (_: IllegalArgumentException) {
-              // Profile exists but belongs to different user (user switched), create new one
-              // createProfile will clear old profile and insert new one
-              localRepo.createProfile(profile)
+              // Profile exists but belongs to different user (user switched), try to create new one
+              syncProfileToLocal(profile)
             }
           })
 
@@ -126,6 +125,25 @@ class ProfileRepositoryHybrid(
       } catch (e: Exception) {
         Log.w(TAG, "Failed to delete profile remotely, but deleted locally", e)
       }
+    }
+  }
+
+  /**
+   * Attempts to sync a profile to local storage, catching all exceptions.
+   *
+   * If syncing fails (e.g., profile belongs to different user, no user logged in), logs the error
+   * but doesn't throw, allowing the remote data to still be returned successfully.
+   *
+   * @param profile The profile to sync to local storage.
+   */
+  private suspend fun syncProfileToLocal(profile: Profile) {
+    try {
+      localRepo.createProfile(profile)
+    } catch (e: Exception) {
+      // If createProfile fails (e.g., ownerId mismatch, no user logged in),
+      // log but don't throw - we still want to return the remote data
+      Log.w(
+          TAG, "Failed to sync profile to local storage (profile may belong to different user)", e)
     }
   }
 

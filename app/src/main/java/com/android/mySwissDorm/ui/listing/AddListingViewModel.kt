@@ -39,7 +39,7 @@ class AddListingViewModel(
 
   init {
     // For Add, residency must be chosen
-    _uiState.value = _uiState.value.copy(requireResidencyName = true)
+    _uiState.value = _uiState.value.copy(requireResidencyName = true, requireAtLeastOnePhoto = true)
   }
 
   fun submitForm(onConfirm: (RentalListing) -> Unit, context: Context) {

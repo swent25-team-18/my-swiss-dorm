@@ -101,8 +101,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       switchToUser(FakeUser.FakeUser1)
 
       // Create two listings via the real repo (one per user)
-      ownerListing = rentalListing1.copy(ownerId = ownerUid)
-      otherListing = rentalListing2.copy(ownerId = otherUid)
+      ownerListing = rentalListing1.copy(ownerId = ownerUid, title = "First title")
+      otherListing = rentalListing2.copy(ownerId = otherUid, title = "Second title")
 
       switchToUser(FakeUser.FakeUser1)
       listingsRepo.addRentalListing(ownerListing)

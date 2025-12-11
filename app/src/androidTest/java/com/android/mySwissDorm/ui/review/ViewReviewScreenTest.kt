@@ -452,11 +452,11 @@ class ViewReviewScreenTest : FirestoreTest() {
     waitForScreenRoot()
     compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
     // Wait a bit more for content to be fully rendered
-    compose.waitUntil(5_000) { vm.uiState.value.review.title == "First Title" }
+    compose.waitUntil(5_000) { vm.uiState.value.review.title == "First title" }
     scrollListTo(C.ViewReviewTags.TITLE)
     compose.onNodeWithTag(C.ViewReviewTags.TITLE, useUnmergedTree = true).assertIsDisplayed()
     // Use onNodeWithText to find text directly
-    compose.onNodeWithText("First Title").assertIsDisplayed()
+    compose.onNodeWithText("First title").assertIsDisplayed()
     // The text is "Review :" with a space before the colon
     compose.onNodeWithText("Review:").assertIsDisplayed()
     compose.onNodeWithText("My first review").assertIsDisplayed()

@@ -2,6 +2,7 @@ package com.android.mySwissDorm.model.profile
 
 import com.android.mySwissDorm.model.database.ProfileDao
 import com.android.mySwissDorm.model.database.ProfileEntity
+import com.google.firebase.auth.FirebaseAuth
 
 /**
  * Room-backed local implementation of [ProfileRepository].
@@ -15,7 +16,8 @@ import com.android.mySwissDorm.model.database.ProfileEntity
  * supported offline and will throw [UnsupportedOperationException]. Blocking users is supported
  * offline for the current user's profile.
  */
-class ProfileRepositoryLocal(private val profileDao: ProfileDao) : ProfileRepository {
+class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val auth: FirebaseAuth) :
+    ProfileRepository {
 
   /**
    * Creates a new profile in the local database.
@@ -23,9 +25,21 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao) : ProfileReposi
    * This method clears any existing profile before inserting the new one, ensuring only one profile
    * exists at a time (the current user's).
    *
-   * @param profile The profile to create. Must have a valid ownerId.
+   * @param profile The profile to create. Must have a valid ownerId that matches the current user.
+   * @throws IllegalArgumentException if the profile's ownerId doesn't match the current logged-in
+   *   user.
    */
   override suspend fun createProfile(profile: Profile) {
+    val currentUserId =
+        auth.currentUser?.uid
+            ?: throw IllegalStateException(
+                "ProfileRepositoryLocal: Cannot create profile. No user is currently logged in.")
+    if (profile.ownerId != currentUserId) {
+      throw IllegalArgumentException(
+          "ProfileRepositoryLocal: Cannot create profile for ownerId ${profile.ownerId}. " +
+              "Only the current user's profile (${currentUserId}) can be created locally.")
+    }
+
     // Clear any existing profile before inserting (handles user switching)
     profileDao.deleteAllProfiles()
     profileDao.insertProfile(ProfileEntity.fromProfile(profile))

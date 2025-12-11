@@ -26,7 +26,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
-import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -36,7 +35,6 @@ import io.getstream.chat.android.compose.ui.theme.ChatTheme
 import io.getstream.chat.android.compose.viewmodel.messages.MessagesViewModelFactory
 import io.getstream.chat.android.models.User
 import kotlinx.coroutines.delay
-import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * Chat screen displaying the full messaging interface for a specific channel.
@@ -96,7 +94,11 @@ fun MyChatScreen(
     currentUserProvider: () -> FirebaseUser? = { FirebaseAuth.getInstance().currentUser },
     userStateProvider: (ChatClient) -> User? = { it.clientState.user.value },
     connectUser: suspend (FirebaseUser, ChatClient) -> Unit = { firebaseUser, _ ->
-      connectUserDefault(firebaseUser)
+      val profile = ProfileRepositoryProvider.repository.getProfile(firebaseUser.uid)
+      StreamChatProvider.connectUser(
+          firebaseUserId = firebaseUser.uid,
+          displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
+          imageUrl = "")
     },
     chatTheme: @Composable (@Composable () -> Unit) -> Unit = { content ->
       ChatTheme(content = content)
@@ -107,7 +109,7 @@ fun MyChatScreen(
         },
     viewModelFactoryProvider: (Context, ChatClient, String, Int) -> MessagesViewModelFactory =
         { ctx, chatClient, cid, limit ->
-          defaultMessagesViewModelFactory(
+          MessagesViewModelFactory(
               context = ctx, chatClient = chatClient, channelId = cid, messageLimit = limit)
         },
     messageLimit: Int = 30,
@@ -190,39 +192,3 @@ fun MyChatScreen(
 fun MyChatScreenPreview() {
   ChatTheme { MyChatScreen(channelId = "messaging:preview", onBackClick = {}) }
 }
-
-/** Default connectUser implementation, exposed for testing. */
-@VisibleForTesting
-internal suspend fun connectUserDefault(firebaseUser: FirebaseUser) {
-  connectUserWithRepo(
-      firebaseUser = firebaseUser,
-      repo = ProfileRepositoryProvider.repository,
-      connector = { id, name, image ->
-        StreamChatProvider.connectUser(firebaseUserId = id, displayName = name, imageUrl = image)
-      })
-}
-
-@VisibleForTesting
-internal suspend fun connectUserWithRepo(
-    firebaseUser: FirebaseUser,
-    repo: ProfileRepository,
-    connector: suspend (id: String, name: String, image: String) -> Unit
-) {
-  val profile = repo.getProfile(firebaseUser.uid)
-  val displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
-  connector(firebaseUser.uid, displayName, "")
-}
-
-/** Default MessagesViewModelFactory builder, exposed for testing. */
-@VisibleForTesting
-internal fun defaultMessagesViewModelFactory(
-    context: Context,
-    chatClient: ChatClient,
-    channelId: String,
-    messageLimit: Int
-): MessagesViewModelFactory =
-    MessagesViewModelFactory(
-        context = context,
-        chatClient = chatClient,
-        channelId = channelId,
-        messageLimit = messageLimit)

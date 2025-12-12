@@ -54,72 +54,66 @@ class NavigationViewModel(
     viewModelScope.launch {
       try {
         val currentUser = auth.currentUser
-
-        if (currentUser == null) {
-          // Not logged in → SignIn screen
-          _navigationState.value =
-              NavigationState(
-                  isLoading = false,
-                  initialDestination = Screen.SignIn.route,
-                  initialLocation = null)
-        } else if (currentUser.isAnonymous) {
-          _navigationState.value =
-              NavigationState(
-                  isLoading = false,
-                  initialDestination = Screen.Homepage.route,
-                  initialLocation = null)
-        } else {
-          // Logged in → Check profile for location
-          try {
-            val profile = profileRepository.getProfile(currentUser.uid)
-            val location = profile.userInfo.location
-
-            if (location != null) {
-              // Has location → BrowseOverview with that location
-              _navigationState.value =
-                  NavigationState(
-                      isLoading = false,
-                      initialDestination = Screen.BrowseOverview(location).route,
-                      initialLocation = location)
-            } else {
-              // No location → Homepage
-              _navigationState.value =
-                  NavigationState(
-                      isLoading = false,
-                      initialDestination = Screen.Homepage.route,
-                      initialLocation = null)
-            }
-          } catch (e: Exception) {
-            // Profile not found or error fetching
-            // If profile doesn't exist, the account may have been deleted
-            // Sign out and navigate to SignIn screen
-            Log.e(
-                "NavigationViewModel",
-                "Error fetching profile (profile may not exist), signing out and navigating to SignIn",
-                e)
-            try {
-              auth.signOut()
-            } catch (signOutError: Exception) {
-              Log.e(
-                  "NavigationViewModel",
-                  "Error signing out after profile fetch failure",
-                  signOutError)
-            }
-            _navigationState.value =
-                NavigationState(
-                    isLoading = false,
-                    initialDestination = Screen.SignIn.route,
-                    initialLocation = null)
-          }
+        when {
+          currentUser == null -> setNavigationStateToSignIn()
+          currentUser.isAnonymous -> setNavigationStateToHomepage()
+          else -> handleAuthenticatedUser(currentUser)
         }
       } catch (e: Exception) {
         Log.e("NavigationViewModel", "Error determining initial destination", e)
-        // On error, default to SignIn screen
-        _navigationState.value =
-            NavigationState(
-                isLoading = false, initialDestination = Screen.SignIn.route, initialLocation = null)
+        setNavigationStateToSignIn()
       }
     }
+  }
+
+  private fun setNavigationStateToSignIn() {
+    _navigationState.value =
+        NavigationState(
+            isLoading = false, initialDestination = Screen.SignIn.route, initialLocation = null)
+  }
+
+  private fun setNavigationStateToHomepage() {
+    _navigationState.value =
+        NavigationState(
+            isLoading = false, initialDestination = Screen.Homepage.route, initialLocation = null)
+  }
+
+  private suspend fun handleAuthenticatedUser(currentUser: com.google.firebase.auth.FirebaseUser) {
+    try {
+      val profile = profileRepository.getProfile(currentUser.uid)
+      val location = profile.userInfo.location
+      if (location != null) {
+        setNavigationStateToBrowseOverview(location)
+      } else {
+        setNavigationStateToHomepage()
+      }
+    } catch (e: Exception) {
+      handleProfileFetchError(e)
+    }
+  }
+
+  private fun setNavigationStateToBrowseOverview(location: Location) {
+    _navigationState.value =
+        NavigationState(
+            isLoading = false,
+            initialDestination = Screen.BrowseOverview(location).route,
+            initialLocation = location)
+  }
+
+  private fun handleProfileFetchError(e: Exception) {
+    // Profile not found or error fetching
+    // If profile doesn't exist, the account may have been deleted
+    // Sign out and navigate to SignIn screen
+    Log.e(
+        "NavigationViewModel",
+        "Error fetching profile (profile may not exist), signing out and navigating to SignIn",
+        e)
+    try {
+      auth.signOut()
+    } catch (signOutError: Exception) {
+      Log.e("NavigationViewModel", "Error signing out after profile fetch failure", signOutError)
+    }
+    setNavigationStateToSignIn()
   }
 
   /**

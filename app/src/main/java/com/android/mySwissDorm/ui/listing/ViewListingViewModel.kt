@@ -29,12 +29,10 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
-import com.android.mySwissDorm.utils.Translator
+import com.android.mySwissDorm.ui.utils.translateTextField
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
-import java.util.Locale
 import kotlin.String
-import kotlin.use
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -111,41 +109,21 @@ class ViewListingViewModel(
    * @param context The Android context, mainly used for accessing string resources.
    */
   fun translateListing(context: Context) {
-    val title = _uiState.value.listing.title
-    val description = _uiState.value.listing.description
-
-    if (title.isNotBlank()) {
-      viewModelScope.launch {
-        _uiState.update {
-          it.copy(translatedTitle = context.getString(R.string.translator_translating))
-        }
-        val translated = translateSingleText(title, context)
-        _uiState.update { it.copy(translatedTitle = translated) }
-      }
-    }
-
-    if (description.isNotBlank()) {
-      viewModelScope.launch {
-        _uiState.update {
-          it.copy(translatedDescription = context.getString(R.string.translator_translating))
-        }
-        val translated = translateSingleText(description, context)
-        _uiState.update { it.copy(translatedDescription = translated) }
-      }
-    }
-  }
-
-  /**
-   * Suspend utility function to translate a single piece of text.
-   *
-   * @param text The source string to be translated.
-   * @param context The Android context required by the [Translator] for internal resource access.
-   * @return The translated string.
-   */
-  private suspend fun translateSingleText(text: String, context: Context): String {
-    val translator = Translator()
-    val code = Locale.getDefault().language
-    return translator.use { it.translateText(text, code, context) }
+    val listing = _uiState.value.listing
+    translateTextField(
+        text = listing.title,
+        context = context,
+        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedTitle = msg) } },
+        onUpdateTranslated = { translated ->
+          _uiState.update { it.copy(translatedTitle = translated) }
+        })
+    translateTextField(
+        text = listing.description,
+        context = context,
+        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedDescription = msg) } },
+        onUpdateTranslated = { translated ->
+          _uiState.update { it.copy(translatedDescription = translated) }
+        })
   }
 
   /** Clears the error message in the UI state. */

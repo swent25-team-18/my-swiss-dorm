@@ -1,9 +1,13 @@
 package com.android.mySwissDorm.ui
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.OpenableColumns
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContract
@@ -31,6 +35,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
@@ -61,17 +66,44 @@ fun GalleryButton(
     interactionSource: MutableInteractionSource? = null,
     choosePictureContract: ActivityResultContract<String, Uri?> =
         ActivityResultContracts.GetContent(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
+  val permission =
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        // Android 12 and below
+        Manifest.permission.READ_EXTERNAL_STORAGE
+      } else {
+        // Android 13+
+        Manifest.permission.READ_MEDIA_IMAGES
+      }
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePictureContract) {
         it?.let { uri ->
           onSelect(Photo(image = uri, fileName = getFileNameFromUri(context = context, uri = uri)))
         }
       }
+  val permissionLauncher =
+      rememberLauncherForActivityResult(permissionContract) { isGranted ->
+        if (isGranted) {
+          galleryLauncher.launch("image/*")
+        } else {
+          Toast.makeText(
+                  context, R.string.gallery_button_permission_denied_text, Toast.LENGTH_SHORT)
+              .show()
+        }
+      }
   Button(
-      onClick = { galleryLauncher.launch("image/*") },
+      onClick = {
+        if (ContextCompat.checkSelfPermission(context, permission) !=
+            PackageManager.PERMISSION_GRANTED) {
+          permissionLauncher.launch(permission)
+        } else {
+          galleryLauncher.launch("image/*")
+        }
+      },
       modifier = modifier.testTag(tag = C.GalleryButtonTag.SINGLE_TAG),
       enabled = enabled,
       shape = shape,
@@ -106,9 +138,17 @@ fun GalleryButtonMultiplePick(
     choosePicturesContract:
         ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>> =
         ActivityResultContracts.PickMultipleVisualMedia(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
+  val permission =
+      if (Build.VERSION.SDK_INT < 33) {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+      } else {
+        Manifest.permission.READ_MEDIA_IMAGES
+      }
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePicturesContract) { uris ->
         if (uris.isNotEmpty()) {
@@ -118,10 +158,26 @@ fun GalleryButtonMultiplePick(
               })
         }
       }
+  val permissionLauncher =
+      rememberLauncherForActivityResult(permissionContract) { isGranted ->
+        if (isGranted) {
+          galleryLauncher.launch(
+              PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        } else {
+          Toast.makeText(
+                  context, R.string.gallery_button_permission_denied_text, Toast.LENGTH_SHORT)
+              .show()
+        }
+      }
   Button(
       onClick = {
-        galleryLauncher.launch(
-            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        if (ContextCompat.checkSelfPermission(context, permission) !=
+            PackageManager.PERMISSION_GRANTED) {
+          permissionLauncher.launch(permission)
+        } else {
+          galleryLauncher.launch(
+              PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
       },
       modifier = modifier.testTag(tag = C.GalleryButtonTag.MULTIPLE_TAG),
       enabled = enabled,
@@ -154,6 +210,8 @@ fun DefaultGalleryButton(
     interactionSource: MutableInteractionSource? = null,
     choosePictureContract: ActivityResultContract<String, Uri?> =
         ActivityResultContracts.GetContent(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
 ) {
   GalleryButton(
       onSelect = onSelect,
@@ -165,6 +223,7 @@ fun DefaultGalleryButton(
       border = border,
       contentPadding = contentPadding,
       interactionSource = interactionSource,
+      permissionContract = permissionContract,
       choosePictureContract = choosePictureContract) {
         Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
         Spacer(Modifier.width(8.dp))
@@ -192,6 +251,8 @@ fun DefaultGalleryButtonMultiplePick(
     choosePicturesContract:
         ActivityResultContract<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>> =
         ActivityResultContracts.PickMultipleVisualMedia(),
+    permissionContract: ActivityResultContract<String, Boolean> =
+        ActivityResultContracts.RequestPermission(),
 ) {
   GalleryButtonMultiplePick(
       onSelect = onSelect,
@@ -203,6 +264,7 @@ fun DefaultGalleryButtonMultiplePick(
       border = border,
       contentPadding = contentPadding,
       interactionSource = interactionSource,
+      permissionContract = permissionContract,
       choosePicturesContract = choosePicturesContract) {
         Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
         Spacer(Modifier.width(8.dp))

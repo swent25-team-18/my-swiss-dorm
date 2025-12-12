@@ -53,6 +53,7 @@
     <string name="room_type">Room Type</string>
     <string name="save">Save</string>
     <string name="search">Search</string>
+    <string name="see_original">See original</string>
     <string name="size">Size</string>
     <string name="start_date">Start Date</string>
     <string name="starting">Starting</string>
@@ -208,6 +209,7 @@
     <string name="view_listing_listing_location">Listing Location</string>
     <string name="view_listing_sign_in_to_apply">Sign in to contact the owner and apply.</string>
     <string name="poi_loading_message">Fetching nearby points of interest…</string>
+    <string name="view_listing_translate_listing">Translate listing</string>
 
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Failed to load listing:</string>
@@ -380,6 +382,7 @@
     <string name="view_review_posted_by_you"> (You)</string>
     <string name="view_review_price_per_month">.-/month</string>
     <string name="view_review_was_this_useful">Was this review helpful?</string>
+    <string name="view_review_translate_review">Translate review</string>
 
     <!-- ViewReviewViewModel -->
     <string name="view_review_failed_to_load_review">Failed to load Review</string>
@@ -448,10 +451,12 @@
 
     <!-- CameraButton -->
     <string name="camera_button_default_text">Take a picture</string>
+    <string name="camera_button_permission_denied_text">This application has no access to the camera</string>
 
     <!-- GalleryButton -->
     <string name="gallery_button_default_text">Choose a picture</string>
     <string name="gallery_button_default_multiple_text">Choose pictures</string>
+    <string name="gallery_button_permission_denied_text">This application has no access to the media</string>
 
     <!-- SanitizedTextFields -->
     <string name="sanitized_text_fields_email_placeholder">name@domain.com</string>

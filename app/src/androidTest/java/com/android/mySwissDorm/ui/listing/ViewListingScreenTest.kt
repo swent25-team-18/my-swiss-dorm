@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -39,6 +40,7 @@ import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import java.io.File
+import java.util.Locale
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
@@ -99,8 +101,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       switchToUser(FakeUser.FakeUser1)
 
       // Create two listings via the real repo (one per user)
-      ownerListing = rentalListing1.copy(ownerId = ownerUid)
-      otherListing = rentalListing2.copy(ownerId = otherUid)
+      ownerListing = rentalListing1.copy(ownerId = ownerUid, title = "First title")
+      otherListing = rentalListing2.copy(ownerId = otherUid, title = "Second title")
 
       switchToUser(FakeUser.FakeUser1)
       listingsRepo.addRentalListing(ownerListing)
@@ -973,6 +975,61 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     scrollListTo(C.ViewListingTags.POI_DISTANCES)
     val emptyText = context.getString(R.string.view_listing_no_points_of_interest)
     compose.onNodeWithText(emptyText).assertIsDisplayed()
+  }
+
+  @Test
+  fun translateButtonTextUpdatesWhenClicked() {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN)
+        .assertTextEquals(context.getString(R.string.view_listing_translate_listing))
+    compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).performClick()
+
+    compose.waitForIdle()
+
+    compose
+        .onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN)
+        .assertTextEquals(context.getString(R.string.see_original))
+  }
+
+  @Test
+  fun translateButtonSuccessfullyTranslatesListing() {
+    // Set the locale to French so it translates the listing in French
+    Locale.setDefault(Locale.FRENCH)
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.listing.uid == otherListing.uid }
+
+    compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.TITLE).assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.DESCRIPTION_TEXT).assertIsDisplayed()
+
+    compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).performClick()
+
+    compose.waitForIdle()
+
+    compose.waitUntil(20_000) {
+      compose.onNodeWithText("Deuxième titre").isDisplayed() &&
+          compose.onNodeWithText("Un bon studio proche du campus.").isDisplayed()
+    }
+
+    compose.onNodeWithTag(C.ViewListingTags.TITLE).assertTextEquals("Deuxième titre")
+    compose
+        .onNodeWithTag(C.ViewListingTags.DESCRIPTION_TEXT)
+        .assertTextEquals("Un bon studio proche du campus.")
   }
 }
 /**

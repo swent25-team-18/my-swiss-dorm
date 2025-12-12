@@ -56,6 +56,7 @@ object C {
     const val RESIDENCY_NAME_CLICKABLE = "viewListingResidencyNameClickable"
     const val BULLETS = "viewListingBullets"
     const val DESCRIPTION = "viewListingDescription"
+    const val DESCRIPTION_TEXT = "viewListingDescriptionText"
     const val PHOTOS = "viewListingPhotos"
     const val LOCATION = "viewListingLocation"
     const val POI_DISTANCES = "viewListingPOIDistances"
@@ -66,6 +67,7 @@ object C {
     const val BLOCKED_BACK_BTN = "viewListingBlockedBackBtn"
     const val BACK_BTN = "viewListingBackBtn"
     const val BOOKMARK_BTN = "viewListingBookmarkBtn"
+    const val TRANSLATE_BTN = "viewListingTranslateButton"
   }
 
   object ViewReviewTags {
@@ -85,6 +87,8 @@ object C {
     const val VOTE_UPVOTE_BUTTON = "viewReviewVoteUpvoteButton"
     const val VOTE_DOWNVOTE_BUTTON = "viewReviewVoteDownvoteButton"
     const val VOTE_SCORE = "viewReviewVoteScore"
+    const val TRANSLATE_BTN = "viewReviewTranslateButton"
+    const val DESCRIPTION_TEXT = "viewReviewDescriptionText"
   }
 
   object ViewUserProfileTags {

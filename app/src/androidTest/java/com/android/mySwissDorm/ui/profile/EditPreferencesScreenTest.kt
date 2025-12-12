@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.resources.C
@@ -41,7 +42,9 @@ class EditPreferencesScreenTest : FirestoreTest() {
 
   private val context = ApplicationProvider.getApplicationContext<Context>()
 
-  override fun createRepositories() {}
+  override fun createRepositories() {
+    ProfileRepositoryProvider.repository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+  }
 
   @Before
   override fun setUp() {

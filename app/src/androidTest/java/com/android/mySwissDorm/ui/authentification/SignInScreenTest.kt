@@ -10,6 +10,7 @@ import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.authentification.AuthRepositoryFirebase
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.profile.Profile
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
@@ -32,7 +33,9 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SignInScreenTest : FirestoreTest() {
 
-  override fun createRepositories() {}
+  override fun createRepositories() {
+    ProfileRepositoryProvider.repository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+  }
 
   @get:Rule val composeTestRule = createComposeRule()
 

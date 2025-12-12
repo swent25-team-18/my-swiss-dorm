@@ -22,9 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
@@ -45,18 +45,21 @@ fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
             })
       }) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 24.dp),
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = Dimens.PaddingLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center) {
               Surface(
                   color = BackGroundColor,
                   contentColor = TextColor,
-                  shape = RoundedCornerShape(16.dp),
-                  modifier = Modifier.fillMaxWidth(0.8f).padding(16.dp)) {
+                  shape = RoundedCornerShape(Dimens.CardCornerRadius),
+                  modifier = Modifier.fillMaxWidth(0.8f).padding(Dimens.SpacingXLarge)) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(Dimens.PaddingLarge),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
                           Text(
                               text =
                                   stringResource(

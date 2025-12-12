@@ -30,6 +30,7 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.SharedMapTags.PREVIOUS_IMAGE
 import com.android.mySwissDorm.ui.overview.ListingCardUI
 import com.android.mySwissDorm.ui.theme.*
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
@@ -144,22 +145,24 @@ fun MultiListingCarouselCard(
         listing = currentListing,
         onClick = { onListingClick(currentListing.listingUid) },
         onClose = onClose,
-        modifier = Modifier.padding(bottom = 8.dp))
+        modifier = Modifier.padding(bottom = Dimens.PaddingSmall))
 
     Row(
         modifier =
-            Modifier.fillMaxWidth().background(White, RoundedCornerShape(12.dp)).padding(4.dp),
+            Modifier.fillMaxWidth()
+                .background(White, RoundedCornerShape(Dimens.PaddingMedium))
+                .padding(Dimens.PaddingXSmall),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
           IconButton(
               onClick = {
                 if (currentIndex > 0) currentIndex-- else currentIndex = listings.lastIndex
               },
-              modifier = Modifier.size(32.dp)) {
+              modifier = Modifier.size(Dimens.IconSizeXXXLarge)) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBackIos,
                     "Previous",
-                    Modifier.size(16.dp),
+                    Modifier.size(Dimens.IconSizeMedium),
                     tint = MainColor)
               }
 
@@ -173,11 +176,11 @@ fun MultiListingCarouselCard(
               onClick = {
                 if (currentIndex < listings.lastIndex) currentIndex++ else currentIndex = 0
               },
-              modifier = Modifier.size(32.dp)) {
+              modifier = Modifier.size(Dimens.IconSizeXXXLarge)) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowForwardIos,
                     "Next",
-                    Modifier.size(16.dp),
+                    Modifier.size(Dimens.IconSizeMedium),
                     tint = MainColor)
               }
         }
@@ -210,13 +213,13 @@ fun SmallListingPreviewCard(
   val safeIndex = if (imageCount > 0) currentImageIndex.coerceIn(0, imageCount - 1) else 0
   Card(
       modifier = modifier.clickable { onClick() },
-      shape = RoundedCornerShape(16.dp),
-      elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+      shape = RoundedCornerShape(Dimens.CardCornerRadius),
+      elevation = CardDefaults.cardElevation(defaultElevation = Dimens.PaddingSmall),
       colors = CardDefaults.cardColors(containerColor = White)) {
         Box {
           Column(modifier = Modifier.fillMaxWidth()) {
             if (imageCount > 0) {
-              Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+              Box(modifier = Modifier.fillMaxWidth().height(Dimens.ImageSizeXLarge)) {
                 if (listing.image.isNotEmpty()) {
                   AsyncImage(
                       model = listing.image[safeIndex],
@@ -230,15 +233,15 @@ fun SmallListingPreviewCard(
                         onClick = { currentImageIndex-- },
                         modifier =
                             Modifier.align(Alignment.CenterStart)
-                                .padding(4.dp)
-                                .background(Dark.copy(alpha = 0.5f), CircleShape)
-                                .size(28.dp)
+                                .padding(Dimens.PaddingXSmall)
+                                .background(Dark.copy(alpha = Dimens.AlphaMedium), CircleShape)
+                                .size(Dimens.IconSizeXLarge)
                                 .testTag(PREVIOUS_IMAGE)) {
                           Icon(
                               imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
                               contentDescription = "Previous Image",
                               tint = White,
-                              modifier = Modifier.size(14.dp))
+                              modifier = Modifier.size(Dimens.IconSizeSmall))
                         }
                   }
                   if (safeIndex < imageCount - 1) {
@@ -246,15 +249,15 @@ fun SmallListingPreviewCard(
                         onClick = { currentImageIndex++ },
                         modifier =
                             Modifier.align(Alignment.CenterEnd)
-                                .padding(4.dp)
-                                .background(Dark.copy(alpha = 0.5f), CircleShape)
-                                .size(28.dp)
+                                .padding(Dimens.PaddingXSmall)
+                                .background(Dark.copy(alpha = Dimens.AlphaMedium), CircleShape)
+                                .size(Dimens.IconSizeXLarge)
                                 .testTag(C.SharedMapTags.NEXT_IMAGE)) {
                           Icon(
                               imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                               contentDescription = "Next Image",
                               tint = White,
-                              modifier = Modifier.size(14.dp))
+                              modifier = Modifier.size(Dimens.IconSizeSmall))
                         }
                   }
                   Text(
@@ -263,14 +266,16 @@ fun SmallListingPreviewCard(
                       color = MainColor,
                       modifier =
                           Modifier.align(Alignment.BottomEnd)
-                              .padding(8.dp)
-                              .background(Dark.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
-                              .padding(horizontal = 4.dp, vertical = 2.dp)
+                              .padding(Dimens.PaddingSmall)
+                              .background(
+                                  Dark.copy(alpha = Dimens.AlphaSecondary),
+                                  RoundedCornerShape(Dimens.PaddingXSmall))
+                              .padding(horizontal = Dimens.PaddingXSmall, vertical = 2.dp)
                               .testTag(C.SharedMapTags.IMAGE_COUNTER))
                 }
               }
             }
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(Dimens.PaddingMedium)) {
               Text(
                   text = listing.title,
                   style = MaterialTheme.typography.titleMedium,
@@ -278,7 +283,7 @@ fun SmallListingPreviewCard(
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis,
                   color = Black)
-              Spacer(modifier = Modifier.height(4.dp))
+              Spacer(modifier = Modifier.height(Dimens.PaddingXSmall))
               Text(
                   text = listing.leftBullets.getOrNull(1) ?: "",
                   style = MaterialTheme.typography.bodyMedium,
@@ -296,15 +301,17 @@ fun SmallListingPreviewCard(
           Box(
               modifier =
                   Modifier.align(Alignment.TopEnd)
-                      .padding(4.dp)
-                      .background(Dark.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                      .padding(Dimens.PaddingXSmall)
+                      .background(
+                          Dark.copy(alpha = Dimens.AlphaMedium),
+                          RoundedCornerShape(Dimens.PaddingSmall))
                       .clickable(onClick = onClose)
-                      .padding(4.dp)) {
+                      .padding(Dimens.PaddingXSmall)) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close",
                     tint = White,
-                    modifier = Modifier.size(16.dp))
+                    modifier = Modifier.size(Dimens.IconSizeMedium))
               }
         }
       }

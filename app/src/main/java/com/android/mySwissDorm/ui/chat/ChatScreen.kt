@@ -23,11 +23,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import io.getstream.chat.android.client.ChatClient
@@ -116,8 +116,8 @@ fun MyChatScreen(
   if (isPreview) {
     // Fake chat UI for preview only
     Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        modifier = modifier.fillMaxSize().padding(Dimens.PaddingDefault),
+        verticalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
           Text("Chat with: $channelId (preview)")
           repeat(4) { Text("Message $it: Hello") }
         }
@@ -163,7 +163,7 @@ fun MyChatScreen(
       Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
           CircularProgressIndicator()
-          Spacer(modifier = Modifier.height(16.dp))
+          Spacer(modifier = Modifier.height(Dimens.SpacingXLarge))
           Text(stringResource(R.string.chat_screen_connecting))
         }
       }

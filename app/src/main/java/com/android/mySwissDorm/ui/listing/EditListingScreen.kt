@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
@@ -29,6 +28,7 @@ import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -116,48 +116,51 @@ fun EditListingScreen(
             })
       },
       bottomBar = {
-        Surface(shadowElevation = 8.dp) {
-          Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            val ui = listingUIState
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                  Button(
-                      onClick = onBack,
-                      colors =
-                          ButtonDefaults.buttonColors(
-                              containerColor = TextBoxColor, contentColor = MainColor),
-                      modifier = Modifier.weight(1f).height(52.dp),
-                      shape = RoundedCornerShape(16.dp)) {
-                        Text(stringResource(R.string.cancel))
-                      }
+        Surface(shadowElevation = Dimens.PaddingSmall) {
+          Column(
+              Modifier.padding(Dimens.PaddingDefault),
+              horizontalAlignment = Alignment.CenterHorizontally) {
+                val ui = listingUIState
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
+                      Button(
+                          onClick = onBack,
+                          colors =
+                              ButtonDefaults.buttonColors(
+                                  containerColor = TextBoxColor, contentColor = MainColor),
+                          modifier = Modifier.weight(1f).height(Dimens.ButtonHeight),
+                          shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
+                            Text(stringResource(R.string.cancel))
+                          }
 
-                  Button(
-                      onClick = {
-                        if (editListingViewModel.editRentalListing(rentalListingID, context))
-                            onConfirm()
-                      },
-                      enabled = ui.isFormValid,
-                      colors =
-                          ButtonDefaults.buttonColors(
-                              containerColor = MainColor,
-                              disabledContainerColor = MainColor.copy(alpha = 0.3f)),
-                      modifier =
-                          Modifier.weight(1f)
-                              .height(52.dp)
-                              .testTag(C.EditListingScreenTags.SAVE_BUTTON),
-                      shape = RoundedCornerShape(16.dp)) {
-                        Text(stringResource(R.string.save), color = White)
-                      }
+                      Button(
+                          onClick = {
+                            if (editListingViewModel.editRentalListing(rentalListingID, context))
+                                onConfirm()
+                          },
+                          enabled = ui.isFormValid,
+                          colors =
+                              ButtonDefaults.buttonColors(
+                                  containerColor = MainColor,
+                                  disabledContainerColor =
+                                      MainColor.copy(alpha = Dimens.AlphaDisabled)),
+                          modifier =
+                              Modifier.weight(1f)
+                                  .height(Dimens.ButtonHeight)
+                                  .testTag(C.EditListingScreenTags.SAVE_BUTTON),
+                          shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
+                            Text(stringResource(R.string.save), color = White)
+                          }
+                    }
+                Spacer(Modifier.height(Dimens.PaddingSmall))
+                if (!ui.isFormValid) {
+                  Text(
+                      stringResource(R.string.edit_listing_invalid_form_text),
+                      style = MaterialTheme.typography.bodySmall,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            Spacer(Modifier.height(8.dp))
-            if (!ui.isFormValid) {
-              Text(
-                  stringResource(R.string.edit_listing_invalid_form_text),
-                  style = MaterialTheme.typography.bodySmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-          }
+              }
         }
       }) { padding ->
         val ui = listingUIState
@@ -173,9 +176,9 @@ fun EditListingScreen(
             modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingTopSmall)
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
               TitleField(
                   value = ui.title,
                   onValueChange = { editListingViewModel.setTitle(it) },
@@ -199,8 +202,8 @@ fun EditListingScreen(
                     modifier =
                         Modifier.testTag(C.EditListingScreenTags.CUSTOM_LOCATION_BUTTON)
                             .fillMaxWidth()
-                            .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
+                            .height(Dimens.ButtonHeightLarge),
+                    shape = RoundedCornerShape(Dimens.CardCornerRadius),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
                       Row(
                           modifier = Modifier.fillMaxWidth(),
@@ -264,8 +267,8 @@ fun EditListingScreen(
                   modifier =
                       Modifier.testTag(C.EditListingScreenTags.START_DATE_FIELD)
                           .fillMaxWidth()
-                          .height(56.dp),
-                  shape = RoundedCornerShape(16.dp),
+                          .height(Dimens.ButtonHeightLarge),
+                  shape = RoundedCornerShape(Dimens.CardCornerRadius),
                   colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -288,7 +291,7 @@ fun EditListingScreen(
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingTopSmall)) {
                     DefaultAddPhotoButton(
                         onSelectPhoto = { editListingViewModel.addPhoto(it) }, multiplePick = true)
                     ImageGrid(

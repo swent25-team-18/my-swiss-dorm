@@ -29,6 +29,7 @@ import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.DarkGray
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
@@ -72,8 +73,8 @@ fun AddListingScreen(
             })
       },
       bottomBar = {
-        Surface(shadowElevation = 8.dp) {
-          Column(Modifier.padding(16.dp)) {
+        Surface(shadowElevation = Dimens.PaddingSmall) {
+          Column(Modifier.padding(Dimens.PaddingDefault)) {
             val ui = listingUIState
             val isButtonEnabled =
                 ui.isFormValid &&
@@ -85,17 +86,19 @@ fun AddListingScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth()
-                        .height(52.dp)
+                        .height(Dimens.ButtonHeight)
                         .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
-                shape = RoundedCornerShape(16.dp)) {
+                shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp), color = White, strokeWidth = 2.dp)
+                        modifier = Modifier.size(Dimens.IconSizeDefault),
+                        color = White,
+                        strokeWidth = 2.dp)
                   } else {
                     Text(stringResource(R.string.confirm_listing), color = White)
                   }
                 }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Dimens.PaddingSmall))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
                   stringResource(R.string.add_listing_invalid_form_text),
@@ -119,10 +122,10 @@ fun AddListingScreen(
             modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingTopSmall)
                 .verticalScroll(scrollState)
                 .testTag(C.AddListingScreenTags.ROOT),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
               TitleField(
                   value = ui.title,
                   onValueChange = { addListingViewModel.setTitle(it) },
@@ -147,8 +150,8 @@ fun AddListingScreen(
                     modifier =
                         Modifier.testTag(C.AddListingScreenTags.CUSTOM_LOCATION_BUTTON)
                             .fillMaxWidth()
-                            .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
+                            .height(Dimens.ButtonHeightLarge),
+                    shape = RoundedCornerShape(Dimens.CardCornerRadius),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
                       Row(
                           modifier = Modifier.fillMaxWidth(),
@@ -213,8 +216,8 @@ fun AddListingScreen(
                   modifier =
                       Modifier.testTag(C.AddListingScreenTags.START_DATE_FIELD)
                           .fillMaxWidth()
-                          .height(56.dp),
-                  shape = RoundedCornerShape(16.dp),
+                          .height(Dimens.ButtonHeightLarge),
+                  shape = RoundedCornerShape(Dimens.CardCornerRadius),
                   colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -237,7 +240,7 @@ fun AddListingScreen(
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingTopSmall)) {
                     DefaultAddPhotoButton(
                         onSelectPhoto = { addListingViewModel.addPhoto(it) }, multiplePick = true)
                     ImageGrid(

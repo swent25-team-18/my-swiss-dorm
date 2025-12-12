@@ -39,6 +39,7 @@ import com.android.mySwissDorm.ui.share.ShareLinkDialog
 import com.android.mySwissDorm.ui.theme.AlmostWhite
 import com.android.mySwissDorm.ui.theme.Black
 import com.android.mySwissDorm.ui.theme.DarkGray
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.OutlineColor
@@ -165,12 +166,12 @@ fun ViewListingScreen(
               modifier =
                   Modifier.fillMaxSize()
                       .padding(paddingValues)
-                      .padding(horizontal = 16.dp, vertical = 24.dp)
+                      .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingLarge)
                       .testTag(C.ViewListingTags.ROOT),
               contentAlignment = Alignment.Center) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
                       Text(
                           text = stringResource(R.string.view_listing_unavailable),
                           style = MaterialTheme.typography.titleLarge.copy(color = TextColor),
@@ -184,7 +185,7 @@ fun ViewListingScreen(
                           modifier =
                               Modifier.fillMaxWidth(0.6f)
                                   .testTag(C.ViewListingTags.BLOCKED_BACK_BTN),
-                          shape = RoundedCornerShape(14.dp),
+                          shape = RoundedCornerShape(Dimens.PaddingMedium),
                           colors =
                               ButtonDefaults.buttonColors(
                                   containerColor = MainColor, contentColor = White)) {
@@ -197,11 +198,11 @@ fun ViewListingScreen(
               modifier =
                   Modifier.fillMaxSize()
                       .padding(paddingValues)
-                      .padding(horizontal = 16.dp, vertical = 8.dp)
+                      .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingSmall)
                       .verticalScroll(rememberScrollState())
                       .imePadding()
                       .testTag(C.ViewListingTags.ROOT),
-              verticalArrangement = Arrangement.spacedBy(16.dp)) {
+              verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
                 val clickableText =
                     if (isTranslated) {
                       context.getString(R.string.see_original)
@@ -275,22 +276,24 @@ fun ViewListingScreen(
 
                 if (listingUIState.isLoadingPOIs) {
                   Row(
-                      modifier = Modifier.padding(start = 16.dp, top = 2.dp),
+                      modifier = Modifier.padding(start = Dimens.PaddingDefault, top = 2.dp),
                       verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                      horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MainColor)
+                            modifier = Modifier.size(Dimens.IconSizeMedium),
+                            strokeWidth = 2.dp,
+                            color = MainColor)
                         Text(
                             stringResource(R.string.poi_loading_message),
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     color =
                                         MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                            alpha = 0.6f)))
+                                            alpha = Dimens.AlphaSecondary)))
                       }
                 } else if (poiDistances.isNotEmpty()) {
                   Column(
-                      modifier = Modifier.padding(start = 16.dp),
+                      modifier = Modifier.padding(start = Dimens.PaddingDefault),
                       verticalArrangement = Arrangement.spacedBy(0.dp)) {
                         val groupedByTime = poiDistances.groupBy { it.walkingTimeMinutes }
 
@@ -372,10 +375,11 @@ fun ViewListingScreen(
                       style =
                           MaterialTheme.typography.bodyMedium.copy(
                               color =
-                                  MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)),
-                      modifier = Modifier.padding(start = 16.dp, top = 2.dp))
+                                  MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                      alpha = Dimens.AlphaSecondary)),
+                      modifier = Modifier.padding(start = Dimens.PaddingDefault, top = 2.dp))
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Dimens.PaddingSmall))
 
                 // Bullet section
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
@@ -390,7 +394,7 @@ fun ViewListingScreen(
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION)) {
                   Text(
                       "${stringResource(R.string.description)} :", fontWeight = FontWeight.SemiBold)
-                  Spacer(Modifier.height(3.dp))
+                  Spacer(Modifier.height(Dimens.SpacingXSmall))
                   val descriptionToDisplay =
                       if (isTranslated) listingUIState.translatedDescription
                       else listing.description
@@ -415,7 +419,7 @@ fun ViewListingScreen(
                       title = listing.title,
                       modifier =
                           Modifier.fillMaxWidth()
-                              .height(180.dp)
+                              .height(Dimens.ImageSizeLarge)
                               .testTag(C.ViewListingTags.LOCATION),
                       onMapClick = {
                         onViewMap(
@@ -428,14 +432,14 @@ fun ViewListingScreen(
                   PlaceholderBlock(
                       text =
                           "${stringResource(R.string.location)} (${stringResource(R.string.not_available)})",
-                      height = 180.dp,
+                      height = Dimens.ImageSizeLarge,
                       modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
                 }
 
                 if (listingUIState.isGuest) {
                   // The guest user has to sign in to apply to a listing when they view it
                   Box(
-                      modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                      modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.SpacingXLarge),
                       contentAlignment = Alignment.Center) {
                         Text(
                             text = stringResource(R.string.view_listing_sign_in_to_apply),
@@ -450,9 +454,9 @@ fun ViewListingScreen(
                         onClick = onEdit,
                         modifier =
                             Modifier.fillMaxWidth(0.55f)
-                                .height(52.dp)
+                                .height(Dimens.ButtonHeight)
                                 .testTag(C.ViewListingTags.EDIT_BTN),
-                        shape = RoundedCornerShape(16.dp)) {
+                        shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
                           Text(
                               stringResource(R.string.edit),
                               style = MaterialTheme.typography.titleMedium,
@@ -463,7 +467,7 @@ fun ViewListingScreen(
                   if (hasExistingMessage) {
                     // Show message that user has already sent a message
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.SpacingXLarge),
                         contentAlignment = Alignment.Center) {
                           Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
@@ -471,7 +475,7 @@ fun ViewListingScreen(
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MainColor,
                                 fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Dimens.PaddingSmall))
                             Text(
                                 text =
                                     stringResource(R.string.view_listing_please_wait_for_response),
@@ -489,7 +493,7 @@ fun ViewListingScreen(
                               stringResource(R.string.view_listing_contact_announcer), color = Gray)
                         },
                         modifier = Modifier.fillMaxWidth().testTag(C.ViewListingTags.CONTACT_FIELD),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(Dimens.CardCornerRadius),
                         singleLine = false,
                         minLines = 1,
                         colors =
@@ -509,9 +513,9 @@ fun ViewListingScreen(
                           enabled = canApply,
                           modifier =
                               Modifier.fillMaxWidth(0.55f)
-                                  .height(52.dp)
+                                  .height(Dimens.ButtonHeight)
                                   .testTag(C.ViewListingTags.APPLY_BTN),
-                          shape = RoundedCornerShape(16.dp),
+                          shape = RoundedCornerShape(Dimens.CardCornerRadius),
                           colors =
                               ButtonDefaults.buttonColors(
                                   containerColor = buttonColor,
@@ -548,11 +552,11 @@ private fun SectionCard(
   Surface(
       modifier = modifier.fillMaxWidth(),
       color = TextBoxColor,
-      shape = RoundedCornerShape(16.dp),
+      shape = RoundedCornerShape(Dimens.CardCornerRadius),
       tonalElevation = 0.dp) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(Dimens.PaddingDefault),
+            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingTopSmall),
             content = content)
       }
 }
@@ -561,7 +565,7 @@ private fun SectionCard(
 @Composable
 private fun BulletRow(text: String) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-    Text("•", fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+    Text("•", fontSize = 18.sp, modifier = Modifier.padding(end = Dimens.PaddingSmall))
     Text(text, style = MaterialTheme.typography.bodyLarge, color = TextColor)
   }
 }
@@ -580,7 +584,7 @@ private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
           modifier
               .fillMaxWidth()
               .height(height)
-              .clip(RoundedCornerShape(16.dp))
+              .clip(RoundedCornerShape(Dimens.CardCornerRadius))
               .background(TextBoxColor),
       contentAlignment = Alignment.Center) {
         Text(text, style = MaterialTheme.typography.titleMedium, color = TextColor)

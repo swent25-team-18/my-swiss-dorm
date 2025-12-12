@@ -29,6 +29,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
+import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -85,7 +86,9 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
 
   private lateinit var uid: String
 
-  override fun createRepositories() {}
+  override fun createRepositories() {
+    ProfileRepositoryProvider.repository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+  }
 
   @Override
   @Before

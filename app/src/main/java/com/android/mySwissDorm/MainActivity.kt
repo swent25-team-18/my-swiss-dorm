@@ -19,6 +19,7 @@ import androidx.credentials.CredentialManager
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
@@ -94,6 +95,7 @@ class MainActivity : ComponentActivity() {
     setContent {
       val context = LocalContext.current
       PhotoRepositoryProvider.initialize(context)
+      ProfileRepositoryProvider.initialize(context)
       ReviewsRepositoryProvider.initialize(context)
       RentalListingRepositoryProvider.initialize(context)
       Log.d("", Screen.topLevel.joinToString { context.getString(it.nameId) })

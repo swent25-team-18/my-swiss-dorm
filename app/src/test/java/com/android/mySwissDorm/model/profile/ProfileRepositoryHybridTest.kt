@@ -105,18 +105,21 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
-  fun getProfile_online_usesRemoteAndSyncsToLocal() = runTest {
+  fun getProfile_online_syncsLocalToRemoteThenReturnsLocal() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
-    val remoteProfile = createTestProfile("user-1", name = "Remote")
-    coEvery { remoteRepository.getProfile("user-1") } returns remoteProfile
+    val localProfile = createTestProfile("user-1", name = "Local")
+    localRepository.createProfile(localProfile)
+
+    coEvery { remoteRepository.editProfile(localProfile) } returns Unit
 
     val result = hybridRepository.getProfile("user-1")
 
-    assertEquals(remoteProfile, result)
-    coVerify { remoteRepository.getProfile("user-1") }
-    assertEquals(remoteProfile, localRepository.getProfile("user-1"))
+    // Should return local profile (local is source of truth)
+    assertEquals(localProfile, result)
+    // Should push local to remote
+    coVerify { remoteRepository.editProfile(localProfile) }
   }
 
   @Test
@@ -134,31 +137,35 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
-  fun getProfile_online_fallsBackToLocalOnNetworkError() = runTest {
+  fun getProfile_online_handlesSyncFailure() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
-    every { NetworkUtils.isNetworkException(any()) } returns true
 
     val localProfile = createTestProfile("user-1", name = "Local")
     localRepository.createProfile(localProfile)
 
-    coEvery { remoteRepository.getProfile("user-1") } throws IOException("Network error")
+    // Sync fails (e.g., network error when pushing to remote)
+    coEvery { remoteRepository.editProfile(localProfile) } throws IOException("Network error")
 
+    // Should still return local profile even if sync fails
     val result = hybridRepository.getProfile("user-1")
 
     assertEquals(localProfile, result)
   }
 
   @Test
-  fun getProfile_online_createsLocalWhenNotExists() = runTest {
+  fun getProfile_online_fetchesRemoteWhenLocalNotExists() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
-    val remoteProfile = createTestProfile("user-1")
+    val remoteProfile = createTestProfile("user-1", name = "Remote")
     coEvery { remoteRepository.getProfile("user-1") } returns remoteProfile
 
-    hybridRepository.getProfile("user-1")
+    val result = hybridRepository.getProfile("user-1")
 
+    // Should return remote profile
+    assertEquals(remoteProfile, result)
+    // Should sync remote to local for future offline access
     assertEquals(remoteProfile, localRepository.getProfile("user-1"))
   }
 
@@ -291,26 +298,25 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
-  fun getBookmarkedListingIds_online_syncsAndReturnsMerged() = runTest {
+  fun getBookmarkedListingIds_online_syncsLocalToRemote() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
     val localProfile = createTestProfile("user-1", bookmarkedListingIds = listOf("listing-1"))
     localRepository.createProfile(localProfile)
 
-    coEvery { remoteRepository.getBookmarkedListingIds("user-1") } returns listOf("listing-2")
-    coEvery { remoteRepository.getProfile("user-1") } returns
-        createTestProfile("user-1", bookmarkedListingIds = listOf("listing-2"))
-    coEvery { remoteRepository.editProfile(any()) } returns Unit
+    coEvery { remoteRepository.editProfile(localProfile) } returns Unit
 
     val result = hybridRepository.getBookmarkedListingIds("user-1")
 
-    assertTrue(result.contains("listing-1"))
-    assertTrue(result.contains("listing-2"))
+    // Should return local bookmarks (local is source of truth)
+    assertEquals(listOf("listing-1"), result)
+    // Should push local profile to remote
+    coVerify { remoteRepository.editProfile(localProfile) }
   }
 
   @Test
-  fun addBookmark_online_savesToBothAndSyncs() = runTest {
+  fun addBookmark_online_savesToBoth() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
@@ -318,10 +324,6 @@ class ProfileRepositoryHybridTest {
     localRepository.createProfile(profile)
 
     coEvery { remoteRepository.addBookmark("user-1", "listing-2") } returns Unit
-    coEvery { remoteRepository.getBookmarkedListingIds("user-1") } returns listOf("listing-2")
-    coEvery { remoteRepository.getProfile("user-1") } returns
-        createTestProfile("user-1", bookmarkedListingIds = listOf("listing-2"))
-    coEvery { remoteRepository.editProfile(any()) } returns Unit
 
     hybridRepository.addBookmark("user-1", "listing-2")
 
@@ -332,26 +334,25 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
-  fun getBlockedUserIds_online_syncsAndReturnsMerged() = runTest {
+  fun getBlockedUserIds_online_syncsLocalToRemote() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
     val localProfile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
     localRepository.createProfile(localProfile)
 
-    coEvery { remoteRepository.getBlockedUserIds("user-1") } returns listOf("user-3")
-    coEvery { remoteRepository.getProfile("user-1") } returns
-        createTestProfile("user-1", blockedUserIds = listOf("user-3"))
-    coEvery { remoteRepository.editProfile(any()) } returns Unit
+    coEvery { remoteRepository.editProfile(localProfile) } returns Unit
 
     val result = hybridRepository.getBlockedUserIds("user-1")
 
-    assertTrue(result.contains("user-2"))
-    assertTrue(result.contains("user-3"))
+    // Should return local blocked users (local is source of truth)
+    assertEquals(listOf("user-2"), result)
+    // Should push local profile to remote
+    coVerify { remoteRepository.editProfile(localProfile) }
   }
 
   @Test
-  fun addBlockedUser_online_savesToBothAndSyncs() = runTest {
+  fun addBlockedUser_online_savesToBoth() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
@@ -359,10 +360,6 @@ class ProfileRepositoryHybridTest {
     localRepository.createProfile(profile)
 
     coEvery { remoteRepository.addBlockedUser("user-1", "user-3") } returns Unit
-    coEvery { remoteRepository.getBlockedUserIds("user-1") } returns listOf("user-3")
-    coEvery { remoteRepository.getProfile("user-1") } returns
-        createTestProfile("user-1", blockedUserIds = listOf("user-3"))
-    coEvery { remoteRepository.editProfile(any()) } returns Unit
 
     hybridRepository.addBlockedUser("user-1", "user-3")
 
@@ -373,7 +370,7 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
-  fun removeBlockedUser_online_savesToBothAndSyncs() = runTest {
+  fun removeBlockedUser_online_savesToBoth() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
@@ -381,10 +378,6 @@ class ProfileRepositoryHybridTest {
     localRepository.createProfile(profile)
 
     coEvery { remoteRepository.removeBlockedUser("user-1", "user-2") } returns Unit
-    coEvery { remoteRepository.getBlockedUserIds("user-1") } returns listOf("user-3")
-    coEvery { remoteRepository.getProfile("user-1") } returns
-        createTestProfile("user-1", blockedUserIds = listOf("user-3"))
-    coEvery { remoteRepository.editProfile(any()) } returns Unit
 
     hybridRepository.removeBlockedUser("user-1", "user-2")
 
@@ -478,56 +471,53 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
-  fun syncList_handlesLocalListRetrievalFailure() = runTest {
+  fun syncProfile_handlesLocalProfileNotExists() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
-    // Don't create local profile, so getBlockedUserIds will throw
-    coEvery { remoteRepository.getBlockedUserIds("user-1") } returns listOf("user-2")
-    coEvery { remoteRepository.getProfile("user-1") } returns
-        createTestProfile("user-1", blockedUserIds = listOf("user-2"))
-    coEvery { remoteRepository.editProfile(any()) } returns Unit
+    // Don't create local profile, so syncProfile will handle NoSuchElementException
 
     // Should not throw, should handle gracefully
     val result = hybridRepository.getBlockedUserIds("user-1")
 
-    // Should return empty list when local fails
+    // Should return empty list when local profile doesn't exist
     assertEquals(emptyList<String>(), result)
+    // Should not try to sync (no local profile to sync)
+    coVerify(exactly = 0) { remoteRepository.editProfile(any()) }
   }
 
   @Test
-  fun syncList_handlesRemoteListRetrievalFailure() = runTest {
+  fun syncProfile_handlesRemoteEditFailure() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
     val localProfile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
     localRepository.createProfile(localProfile)
 
-    coEvery { remoteRepository.getBlockedUserIds("user-1") } throws IOException("Network error")
+    // Remote edit fails (e.g., network error)
+    coEvery { remoteRepository.editProfile(localProfile) } throws IOException("Network error")
 
-    // Should not throw, should return local data
+    // Should not throw, should return local data even if sync fails
     val result = hybridRepository.getBlockedUserIds("user-1")
 
     assertEquals(listOf("user-2"), result)
   }
 
   @Test
-  fun syncList_handlesLocalProfileUpdateFailure() = runTest {
+  fun syncProfile_handlesRemoteGetProfileFailure() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
     val localProfile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
     localRepository.createProfile(localProfile)
 
-    coEvery { remoteRepository.getBlockedUserIds("user-1") } returns listOf("user-3")
-    // Make getProfile fail to trigger exception in syncList
-    coEvery { remoteRepository.getProfile("user-1") } throws IOException("Network error")
+    // Remote edit fails (e.g., network error when getting profile for edit)
+    coEvery { remoteRepository.editProfile(localProfile) } throws IOException("Network error")
 
-    // Should not throw, should handle gracefully
+    // Should not throw, should return local data even if sync fails
     val result = hybridRepository.getBlockedUserIds("user-1")
 
-    // Should still return local data
-    assertTrue(result.contains("user-2"))
+    assertEquals(listOf("user-2"), result)
   }
 
   @Test

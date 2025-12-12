@@ -5,14 +5,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
-import com.android.mySwissDorm.model.poi.DistanceService
 import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
-import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
+import com.android.mySwissDorm.ui.utils.calculatePOIDistances
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +23,8 @@ data class ViewResidencyUIState(
     val residency: Residency? = null,
     val errorMsg: String? = null,
     val poiDistances: List<POIDistance> = emptyList(),
-    val loading: Boolean = false
+    val loading: Boolean = false,
+    val isLoadingPOIs: Boolean = false
 )
 
 open class ViewResidencyViewModel(
@@ -42,14 +42,24 @@ open class ViewResidencyViewModel(
         // Load residency first and show it immediately
         val residency = residenciesRepository.getResidency(residencyName)
 
-        _uiState.update { it.copy(residency = residency, loading = false, errorMsg = null) }
+        _uiState.update {
+          it.copy(residency = residency, loading = false, errorMsg = null, isLoadingPOIs = true)
+        }
 
         // Load POI distances in background (non-blocking)
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        val userUniversityName =
-            getUserUniversityName(currentUser?.uid, currentUser?.isAnonymous ?: true)
-        val poiDistances = calculatePOIDistances(residency, userUniversityName)
-        _uiState.update { it.copy(poiDistances = poiDistances) }
+        launch {
+          try {
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            val userUniversityName =
+                getUserUniversityName(currentUser?.uid, currentUser?.isAnonymous ?: true)
+            val poiDistances =
+                calculatePOIDistances(residency.location, userUniversityName, residency.name)
+            _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIs = false) }
+          } catch (e: Exception) {
+            Log.e("ViewResidencyViewModel", "Error calculating POI distances asynchronously", e)
+            _uiState.update { it.copy(isLoadingPOIs = false) }
+          }
+        }
       } catch (e: Exception) {
         Log.e("ViewResidencyViewModel", "Error loading residency: $residencyName", e)
         _uiState.update {
@@ -75,28 +85,6 @@ open class ViewResidencyViewModel(
           "Could not get user profile for university, showing 2 nearest universities",
           e)
       null
-    }
-  }
-
-  private suspend fun calculatePOIDistances(
-      residency: Residency,
-      userUniversityName: String?
-  ): List<POIDistance> {
-    return try {
-      val distanceService =
-          DistanceService(
-              universitiesRepository = UniversitiesRepositoryProvider.repository,
-              walkingRouteService =
-                  com.android.mySwissDorm.model.map.WalkingRouteServiceProvider.service)
-      val distances =
-          distanceService.calculateDistancesToPOIs(residency.location, userUniversityName)
-      Log.d(
-          "ViewResidencyViewModel",
-          "Calculated ${distances.size} POI distances for residency ${residency.name} at lat=${residency.location.latitude}, lng=${residency.location.longitude}${if (userUniversityName != null) " (user university: $userUniversityName)" else " (showing 2 nearest universities)"}")
-      distances
-    } catch (e: Exception) {
-      Log.e("ViewResidencyViewModel", "Error calculating POI distances", e)
-      emptyList()
     }
   }
 

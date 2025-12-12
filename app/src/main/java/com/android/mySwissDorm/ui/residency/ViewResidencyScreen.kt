@@ -120,6 +120,7 @@ private fun ViewResidencyContent(
       ResidencyDetailsContent(
           residency = residency,
           poiDistances = uiState.poiDistances,
+          isLoadingPOIs = uiState.isLoadingPOIs,
           paddingValues = paddingValues,
           onViewMap = onViewMap)
     }
@@ -166,6 +167,7 @@ private fun ErrorView(errorMsg: String?, paddingValues: PaddingValues) {
 private fun ResidencyDetailsContent(
     residency: com.android.mySwissDorm.model.residency.Residency,
     poiDistances: List<POIDistance>,
+    isLoadingPOIs: Boolean,
     paddingValues: PaddingValues,
     onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit
 ) {
@@ -179,7 +181,7 @@ private fun ResidencyDetailsContent(
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ResidencyNameHeader(residency.name)
         DescriptionSection(residency.description)
-        POIDistancesSection(poiDistances)
+        POIDistancesSection(poiDistances, isLoadingPOIs)
         Spacer(Modifier.height(8.dp))
         ContactInformationSection(residency)
         LocationSection(residency, onViewMap)
@@ -220,27 +222,36 @@ private fun DescriptionSection(description: String) {
  * Displays the nearby points of interest section with walking distances.
  *
  * Shows universities and supermarkets within walking distance, calculated using the same
- * [DistanceService] implementation as the main branch. If no POIs are found, displays a message
- * indicating no nearby points of interest.
+ * [DistanceService] implementation as the main branch. Shows a loading indicator while POIs are
+ * being calculated, or a message if no POIs are found.
  *
  * @param poiDistances List of nearby points of interest with their walking distances.
+ * @param isLoadingPOIs Whether POI distances are currently being calculated.
  */
 @Composable
-private fun POIDistancesSection(poiDistances: List<POIDistance>) {
+private fun POIDistancesSection(poiDistances: List<POIDistance>, isLoadingPOIs: Boolean) {
   Text(
       stringResource(R.string.view_listing_nearby_points_of_interest),
       style =
-          MaterialTheme.typography.bodyMedium.copy(
-              color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold),
+          MaterialTheme.typography.bodyMedium.copy(color = Gray, fontWeight = FontWeight.SemiBold),
       modifier = Modifier.testTag(C.ViewResidencyTags.POI_DISTANCES))
-  if (poiDistances.isNotEmpty()) {
+  if (isLoadingPOIs) {
+    Row(
+        modifier = Modifier.padding(start = 16.dp, top = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          CircularProgressIndicator(
+              modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MainColor)
+          Text(
+              stringResource(R.string.poi_loading_message),
+              style = MaterialTheme.typography.bodyMedium.copy(color = Gray.copy(alpha = 0.6f)))
+        }
+  } else if (poiDistances.isNotEmpty()) {
     POIDistancesList(poiDistances)
   } else {
     Text(
         stringResource(R.string.view_listing_no_points_of_interest),
-        style =
-            MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)),
+        style = MaterialTheme.typography.bodyMedium.copy(color = Gray.copy(alpha = 0.6f)),
         modifier = Modifier.padding(start = 16.dp, top = 2.dp))
   }
 }
@@ -281,8 +292,7 @@ private fun POIDistanceItem(timeMinutes: Int, pois: List<POIDistance>) {
       timeText,
       style =
           MaterialTheme.typography.bodyMedium.copy(
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-              lineHeight = MaterialTheme.typography.bodySmall.lineHeight))
+              color = Gray, lineHeight = MaterialTheme.typography.bodySmall.lineHeight))
 }
 
 /**
@@ -371,9 +381,7 @@ private fun ContactInformationSection(
     } else {
       Text(
           stringResource(R.string.view_residency_no_contact_info),
-          style =
-              MaterialTheme.typography.bodyMedium.copy(
-                  color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)))
+          style = MaterialTheme.typography.bodyMedium.copy(color = Gray.copy(alpha = 0.6f)))
     }
   }
 }

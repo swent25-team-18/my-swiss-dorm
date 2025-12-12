@@ -245,7 +245,8 @@ fun ListingPreferencesContent(
                             modifier = Modifier.weight(1f),
                             colors =
                                 FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MainColor.copy(alpha = 0.2f),
+                                    selectedContainerColor =
+                                        MainColor.copy(alpha = Dimens.AlphaLow),
                                     selectedLabelColor = TextColor))
                       }
                       if (rowTypes.size < 2) Spacer(modifier = Modifier.weight(1f))

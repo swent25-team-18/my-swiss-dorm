@@ -97,7 +97,7 @@ fun CustomLocationDialog(
                             imageVector = Icons.Default.MyLocation,
                             contentDescription = "My Location",
                             tint = MainColor)
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(Dimens.SpacingSmall))
                         Text(
                             text = stringResource(R.string.custom_location_dialog_current_location),
                             color = MainColor)
@@ -119,7 +119,8 @@ fun CustomLocationDialog(
                                     unfocusedBorderColor = TextBoxColor,
                                     focusedLabelColor = MainColor,
                                     cursorColor = TextColor,
-                                    unfocusedLabelColor = TextColor.copy(alpha = 0.6f)),
+                                    unfocusedLabelColor =
+                                        TextColor.copy(alpha = Dimens.AlphaSecondary)),
                             modifier =
                                 Modifier.menuAnchor()
                                     .fillMaxWidth()

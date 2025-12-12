@@ -54,6 +54,7 @@ import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
@@ -160,7 +161,7 @@ fun HomePageScreen(
                     imageVector = Icons.Default.Place,
                     contentDescription = "Custom Location",
                     tint = MainColor)
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(Dimens.SpacingSmall))
                 Text(text = stringResource(R.string.custom_location), color = MainColor)
               }
 
@@ -168,8 +169,8 @@ fun HomePageScreen(
               modifier =
                   Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
                       .fillMaxWidth()
-                      .padding(horizontal = 32.dp)
-                      .padding(top = 10.dp),
+                      .padding(horizontal = Dimens.PaddingHorizontalLarge)
+                      .padding(top = Dimens.PaddingTopSmall),
               state = lazyState) {
                 items(uiState.cities.size) { index ->
                   val city = uiState.cities[index]
@@ -233,7 +234,7 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
       modifier =
           Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCard(city.name))
               .fillMaxWidth()
-              .padding(vertical = 6.dp)
+              .padding(vertical = Dimens.SpacingMedium)
               .border(2.dp, TextColor, RoundedCornerShape(10.dp))
               .clickable { onClick() },
   ) {
@@ -243,23 +244,25 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
           contentDescription = city.name,
           contentScale = ContentScale.Crop,
           modifier = Modifier.fillMaxWidth().height(HomePageScreenSizes.CITY_IMAGE_HEIGHT))
-      Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(8.dp)) {
-        Text(
-            modifier =
-                Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardTitle(city.name)),
-            text = city.name,
-            color = TextColor,
-            fontWeight = FontWeight.Black,
-            fontSize = 20.sp)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            modifier =
-                Modifier.testTag(
-                    HomePageScreenTestTags.getTestTagForCityCardDescription(city.name)),
-            text = city.description,
-            color = TextColor,
-            fontSize = 12.sp)
-      }
+      Column(
+          modifier =
+              Modifier.fillMaxWidth().align(Alignment.TopStart).padding(Dimens.SpacingDefault)) {
+            Text(
+                modifier =
+                    Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardTitle(city.name)),
+                text = city.name,
+                color = TextColor,
+                fontWeight = FontWeight.Black,
+                fontSize = 20.sp)
+            Spacer(modifier = Modifier.height(Dimens.SpacingDefault))
+            Text(
+                modifier =
+                    Modifier.testTag(
+                        HomePageScreenTestTags.getTestTagForCityCardDescription(city.name)),
+                text = city.description,
+                color = TextColor,
+                fontSize = 12.sp)
+          }
     }
   }
 }

@@ -56,6 +56,7 @@ import com.android.mySwissDorm.ui.SanitizedOutlinedTextField
 import com.android.mySwissDorm.ui.homepage.HomePageScreenSizes
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -139,17 +140,21 @@ fun AdminPageScreen(
       },
       bottomBar = {
         Surface(shadowElevation = 8.dp) {
-          Column(Modifier.padding(16.dp)) {
+          Column(Modifier.padding(Dimens.PaddingDefault)) {
             Button(
                 onClick = { vm.submit(context) },
                 enabled = !ui.isSubmitting,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
-                    Modifier.fillMaxWidth().height(52.dp).testTag(C.AdminPageTags.SAVE_BUTTON),
+                    Modifier.fillMaxWidth()
+                        .height(Dimens.ButtonHeight)
+                        .testTag(C.AdminPageTags.SAVE_BUTTON),
                 shape = RoundedCornerShape(24.dp)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp), color = White, strokeWidth = 2.dp)
+                        modifier = Modifier.size(Dimens.IconSizeLarge),
+                        color = White,
+                        strokeWidth = 2.dp)
                   } else {
                     Text(stringResource(R.string.save), color = White)
                   }
@@ -389,7 +394,7 @@ fun AdminPageScreen(
                     }
               }
 
-              Spacer(Modifier.height(16.dp))
+              Spacer(Modifier.height(Dimens.SpacingXLarge))
             }
 
         // Custom Location Dialog

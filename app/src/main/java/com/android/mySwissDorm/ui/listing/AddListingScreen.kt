@@ -29,6 +29,7 @@ import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.DarkGray
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
@@ -73,7 +74,7 @@ fun AddListingScreen(
       },
       bottomBar = {
         Surface(shadowElevation = 8.dp) {
-          Column(Modifier.padding(16.dp)) {
+          Column(Modifier.padding(Dimens.PaddingDefault)) {
             val ui = listingUIState
             val isButtonEnabled =
                 ui.isFormValid &&
@@ -85,17 +86,19 @@ fun AddListingScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
                     Modifier.fillMaxWidth()
-                        .height(52.dp)
+                        .height(Dimens.ButtonHeight)
                         .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp), color = White, strokeWidth = 2.dp)
+                        modifier = Modifier.size(Dimens.IconSizeDefault),
+                        color = White,
+                        strokeWidth = 2.dp)
                   } else {
                     Text(stringResource(R.string.confirm_listing), color = White)
                   }
                 }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Dimens.SpacingDefault))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
                   stringResource(R.string.add_listing_invalid_form_text),

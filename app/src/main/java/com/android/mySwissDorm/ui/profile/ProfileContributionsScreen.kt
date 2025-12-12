@@ -44,7 +44,9 @@ fun ProfileContributionsScreen(
             contributions = contributions,
             onContributionClick = onContributionClick,
             modifier =
-                Modifier.padding(inner).fillMaxSize().padding(horizontal = 16.dp, vertical = 16.dp))
+                Modifier.padding(inner)
+                    .fillMaxSize()
+                    .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingDefault))
       }
 }
 
@@ -63,7 +65,7 @@ fun ProfileContributionsList(
             Text(
                 text = stringResource(R.string.profile_contributions_no_contributions_yet),
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextColor.copy(alpha = 0.6f))
+                color = TextColor.copy(alpha = Dimens.AlphaSecondary))
           }
         } else {
           itemsIndexed(contributions) { index, contribution ->
@@ -83,8 +85,8 @@ private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, in
       shape = MaterialTheme.shapes.large,
       colors = CardDefaults.cardColors(containerColor = BackGroundColor),
       elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-      border = BorderStroke(1.dp, OutlineColor.copy(alpha = 0.5f))) {
-        Column(Modifier.padding(16.dp)) {
+      border = BorderStroke(1.dp, OutlineColor.copy(alpha = Dimens.AlphaMedium))) {
+        Column(Modifier.padding(Dimens.PaddingDefault)) {
           Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween) {
@@ -93,18 +95,18 @@ private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, in
                     style = MaterialTheme.typography.titleMedium,
                     color = TextColor,
                     modifier = Modifier.weight(1f, fill = true))
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(Dimens.SpacingLarge))
                 Text(
                     text = contribution.type.label,
                     style = MaterialTheme.typography.labelMedium,
                     color = MainColor)
               }
-          Spacer(Modifier.height(6.dp))
+          Spacer(Modifier.height(Dimens.SpacingMedium))
           Text(
               text = contribution.description,
               style = MaterialTheme.typography.bodyMedium,
               color = DarkGray)
-          Spacer(Modifier.height(12.dp))
+          Spacer(Modifier.height(Dimens.SpacingLarge))
           OutlinedButton(
               onClick = onClick,
               modifier = Modifier.testTag("btn_contrib_details_$index"),

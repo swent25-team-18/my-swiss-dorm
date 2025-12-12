@@ -23,6 +23,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.BrowseCityTags.RECOMMENDED
 import com.android.mySwissDorm.ui.overview.ListingCardUI
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.ListingCardColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -59,7 +60,7 @@ fun ListingCard(
                 // Image (left) - height matches card height as suggested in PR review
                 Box(
                     modifier =
-                        Modifier.height(140.dp)
+                        Modifier.height(Dimens.CardImageHeight)
                             .fillMaxWidth(0.35F)
                             .clip(RoundedCornerShape(12.dp))
                             .background(ListingCardColor)) {
@@ -85,7 +86,7 @@ fun ListingCard(
                       }
                     }
 
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(Dimens.SpacingLarge))
 
                 Column(modifier = Modifier.weight(1f)) {
                   Text(
@@ -96,11 +97,11 @@ fun ListingCard(
                       color = TextColor,
                       modifier = Modifier.fillMaxWidth())
 
-                  Spacer(Modifier.height(8.dp))
+                  Spacer(Modifier.height(Dimens.SpacingDefault))
 
                   Row(modifier = Modifier.fillMaxWidth()) {
                     BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(Dimens.SpacingDefault))
                     BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
                   }
                 }
@@ -136,7 +137,7 @@ private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
   Column(modifier) {
     items.forEach {
       Text("• $it", style = MaterialTheme.typography.bodyMedium, color = TextColor)
-      Spacer(Modifier.height(6.dp))
+      Spacer(Modifier.height(Dimens.SpacingMedium))
     }
   }
 }

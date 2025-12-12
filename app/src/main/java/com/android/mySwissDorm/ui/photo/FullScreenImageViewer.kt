@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Red
 
 @Composable
@@ -110,14 +111,14 @@ fun FullScreenImageViewer(
         CircularProgressIndicator(color = Red)
       }
     }
-    val buttonBackGroundColor = BackGroundColor.copy(alpha = 0.5f)
+    val buttonBackGroundColor = BackGroundColor.copy(alpha = Dimens.AlphaMedium)
 
     // Close control
     AnimatedVisibility(
         visible = showControls,
         enter = fadeIn(),
         exit = fadeOut(),
-        modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)) {
+        modifier = Modifier.align(Alignment.TopEnd).padding(Dimens.PaddingDefault)) {
           IconButton(
               onClick = onDismiss,
               modifier =

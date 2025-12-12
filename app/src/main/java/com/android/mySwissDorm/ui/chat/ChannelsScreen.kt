@@ -45,6 +45,7 @@ import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.Transparent
@@ -333,7 +334,9 @@ fun ChannelsScreen(
             placeholder = {
               Text(
                   stringResource(R.string.channels_screen_search_chats),
-                  color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                  color =
+                      MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                          alpha = Dimens.AlphaSecondary))
             },
             leadingIcon = {
               Icon(Icons.Default.Search, contentDescription = null, tint = MainColor)
@@ -355,7 +358,7 @@ fun ChannelsScreen(
                     unfocusedIndicatorColor = Transparent,
                     disabledIndicatorColor = Transparent,
                     focusedContainerColor =
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = Dimens.AlphaMedium),
                     unfocusedContainerColor =
                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                     focusedTextColor = TextColor,

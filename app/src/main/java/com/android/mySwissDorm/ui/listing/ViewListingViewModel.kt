@@ -29,6 +29,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
+import com.android.mySwissDorm.ui.utils.translateTextField
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -70,7 +71,9 @@ data class ViewListingUIState(
     val isBookmarked: Boolean = false,
     val poiDistances: List<POIDistance> = emptyList(),
     val hasExistingMessage: Boolean = false,
-    val isLoadingPOIs: Boolean = false
+    val isLoadingPOIs: Boolean = false,
+    val translatedTitle: String = "",
+    val translatedDescription: String = "",
 )
 
 class ViewListingViewModel(
@@ -98,6 +101,29 @@ class ViewListingViewModel(
     val index = _uiState.value.images.map { it.image }.indexOf(uri)
     require(index >= 0)
     _uiState.value = _uiState.value.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
+  }
+
+  /**
+   * Translates the listing's title and description to the user's app language.
+   *
+   * @param context The Android context, mainly used for accessing string resources.
+   */
+  fun translateListing(context: Context) {
+    val listing = _uiState.value.listing
+    translateTextField(
+        text = listing.title,
+        context = context,
+        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedTitle = msg) } },
+        onUpdateTranslated = { translated ->
+          _uiState.update { it.copy(translatedTitle = translated) }
+        })
+    translateTextField(
+        text = listing.description,
+        context = context,
+        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedDescription = msg) } },
+        onUpdateTranslated = { translated ->
+          _uiState.update { it.copy(translatedDescription = translated) }
+        })
   }
 
   /** Clears the error message in the UI state. */

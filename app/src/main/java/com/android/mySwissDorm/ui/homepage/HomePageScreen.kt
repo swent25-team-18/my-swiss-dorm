@@ -98,6 +98,15 @@ fun HomePageScreen(
   val lazyState = LazyListState()
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, homePageViewModel)
 
+  // Ensure cities are loaded when the screen appears
+  // This is a safety net in case the ViewModel's init block doesn't complete in time
+  LaunchedEffect(Unit) {
+    // Trigger loading if cities are empty (ViewModel loads in init, but ensure it happens)
+    if (uiState.cities.isEmpty()) {
+      homePageViewModel.loadCities()
+    }
+  }
+
   LaunchedEffect(uiState.errorMsg) {
     uiState.errorMsg?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
   }

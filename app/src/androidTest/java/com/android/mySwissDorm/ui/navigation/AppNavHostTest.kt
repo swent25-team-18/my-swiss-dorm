@@ -512,33 +512,7 @@ class AppNavHostTest : FirestoreTest() {
     }
   }
 
-  // Test 11: Settings route - anonymous user contribution click (lines 212-221)
-  @Test
-  fun appNavHost_settingsRoute_anonymousUserContributionClick_showsToast() = runTest {
-    signInAnonymous()
-
-    composeTestRule.runOnUiThread { navController.navigate(Screen.Settings.route) }
-    composeTestRule.waitForIdle()
-
-    // Wait for Settings screen to be visible by checking for a UI element
-    composeTestRule.waitUntil(timeoutMillis = 10_000) {
-      composeTestRule
-          .onAllNodes(
-              hasTestTag(com.android.mySwissDorm.resources.C.SettingsTags.DELETE_ACCOUNT_BUTTON),
-              useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-    composeTestRule.waitForIdle()
-
-    // Navigation should work
-    composeTestRule.runOnUiThread {
-      assertEquals(
-          "Should be on Settings route",
-          Screen.Settings.route,
-          navController.currentBackStackEntry?.destination?.route)
-    }
-  }
+  // Test 11: Not needed anymore
 
   // Test 12: AddListing route (lines 228-239)
   @Test

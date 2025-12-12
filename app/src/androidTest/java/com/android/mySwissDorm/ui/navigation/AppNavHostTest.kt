@@ -524,7 +524,7 @@ class AppNavHostTest : FirestoreTest() {
     composeTestRule.waitUntil(timeoutMillis = 10_000) {
       composeTestRule
           .onAllNodes(
-              hasTestTag(com.android.mySwissDorm.resources.C.SettingsTags.CONTRIBUTIONS_BUTTON),
+              hasTestTag(com.android.mySwissDorm.resources.C.SettingsTags.DELETE_ACCOUNT_BUTTON),
               useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()

@@ -673,12 +673,44 @@ fun AppNavHost(
                   onLogout = {
                     coroutineScope.launch {
                       try {
-                        StreamChatProvider.disconnectUser()
+                        // Flush persistence to ensure clean state for next login
+                        StreamChatProvider.disconnectUser(flushPersistence = true)
                       } catch (e: Exception) {
                         Log.e("AppNavHost", "Error disconnecting stream user", e)
                       }
-                      AuthRepositoryProvider.repository.signOut()
-                      navigationViewModel.determineInitialDestination()
+                      val signOutResult = AuthRepositoryProvider.repository.signOut()
+                      signOutResult.fold(
+                          {
+                            // Sign out succeeded - directly navigate to SignIn
+                            // Update navigation state for consistency
+                            navigationViewModel.determineInitialDestination()
+                            // Navigate directly to ensure it works even if state hasn't changed
+                            try {
+                              navController.navigate(Screen.SignIn.route) {
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
+                              }
+                            } catch (e: Exception) {
+                              Log.e("AppNavHost", "Error navigating to SignIn after logout", e)
+                            }
+                          },
+                          { error ->
+                            // Sign out failed, log but still try to navigate to SignIn
+                            Log.e("AppNavHost", "Error signing out", error)
+                            // Update navigation state and navigate anyway
+                            navigationViewModel.determineInitialDestination()
+                            try {
+                              navController.navigate(Screen.SignIn.route) {
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
+                              }
+                            } catch (e: Exception) {
+                              Log.e(
+                                  "AppNavHost",
+                                  "Error navigating to SignIn after logout failure",
+                                  e)
+                            }
+                          })
                     }
                   },
                   onLanguageChange = { activity?.updateLanguage(it) },

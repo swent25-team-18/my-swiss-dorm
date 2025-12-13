@@ -13,6 +13,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import java.io.IOException
 import kotlinx.coroutines.test.runTest
@@ -52,6 +53,10 @@ class ProfileRepositoryHybridTest {
     firebaseUser = mockk(relaxed = true)
     every { auth.currentUser } returns firebaseUser
     every { firebaseUser.uid } returns "user-1"
+
+    // Mock FirebaseAuth.getInstance() so ProfileRepositoryHybrid can access the current user
+    mockkStatic(FirebaseAuth::class)
+    every { FirebaseAuth.getInstance() } returns auth
 
     localRepository = ProfileRepositoryLocal(database.profileDao(), auth)
     remoteRepository = mockk(relaxed = true)
@@ -518,6 +523,44 @@ class ProfileRepositoryHybridTest {
     val result = hybridRepository.getBlockedUserIds("user-1")
 
     assertEquals(listOf("user-2"), result)
+  }
+
+  @Test
+  fun syncProfile_skipsWhenNotCurrentUser() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Try to get blocked users for user-2 (not current user, current user is user-1)
+    // syncProfile should skip because ownerId != currentUserId
+    val result = hybridRepository.getBlockedUserIds("user-2")
+
+    // Should not try to sync (skip because not current user)
+    coVerify(exactly = 0) { remoteRepository.editProfile(any()) }
+    // Should return empty list (no local profile for other user)
+    assertEquals(emptyList<String>(), result)
+  }
+
+  @Test
+  fun syncProfileToLocal_skipsWhenNotCurrentUser() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Try to get profile for user-2 from remote (different user)
+    val remoteProfile = createTestProfile("user-2", name = "Other User")
+    coEvery { remoteRepository.getProfile("user-2") } returns remoteProfile
+
+    val result = hybridRepository.getProfile("user-2")
+
+    // Should return remote profile
+    assertEquals(remoteProfile, result)
+    // Should NOT sync to local (skipped because not current user)
+    // Verify local doesn't have user-2's profile
+    try {
+      localRepository.getProfile("user-2")
+      fail("Expected NoSuchElementException - user-2's profile should not be in local storage")
+    } catch (e: NoSuchElementException) {
+      // Expected - profile should not be synced to local
+    }
   }
 
   @Test

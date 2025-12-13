@@ -139,11 +139,17 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun nonOwner_showsContactAndApply_enablesAfterTyping() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
-      val vm = ViewListingViewModel(listingsRepo, profileRepo)
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
     waitForScreenRoot()
+
+    // Wait for ViewModel to finish loading (including POI calculation)
+    compose.waitUntil(10_000) {
+      vm.uiState.value.listing.uid == otherListing.uid && !vm.uiState.value.isLoadingPOIs
+    }
+    compose.waitForIdle()
 
     compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
 

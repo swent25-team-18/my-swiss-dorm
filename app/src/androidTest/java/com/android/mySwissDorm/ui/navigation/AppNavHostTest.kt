@@ -419,11 +419,15 @@ class AppNavHostTest : FirestoreTest() {
 
     composeTestRule.runOnUiThread { navController.navigate(Screen.Inbox.route) }
     composeTestRule.waitForIdle()
-    delay(2000) // Allow LaunchedEffect to execute
+    delay(3000) // Allow LaunchedEffect to execute and coroutines to complete
 
     // Verify count was loaded
     val count = RequestedMessageRepositoryProvider.repository.getPendingMessageCount(receiverUserId)
     assertTrue("Should have at least one pending message", count >= 1)
+
+    // Wait for all coroutines to complete
+    composeTestRule.waitForIdle()
+    delay(1000)
   }
 
   // Test 7: Inbox route - error handling in LaunchedEffect (lines 154-156)

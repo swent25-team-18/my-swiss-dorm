@@ -27,7 +27,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.DateTimeUi
@@ -116,7 +115,7 @@ fun OfflineBannerContent(isOffline: Boolean, modifier: Modifier = Modifier) {
           Text(
               text = lastUpdatedText,
               style = MaterialTheme.typography.bodySmall,
-              color = White.copy(alpha = Dimens.AlphaHigh),
+              color = White.copy(alpha = 0.9f),
               textAlign = TextAlign.End,
               modifier =
                   Modifier.testTag(

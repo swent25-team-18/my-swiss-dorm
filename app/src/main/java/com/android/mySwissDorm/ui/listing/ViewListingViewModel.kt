@@ -224,15 +224,6 @@ class ViewListingViewModel(
                 hasExistingMessage = hasExistingMessage)
         updateUIState(listing, uiData, isLoadingPOIs = true)
 
-        // Skip POI calculation when location is invalid (e.g., 0/0) to avoid long-running work that
-        // can hang tests/CI. This keeps behavior graceful by returning an empty list immediately.
-        val isInvalidLocation =
-            listing.location.latitude == 0.0 && listing.location.longitude == 0.0
-        if (isInvalidLocation) {
-          _uiState.update { it.copy(poiDistances = emptyList(), isLoadingPOIs = false) }
-          return@launch
-        }
-
         launch {
           try {
             val userUniversityName = getUserUniversityName(currentUserId, isGuest)

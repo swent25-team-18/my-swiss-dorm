@@ -12,6 +12,10 @@ import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
+import com.android.mySwissDorm.model.rental.RentalListingRepository
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
+import com.android.mySwissDorm.model.review.ReviewsRepository
+import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -40,8 +44,17 @@ class SettingsViewModelTest : FirestoreTest() {
 
   @Before override fun setUp() = runTest { super.setUp() }
 
-  private fun vm(repo: ProfileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)) =
-      SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+  private fun vm(
+      repo: ProfileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore),
+      rentalListingRepo: RentalListingRepository =
+          RentalListingRepositoryFirestore(FirebaseEmulator.firestore),
+      reviewsRepo: ReviewsRepository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
+  ) =
+      SettingsViewModel(
+          auth = FirebaseEmulator.auth,
+          profiles = repo,
+          rentalListingRepository = rentalListingRepo,
+          reviewsRepository = reviewsRepo)
 
   private suspend fun awaitUntil(timeoutMs: Long = 5000, intervalMs: Long = 25, p: () -> Boolean) {
     val start = System.currentTimeMillis()
@@ -322,7 +335,12 @@ class SettingsViewModelTest : FirestoreTest() {
     doThrow(RuntimeException("SignOut failed")).whenever(mockAuth).signOut()
 
     val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    val vm = SettingsViewModel(auth = mockAuth, profiles = repo)
+    val vm =
+        SettingsViewModel(
+            auth = mockAuth,
+            profiles = repo,
+            rentalListingRepository = RentalListingRepositoryFirestore(FirebaseEmulator.firestore),
+            reviewsRepository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore))
     var cbOk: Boolean? = null
 
     vm.deleteAccount({ ok, _ -> cbOk = ok }, context)
@@ -369,7 +387,9 @@ class SettingsViewModelTest : FirestoreTest() {
         SettingsViewModel(
             auth = FirebaseEmulator.auth,
             profiles = ProfileRepositoryFirestore(FirebaseEmulator.firestore),
-            photoRepositoryCloud = throwingPhotoRepo)
+            photoRepositoryCloud = throwingPhotoRepo,
+            rentalListingRepository = RentalListingRepositoryFirestore(FirebaseEmulator.firestore),
+            reviewsRepository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore))
     vm.refresh()
     // Wait for the profile to load and userName to be set correctly
     awaitUntil { vm.uiState.value.userName == "Test User" }

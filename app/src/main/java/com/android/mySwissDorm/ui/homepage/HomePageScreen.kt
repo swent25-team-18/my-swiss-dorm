@@ -54,7 +54,6 @@ import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
-import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
@@ -98,15 +97,6 @@ fun HomePageScreen(
   val context = LocalContext.current
   val lazyState = LazyListState()
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, homePageViewModel)
-
-  // Ensure cities are loaded when the screen appears
-  // This is a safety net in case the ViewModel's init block doesn't complete in time
-  LaunchedEffect(Unit) {
-    // Trigger loading if cities are empty (ViewModel loads in init, but ensure it happens)
-    if (uiState.cities.isEmpty()) {
-      homePageViewModel.loadCities()
-    }
-  }
 
   LaunchedEffect(uiState.errorMsg) {
     uiState.errorMsg?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
@@ -161,7 +151,7 @@ fun HomePageScreen(
                     imageVector = Icons.Default.Place,
                     contentDescription = "Custom Location",
                     tint = MainColor)
-                Spacer(modifier = Modifier.width(Dimens.SpacingSmall))
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(text = stringResource(R.string.custom_location), color = MainColor)
               }
 
@@ -169,8 +159,8 @@ fun HomePageScreen(
               modifier =
                   Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
                       .fillMaxWidth()
-                      .padding(horizontal = Dimens.PaddingHorizontalLarge)
-                      .padding(top = Dimens.PaddingTopSmall),
+                      .padding(horizontal = 32.dp)
+                      .padding(top = 10.dp),
               state = lazyState) {
                 items(uiState.cities.size) { index ->
                   val city = uiState.cities[index]
@@ -234,7 +224,7 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
       modifier =
           Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCard(city.name))
               .fillMaxWidth()
-              .padding(vertical = Dimens.SpacingMedium)
+              .padding(vertical = 12.dp)
               .border(2.dp, TextColor, RoundedCornerShape(10.dp))
               .clickable { onClick() },
   ) {
@@ -244,25 +234,23 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
           contentDescription = city.name,
           contentScale = ContentScale.Crop,
           modifier = Modifier.fillMaxWidth().height(HomePageScreenSizes.CITY_IMAGE_HEIGHT))
-      Column(
-          modifier =
-              Modifier.fillMaxWidth().align(Alignment.TopStart).padding(Dimens.SpacingDefault)) {
-            Text(
-                modifier =
-                    Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardTitle(city.name)),
-                text = city.name,
-                color = TextColor,
-                fontWeight = FontWeight.Black,
-                fontSize = 20.sp)
-            Spacer(modifier = Modifier.height(Dimens.SpacingDefault))
-            Text(
-                modifier =
-                    Modifier.testTag(
-                        HomePageScreenTestTags.getTestTagForCityCardDescription(city.name)),
-                text = city.description,
-                color = TextColor,
-                fontSize = 12.sp)
-          }
+      Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(16.dp)) {
+        Text(
+            modifier =
+                Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardTitle(city.name)),
+            text = city.name,
+            color = TextColor,
+            fontWeight = FontWeight.Black,
+            fontSize = 20.sp)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            modifier =
+                Modifier.testTag(
+                    HomePageScreenTestTags.getTestTagForCityCardDescription(city.name)),
+            text = city.description,
+            color = TextColor,
+            fontSize = 12.sp)
+      }
     }
   }
 }

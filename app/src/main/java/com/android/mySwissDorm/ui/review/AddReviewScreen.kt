@@ -29,7 +29,6 @@ import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.DarkGray
-import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -69,7 +68,7 @@ fun AddReviewScreen(
       },
       bottomBar = {
         Surface(shadowElevation = 8.dp) {
-          Column(Modifier.padding(Dimens.PaddingDefault)) {
+          Column(Modifier.padding(16.dp)) {
             val ui = reviewUIState
             val isButtonEnabled =
                 ui.isFormValid &&
@@ -80,20 +79,16 @@ fun AddReviewScreen(
                 enabled = isButtonEnabled,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
-                    Modifier.fillMaxWidth()
-                        .height(Dimens.ButtonHeight)
-                        .testTag(C.AddReviewTags.SUBMIT_BUTTON),
+                    Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
                 shape = RoundedCornerShape(16.dp)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(Dimens.IconSizeDefault),
-                        color = White,
-                        strokeWidth = 2.dp)
+                        modifier = Modifier.size(20.dp), color = White, strokeWidth = 2.dp)
                   } else {
                     Text(stringResource(R.string.add_review_submit), color = White)
                   }
                 }
-            Spacer(Modifier.height(Dimens.SpacingDefault))
+            Spacer(Modifier.height(8.dp))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
                   stringResource(R.string.add_review_invalid_form_text),
@@ -211,8 +206,7 @@ fun AddReviewScreen(
                                 checkedThumbColor = White,
                                 checkedTrackColor = MainColor,
                                 uncheckedThumbColor = White,
-                                uncheckedTrackColor =
-                                    TextBoxColor.copy(alpha = Dimens.AlphaSecondary)))
+                                uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
                   }
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(

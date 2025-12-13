@@ -41,7 +41,6 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
-import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -98,7 +97,7 @@ fun CustomLocationDialog(
                             imageVector = Icons.Default.MyLocation,
                             contentDescription = "My Location",
                             tint = MainColor)
-                        Spacer(modifier = Modifier.width(Dimens.SpacingSmall))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = stringResource(R.string.custom_location_dialog_current_location),
                             color = MainColor)
@@ -120,8 +119,7 @@ fun CustomLocationDialog(
                                     unfocusedBorderColor = TextBoxColor,
                                     focusedLabelColor = MainColor,
                                     cursorColor = TextColor,
-                                    unfocusedLabelColor =
-                                        TextColor.copy(alpha = Dimens.AlphaSecondary)),
+                                    unfocusedLabelColor = TextColor.copy(alpha = 0.6f)),
                             modifier =
                                 Modifier.menuAnchor()
                                     .fillMaxWidth()

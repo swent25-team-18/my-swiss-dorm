@@ -46,7 +46,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -94,7 +93,7 @@ fun SignUpScreen(
                       cursorColor = TextColor,
                       unfocusedLabelColor = Color.Gray)
 
-              Spacer(modifier = Modifier.size(Dimens.SpacingXLarge))
+              Spacer(modifier = Modifier.size(16.dp))
               OutlinedTextField(
                   value = uiState.name,
                   onValueChange = { signUpViewModel.updateName(it) },
@@ -264,14 +263,11 @@ fun SignUpScreen(
                   onClick = { onContinue() },
                   enabled = signUpViewModel.isFormValid,
                   colors = ButtonDefaults.buttonColors(containerColor = MainColor),
-                  modifier =
-                      Modifier.fillMaxWidth()
-                          .height(Dimens.ButtonHeight)
-                          .testTag(C.Tag.SIGN_UP_BUTTON),
+                  modifier = Modifier.fillMaxWidth().height(52.dp).testTag(C.Tag.SIGN_UP_BUTTON),
                   shape = RoundedCornerShape(16.dp)) {
                     Text(text = stringResource(R.string.continue_with_preferences), color = White)
                   }
-              Spacer(Modifier.height(Dimens.SpacingDefault))
+              Spacer(Modifier.height(8.dp))
               if (!signUpViewModel.isFormValid) {
                 Text(
                     stringResource(R.string.sign_up_button_help_text),

@@ -126,6 +126,10 @@ class NavigationViewModel(
     return try {
       val currentUser = auth.currentUser
       if (currentUser != null) {
+        // Anonymous users don't have profiles, so go directly to Homepage
+        if (currentUser.isAnonymous) {
+          return Screen.Homepage
+        }
         val profile = profileRepository.getProfile(currentUser.uid)
         val location = profile.userInfo.location
         if (location != null) {

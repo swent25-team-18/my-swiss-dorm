@@ -24,7 +24,6 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.MAX_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.MIN_PRICE
 import com.android.mySwissDorm.resources.C.FilterTestTags.MIN_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_PRICE
-import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
@@ -71,7 +70,7 @@ fun PriceFilterContent(
             SliderDefaults.colors(
                 thumbColor = MainColor,
                 activeTrackColor = MainColor,
-                inactiveTrackColor = MainColor.copy(alpha = Dimens.AlphaDisabled)))
+                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
   }
 }
 
@@ -110,6 +109,6 @@ fun SizeFilterContent(sizeRange: Pair<Int?, Int?>, onRangeChange: (Int?, Int?) -
             SliderDefaults.colors(
                 thumbColor = MainColor,
                 activeTrackColor = MainColor,
-                inactiveTrackColor = MainColor.copy(alpha = Dimens.AlphaDisabled)))
+                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
   }
 }

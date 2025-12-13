@@ -530,14 +530,78 @@ class ProfileRepositoryHybridTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
-    // Try to get blocked users for user-2 (not current user, current user is user-1)
+    // Create a profile for user-1 locally (current user)
+    val localProfile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    localRepository.createProfile(localProfile)
+
+    // Try to get blocked users for user-2 (not current user)
     // syncProfile should skip because ownerId != currentUserId
+    hybridRepository.getBlockedUserIds("user-2")
+
+    // Should not try to sync user-2's profile to remote (syncProfile skips)
+    coVerify(exactly = 0) { remoteRepository.editProfile(any()) }
+  }
+
+  @Test
+  fun getBlockedUserIds_otherUser_online_fetchesFromRemote() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Try to get blocked users for user-2 (not current user, current user is user-1)
+    val remoteBlockedUsers = listOf("user-3", "user-4")
+    coEvery { remoteRepository.getBlockedUserIds("user-2") } returns remoteBlockedUsers
+
     val result = hybridRepository.getBlockedUserIds("user-2")
 
-    // Should not try to sync (skip because not current user)
+    // Should fetch from remote (not try to sync local to remote)
     coVerify(exactly = 0) { remoteRepository.editProfile(any()) }
-    // Should return empty list (no local profile for other user)
+    coVerify { remoteRepository.getBlockedUserIds("user-2") }
+    // Should return remote data
+    assertEquals(remoteBlockedUsers, result)
+  }
+
+  @Test
+  fun getBlockedUserIds_otherUser_offline_returnsEmpty() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    // Try to get blocked users for user-2 (not current user) while offline
+    val result = hybridRepository.getBlockedUserIds("user-2")
+
+    // Should return empty list (can't fetch other users' data offline)
     assertEquals(emptyList<String>(), result)
+    coVerify(exactly = 0) { remoteRepository.getBlockedUserIds(any()) }
+  }
+
+  @Test
+  fun getBookmarkedListingIds_otherUser_online_fetchesFromRemote() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Try to get bookmarks for user-2 (not current user, current user is user-1)
+    val remoteBookmarks = listOf("listing-1", "listing-2")
+    coEvery { remoteRepository.getBookmarkedListingIds("user-2") } returns remoteBookmarks
+
+    val result = hybridRepository.getBookmarkedListingIds("user-2")
+
+    // Should fetch from remote (not try to sync local to remote)
+    coVerify(exactly = 0) { remoteRepository.editProfile(any()) }
+    coVerify { remoteRepository.getBookmarkedListingIds("user-2") }
+    // Should return remote data
+    assertEquals(remoteBookmarks, result)
+  }
+
+  @Test
+  fun getBookmarkedListingIds_otherUser_offline_returnsEmpty() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    // Try to get bookmarks for user-2 (not current user) while offline
+    val result = hybridRepository.getBookmarkedListingIds("user-2")
+
+    // Should return empty list (can't fetch other users' data offline)
+    assertEquals(emptyList<String>(), result)
+    coVerify(exactly = 0) { remoteRepository.getBookmarkedListingIds(any()) }
   }
 
   @Test

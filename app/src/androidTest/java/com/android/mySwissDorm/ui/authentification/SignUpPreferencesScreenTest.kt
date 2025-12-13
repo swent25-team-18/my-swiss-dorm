@@ -30,8 +30,11 @@ import com.android.mySwissDorm.ui.utils.ListingPreferencesContent
 import com.android.mySwissDorm.utils.FakeCredentialManager
 import com.android.mySwissDorm.utils.FakeJwtGenerator
 import com.android.mySwissDorm.utils.FakeUser
+import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -169,6 +172,39 @@ class SignUpPreferencesScreenTest : FirestoreTest() {
 
     val btn = composeTestRule.onNodeWithTag(SIGN_UP_WITH_PREFERENCES)
     btn.performClick()
+  }
+
+  @Test
+  fun onSignedUp_callbackCalledWhenUserIsSet() = runTest {
+    // Sign out any existing user first
+    FirebaseEmulator.auth.signOut()
+
+    var callbackCalled = false
+    composeTestRule.setContent {
+      SignUpPreferencesScreen(
+          signUpViewModel = viewModel,
+          credentialManager = fakeCredentialManager,
+          onBack = {},
+          onSignedUp = { callbackCalled = true })
+    }
+
+    composeTestRule.waitForIdle()
+
+    // Fill in the form fields to make it valid
+    viewModel.updateName("Test")
+    viewModel.updateLastName("User")
+    viewModel.updatePhoneNumber("123456789")
+
+    composeTestRule.waitForIdle()
+
+    // Trigger sign-up which will sign in with Google and create profile
+    // The user will be set in the state, triggering LaunchedEffect(uiState.user)
+    viewModel.signUp(context, fakeCredentialManager)
+
+    // Wait for the sign-up to complete and callback to be triggered
+    // The callback is triggered by LaunchedEffect(uiState.user) when user is set
+    composeTestRule.waitUntil(10_000) { callbackCalled }
+    assertTrue("onSignedUp callback should be called when user is set", callbackCalled)
   }
 
   @Test

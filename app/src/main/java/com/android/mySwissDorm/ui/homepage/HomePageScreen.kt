@@ -224,7 +224,7 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
       modifier =
           Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCard(city.name))
               .fillMaxWidth()
-              .padding(vertical = 6.dp)
+              .padding(vertical = 12.dp)
               .border(2.dp, TextColor, RoundedCornerShape(10.dp))
               .clickable { onClick() },
   ) {
@@ -234,7 +234,7 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
           contentDescription = city.name,
           contentScale = ContentScale.Crop,
           modifier = Modifier.fillMaxWidth().height(HomePageScreenSizes.CITY_IMAGE_HEIGHT))
-      Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(8.dp)) {
+      Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(16.dp)) {
         Text(
             modifier =
                 Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardTitle(city.name)),
@@ -242,7 +242,7 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
             color = TextColor,
             fontWeight = FontWeight.Black,
             fontSize = 20.sp)
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             modifier =
                 Modifier.testTag(

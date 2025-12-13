@@ -221,6 +221,7 @@ class ViewListingViewModel(
                 poiDistances = emptyList(),
                 hasExistingMessage = hasExistingMessage)
         updateUIState(listing, uiData, isLoadingPOIs = true)
+
         launch {
           try {
             val userUniversityName = getUserUniversityName(currentUserId, isGuest)

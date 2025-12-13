@@ -10,6 +10,10 @@ import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.model.rental.RentalListingRepository
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.model.review.ReviewsRepository
+import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +48,10 @@ class SettingsViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val profiles: ProfileRepository = ProfileRepositoryProvider.repository,
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository
+        PhotoRepositoryProvider.cloud_repository,
+    private val rentalListingRepository: RentalListingRepository =
+        RentalListingRepositoryProvider.repository,
+    private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository
 ) : ViewModel() {
 
   private val _ui = MutableStateFlow(SettingsUiState())
@@ -118,7 +125,8 @@ class SettingsViewModel(
 
   /**
    * Deletes profile doc; then tries to delete auth user. If recent login is required, we surface an
-   * error but still ensure flags reset.
+   * error but still ensure flags reset. After successful deletion, signs out to clear cached auth
+   * state.
    */
   fun deleteAccount(onDone: (Boolean, String?) -> Unit, context: Context) {
     val user = auth.currentUser
@@ -135,7 +143,44 @@ class SettingsViewModel(
       var ok = true
       var msg: String? = null
       try {
-        profiles.deleteProfile(user.uid)
+        val userId = user.uid
+
+        // Delete all user's listings
+        try {
+          val userListings = rentalListingRepository.getAllRentalListingsByUser(userId)
+          userListings.forEach { listing ->
+            try {
+              rentalListingRepository.deleteRentalListing(listing.uid)
+            } catch (e: Exception) {
+              Log.e("SettingsViewModel", "Error deleting listing ${listing.uid}", e)
+              // Continue with other listings even if one fails
+            }
+          }
+        } catch (e: Exception) {
+          Log.e("SettingsViewModel", "Error fetching user listings for deletion", e)
+          // Continue with account deletion even if listing deletion fails
+        }
+
+        // Anonymize all user's reviews
+        try {
+          val userReviews = reviewsRepository.getAllReviewsByUser(userId)
+          userReviews.forEach { review ->
+            try {
+              val anonymizedReview = review.copy(ownerName = "[Deleted user]", isAnonymous = true)
+              reviewsRepository.editReview(review.uid, anonymizedReview)
+            } catch (e: Exception) {
+              Log.e("SettingsViewModel", "Error anonymizing review ${review.uid}", e)
+              // Continue with other reviews even if one fails
+            }
+          }
+        } catch (e: Exception) {
+          Log.e("SettingsViewModel", "Error fetching user reviews for anonymization", e)
+          // Continue with account deletion even if review anonymization fails
+        }
+
+        // Delete profile
+        profiles.deleteProfile(userId)
+
         // Try deleting the auth user; may throw recent-login required
         runCatching { user.delete() }
             .onFailure { e ->
@@ -145,6 +190,17 @@ class SettingsViewModel(
               } else {
                 ok = false
                 msg = e.message
+              }
+            }
+            .onSuccess {
+              // After successful deletion, sign out to clear cached auth state
+              // This ensures that when the app restarts, NavigationViewModel will correctly
+              // detect that the user is not logged in
+              try {
+                auth.signOut()
+              } catch (e: Exception) {
+                Log.e("SettingsViewModel", "Error signing out after account deletion", e)
+                // Don't fail the deletion if signOut fails - the account is already deleted
               }
             }
       } catch (e: Exception) {

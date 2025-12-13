@@ -66,24 +66,34 @@ class HomePageViewModel(
   }
 
   /** Loads the list of cities from the repository and updates the UI state. */
-  private fun loadCities() {
+  fun loadCities() {
     viewModelScope.launch {
       try {
         val cities = citiesRepository.getAllCities()
+        Log.d(logTag, "Loaded ${cities.size} cities from repository")
+        // Set cities immediately, even if image loading fails
+        // This ensures cities appear in the UI while images load separately
+        _uiState.value = _uiState.value.copy(cities = cities)
+        Log.d(logTag, "Updated UI state with ${_uiState.value.cities.size} cities")
+
+        // Load images separately - failures shouldn't prevent cities from displaying
         val map =
             cities
                 .mapNotNull { city ->
                   Log.d(logTag, "Try to load the image: ${city.imageId}")
                   try {
                     city to photoRepositoryCloud.retrievePhoto(city.imageId)
-                  } catch (_: NoSuchElementException) {
-                    Log.d(logTag, "Cannot retrieve the image: ${city.imageId}")
+                  } catch (e: Exception) {
+                    // Catch all exceptions, not just NoSuchElementException
+                    // Image loading failures shouldn't prevent cities from displaying
+                    Log.d(logTag, "Cannot retrieve the image: ${city.imageId}", e)
                     null
                   }
                 }
                 .associate { cityPairPhoto -> cityPairPhoto.first to cityPairPhoto.second.image }
-        _uiState.value = _uiState.value.copy(cities = cities, cityImageMap = map)
+        _uiState.value = _uiState.value.copy(cityImageMap = map)
       } catch (e: Exception) {
+        Log.e(logTag, "Error loading cities", e)
         _uiState.value = _uiState.value.copy(errorMsg = e.message)
       }
     }

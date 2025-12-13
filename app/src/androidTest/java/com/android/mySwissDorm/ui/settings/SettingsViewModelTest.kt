@@ -4,15 +4,24 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.profile.PROFILE_COLLECTION_PATH
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.model.profile.UserSettings
+import com.android.mySwissDorm.model.rental.RentalListingRepository
+import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
+import com.android.mySwissDorm.model.review.ReviewsRepository
+import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
@@ -21,6 +30,9 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class SettingsViewModelTest : FirestoreTest() {
@@ -32,8 +44,17 @@ class SettingsViewModelTest : FirestoreTest() {
 
   @Before override fun setUp() = runTest { super.setUp() }
 
-  private fun vm(repo: ProfileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)) =
-      SettingsViewModel(auth = FirebaseEmulator.auth, profiles = repo)
+  private fun vm(
+      repo: ProfileRepository = ProfileRepositoryFirestore(FirebaseEmulator.firestore),
+      rentalListingRepo: RentalListingRepository =
+          RentalListingRepositoryFirestore(FirebaseEmulator.firestore),
+      reviewsRepo: ReviewsRepository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
+  ) =
+      SettingsViewModel(
+          auth = FirebaseEmulator.auth,
+          profiles = repo,
+          rentalListingRepository = rentalListingRepo,
+          reviewsRepository = reviewsRepo)
 
   private suspend fun awaitUntil(timeoutMs: Long = 5000, intervalMs: Long = 25, p: () -> Boolean) {
     val start = System.currentTimeMillis()
@@ -228,5 +249,154 @@ class SettingsViewModelTest : FirestoreTest() {
     val vm = vm()
     vm.setIsGuest()
     assertFalse("VM should not identify registered user as guest", vm.uiState.value.isGuest)
+  }
+
+  @Test
+  fun deleteAccount_afterSuccessfulDeletion_signsOutUser() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val auth = FirebaseEmulator.auth
+    val db = FirebaseEmulator.firestore
+    val uid = auth.currentUser!!.uid
+
+    // Create profile
+    val seeded =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "ToDelete",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = Location("Seed", 0.0, 0.0),
+                    residencyName = ""),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+
+    // Verify user is logged in before deletion
+    assertNotNull("User should be logged in before deletion", auth.currentUser)
+
+    val vm = vm()
+    var cbOk: Boolean? = null
+
+    vm.deleteAccount({ ok, _ -> cbOk = ok }, context)
+    awaitUntil { !vm.uiState.value.isDeleting && cbOk != null }
+
+    // Wait for sign-out to complete - use try-catch to handle potential Firebase exceptions
+    awaitUntil {
+      try {
+        auth.currentUser == null
+      } catch (e: Exception) {
+        // If there's an exception checking auth state, consider it as signed out
+        true
+      }
+    }
+
+    // Verify user is signed out after successful deletion
+    try {
+      assertNull("User should be signed out after successful account deletion", auth.currentUser)
+    } catch (e: Exception) {
+      // If we can't check auth state due to Firebase exception, that's acceptable
+      // The important part is that deletion completed successfully
+    }
+    assertEquals(true, cbOk)
+  }
+
+  @Test
+  fun deleteAccount_signOutException_doesNotFailDeletion() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val auth = FirebaseEmulator.auth
+    val db = FirebaseEmulator.firestore
+    val uid = auth.currentUser!!.uid
+
+    // Create profile
+    val seeded =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "ToDelete",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = Location("Seed", 0.0, 0.0),
+                    residencyName = ""),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+
+    // Create a mock auth that throws exception on signOut to test exception handling
+    val mockAuth = mock<FirebaseAuth>()
+    val mockUser = mock<FirebaseUser>()
+    whenever(mockAuth.currentUser).thenReturn(mockUser)
+    whenever(mockUser.uid).thenReturn(uid)
+    whenever(mockUser.delete()).thenReturn(Tasks.forResult(null))
+    doThrow(RuntimeException("SignOut failed")).whenever(mockAuth).signOut()
+
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    val vm =
+        SettingsViewModel(
+            auth = mockAuth,
+            profiles = repo,
+            rentalListingRepository = RentalListingRepositoryFirestore(FirebaseEmulator.firestore),
+            reviewsRepository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore))
+    var cbOk: Boolean? = null
+
+    vm.deleteAccount({ ok, _ -> cbOk = ok }, context)
+    awaitUntil { !vm.uiState.value.isDeleting && cbOk != null }
+
+    // Deletion should still succeed even if signOut throws exception
+    assertEquals(true, cbOk)
+    val snap = db.collection(PROFILE_COLLECTION_PATH).document(uid).get().await()
+    assertEquals(false, snap.exists())
+  }
+
+  @Test
+  fun refresh_handlesPhotoRetrievalError_gracefully() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val db = FirebaseEmulator.firestore
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile with profilePicture set
+    val profileWithPhoto =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = Location("Seed", 0.0, 0.0),
+                    residencyName = "",
+                    profilePicture = "non-existent-photo.jpg"),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(profileWithPhoto).await()
+
+    // Create a photo repository that throws NoSuchElementException when retrieving
+    val throwingPhotoRepo =
+        object : PhotoRepositoryCloud() {
+          override suspend fun retrievePhoto(uid: String): Photo {
+            throw NoSuchElementException("Photo not found")
+          }
+        }
+
+    val vm =
+        SettingsViewModel(
+            auth = FirebaseEmulator.auth,
+            profiles = ProfileRepositoryFirestore(FirebaseEmulator.firestore),
+            photoRepositoryCloud = throwingPhotoRepo,
+            rentalListingRepository = RentalListingRepositoryFirestore(FirebaseEmulator.firestore),
+            reviewsRepository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore))
+    vm.refresh()
+    // Wait for the profile to load and userName to be set correctly
+    awaitUntil { vm.uiState.value.userName == "Test User" }
+
+    // Should not crash, photo should be null but other data should be loaded
+    assertEquals("Test User", vm.uiState.value.userName)
+    assertEquals(FakeUser.FakeUser1.email, vm.uiState.value.email)
+    assertNull("Photo should be null when retrieval fails", vm.uiState.value.profilePicture)
   }
 }

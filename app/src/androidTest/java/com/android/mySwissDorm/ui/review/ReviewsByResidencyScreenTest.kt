@@ -182,6 +182,36 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
   }
 
   @Test
+  fun seeResidencyDetailsButton_isDisplayed() {
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+
+    compose.onNodeWithTag(C.ReviewsByResidencyTag.ROOT).assertIsDisplayed()
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.VIEW_RESIDENCY_DETAILS_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun clickingSeeResidencyDetailsButton_callsOnViewResidencyDetails() {
+    var clicked = false
+    compose.setContent {
+      ReviewsByResidencyScreen(vm, "Vortex", onViewResidencyDetails = { clicked = true })
+    }
+
+    compose.onNodeWithTag(C.ReviewsByResidencyTag.ROOT).assertIsDisplayed()
+    assertEquals(false, clicked)
+
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.VIEW_RESIDENCY_DETAILS_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    assertEquals(true, clicked)
+  }
+
+  @Test
   fun everythingIsCorrectlyDisplayedOnReviewCard() {
     compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
 

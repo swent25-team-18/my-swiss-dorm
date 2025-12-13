@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.android.mySwissDorm.model.HybridRepositoryBase
 import com.android.mySwissDorm.utils.NetworkUtils
+import com.google.firebase.auth.FirebaseAuth
 
 /**
  * Hybrid implementation of [ProfileRepository] that combines local and remote data sources.
@@ -143,11 +144,22 @@ class ProfileRepositoryHybrid(
    * Strategy: Local is the source of truth for offline changes. When going online, push local
    * profile to remote to sync all offline changes (name, settings, bookmarks, blocked users, etc.).
    *
+   * IMPORTANT: Only syncs if the profile belongs to the current user.
+   *
    * @param ownerId The identifier of the profile to sync.
    */
   private suspend fun syncProfile(ownerId: String) {
     if (!NetworkUtils.isNetworkAvailable(context)) {
       Log.d(TAG, "[syncProfile] No network available, skipping sync")
+      return
+    }
+
+    // Only sync if it's the current user's profile
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+    if (ownerId != currentUserId) {
+      Log.d(
+          TAG,
+          "[syncProfile] Skipping sync - profile belongs to different user (ownerId: $ownerId, currentUser: $currentUserId)")
       return
     }
 
@@ -173,19 +185,28 @@ class ProfileRepositoryHybrid(
   /**
    * Attempts to sync a profile to local storage, catching all exceptions.
    *
-   * If syncing fails (e.g., profile belongs to different user, no user logged in), logs the error
-   * but doesn't throw, allowing the remote data to still be returned successfully.
+   * IMPORTANT: Only syncs if the profile belongs to the current user. If syncing fails (e.g.,
+   * profile belongs to different user, no user logged in), logs the error but doesn't throw,
+   * allowing the remote data to still be returned successfully.
    *
    * @param profile The profile to sync to local storage.
    */
   private suspend fun syncProfileToLocal(profile: Profile) {
+    // Only sync if it's the current user's profile
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+    if (profile.ownerId != currentUserId) {
+      Log.d(
+          TAG,
+          "[syncProfileToLocal] Skipping sync - profile belongs to different user (ownerId: ${profile.ownerId}, currentUser: $currentUserId)")
+      return
+    }
+
     try {
       localRepo.createProfile(profile)
     } catch (e: Exception) {
-      // If createProfile fails (e.g., ownerId mismatch, no user logged in),
+      // If createProfile fails (e.g., no user logged in),
       // log but don't throw - we still want to return the remote data
-      Log.w(
-          TAG, "Failed to sync profile to local storage (profile may belong to different user)", e)
+      Log.w(TAG, "Failed to sync profile to local storage", e)
     }
   }
 

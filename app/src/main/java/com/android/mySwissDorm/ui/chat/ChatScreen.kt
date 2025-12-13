@@ -1,7 +1,7 @@
-// MyChatScreen.kt
 package com.android.mySwissDorm.ui.chat
 
 import android.content.Context
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +28,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.ui.theme.ThemePreferenceState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import io.getstream.chat.android.client.ChatClient
@@ -98,7 +99,15 @@ fun MyChatScreen(
       connectUserById(firebaseUser.uid)
     },
     chatTheme: @Composable (@Composable () -> Unit) -> Unit = { content ->
-      ChatTheme(content = content)
+      val userPreference by ThemePreferenceState.darkModePreference
+      val isDarkTheme =
+          when (userPreference) {
+            true -> true
+            false -> false
+            null -> isSystemInDarkTheme()
+          }
+
+      ChatTheme(isInDarkMode = isDarkTheme, content = content)
     },
     messagesScreen: @Composable (MessagesViewModelFactory, () -> Unit) -> Unit =
         { viewModelFactory, onBack ->

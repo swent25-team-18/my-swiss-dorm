@@ -110,9 +110,6 @@ sealed class Screen(
     }
   }
 
-  data object SelectUserToChat :
-      Screen(route = "selectUserToChat", nameId = R.string.screen_select_user_to_chat)
-
   data object RequestedMessages :
       Screen(route = "requestedMessages", nameId = R.string.screen_requested_messages)
 

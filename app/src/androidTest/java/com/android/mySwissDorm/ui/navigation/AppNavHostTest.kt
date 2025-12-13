@@ -1232,25 +1232,7 @@ class AppNavHostTest : FirestoreTest() {
     // the AppNavHost setup. We don't navigate to avoid ChatTheme rendering issues.
   }
 
-  // Test 34: SelectUserToChat route (lines 567-571)
-  @Test
-  fun appNavHost_selectUserToChatRoute_displaysSelectUserToChatScreen() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    delay(500)
-
-    composeTestRule.runOnUiThread { navController.navigate(Screen.SelectUserToChat.route) }
-    composeTestRule.waitForIdle()
-    delay(1000)
-
-    composeTestRule.runOnUiThread {
-      assertEquals(
-          "Should be on SelectUserToChat route",
-          Screen.SelectUserToChat.route,
-          navController.currentBackStackEntry?.destination?.route)
-    }
-  }
-
-  // Test 35: RequestedMessages route - onApprove success with Stream Chat (lines 577-641)
+  // Test 34: RequestedMessages route - onApprove success with Stream Chat (lines 577-641)
   // Covers: message retrieval (line 581), status update (line 584), onSuccess callback (line 587),
   // Stream Chat initialization check (line 594), user connection (lines 606-627), channel creation
   // (lines 630-634), and success toast (lines 636-641)

@@ -51,6 +51,7 @@ import kotlinx.coroutines.launch
 data class ProfileUiState(
     val firstName: String = "",
     val lastName: String = "",
+    val email: String = "",
     val language: String = "",
     val residence: String = "",
     val university: String = "",
@@ -113,7 +114,8 @@ class ProfileScreenViewModel(
   }
 
   fun loadProfile(context: Context) {
-    val uid = auth.currentUser?.uid
+    val user = auth.currentUser
+    val uid = user?.uid
     if (uid == null) {
       _uiState.update { it.copy(errorMsg = context.getString(R.string.profile_vm_not_signed_in)) }
       return
@@ -131,6 +133,7 @@ class ProfileScreenViewModel(
           it.copy(
               firstName = profile.userInfo.name,
               lastName = profile.userInfo.lastName,
+              email = user.email ?: "",
               residence = profile.userInfo.residencyName ?: "",
               university = profile.userInfo.universityName ?: "",
               profilePicture = profilePicture,

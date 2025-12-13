@@ -38,7 +38,7 @@ class BottomNavigationMenuTest : FirestoreTest() {
       NavHost(navController = navController, startDestination = Screen.Homepage.route) {
         composable(Screen.Homepage.route) { BottomBarFromNav(navActions) }
         composable(Screen.BrowseOverview.route) { BottomBarFromNav(navActions) }
-        composable(Screen.Settings.route) { BottomBarFromNav(navActions) }
+        composable(Screen.Profile.route) { BottomBarFromNav(navActions) }
       }
     }
 
@@ -46,7 +46,7 @@ class BottomNavigationMenuTest : FirestoreTest() {
 
     // Verify Homepage tab is selected
     composeTestRule.onNodeWithTag("bottom_nav_${Screen.Homepage.route}").assertIsSelected()
-    composeTestRule.onNodeWithTag("bottom_nav_${Screen.Settings.route}").assertIsNotSelected()
+    composeTestRule.onNodeWithTag("bottom_nav_${Screen.Profile.route}").assertIsNotSelected()
   }
 
   @Test
@@ -63,7 +63,7 @@ class BottomNavigationMenuTest : FirestoreTest() {
           navController = navController, startDestination = Screen.BrowseOverview(location).route) {
             composable(Screen.Homepage.route) { BottomBarFromNav(navActions) }
             composable(Screen.BrowseOverview.route) { BottomBarFromNav(navActions) }
-            composable(Screen.Settings.route) { BottomBarFromNav(navActions) }
+            composable(Screen.Profile.route) { BottomBarFromNav(navActions) }
           }
     }
 
@@ -71,11 +71,11 @@ class BottomNavigationMenuTest : FirestoreTest() {
 
     // Verify Homepage tab is selected even though we're on BrowseOverview
     composeTestRule.onNodeWithTag("bottom_nav_${Screen.Homepage.route}").assertIsSelected()
-    composeTestRule.onNodeWithTag("bottom_nav_${Screen.Settings.route}").assertIsNotSelected()
+    composeTestRule.onNodeWithTag("bottom_nav_${Screen.Profile.route}").assertIsNotSelected()
   }
 
   @Test
-  fun bottomBar_onSettings_highlightsSettingsTab() {
+  fun bottomBar_onProfile_highlightsProfileTab() {
 
     composeTestRule.setContent {
       val navController = rememberNavController()
@@ -83,16 +83,16 @@ class BottomNavigationMenuTest : FirestoreTest() {
           NavigationActions(
               navController = navController, coroutineScope = CoroutineScope(Dispatchers.Main))
 
-      NavHost(navController = navController, startDestination = Screen.Settings.route) {
+      NavHost(navController = navController, startDestination = Screen.Profile.route) {
         composable(Screen.Homepage.route) { BottomBarFromNav(navActions) }
-        composable(Screen.Settings.route) { BottomBarFromNav(navActions) }
+        composable(Screen.Profile.route) { BottomBarFromNav(navActions) }
       }
     }
 
     composeTestRule.waitForIdle()
 
     // Verify Settings tab is selected
-    composeTestRule.onNodeWithTag("bottom_nav_${Screen.Settings.route}").assertIsSelected()
+    composeTestRule.onNodeWithTag("bottom_nav_${Screen.Profile.route}").assertIsSelected()
     composeTestRule.onNodeWithTag("bottom_nav_${Screen.Homepage.route}").assertIsNotSelected()
   }
 }

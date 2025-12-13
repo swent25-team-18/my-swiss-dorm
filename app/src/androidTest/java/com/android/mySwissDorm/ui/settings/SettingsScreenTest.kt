@@ -16,7 +16,6 @@ import com.android.mySwissDorm.model.profile.UserSettings
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.DarkModePreferenceHelper
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -27,14 +26,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 /**
  * UI tests for SettingsScreen. We pass an explicit SettingsViewModel built on the emulators to
@@ -58,21 +53,9 @@ class SettingsScreenTest : FirestoreTest() {
   }
 
   /** Set content with our explicit VM. */
-  private fun setContentWithVm(
-      onContributionClick: () -> Unit = {},
-      onProfileClick: () -> Unit = {},
-      onViewBookmarks: () -> Unit = {}
-  ) {
+  private fun setContentWithVm() {
     val vm = makeVm()
-    compose.setContent {
-      MySwissDormAppTheme {
-        SettingsScreen(
-            vm = vm,
-            onContributionClick = onContributionClick,
-            onProfileClick = onProfileClick,
-            onViewBookmarks = onViewBookmarks)
-      }
-    }
+    compose.setContent { MySwissDormAppTheme { SettingsScreen(vm = vm) } }
   }
 
   @Before
@@ -177,19 +160,6 @@ class SettingsScreenTest : FirestoreTest() {
 
   // ---------- tests ----------
 
-  /** Verifies Firestore-seeded display name is shown, plus base header elements. */
-  @Test
-  fun settings_showsSeededFirestoreNameAndEmail() {
-    setContentWithVm()
-    // Wait for the ViewModel refresh to pull profile + compose to settle
-    compose.waitUntilTextExists("Settings")
-    compose.waitUntilTextExists("Mansour Kanaan")
-
-    compose.onNodeWithText("Settings", useUnmergedTree = true).assertIsDisplayed()
-    compose.onNodeWithText("View profile", useUnmergedTree = true).assertIsDisplayed()
-    compose.onNodeWithText("Mansour Kanaan", useUnmergedTree = true).assertIsDisplayed()
-  }
-
   @Test
   fun notificationSwitches_toggleStateCorrectly() {
     setContentWithVm()
@@ -278,43 +248,6 @@ class SettingsScreenTest : FirestoreTest() {
     compose.onNodeWithTag(toggleTag, useUnmergedTree = true).performClick()
     compose.waitUntilTagGone(listTag)
     compose.onNodeWithTag(listTag, useUnmergedTree = true).assertDoesNotExist()
-  }
-
-  @Test
-  fun contributionsButton_triggersCallback() = runTest {
-    var clicked = false
-    setContentWithVm(onContributionClick = { clicked = true })
-    compose.waitForIdle()
-
-    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
-    val buttonTag = C.SettingsTags.CONTRIBUTIONS_BUTTON
-
-    compose.scrollUntilDisplayed(scrollTag, buttonTag)
-    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).performClick()
-    compose.waitForIdle()
-    assert(clicked)
-  }
-
-  @Test
-  fun bookmarksButton_triggersCallback() = runTest {
-    var clicked = false
-    setContentWithVm(onViewBookmarks = { clicked = true })
-    compose.waitForIdle()
-
-    val scrollTag = C.SettingsTags.SETTINGS_SCROLL
-    val buttonTag = C.SettingsTags.BOOKMARKS_BUTTON
-
-    compose.scrollUntilDisplayed(scrollTag, buttonTag)
-    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).performClick()
-    compose.waitForIdle()
-    assert(clicked)
-  }
-
-  @Test
-  fun emailField_isDisabledAndReadOnly() {
-    setContentWithVm()
-    compose.waitForIdle()
-    compose.onNodeWithTag(C.SettingsTags.EMAIL_FIELD, useUnmergedTree = true).assertIsNotEnabled()
   }
 
   @Test
@@ -658,64 +591,5 @@ class SettingsScreenTest : FirestoreTest() {
     compose.scrollUntilTextDisplayed(scrollTag, "SIGN UP TO CREATE ACCOUNT")
     compose.onNodeWithText("SIGN UP TO CREATE ACCOUNT").assertIsDisplayed()
     compose.onNodeWithText("DELETE MY ACCOUNT").assertDoesNotExist()
-  }
-
-  @Test
-  fun guestMode_profileClick_doesNotTriggerCallback() = runTest {
-    signInAnonymous()
-    var profileClicked = false
-    setContentWithVm(onProfileClick = { profileClicked = true })
-    compose.waitForIdle()
-    compose.onNodeWithText("View profile", useUnmergedTree = true).performClick()
-    compose.waitForIdle()
-    assert(!profileClicked) { "Profile click callback should not be triggered in guest mode" }
-  }
-
-  @Test
-  fun guestMode_contributionsClick_doesNotTriggerCallback() = runTest {
-    signInAnonymous()
-    var contributionClicked = false
-    setContentWithVm(onContributionClick = { contributionClicked = true })
-    compose.waitForIdle()
-    compose.onNodeWithText("View profile", useUnmergedTree = true).performScrollTo().performClick()
-    compose.waitForIdle()
-    assert(!contributionClicked) {
-      "Contributions click callback should not be triggered in guest mode"
-    }
-  }
-
-  @Test
-  fun photoIsDisplayedInSettings() {
-    val cloudRepo = FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, true)
-    val fakeProfileRepo: ProfileRepository = mock()
-    runBlocking { whenever(fakeProfileRepo.getProfile(any())) }
-        .thenReturn(
-            profile1.copy(userInfo = profile1.userInfo.copy(profilePicture = photo.fileName)))
-    val vm = SettingsViewModel(photoRepositoryCloud = cloudRepo, profiles = fakeProfileRepo)
-    compose.setContent { SettingsScreen(vm = vm) }
-    compose.waitForIdle()
-
-    compose.waitUntil("The profile picture is not displayed in the settings", 5_000) {
-      compose
-          .onNodeWithTag(C.SettingsTags.avatarTag(photo.image), useUnmergedTree = true)
-          .isDisplayed()
-    }
-  }
-
-  @Test
-  fun defaultAvatarIsDisplayedWhenNoPP() {
-    Assume.assumeTrue(
-        "The profile picture of the tested profile is not null as assumed by this test",
-        profile2.userInfo.profilePicture == null)
-    val cloudRepo = FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, true)
-    val fakeProfileRepo: ProfileRepository = mock()
-    runBlocking { whenever(fakeProfileRepo.getProfile(any())) }.thenReturn(profile2)
-    val vm = SettingsViewModel(photoRepositoryCloud = cloudRepo, profiles = fakeProfileRepo)
-    compose.setContent { SettingsScreen(vm = vm) }
-    compose.waitForIdle()
-
-    compose.waitUntil("The profile picture is not displayed in the settings", 5_000) {
-      compose.onNodeWithTag(C.SettingsTags.avatarTag(null), useUnmergedTree = true).isDisplayed()
-    }
   }
 }

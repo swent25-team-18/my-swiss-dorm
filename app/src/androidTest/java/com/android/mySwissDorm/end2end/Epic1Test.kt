@@ -166,47 +166,44 @@ class Epic1Test : FirestoreTest() {
 
         composeTestRule.waitForIdle()
 
-        // Ensure bottom bar is visible and go to Settings
+        // Ensure bottom bar is visible and go to Profile
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
+          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
         }
-        composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).performClick()
+        composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).performClick()
 
-        // Wait until Settings screen is shown (use Profile button which exists there)
+        // Wait until Profile screen is shown (use Settings button which exists there)
         composeTestRule.waitUntil(5_000) {
           composeTestRule
-              .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
+              .onNodeWithTag(C.ProfileTags.SETTINGS_ICON, useUnmergedTree = true)
               .isDisplayed()
         }
 
-        // Go to profile screen from settings
+        // Go to settings screen from profile
         composeTestRule
-            .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
+            .onNodeWithTag(C.ProfileTags.SETTINGS_ICON, useUnmergedTree = true)
             .performClick()
 
-        // Wait for profile screen title
+        // Wait for settings screen back button
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.Tag.PROFILE_SCREEN_TITLE).isDisplayed()
+          composeTestRule.onNodeWithTag(C.SettingsTags.BACK_BUTTON).isDisplayed()
         }
 
-        // Go back to settings (profile screen has its own back button)
-        composeTestRule
-            .onNodeWithTag(C.Tag.PROFILE_SCREEN_BACK_BUTTON)
-            .assertIsDisplayed()
-            .performClick()
+        // Go back to profile (settings screen has its own back button)
+        composeTestRule.onNodeWithTag(C.SettingsTags.BACK_BUTTON).assertIsDisplayed().performClick()
 
-        // Now we're back on Settings; assert again via Profile button visibility
+        // Now we're back on Profile; assert again via Settings button visibility
         composeTestRule.waitUntil(5_000) {
           composeTestRule
-              .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
+              .onNodeWithTag(C.ProfileTags.SETTINGS_ICON, useUnmergedTree = true)
               .isDisplayed()
         }
 
-        // Return to Homepage via the bottom navigation (no back button on Settings)
+        // Return to Homepage via the bottom navigation (no back button on Profile)
         composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).performClick()
 
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
+          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
         }
 
         // Wait for cities list to be available

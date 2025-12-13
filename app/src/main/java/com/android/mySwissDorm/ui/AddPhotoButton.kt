@@ -35,12 +35,12 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.White
@@ -112,14 +112,14 @@ fun AddPhotoDialog(
         modifier =
             Modifier.fillMaxWidth()
                 .testTag(C.AddPhotoButtonTags.DIALOG)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(Dimens.CardCornerRadius))
                 .background(BackGroundColor),
-        elevation = CardDefaults.cardElevation(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = Dimens.PaddingSmall),
     ) {
       Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier.fillMaxWidth(0.8f).padding(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(0.8f).padding(vertical = Dimens.PaddingMedium),
+            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium),
             horizontalAlignment = Alignment.CenterHorizontally) {
               CameraButton(
                   onSave = { onSelectPhoto(it) },
@@ -127,7 +127,7 @@ fun AddPhotoDialog(
                   colors =
                       ButtonDefaults.filledTonalButtonColors(
                           containerColor = MainColor, contentColor = White),
-                  shape = RoundedCornerShape(14.dp),
+                  shape = RoundedCornerShape(Dimens.IconSizeSmall),
               ) {
                 Text(
                     text = stringResource(R.string.add_photo_button_take_photo),
@@ -141,7 +141,7 @@ fun AddPhotoDialog(
                     colors =
                         ButtonDefaults.filledTonalButtonColors(
                             containerColor = MainColor, contentColor = White),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(Dimens.IconSizeSmall),
                 ) {
                   GalleryText()
                 }
@@ -152,7 +152,7 @@ fun AddPhotoDialog(
                     colors =
                         ButtonDefaults.filledTonalButtonColors(
                             containerColor = MainColor, contentColor = White),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(Dimens.IconSizeSmall),
                 ) {
                   GalleryText()
                 }
@@ -180,7 +180,7 @@ private fun GalleryText() {
 fun DefaultAddPhotoButton(onSelectPhoto: (Photo) -> Unit, multiplePick: Boolean = false) {
   AddPhotoButton(
       onSelectPhoto = onSelectPhoto,
-      shape = RoundedCornerShape(14.dp),
+      shape = RoundedCornerShape(Dimens.IconSizeSmall),
       colors =
           ButtonColors(
               containerColor = TextBoxColor,
@@ -189,7 +189,7 @@ fun DefaultAddPhotoButton(onSelectPhoto: (Photo) -> Unit, multiplePick: Boolean 
               disabledContainerColor = TextBoxColor),
       multiplePick = multiplePick) {
         Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(Dimens.PaddingSmall))
         Text(stringResource(R.string.add_photo_button_default_text))
       }
 }

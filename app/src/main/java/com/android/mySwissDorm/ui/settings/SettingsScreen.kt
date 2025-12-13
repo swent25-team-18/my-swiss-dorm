@@ -51,6 +51,7 @@ import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.DarkGray
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -206,9 +207,9 @@ fun SettingsScreenContent(
 
               val horizontalPad: Dp =
                   when {
-                    isTablet -> 24.dp
-                    isCompact -> 12.dp
-                    else -> 16.dp
+                    isTablet -> Dimens.PaddingLarge
+                    isCompact -> Dimens.PaddingMedium
+                    else -> Dimens.PaddingDefault
                   }
               val contentWidthCap = if (isTablet) 600.dp else maxW
 
@@ -219,8 +220,8 @@ fun SettingsScreenContent(
                       PaddingValues(
                           start = horizontalPad,
                           end = horizontalPad,
-                          top = 12.dp,
-                          bottom = 24.dp)) {
+                          top = Dimens.PaddingMedium,
+                          bottom = Dimens.PaddingLarge)) {
                     item {
                       Column(modifier = Modifier.fillMaxWidth().widthIn(max = contentWidthCap)) {
 
@@ -229,8 +230,9 @@ fun SettingsScreenContent(
                           Row(
                               modifier = Modifier.fillMaxWidth(),
                               verticalAlignment = Alignment.CenterVertically,
-                              horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                val avatarSize = if (isTablet) 64.dp else 56.dp
+                              horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
+                                val avatarSize =
+                                    if (isTablet) Dimens.ImageSizeSmall else Dimens.ImageSizeAvatar
                                 val initial =
                                     (ui.userName.firstOrNull()?.uppercaseChar() ?: 'A').toString()
 
@@ -239,7 +241,7 @@ fun SettingsScreenContent(
                                     modifier =
                                         Modifier.size(avatarSize)
                                             .clip(CircleShape)
-                                            .background(MainColor.copy(alpha = 0.16f)),
+                                            .background(MainColor.copy(alpha = Dimens.AlphaLow)),
                                     contentAlignment = Alignment.Center) {
                                       if (ui.profilePicture != null) {
                                         AsyncImage(
@@ -315,31 +317,31 @@ fun SettingsScreenContent(
                                   KeyboardActions(onDone = { focusManager.clearFocus() }),
                               colors =
                                   OutlinedTextFieldDefaults.colors(
-                                      disabledTextColor = TextColor.copy(alpha = 0.9f),
+                                      disabledTextColor = TextColor.copy(alpha = Dimens.AlphaHigh),
                                       disabledBorderColor = TextBoxColor,
                                       disabledLabelColor =
                                           MaterialTheme.colorScheme.onSurfaceVariant,
                                       disabledContainerColor = MaterialTheme.colorScheme.surface),
                               modifier =
                                   Modifier.fillMaxWidth().testTag(C.SettingsTags.EMAIL_FIELD))
-                          Spacer(Modifier.height(12.dp))
+                          Spacer(Modifier.height(Dimens.PaddingMedium))
                           Button(
                               onClick = onContributionClick,
                               modifier =
                                   Modifier.fillMaxWidth()
                                       .testTag(C.SettingsTags.CONTRIBUTIONS_BUTTON),
-                              shape = RoundedCornerShape(16.dp),
+                              shape = RoundedCornerShape(Dimens.CardCornerRadius),
                               colors =
                                   ButtonDefaults.buttonColors(
                                       containerColor = MainColor, contentColor = White)) {
                                 Text(stringResource(R.string.settings_view_contributions))
                               }
-                          Spacer(Modifier.height(12.dp))
+                          Spacer(Modifier.height(Dimens.PaddingMedium))
                           Button(
                               onClick = onViewBookmarks,
                               modifier =
                                   Modifier.fillMaxWidth().testTag(C.SettingsTags.BOOKMARKS_BUTTON),
-                              shape = RoundedCornerShape(16.dp),
+                              shape = RoundedCornerShape(Dimens.CardCornerRadius),
                               colors =
                                   ButtonDefaults.buttonColors(
                                       containerColor = MainColor, contentColor = White)) {
@@ -359,7 +361,9 @@ fun SettingsScreenContent(
                           Row(
                               modifier =
                                   Modifier.fillMaxWidth()
-                                      .padding(horizontal = 4.dp, vertical = 10.dp),
+                                      .padding(
+                                          horizontal = Dimens.PaddingXSmall,
+                                          vertical = Dimens.PaddingTopSmall),
                               verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     "${stringResource(R.string.settings_blocked_contacts)} (${blockedContacts.size})",
@@ -402,19 +406,21 @@ fun SettingsScreenContent(
                                     Modifier.fillMaxWidth()
                                         .bringIntoViewRequester(blockedBringIntoView)
                                         .testTag(C.SettingsTags.BLOCKED_CONTACTS_LIST)) {
-                                  Column(Modifier.padding(12.dp)) {
+                                  Column(Modifier.padding(Dimens.PaddingMedium)) {
                                     if (blockedContacts.isEmpty()) {
                                       Text(
                                           text =
                                               stringResource(R.string.settings_no_blocked_contacts),
                                           style = MaterialTheme.typography.bodyMedium,
-                                          color = TextColor.copy(alpha = 0.6f),
-                                          modifier = Modifier.padding(vertical = 4.dp))
+                                          color = TextColor.copy(alpha = Dimens.AlphaSecondary),
+                                          modifier =
+                                              Modifier.padding(vertical = Dimens.PaddingXSmall))
                                     } else {
                                       blockedContacts.forEach { contact ->
                                         Row(
                                             modifier =
-                                                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                                Modifier.fillMaxWidth()
+                                                    .padding(vertical = Dimens.PaddingXSmall),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically) {
                                               Text(
@@ -424,7 +430,8 @@ fun SettingsScreenContent(
                                                   maxLines = 1,
                                                   overflow = TextOverflow.Ellipsis,
                                                   modifier =
-                                                      Modifier.weight(1f).padding(end = 12.dp))
+                                                      Modifier.weight(1f)
+                                                          .padding(end = Dimens.PaddingMedium))
                                               TextButton(
                                                   onClick = { onUnblockUser(contact.uid) },
                                                   colors =
@@ -456,7 +463,7 @@ fun SettingsScreenContent(
                             Row(
                                 modifier =
                                     Modifier.fillMaxWidth()
-                                        .padding(vertical = 4.dp)
+                                        .padding(vertical = Dimens.PaddingXSmall)
                                         .clickable(onClick = onAdminClick),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween) {
@@ -466,7 +473,8 @@ fun SettingsScreenContent(
                                       color = TextColor,
                                       maxLines = 2,
                                       overflow = TextOverflow.Ellipsis,
-                                      modifier = Modifier.weight(1f).padding(end = 12.dp))
+                                      modifier =
+                                          Modifier.weight(1f).padding(end = Dimens.PaddingMedium))
                                   Icon(
                                       imageVector = Icons.Filled.ChevronRight,
                                       contentDescription = "Open admin page",
@@ -490,14 +498,15 @@ fun SettingsScreenContent(
                                       ButtonDefaults.buttonColors(
                                           containerColor = MainColor,
                                           contentColor = White,
-                                          disabledContainerColor = MainColor.copy(alpha = 0.5f),
+                                          disabledContainerColor =
+                                              MainColor.copy(alpha = Dimens.AlphaMedium),
                                           disabledContentColor = White),
-                                  shape = RoundedCornerShape(28.dp),
+                                  shape = RoundedCornerShape(Dimens.IconSizeXLarge),
                                   elevation =
                                       ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                   modifier =
                                       Modifier.fillMaxWidth()
-                                          .padding(top = 8.dp)
+                                          .padding(top = Dimens.PaddingSmall)
                                           .testTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
                                           .navigationBarsPadding()) {
                                     Text(
@@ -512,14 +521,16 @@ fun SettingsScreenContent(
                                           containerColor = BackGroundColor,
                                           contentColor = MainColor,
                                           disabledContainerColor = BackGroundColor,
-                                          disabledContentColor = MainColor.copy(alpha = 0.5f)),
-                                  shape = RoundedCornerShape(28.dp),
+                                          disabledContentColor =
+                                              MainColor.copy(alpha = Dimens.AlphaMedium)),
+                                  shape = RoundedCornerShape(Dimens.IconSizeXLarge),
                                   elevation =
                                       ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                  border = BorderStroke(1.dp, MainColor.copy(alpha = 0.15f)),
+                                  border =
+                                      BorderStroke(1.dp, MainColor.copy(alpha = Dimens.AlphaLow)),
                                   modifier =
                                       Modifier.fillMaxWidth()
-                                          .padding(top = 8.dp)
+                                          .padding(top = Dimens.PaddingSmall)
                                           .testTag(C.SettingsTags.DELETE_ACCOUNT_BUTTON)
                                           .navigationBarsPadding()) {
                                     Text(
@@ -567,7 +578,7 @@ private fun CardBlock(content: @Composable ColumnScope.() -> Unit) {
       shadowElevation = 0.dp,
       tonalElevation = 0.dp,
       modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), content = content)
+        Column(Modifier.padding(Dimens.PaddingDefault), content = content)
       }
 }
 
@@ -577,12 +588,12 @@ private fun SectionLabel(text: String) {
       text = text,
       style = MaterialTheme.typography.titleMedium,
       color = TextColor,
-      modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
+      modifier = Modifier.padding(start = Dimens.PaddingXSmall, bottom = Dimens.PaddingXSmall))
 }
 
 @Composable
 private fun SoftDivider() {
-  HorizontalDivider(thickness = 1.dp, color = TextBoxColor.copy(alpha = 0.25f))
+  HorizontalDivider(thickness = 1.dp, color = TextBoxColor.copy(alpha = Dimens.AlphaLow))
 }
 
 /** Switch row with white thumb and theme-aware colors */
@@ -595,11 +606,11 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
           checkedThumbColor = White,
           checkedTrackColor = MainColor,
           uncheckedThumbColor = White,
-          uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f))
+          uncheckedTrackColor = TextBoxColor.copy(alpha = Dimens.AlphaSecondary))
 
   if (!isExtraNarrow) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.PaddingXSmall),
         verticalAlignment = Alignment.CenterVertically) {
           Text(
               label,
@@ -607,7 +618,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
               color = TextColor,
               maxLines = 2,
               overflow = TextOverflow.Ellipsis,
-              modifier = Modifier.weight(1f).padding(end = 12.dp))
+              modifier = Modifier.weight(1f).padding(end = Dimens.PaddingMedium))
           Switch(
               modifier =
                   Modifier.testTag(C.SettingsTags.switch(label)).semantics(
@@ -620,7 +631,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
               colors = switchColors)
         }
   } else {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.PaddingXSmall)) {
       Text(
           label,
           style = MaterialTheme.typography.bodyLarge,
@@ -629,7 +640,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
           overflow = TextOverflow.Ellipsis,
           modifier = Modifier.fillMaxWidth())
       Row(
-          modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+          modifier = Modifier.fillMaxWidth().padding(top = Dimens.SpacingMedium),
           horizontalArrangement = Arrangement.End) {
             Switch(
                 modifier =

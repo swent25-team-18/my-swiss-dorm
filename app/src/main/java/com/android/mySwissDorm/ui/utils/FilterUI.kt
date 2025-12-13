@@ -16,7 +16,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.FilterTestTags.MAX_PRICE
@@ -24,6 +23,7 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.MAX_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.MIN_PRICE
 import com.android.mySwissDorm.resources.C.FilterTestTags.MIN_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SLIDER_PRICE
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
@@ -45,7 +45,7 @@ fun PriceFilterContent(
       onRangeChange(minPrice.toDouble(), maxPrice.toDouble())
     }
   }
-  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+  Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
       Text(
           "${stringResource(R.string.min)}: ${minPrice.toInt()} CHF",
@@ -70,7 +70,7 @@ fun PriceFilterContent(
             SliderDefaults.colors(
                 thumbColor = MainColor,
                 activeTrackColor = MainColor,
-                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
+                inactiveTrackColor = MainColor.copy(alpha = Dimens.AlphaDisabled)))
   }
 }
 
@@ -84,7 +84,7 @@ fun SizeFilterContent(sizeRange: Pair<Int?, Int?>, onRangeChange: (Int?, Int?) -
   var maxSize by
       remember(sizeRange) { mutableFloatStateOf((sizeRange.second?.toFloat() ?: defaultMax)) }
 
-  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+  Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
       Text(
           "${stringResource(R.string.min)}: ${minSize.toInt()} m²",
@@ -109,6 +109,6 @@ fun SizeFilterContent(sizeRange: Pair<Int?, Int?>, onRangeChange: (Int?, Int?) -
             SliderDefaults.colors(
                 thumbColor = MainColor,
                 activeTrackColor = MainColor,
-                inactiveTrackColor = MainColor.copy(alpha = 0.3f)))
+                inactiveTrackColor = MainColor.copy(alpha = Dimens.AlphaDisabled)))
   }
 }

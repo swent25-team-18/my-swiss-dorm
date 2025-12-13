@@ -34,11 +34,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -197,7 +197,7 @@ fun DefaultGalleryButton(
     onSelect: (Photo) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = RoundedCornerShape(Dimens.IconSizeSmall),
     colors: ButtonColors =
         ButtonColors(
             containerColor = TextBoxColor,
@@ -226,7 +226,7 @@ fun DefaultGalleryButton(
       permissionContract = permissionContract,
       choosePictureContract = choosePictureContract) {
         Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(Dimens.PaddingSmall))
         Text(text = stringResource(R.string.gallery_button_default_text))
       }
 }
@@ -237,7 +237,7 @@ fun DefaultGalleryButtonMultiplePick(
     onSelect: (List<Photo>) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = RoundedCornerShape(Dimens.IconSizeSmall),
     colors: ButtonColors =
         ButtonColors(
             containerColor = TextBoxColor,
@@ -267,7 +267,7 @@ fun DefaultGalleryButtonMultiplePick(
       permissionContract = permissionContract,
       choosePicturesContract = choosePicturesContract) {
         Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(Dimens.PaddingSmall))
         Text(text = stringResource(R.string.gallery_button_default_multiple_text))
       }
 }

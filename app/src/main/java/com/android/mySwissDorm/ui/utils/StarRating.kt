@@ -21,8 +21,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Dimens
 import kotlin.math.roundToInt
 
 /**
@@ -54,7 +54,7 @@ fun StarRatingBar(
   Row(
       modifier =
           modifier
-              .width(160.dp)
+              .width(Dimens.SpacerHeightSmall)
               .onSizeChanged { rowSize = it }
               .pointerInput(Unit) {
                 detectTapGestures { offset ->
@@ -79,7 +79,9 @@ fun StarRatingBar(
               contentDescription = null,
               tint = if (i - 0.5 <= rating) activeColor else inactiveColor,
               modifier =
-                  Modifier.weight(1f).height(30.dp).testTag(C.StarRatingBarTags.getStarTag(i)))
+                  Modifier.weight(1f)
+                      .height(Dimens.IconSizeXXLarge)
+                      .testTag(C.StarRatingBarTags.getStarTag(i)))
         }
       }
 }

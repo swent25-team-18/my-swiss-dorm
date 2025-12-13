@@ -26,7 +26,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -34,6 +33,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.Red
@@ -123,7 +123,7 @@ fun ViewUserProfileScreen(
                   Text(
                       "${stringResource(R.string.error)}: ${ui.error}",
                       modifier = Modifier.testTag(T.ERROR_TEXT))
-                  Spacer(Modifier.height(12.dp))
+                  Spacer(Modifier.height(Dimens.PaddingMedium))
                   Button(
                       onClick = { if (ownerId != null) realVm?.loadProfile(ownerId, context) },
                       modifier = Modifier.testTag(T.RETRY_BTN)) {
@@ -135,7 +135,8 @@ fun ViewUserProfileScreen(
           // Normal content
           LazyColumn(
               modifier = Modifier.fillMaxSize().padding(padding).testTag(T.ROOT),
-              contentPadding = PaddingValues(horizontal = 24.dp, vertical = 24.dp)) {
+              contentPadding =
+                  PaddingValues(horizontal = Dimens.PaddingLarge, vertical = Dimens.PaddingLarge)) {
                 item {
                   // Center avatar horizontally with a full-width wrapper
                   Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -143,9 +144,9 @@ fun ViewUserProfileScreen(
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier =
-                            Modifier.size(180.dp)
+                            Modifier.size(Dimens.ImageSizeAvatarLarge)
                                 .clip(CircleShape)
-                                .border(3.dp, MainColor, CircleShape)
+                                .border(Dimens.SpacingXSmall, MainColor, CircleShape)
                                 .testTag(T.AVATAR_BOX)) {
                           Box(
                               modifier =
@@ -168,27 +169,29 @@ fun ViewUserProfileScreen(
                                       contentDescription = "Profile picture",
                                       tint = MainColor,
                                       modifier =
-                                          Modifier.size(64.dp)
+                                          Modifier.size(Dimens.ImageSizeSmall)
                                               .testTag(C.ViewUserProfileTags.PROFILE_PICTURE))
                                 }
                               }
                         }
                   }
-                  Spacer(Modifier.height(28.dp))
+                  Spacer(Modifier.height(Dimens.IconSizeXLarge))
                 }
 
                 // Residence chip (only when non-blank)
                 if (ui.residence.isNotBlank()) {
                   item {
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Dimens.PaddingMedium),
                         color = TextBoxColor,
                         modifier =
                             Modifier.fillMaxWidth()
-                                .heightIn(min = 48.dp)
+                                .heightIn(min = Dimens.IconSizeXXLarge)
                                 .testTag(T.RESIDENCE_CHIP)) {
                           Box(
-                              modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                              modifier =
+                                  Modifier.fillMaxWidth()
+                                      .padding(horizontal = Dimens.SpacingXLarge),
                               contentAlignment = Alignment.CenterStart) {
                                 Text(
                                     text = ui.residence,
@@ -196,7 +199,7 @@ fun ViewUserProfileScreen(
                                     color = TextColor)
                               }
                         }
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(Dimens.SpacingXLarge))
                   }
                 }
 
@@ -205,18 +208,22 @@ fun ViewUserProfileScreen(
                   item {
                     Surface(
                         onClick = { onSendMessage() },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Dimens.PaddingMedium),
                         color = TextBoxColor,
                         modifier =
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(T.SEND_MESSAGE)) {
+                            Modifier.fillMaxWidth()
+                                .heightIn(min = Dimens.IconSizeXXLarge)
+                                .testTag(T.SEND_MESSAGE)) {
                           Row(
                               verticalAlignment = Alignment.CenterVertically,
-                              modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                              modifier =
+                                  Modifier.fillMaxWidth()
+                                      .padding(horizontal = Dimens.SpacingXLarge)) {
                                 Icon(
                                     imageVector = Icons.Outlined.Forum,
                                     contentDescription = null,
                                     tint = TextColor)
-                                Spacer(Modifier.width(12.dp))
+                                Spacer(Modifier.width(Dimens.PaddingMedium))
                                 Text(
                                     text = stringResource(R.string.view_user_profile_send_message),
                                     style = MaterialTheme.typography.bodyLarge.copy(),
@@ -229,7 +236,7 @@ fun ViewUserProfileScreen(
                 // Block user row (enabled only when ownerId is non-null and not current user)
                 if (!isCurrentUser && ownerId != null && realVm != null) {
                   item {
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(Dimens.PaddingMedium))
                     val isBlocked = ui.isBlocked
                     val buttonColor = if (isBlocked) MainColor else Red
                     val textColor = if (isBlocked) BackGroundColor else White
@@ -258,18 +265,22 @@ fun ViewUserProfileScreen(
                             }
                           }
                         },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(Dimens.PaddingMedium),
                         color = buttonColor,
                         modifier =
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(T.BLOCK_BUTTON)) {
+                            Modifier.fillMaxWidth()
+                                .heightIn(min = Dimens.IconSizeXXLarge)
+                                .testTag(T.BLOCK_BUTTON)) {
                           Row(
                               verticalAlignment = Alignment.CenterVertically,
-                              modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                              modifier =
+                                  Modifier.fillMaxWidth()
+                                      .padding(horizontal = Dimens.SpacingXLarge)) {
                                 Icon(
                                     imageVector = Icons.Outlined.ReportProblem,
                                     contentDescription = null,
                                     tint = iconColor)
-                                Spacer(Modifier.width(12.dp))
+                                Spacer(Modifier.width(Dimens.PaddingMedium))
                                 Text(
                                     text = buttonText,
                                     style = MaterialTheme.typography.bodyLarge.copy(),

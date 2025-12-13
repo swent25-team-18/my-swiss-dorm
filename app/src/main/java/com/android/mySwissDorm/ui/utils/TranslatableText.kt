@@ -26,9 +26,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 
 /**
@@ -92,7 +92,7 @@ fun TranslatableText(
 
     // Translation toggle button, visible only if the text input is not blank
     if (text.isNotBlank()) {
-      Spacer(modifier = Modifier.height(3.dp))
+      Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
 
       // Either displays "Translate" or "See original"
       val clickableText =

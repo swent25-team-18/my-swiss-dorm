@@ -23,12 +23,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.Typography
@@ -66,20 +66,20 @@ fun SignInScreen(
         modifier = Modifier.padding(padding).fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center) {
-          Spacer(modifier = Modifier.height(160.dp))
+          Spacer(modifier = Modifier.height(Dimens.SpacerHeightSmall))
           Text(
               text = stringResource(R.string.app_name),
               style = Typography.titleLarge,
               color = MainColor,
               modifier = Modifier.testTag(C.Tag.SIGN_IN_APP_LOGO))
-          Spacer(modifier = Modifier.height(16.dp))
+          Spacer(modifier = Modifier.height(Dimens.SpacingXLarge))
           Button(
               onClick = {
                 if (!uiState.isLoading) {
                   authViewModel.signIn(context, credentialManager)
                 }
               },
-              shape = RoundedCornerShape(4.dp),
+              shape = RoundedCornerShape(Dimens.PaddingXSmall),
               colors =
                   ButtonColors(
                       containerColor = MainColor,
@@ -89,7 +89,7 @@ fun SignInScreen(
               modifier = Modifier.testTag(C.Tag.SIGN_IN_LOG_IN_BUTTON)) {
                 Text(text = stringResource(R.string.login_in_text))
               }
-          Spacer(modifier = Modifier.height(5.dp))
+          Spacer(modifier = Modifier.height(Dimens.SpacingTiny))
           TextButton(
               onClick = {
                 if (!uiState.isLoading) {
@@ -100,7 +100,7 @@ fun SignInScreen(
                 Text(text = stringResource(R.string.continue_as_guest), color = Gray)
               }
 
-          Spacer(modifier = Modifier.height(225.dp))
+          Spacer(modifier = Modifier.height(Dimens.SpacerHeightLarge))
           TextButton(
               onClick = onSignUp, modifier = Modifier.testTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON)) {
                 Text(text = stringResource(R.string.create_account_text), color = Gray)

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 
 /**
@@ -51,8 +52,8 @@ fun ImageGrid(
 ) {
   LazyRow(
       modifier = modifier,
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      contentPadding = PaddingValues(horizontal = 16.dp)) {
+      horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall),
+      contentPadding = PaddingValues(horizontal = Dimens.SpacingXLarge)) {
         items(imageUris.toList()) { uri ->
           Box(
               modifier =
@@ -62,19 +63,22 @@ fun ImageGrid(
                     model = uri,
                     contentDescription = null,
                     modifier =
-                        Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).clickable {
-                          onImageClick(uri)
-                        },
+                        Modifier.fillMaxSize()
+                            .clip(RoundedCornerShape(Dimens.PaddingSmall))
+                            .clickable { onImageClick(uri) },
                     contentScale = ContentScale.Crop)
                 if (isEditingMode) {
                   FloatingActionButton(
                       onClick = { onRemove(uri) },
-                      modifier = Modifier.offset(x = 8.dp, y = (-8).dp).size(32.dp)) {
+                      modifier =
+                          Modifier.offset(x = Dimens.PaddingSmall, y = -Dimens.PaddingSmall)
+                              .size(Dimens.IconSizeXXXLarge)) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = C.ImageGridTags.ICON_DELETE_CONTENT_DESC,
                             modifier =
-                                Modifier.size(20.dp).testTag(C.ImageGridTags.deleteButtonTag(uri)),
+                                Modifier.size(Dimens.IconSizeDefault)
+                                    .testTag(C.ImageGridTags.deleteButtonTag(uri)),
                             tint = MainColor)
                       }
                 }

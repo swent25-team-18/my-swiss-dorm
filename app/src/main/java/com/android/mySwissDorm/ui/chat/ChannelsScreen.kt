@@ -45,6 +45,7 @@ import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.Transparent
@@ -326,43 +327,50 @@ fun ChannelsScreen(
       val focusRequester = remember { FocusRequester() }
       val keyboardController = LocalSoftwareKeyboardController.current
 
-      Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        TextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = {
-              Text(
-                  stringResource(R.string.channels_screen_search_chats),
-                  color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-            },
-            leadingIcon = {
-              Icon(Icons.Default.Search, contentDescription = null, tint = MainColor)
-            },
-            modifier =
-                Modifier.testTag(C.ChannelsScreenTestTags.SEARCH_BAR)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusState ->
-                      if (focusState.isFocused) {
-                        keyboardController?.show()
-                      }
-                    },
-            singleLine = true,
-            colors =
-                TextFieldDefaults.colors(
-                    focusedIndicatorColor = Transparent,
-                    unfocusedIndicatorColor = Transparent,
-                    disabledIndicatorColor = Transparent,
-                    focusedContainerColor =
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    unfocusedContainerColor =
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    focusedTextColor = TextColor,
-                    unfocusedTextColor = TextColor,
-                    cursorColor = TextColor),
-            shape = RoundedCornerShape(24.dp))
-      }
+      Box(
+          modifier =
+              Modifier.fillMaxWidth()
+                  .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingSmall)) {
+            TextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = {
+                  Text(
+                      stringResource(R.string.channels_screen_search_chats),
+                      color =
+                          MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                              alpha = Dimens.AlphaSecondary))
+                },
+                leadingIcon = {
+                  Icon(Icons.Default.Search, contentDescription = null, tint = MainColor)
+                },
+                modifier =
+                    Modifier.testTag(C.ChannelsScreenTestTags.SEARCH_BAR)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(Dimens.PaddingLarge))
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { focusState ->
+                          if (focusState.isFocused) {
+                            keyboardController?.show()
+                          }
+                        },
+                singleLine = true,
+                colors =
+                    TextFieldDefaults.colors(
+                        focusedIndicatorColor = Transparent,
+                        unfocusedIndicatorColor = Transparent,
+                        disabledIndicatorColor = Transparent,
+                        focusedContainerColor =
+                            MaterialTheme.colorScheme.surfaceVariant.copy(
+                                alpha = Dimens.AlphaMedium),
+                        unfocusedContainerColor =
+                            MaterialTheme.colorScheme.surfaceVariant.copy(
+                                alpha = Dimens.AlphaDisabled),
+                        focusedTextColor = TextColor,
+                        unfocusedTextColor = TextColor,
+                        cursorColor = TextColor),
+                shape = RoundedCornerShape(Dimens.PaddingLarge))
+          }
 
       // Channel list
       if (isLoading && !isRefreshing) {
@@ -384,7 +392,7 @@ fun ChannelsScreen(
                         stringResource(R.string.channels_screen_no_chats_found)
                       },
                   style = MaterialTheme.typography.bodyLarge,
-                  color = TextColor.copy(alpha = 0.7f))
+                  color = TextColor.copy(alpha = Dimens.AlphaHigh))
             }
       } else {
         LazyColumn(modifier = Modifier.testTag(C.ChannelsScreenTestTags.CHANNELS_LIST)) {
@@ -542,21 +550,21 @@ internal fun ChannelItem(
           modifier
               .fillMaxWidth()
               .clickable { onChannelClick(channel.cid) }
-              .padding(horizontal = 16.dp, vertical = 12.dp),
+              .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingMedium),
       verticalAlignment = Alignment.CenterVertically) {
         // Avatar
         if (displayedImage != null) {
           AsyncImage(
               model = displayedImage,
               contentDescription = displayedName,
-              modifier = Modifier.size(56.dp).clip(CircleShape),
+              modifier = Modifier.size(Dimens.ImageSizeAvatar).clip(CircleShape),
               contentScale = ContentScale.Crop)
         } else {
           // Default icon if no profile picture
           Box(
               contentAlignment = Alignment.Center,
               modifier =
-                  Modifier.size(56.dp)
+                  Modifier.size(Dimens.ImageSizeAvatar)
                       .clip(CircleShape)
                       .background(BackGroundColor)
                       .border(2.dp, MainColor, CircleShape)) {
@@ -568,7 +576,7 @@ internal fun ChannelItem(
               }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(Dimens.PaddingMedium))
 
         // Name and message
         Column(modifier = Modifier.weight(1f)) {
@@ -588,11 +596,12 @@ internal fun ChannelItem(
                   Text(
                       text = lastMessageTime,
                       style = MaterialTheme.typography.bodySmall,
-                      color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                      color =
+                          MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = Dimens.AlphaHigh))
                 }
               }
 
-          Spacer(modifier = Modifier.height(4.dp))
+          Spacer(modifier = Modifier.height(Dimens.PaddingXSmall))
 
           Row(
               modifier = Modifier.fillMaxWidth(),
@@ -607,15 +616,20 @@ internal fun ChannelItem(
                     modifier = Modifier.weight(1f))
 
                 if (unreadCount > 0) {
-                  Surface(shape = CircleShape, color = MainColor, modifier = Modifier.size(20.dp)) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                      Text(
-                          text = if (unreadCount > 99) "99+" else unreadCount.toString(),
-                          style = MaterialTheme.typography.labelSmall,
-                          color = White)
-                    }
-                  }
-                  Spacer(modifier = Modifier.width(8.dp))
+                  Surface(
+                      shape = CircleShape,
+                      color = MainColor,
+                      modifier = Modifier.size(Dimens.IconSizeDefault)) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()) {
+                              Text(
+                                  text = if (unreadCount > 99) "99+" else unreadCount.toString(),
+                                  style = MaterialTheme.typography.labelSmall,
+                                  color = White)
+                            }
+                      }
+                  Spacer(modifier = Modifier.width(Dimens.PaddingSmall))
                 }
               }
         }

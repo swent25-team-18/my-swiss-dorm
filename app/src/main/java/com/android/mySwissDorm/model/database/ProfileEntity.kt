@@ -35,6 +35,8 @@ import com.android.mySwissDorm.model.rental.RoomType
  * @property preferredRoomTypes List of preferred room types (stored as comma-separated enum names).
  * @property bookmarkedListingIds List of bookmarked listing IDs (stored using TypeConverter).
  * @property blockedUserIds List of blocked user IDs (stored using TypeConverter).
+ * @property blockedUserNames Map of blocked user IDs to their display names (stored using
+ *   TypeConverter, local-only, not synced to remote).
  * @property language User's preferred language (stored as enum name string).
  * @property isPublic Whether the user's profile is public.
  * @property isPushNotified Whether the user has push notifications enabled.
@@ -60,6 +62,7 @@ data class ProfileEntity(
     val preferredRoomTypes: String, // Comma-separated enum names (e.g., "STUDIO,APARTMENT")
     val bookmarkedListingIds: List<String> = emptyList(),
     val blockedUserIds: List<String> = emptyList(),
+    val blockedUserNames: Map<String, String> = emptyMap(), // Local-only: uid -> displayName
     // UserSettings fields
     val language: String, // Enum name (e.g., "ENGLISH", "FRENCH")
     val isPublic: Boolean = false,

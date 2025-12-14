@@ -262,14 +262,53 @@ class ProfileRepositoryHybrid(
    * Adds a user to the blocked list in both local and remote repositories.
    *
    * Adds to local first (offline-first), then to remote if online. If remote operation fails, the
-   * local change is preserved.
+   * local change is preserved. Fetches the target user's display name when online to store locally
+   * for offline access.
    *
    * @param ownerId The identifier of the profile.
    * @param targetUid The identifier of the user to block.
    */
   override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
-    localRepo.addBlockedUser(ownerId, targetUid)
+    // Try to fetch the target user's display name if online
+    var targetDisplayName: String? = null
+    if (NetworkUtils.isNetworkAvailable(context)) {
+      try {
+        val targetProfile = remoteRepo.getProfile(targetUid)
+        // Construct display name from name and lastName
+        targetDisplayName =
+            "${targetProfile.userInfo.name} ${targetProfile.userInfo.lastName}".trim()
+      } catch (e: Exception) {
+        Log.w(
+            TAG, "Failed to fetch target user's profile for display name, continuing without it", e)
+      }
+    }
 
+    // Ensure local profile exists before adding blocked user
+    try {
+      localRepo.getProfile(ownerId)
+    } catch (e: NoSuchElementException) {
+      // Profile doesn't exist locally - fetch from remote if online
+      if (NetworkUtils.isNetworkAvailable(context)) {
+        try {
+          val remoteProfile = remoteRepo.getProfile(ownerId)
+          localRepo.createProfile(remoteProfile)
+        } catch (e2: Exception) {
+          Log.w(TAG, "Failed to fetch and create local profile before adding blocked user", e2)
+          throw e // Re-throw original exception
+        }
+      } else {
+        throw e // Offline and no local profile, cannot proceed
+      }
+    }
+
+    // Add to local with the display name (if available)
+    if (targetDisplayName != null) {
+      localRepo.addBlockedUserWithName(ownerId, targetUid, targetDisplayName)
+    } else {
+      localRepo.addBlockedUser(ownerId, targetUid)
+    }
+
+    // Add to remote if online
     if (NetworkUtils.isNetworkAvailable(context)) {
       try {
         remoteRepo.addBlockedUser(ownerId, targetUid)

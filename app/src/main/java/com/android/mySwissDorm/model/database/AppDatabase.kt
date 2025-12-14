@@ -24,7 +24,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 @Database(
     entities = [ReviewEntity::class, RentalListingEntity::class, ProfileEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -151,6 +151,20 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
     /**
+     * Migration from version 4 to 5.
+     *
+     * Adds the `blockedUserNames` column to the `profiles` table. This column stores a map of
+     * blocked user IDs to their display names, used for offline access to blocked user names. The
+     * column is nullable and defaults to empty (no names stored initially).
+     */
+    private val MIGRATION_4_5 =
+        object : Migration(4, 5) {
+          override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL("ALTER TABLE profiles ADD COLUMN blockedUserNames TEXT")
+          }
+        }
+
+    /**
      * Gets the singleton instance of the database.
      *
      * This method uses double-checked locking to ensure thread-safe singleton creation. The
@@ -170,7 +184,7 @@ abstract class AppDatabase : RoomDatabase() {
             val instance =
                 Room.databaseBuilder(
                         context.applicationContext, AppDatabase::class.java, "app_database")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
             INSTANCE = instance
             instance

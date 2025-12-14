@@ -24,7 +24,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 @Database(
     entities = [ReviewEntity::class, RentalListingEntity::class, ProfileEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -106,15 +106,60 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
     /**
+     * Migration from version 3 to 4.
+     *
+     * Fixes schema hash mismatch. The profiles table created in migration 2→3 had a hash mismatch.
+     * This migration recreates the table, allowing Room to recalculate and store the correct schema
+     * hash based on the current ProfileEntity definition.
+     *
+     * WARNING: This will delete all existing profile data. This is acceptable for development, but
+     * consider data migration if users have important profile data.
+     */
+    private val MIGRATION_3_4 =
+        object : Migration(3, 4) {
+          override fun migrate(database: SupportSQLiteDatabase) {
+            // Drop the existing table
+            database.execSQL("DROP TABLE IF EXISTS profiles")
+            // Recreate it - Room will recalculate the schema hash after this migration
+            database.execSQL(
+                """
+                CREATE TABLE profiles (
+                    ownerId TEXT NOT NULL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    lastName TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    phoneNumber TEXT NOT NULL,
+                    universityName TEXT,
+                    location TEXT,
+                    residencyName TEXT,
+                    profilePicture TEXT,
+                    minPrice REAL,
+                    maxPrice REAL,
+                    minSize INTEGER,
+                    maxSize INTEGER,
+                    preferredRoomTypes TEXT NOT NULL,
+                    bookmarkedListingIds TEXT NOT NULL,
+                    blockedUserIds TEXT NOT NULL,
+                    language TEXT NOT NULL,
+                    isPublic INTEGER NOT NULL,
+                    isPushNotified INTEGER NOT NULL,
+                    darkMode INTEGER
+                )
+                """
+                    .trimIndent())
+          }
+        }
+
+    /**
      * Gets the singleton instance of the database.
      *
      * This method uses double-checked locking to ensure thread-safe singleton creation. The
      * database is created with the name "app_database" and uses the application context to prevent
      * memory leaks.
      *
-     * For first-time users: Room will create a new database at version 3, and no migration will
-     * run. For existing users: The appropriate migrations will run (1→2, 2→3) to add new columns
-     * and tables.
+     * For first-time users: Room will create a new database at version 4, and no migration will
+     * run. For existing users: The appropriate migrations will run (1→2, 2→3, 3→4) to add new
+     * columns and tables.
      *
      * @param context The application context.
      * @return The [AppDatabase] instance.
@@ -125,7 +170,7 @@ abstract class AppDatabase : RoomDatabase() {
             val instance =
                 Room.databaseBuilder(
                         context.applicationContext, AppDatabase::class.java, "app_database")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
             INSTANCE = instance
             instance

@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 data class SettingItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -199,27 +200,27 @@ class SettingsViewModel(
       user: com.google.firebase.auth.FirebaseUser,
       context: Context
   ): Pair<Boolean, String?> {
-    val result = runCatching { user.delete() }
-    return result.fold(
-        onSuccess = {
-          // After successful deletion, sign out to clear cached auth state
-          // This ensures that when the app restarts, NavigationViewModel will correctly
-          // detect that the user is not logged in
-          try {
-            auth.signOut()
-          } catch (e: Exception) {
-            Log.e("SettingsViewModel", "Error signing out after account deletion", e)
-            // Don't fail the deletion if signOut fails - the account is already deleted
-          }
-          Pair(true, null)
-        },
-        onFailure = { e ->
-          if (e is FirebaseAuthRecentLoginRequiredException) {
-            Pair(false, context.getString(R.string.settings_re_authenticate_to_delete))
-          } else {
-            Pair(false, e.message)
-          }
-        })
+    return runCatching { user.delete().await() }
+        .fold(
+            onSuccess = {
+              // After successful deletion, sign out to clear cached auth state
+              // This ensures that when the app restarts, NavigationViewModel will correctly
+              // detect that the user is not logged in
+              try {
+                auth.signOut()
+              } catch (e: Exception) {
+                Log.e("SettingsViewModel", "Error signing out after account deletion", e)
+                // Don't fail the deletion if signOut fails - the account is already deleted
+              }
+              Pair(true, null)
+            },
+            onFailure = { e ->
+              if (e is FirebaseAuthRecentLoginRequiredException) {
+                Pair(false, context.getString(R.string.settings_re_authenticate_to_delete))
+              } else {
+                Pair(false, e.message)
+              }
+            })
   }
 
   /** Add a user to the current user's blocked list in Firestore. */

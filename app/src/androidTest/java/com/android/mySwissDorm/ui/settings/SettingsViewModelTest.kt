@@ -472,12 +472,31 @@ class SettingsViewModelTest : FirestoreTest() {
     vm.deleteAccount({ ok, _ -> cbOk = ok }, context)
     awaitUntil { !vm.uiState.value.isDeleting && cbOk != null }
 
+    // Wait for reviews to be anonymized (anonymization happens asynchronously)
+    var remainingReviews = reviewsRepo.getAllReviewsByUser(uid)
+    var attempts = 0
+    while (attempts < 50) {
+      remainingReviews = reviewsRepo.getAllReviewsByUser(uid)
+      val review1Anonymized =
+          remainingReviews.any {
+            it.uid == review1.uid && it.isAnonymous && it.ownerName == "[Deleted user]"
+          }
+      val review2Anonymized =
+          remainingReviews.any {
+            it.uid == review2.uid && it.isAnonymous && it.ownerName == "[Deleted user]"
+          }
+      if (review1Anonymized && review2Anonymized) {
+        break
+      }
+      delay(100)
+      attempts++
+    }
+
     // Verify listings are deleted
     val remainingListings = rentalRepo.getAllRentalListingsByUser(uid)
     assertEquals("All listings should be deleted", 0, remainingListings.size)
 
     // Verify reviews are anonymized
-    val remainingReviews = reviewsRepo.getAllReviewsByUser(uid)
     assertEquals("Reviews should still exist", 2, remainingReviews.size)
     assertTrue(
         "Review 1 should be anonymized",
@@ -810,12 +829,15 @@ class SettingsViewModelTest : FirestoreTest() {
             ownerId = uid)
     db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
 
-    // Create a mock auth that throws non-recent-login exception
+    // Create a mock auth that throws non-recent-login exception when delete() is awaited
     val mockAuth = mock<FirebaseAuth>()
     val mockUser = mock<FirebaseUser>()
     whenever(mockAuth.currentUser).thenReturn(mockUser)
     whenever(mockUser.uid).thenReturn(uid)
-    whenever(mockUser.delete()).thenReturn(Tasks.forException(Exception("Other error")))
+
+    // Create a Task that will fail when awaited
+    val failingTask = Tasks.forException<Void>(Exception("Other error"))
+    whenever(mockUser.delete()).thenReturn(failingTask)
 
     val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
     val vm =
@@ -835,9 +857,13 @@ class SettingsViewModelTest : FirestoreTest() {
         context)
     awaitUntil { !vm.uiState.value.isDeleting && cbOk != null }
 
-    // Should return false with error message
+    // Should return false with error message since user.delete() throws an exception
     assertEquals(false, cbOk)
     assertNotNull("Error message should be set", cbMsg)
+
+    // Profile should still be deleted even if user.delete() fails
+    val snap = db.collection(PROFILE_COLLECTION_PATH).document(uid).get().await()
+    assertEquals("Profile should be deleted", false, snap.exists())
   }
 
   @Test

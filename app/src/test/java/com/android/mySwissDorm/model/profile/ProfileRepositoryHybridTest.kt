@@ -578,6 +578,46 @@ class ProfileRepositoryHybridTest {
   }
 
   @Test
+  fun getBlockedUserNames_currentUser_returnsStoredNames() = runTest {
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    localRepository.createProfile(profile)
+
+    // Store a name for blocked user
+    localRepository.addBlockedUserWithName("user-1", "user-3", "Jane Smith")
+
+    val names = hybridRepository.getBlockedUserNames("user-1")
+    assertEquals("Jane Smith", names["user-3"])
+    assertEquals(1, names.size)
+  }
+
+  @Test
+  fun getBlockedUserNames_currentUser_returnsEmptyWhenNoNamesStored() = runTest {
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2", "user-3"))
+    localRepository.createProfile(profile)
+
+    val names = hybridRepository.getBlockedUserNames("user-1")
+    assertTrue(names.isEmpty())
+  }
+
+  @Test
+  fun getBlockedUserNames_otherUser_returnsEmpty() = runTest {
+    // Try to get blocked user names for user-2 (not current user)
+    val names = hybridRepository.getBlockedUserNames("user-2")
+
+    // Should return empty map (names are only stored for current user)
+    assertTrue(names.isEmpty())
+  }
+
+  @Test
+  fun getBlockedUserNames_currentUser_handlesProfileNotFound() = runTest {
+    // Profile doesn't exist
+    val names = hybridRepository.getBlockedUserNames("user-1")
+
+    // Should return empty map (gracefully handles missing profile)
+    assertTrue(names.isEmpty())
+  }
+
+  @Test
   fun getBookmarkedListingIds_otherUser_online_fetchesFromRemote() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true

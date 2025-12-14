@@ -12,11 +12,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
@@ -24,33 +22,25 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
-import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -80,29 +70,25 @@ import com.android.mySwissDorm.ui.theme.rememberDarkModePreference
  * - Input sanitization and validation
  * - Loading states and error handling
  *
- * @param onProfileClick Callback invoked when the profile button is clicked to navigate to profile
  *   screen.
+ *
  * @param navigationActions Optional [NavigationActions] for bottom bar navigation. If null, bottom
  *   bar is hidden.
  * @param vm The [SettingsViewModel] that manages the settings state and user data. Defaults to a
  *   new instance created via [viewModel].
  * @param isAdmin Whether the current user has admin access. If true, displays Admin section.
  * @param onAdminClick Callback invoked when the admin page button is clicked.
- * @param onContributionClick Callback invoked when the contributions button is clicked.
- * @param onViewBookmarks Callback invoked when the bookmarks button is clicked.
  * @see SettingsViewModel for state management and user data handling
  * @see SettingsScreenContent for the actual UI implementation
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onProfileClick: () -> Unit = {},
+    onBack: () -> Unit = {},
     navigationActions: NavigationActions? = null,
     vm: SettingsViewModel = viewModel(),
     isAdmin: Boolean = false,
     onAdminClick: () -> Unit = {},
-    onContributionClick: () -> Unit = {},
-    onViewBookmarks: () -> Unit = {}
 ) {
   val ui by vm.uiState.collectAsState()
   vm.setIsGuest()
@@ -118,7 +104,7 @@ fun SettingsScreen(
 
   SettingsScreenContent(
       ui = ui,
-      onProfileClick = onProfileClick,
+      onBack = onBack,
       onDeleteAccount = {
         vm.deleteAccount(
             { success, _ ->
@@ -128,8 +114,6 @@ fun SettingsScreen(
             },
             context)
       },
-      onContributionClick = onContributionClick,
-      onViewBookmarks = onViewBookmarks,
       onUnblockUser = { uid -> vm.unblockUser(uid, context) },
       navigationActions = navigationActions,
       isAdmin = isAdmin,
@@ -152,10 +136,7 @@ private val previewUiState =
  * manages local UI state (toggles, expanded states).
  *
  * @param ui The [SettingsUiState] containing user data and blocked contacts.
- * @param onProfileClick Callback invoked when the profile button is clicked.
  * @param onDeleteAccount Callback invoked when the delete account button is confirmed.
- * @param onContributionClick Callback invoked when the contributions button is clicked.
- * @param onViewBookmarks Callback invoked when the bookmarks button is clicked.
  * @param onUnblockUser Callback invoked when a blocked user is unblocked.
  * @param navigationActions Optional [NavigationActions] for bottom bar navigation.
  * @param isAdmin Whether to display the Admin section.
@@ -165,10 +146,8 @@ private val previewUiState =
 @Composable
 fun SettingsScreenContent(
     ui: SettingsUiState,
-    onProfileClick: () -> Unit = {},
+    onBack: () -> Unit = {},
     onDeleteAccount: () -> Unit = {},
-    onContributionClick: () -> Unit = {},
-    onViewBookmarks: () -> Unit = {},
     onUnblockUser: (String) -> Unit = {},
     navigationActions: NavigationActions? = null,
     isAdmin: Boolean = false,
@@ -178,7 +157,6 @@ fun SettingsScreenContent(
   var notificationsMessages by remember { mutableStateOf(true) }
   var notificationsListings by remember { mutableStateOf(false) }
   var readReceipts by remember { mutableStateOf(true) }
-  var anonymous by remember { mutableStateOf(false) }
 
   // Dark mode preference - connected to theme
   val (darkModePreference, setDarkModePreference) = rememberDarkModePreference()
@@ -186,10 +164,7 @@ fun SettingsScreenContent(
 
   var blockedExpanded by remember { mutableStateOf(false) }
   val blockedContacts = ui.blockedContacts
-  val focusManager = LocalFocusManager.current
   var showDeleteConfirm by remember { mutableStateOf(false) }
-
-  val context = LocalContext.current
 
   Scaffold(
       containerColor = BackGroundColor,
@@ -199,12 +174,16 @@ fun SettingsScreenContent(
             title = { Text(stringResource(R.string.settings_title)) },
             colors =
                 TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = BackGroundColor, titleContentColor = TextColor))
-      },
-      bottomBar = {
-        if (navigationActions != null) {
-          BottomBarFromNav(navigationActions)
-        }
+                    containerColor = BackGroundColor, titleContentColor = TextColor),
+            navigationIcon = {
+              IconButton(
+                  onClick = onBack, modifier = Modifier.testTag(C.SettingsTags.BACK_BUTTON)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Go back",
+                        tint = MainColor)
+                  }
+            })
       }) { paddingValues ->
         BoxWithConstraints(
             modifier = Modifier.fillMaxSize().padding(paddingValues).background(BackGroundColor)) {
@@ -232,68 +211,6 @@ fun SettingsScreenContent(
                     item {
                       Column(modifier = Modifier.fillMaxWidth().widthIn(max = contentWidthCap)) {
 
-                        // ---- Profile card ----------------------------------------------------
-                        CardBlock {
-                          Row(
-                              modifier = Modifier.fillMaxWidth(),
-                              verticalAlignment = Alignment.CenterVertically,
-                              horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                val avatarSize = if (isTablet) 64.dp else 56.dp
-                                val initial =
-                                    (ui.userName.firstOrNull()?.uppercaseChar() ?: 'A').toString()
-
-                                // Avatar background uses theme-aware color
-                                Box(
-                                    modifier =
-                                        Modifier.size(avatarSize)
-                                            .clip(CircleShape)
-                                            .background(MainColor.copy(alpha = 0.16f)),
-                                    contentAlignment = Alignment.Center) {
-                                      if (ui.profilePicture != null) {
-                                        AsyncImage(
-                                            model = ui.profilePicture.image,
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier =
-                                                Modifier.testTag(
-                                                    C.SettingsTags.avatarTag(
-                                                        ui.profilePicture.image)))
-                                      } else {
-                                        Text(
-                                            text = initial,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MainColor,
-                                            modifier =
-                                                Modifier.testTag(C.SettingsTags.avatarTag(null)))
-                                      }
-                                    }
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                  Text(
-                                      ui.userName.ifBlank { stringResource(R.string.user) },
-                                      style = MaterialTheme.typography.titleMedium,
-                                      color = TextColor,
-                                      maxLines = 1,
-                                      overflow = TextOverflow.Ellipsis)
-                                  Text(
-                                      stringResource(R.string.settings_view_profile),
-                                      style = MaterialTheme.typography.bodySmall,
-                                      color = DarkGray,
-                                      maxLines = 1,
-                                      overflow = TextOverflow.Ellipsis)
-                                }
-
-                                IconButton(
-                                    onClick = onProfileClick,
-                                    modifier = Modifier.testTag(C.SettingsTags.PROFILE_BUTTON)) {
-                                      Icon(
-                                          imageVector = Icons.Filled.ChevronRight,
-                                          contentDescription = "Open profile",
-                                          tint = TextColor)
-                                    }
-                              }
-                        }
-
                         // ---- Notifications ---------------------------------------------------
                         SectionLabel(stringResource(R.string.notifications))
                         CardBlock {
@@ -306,53 +223,6 @@ fun SettingsScreenContent(
                               label = stringResource(R.string.settings_notifications_listings),
                               checked = if (ui.isGuest) false else notificationsListings,
                               onCheckedChange = { notificationsListings = it })
-                        }
-
-                        // ---- Account ---------------------------------------------------------
-                        SectionLabel(stringResource(R.string.account))
-                        CardBlock {
-                          OutlinedTextField(
-                              value = ui.email,
-                              onValueChange = {},
-                              label = { Text(stringResource(R.string.email_address)) },
-                              singleLine = true,
-                              readOnly = true,
-                              enabled = false,
-                              keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                              keyboardActions =
-                                  KeyboardActions(onDone = { focusManager.clearFocus() }),
-                              colors =
-                                  OutlinedTextFieldDefaults.colors(
-                                      disabledTextColor = TextColor.copy(alpha = 0.9f),
-                                      disabledBorderColor = TextBoxColor,
-                                      disabledLabelColor =
-                                          MaterialTheme.colorScheme.onSurfaceVariant,
-                                      disabledContainerColor = MaterialTheme.colorScheme.surface),
-                              modifier =
-                                  Modifier.fillMaxWidth().testTag(C.SettingsTags.EMAIL_FIELD))
-                          Spacer(Modifier.height(12.dp))
-                          Button(
-                              onClick = onContributionClick,
-                              modifier =
-                                  Modifier.fillMaxWidth()
-                                      .testTag(C.SettingsTags.CONTRIBUTIONS_BUTTON),
-                              shape = RoundedCornerShape(16.dp),
-                              colors =
-                                  ButtonDefaults.buttonColors(
-                                      containerColor = MainColor, contentColor = White)) {
-                                Text(stringResource(R.string.settings_view_contributions))
-                              }
-                          Spacer(Modifier.height(12.dp))
-                          Button(
-                              onClick = onViewBookmarks,
-                              modifier =
-                                  Modifier.fillMaxWidth().testTag(C.SettingsTags.BOOKMARKS_BUTTON),
-                              shape = RoundedCornerShape(16.dp),
-                              colors =
-                                  ButtonDefaults.buttonColors(
-                                      containerColor = MainColor, contentColor = White)) {
-                                Text(stringResource(R.string.profile_view_bookmarks))
-                              }
                         }
 
                         // ---- Privacy ---------------------------------------------------------

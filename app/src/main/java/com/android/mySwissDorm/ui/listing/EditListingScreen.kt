@@ -189,7 +189,7 @@ fun EditListingScreen(
                   accentColor = MainColor)
 
               HousingTypeDropdown(
-                  selected = ui.housingType,
+                  selected = ui.housingType.getName(context),
                   onSelected = { editListingViewModel.setHousingType(it) },
                   accentColor = MainColor)
 

@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -80,6 +81,7 @@ fun EditReviewScreen(
 ) {
   val editReviewUIState by editReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  val context = LocalContext.current
   var showDeleteConfirm by remember { mutableStateOf(false) }
   if (editReviewUIState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -178,7 +180,7 @@ fun EditReviewScreen(
                   modifier = Modifier.testTag("residencyDropdown").fillMaxWidth())
 
               HousingTypeDropdown(
-                  selected = ui.roomType,
+                  selected = ui.roomType.getName(context),
                   onSelected = { editReviewViewModel.setRoomType(it) },
                   accentColor = MainColor)
 

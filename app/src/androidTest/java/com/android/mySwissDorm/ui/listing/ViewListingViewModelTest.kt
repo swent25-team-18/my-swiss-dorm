@@ -226,6 +226,9 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     // Should return false for unauthenticated user
     assertFalse("Should return false for unauthenticated user", result)
+
+    // Advance coroutines to ensure any background operations complete
+    advanceUntilIdle()
   }
 
   @Test
@@ -252,6 +255,9 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     // Should return false for anonymous user
     assertFalse("Should return false for anonymous user", result)
+
+    // Advance coroutines to ensure any background operations complete
+    advanceUntilIdle()
   }
 
   @Test
@@ -329,6 +335,9 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     // Should return false for blank owner ID
     assertFalse("Should return false for blank owner ID", result)
+
+    // Advance coroutines to ensure any background operations complete
+    advanceUntilIdle()
   }
 
   @Test

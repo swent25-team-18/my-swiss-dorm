@@ -487,62 +487,9 @@ class AppNavHostTest : FirestoreTest() {
     }
   }
 
-  // Test 10: Settings route - anonymous user profile click (lines 197-206)
-  @Test
-  fun appNavHost_settingsRoute_anonymousUserProfileClick_showsToast() = runTest {
-    signInAnonymous()
+  // Test 10: Not needed anymore (profile not accessible from the settings anymore)
 
-    composeTestRule.runOnUiThread { navController.navigate(Screen.Settings.route) }
-    composeTestRule.waitForIdle()
-
-    // Wait for Settings screen to be visible by checking for a UI element
-    composeTestRule.waitUntil(timeoutMillis = 10_000) {
-      composeTestRule
-          .onAllNodes(
-              hasTestTag(com.android.mySwissDorm.resources.C.SettingsTags.PROFILE_BUTTON),
-              useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    } //
-    composeTestRule.waitForIdle()
-
-    // The toast will be shown when profile is clicked, but we can't easily test that
-    // We just verify navigation works
-    composeTestRule.runOnUiThread {
-      assertEquals(
-          "Should be on Settings route",
-          Screen.Settings.route,
-          navController.currentBackStackEntry?.destination?.route)
-    }
-  }
-
-  // Test 11: Settings route - anonymous user contribution click (lines 212-221)
-  @Test
-  fun appNavHost_settingsRoute_anonymousUserContributionClick_showsToast() = runTest {
-    signInAnonymous()
-
-    composeTestRule.runOnUiThread { navController.navigate(Screen.Settings.route) }
-    composeTestRule.waitForIdle()
-
-    // Wait for Settings screen to be visible by checking for a UI element
-    composeTestRule.waitUntil(timeoutMillis = 10_000) {
-      composeTestRule
-          .onAllNodes(
-              hasTestTag(com.android.mySwissDorm.resources.C.SettingsTags.CONTRIBUTIONS_BUTTON),
-              useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-    composeTestRule.waitForIdle()
-
-    // Navigation should work
-    composeTestRule.runOnUiThread {
-      assertEquals(
-          "Should be on Settings route",
-          Screen.Settings.route,
-          navController.currentBackStackEntry?.destination?.route)
-    }
-  }
+  // Test 11: Not needed anymore (contributions not accessible from the settings anymore)
 
   // Test 12: AddListing route (lines 228-239)
   @Test

@@ -1,9 +1,9 @@
 package com.android.mySwissDorm.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -29,7 +29,7 @@ fun BottomNavigationMenu(
           when (screen) {
             Screen.Homepage -> stringResource(screen.nameId) to Icons.Filled.Home
             Screen.Inbox -> stringResource(screen.nameId) to Icons.Filled.Chat
-            Screen.Settings -> stringResource(screen.nameId) to Icons.Filled.Settings
+            Screen.Profile -> stringResource(screen.nameId) to Icons.Filled.AccountBox
             else -> stringResource(screen.nameId) to Icons.Filled.Home
           }
       NavigationBarItem(
@@ -62,7 +62,7 @@ fun BottomBarFromNav(navigationActions: NavigationActions?) {
         route == Screen.Homepage.route || route?.startsWith("browseOverview/") == true ->
             Screen.Homepage
         route == Screen.Inbox.route -> Screen.Inbox
-        route == Screen.Settings.route -> Screen.Settings
+        route == Screen.Profile.route -> Screen.Profile
         else -> Screen.Homepage
       }
 

@@ -105,8 +105,8 @@ class Converters {
    * @return A string representation of the map, or null if the input was null or empty.
    */
   @TypeConverter
-  fun fromStringMap(value: Map<String, String>?): String? {
-    if (value.isNullOrEmpty()) return null
+  fun fromStringMap(value: Map<String, String>?): String {
+    if (value.isNullOrEmpty()) return ""
     return value.entries.joinToString("|") {
       "${java.net.URLEncoder.encode(it.key, "UTF-8")}:${java.net.URLEncoder.encode(it.value, "UTF-8")}"
     }
@@ -122,7 +122,7 @@ class Converters {
    * @return A map, or an empty map if the input was null, empty, or invalid.
    */
   @TypeConverter
-  fun toStringMap(value: String?): Map<String, String>? {
+  fun toStringMap(value: String?): Map<String, String> {
     return if (value.isNullOrEmpty()) {
       emptyMap()
     } else {

@@ -164,7 +164,7 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
    * @throws NoSuchElementException if the profile is not found or doesn't match the requested
    *   ownerId.
    */
-  suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+  override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
     val entity =
         profileDao.getUserProfile()
             ?: throw NoSuchElementException(

@@ -87,19 +87,35 @@ class SettingsViewModel(
       _ui.value =
           _ui.value.copy(userName = userName, email = user.email ?: "", profilePicture = photo)
 
-      // Load blocked user IDs from Firestore and map to display names
+      // Load blocked user IDs and get display names from local storage (works offline)
       val blockedContacts =
           runCatching {
-                profiles.getBlockedUserIds(user.uid).mapNotNull { blockedUid ->
-                  runCatching {
-                        val profile = profiles.getProfile(blockedUid)
-                        val displayName =
-                            "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
-                        if (displayName.isNotBlank()) {
-                          BlockedContact(uid = blockedUid, displayName = displayName)
-                        } else null
-                      }
-                      .getOrNull()
+                val blockedUserIds = profiles.getBlockedUserIds(user.uid)
+                val storedNames = profiles.getBlockedUserNames(user.uid)
+
+                blockedUserIds.mapNotNull { blockedUid ->
+                  // Try to get stored name first (works offline)
+                  val storedName = storedNames[blockedUid]
+
+                  if (storedName != null && storedName.isNotBlank()) {
+                    // Use stored name (available offline)
+                    BlockedContact(uid = blockedUid, displayName = storedName)
+                  } else {
+                    // No stored name - try to fetch from remote if online
+                    // (This will also store the name for future offline access)
+                    runCatching {
+                          val profile = profiles.getProfile(blockedUid)
+                          val displayName =
+                              "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                          if (displayName.isNotBlank()) {
+                            BlockedContact(uid = blockedUid, displayName = displayName)
+                          } else {
+                            // Fallback: use UID if no name available
+                            BlockedContact(uid = blockedUid, displayName = blockedUid)
+                          }
+                        }
+                        .getOrNull()
+                  }
                 }
               }
               .getOrElse { emptyList() }

@@ -259,6 +259,30 @@ class ProfileRepositoryHybrid(
   }
 
   /**
+   * Returns a map of blocked user IDs to their display names (local-only data).
+   *
+   * This method returns locally stored display names for blocked users. For the current user,
+   * returns names from local storage. For other users, returns empty map (names are only stored for
+   * the current user's blocked list).
+   *
+   * @param ownerId The identifier of the profile.
+   * @return A map of blocked user IDs to their display names (may be empty if names weren't
+   *   stored).
+   */
+  override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+    // Only current user has names stored locally
+    if (!isCurrentUserProfile(ownerId)) {
+      return emptyMap()
+    }
+
+    return try {
+      localRepo.getBlockedUserNames(ownerId)
+    } catch (e: Exception) {
+      emptyMap() // Return empty if profile doesn't exist or other error
+    }
+  }
+
+  /**
    * Adds a user to the blocked list in both local and remote repositories.
    *
    * Adds to local first (offline-first), then to remote if online. If remote operation fails, the

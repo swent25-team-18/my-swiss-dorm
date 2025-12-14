@@ -1139,6 +1139,9 @@ class SettingsViewModelTest : FirestoreTest() {
 
           override suspend fun getBlockedUserIds(ownerId: String): List<String> = emptyList()
 
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> =
+              emptyMap()
+
           override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
             throw Exception("Failed to block user")
           }
@@ -1228,6 +1231,9 @@ class SettingsViewModelTest : FirestoreTest() {
           }
 
           override suspend fun getBlockedUserIds(ownerId: String): List<String> = emptyList()
+
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> =
+              emptyMap()
 
           override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
             throw UnsupportedOperationException()
@@ -1341,6 +1347,9 @@ class SettingsViewModelTest : FirestoreTest() {
           override suspend fun getBlockedUserIds(ownerId: String): List<String> {
             throw Exception("Error fetching blocked users")
           }
+
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> =
+              emptyMap()
 
           override suspend fun addBlockedUser(ownerId: String, targetUid: String) {}
 

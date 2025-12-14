@@ -255,7 +255,6 @@ fun AppNavHost(
             val adminRepo = remember { AdminRepository() }
             var isAdmin by remember { mutableStateOf(false) }
             val currentUser = FirebaseAuth.getInstance().currentUser
-            val userAnonymous = currentUser != null && currentUser.isAnonymous
 
             LaunchedEffect(Unit) {
               isAdmin =
@@ -271,34 +270,10 @@ fun AppNavHost(
                   }
             }
             SettingsScreen(
-                onProfileClick = {
-                  if (userAnonymous) {
-                    Toast.makeText(
-                            context,
-                            context.getString(R.string.app_nav_host_sign_in_to_create_profile),
-                            Toast.LENGTH_SHORT)
-                        .show()
-                    navActions.navigateTo(Screen.Profile)
-                  } else {
-                    navActions.navigateTo(Screen.Profile)
-                  }
-                },
+                onBack = { navActions.goBack() },
                 navigationActions = navActions,
                 onAdminClick = { navActions.navigateTo(Screen.Admin) },
-                isAdmin = isAdmin,
-                onContributionClick = {
-                  if (userAnonymous) {
-                    Toast.makeText(
-                            context,
-                            context.getString(R.string.app_nav_host_sign_in_to_see_contributions),
-                            Toast.LENGTH_SHORT)
-                        .show()
-                    navActions.navigateTo(Screen.ProfileContributions)
-                  } else {
-                    navActions.navigateTo(Screen.ProfileContributions)
-                  }
-                },
-                onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
+                isAdmin = isAdmin)
           }
 
           // --- Secondary destinations ---
@@ -679,8 +654,9 @@ fun AppNavHost(
                   onBack = { navActions.goBack() },
                   title = stringResource(R.string.app_nav_host_profile))
             } else {
+              val userAnonymous = currentUser != null && currentUser.isAnonymous
               ProfileScreen(
-                  onBack = { navActions.goBack() },
+                  onSettingsClicked = { navActions.navigateTo(Screen.Settings) },
                   onLogout = {
                     coroutineScope.launch {
                       try {
@@ -693,7 +669,21 @@ fun AppNavHost(
                     }
                   },
                   onLanguageChange = { activity?.updateLanguage(it) },
-                  onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
+                  onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) },
+                  onContributionClick = {
+                    if (userAnonymous) {
+                      Toast.makeText(
+                              context,
+                              context.getString(R.string.app_nav_host_sign_in_to_see_contributions),
+                              Toast.LENGTH_SHORT)
+                          .show()
+                      navActions.navigateTo(Screen.ProfileContributions)
+                    } else {
+                      navActions.navigateTo(Screen.ProfileContributions)
+                    }
+                  },
+                  onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) },
+                  navigationActions = navActions)
             }
           }
           composable(Screen.Admin.route) {

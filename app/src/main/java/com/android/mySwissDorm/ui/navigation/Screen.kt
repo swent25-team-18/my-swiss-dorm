@@ -24,7 +24,7 @@ sealed class Screen(
 
   data object Inbox : Screen("inbox", R.string.screen_inbox, isTopLevelDestination = true)
 
-  data object Settings : Screen("settings", R.string.screen_settings, isTopLevelDestination = true)
+  data object Settings : Screen("settings", R.string.screen_settings)
 
   // Secondary (non-bottom-bar) destinations
   data object AddListing : Screen("addListing", R.string.screen_add_listing)
@@ -109,7 +109,8 @@ sealed class Screen(
     }
   }
 
-  data object Profile : Screen(route = "profile", nameId = R.string.screen_profile)
+  data object Profile :
+      Screen(route = "profile", nameId = R.string.screen_profile, isTopLevelDestination = true)
 
   data class ChatChannel(val channelId: String) :
       Screen(route = "chatChannel/${channelId}", nameId = R.string.screen_chat) {
@@ -130,7 +131,7 @@ sealed class Screen(
   companion object {
     // Compute on access so objects are definitely initialized
     val topLevel: List<Screen>
-      get() = listOf(Homepage, Inbox, Settings)
+      get() = listOf(Homepage, Inbox, Profile)
     // (Alternatively: val topLevel by lazy { listOf(ReviewOverview, ListingOverview, Inbox,
     // Settings) })
   }

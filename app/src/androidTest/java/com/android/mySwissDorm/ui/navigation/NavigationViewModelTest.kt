@@ -261,6 +261,10 @@ class NavigationViewModelTest : FirestoreTest() {
                 throw UnsupportedOperationException()
               }
 
+              override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+                throw UnsupportedOperationException()
+              }
+
               override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
                 throw UnsupportedOperationException()
               }

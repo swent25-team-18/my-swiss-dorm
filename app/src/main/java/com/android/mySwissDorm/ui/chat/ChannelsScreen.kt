@@ -49,8 +49,10 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.Transparent
 import com.android.mySwissDorm.ui.theme.White
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.storage.storage
 import io.getstream.chat.android.client.api.models.QueryChannelsRequest
 import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.Filters
@@ -60,6 +62,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
@@ -80,11 +83,25 @@ suspend fun defaultFetchChannelsForTest(
 }
 
 suspend fun defaultEnsureConnected(currentUser: FirebaseUser) {
-  val displayName = currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
+  val profile = ProfileRepositoryProvider.repository.getProfile(currentUser.uid)
+  val displayName =
+      "${profile.userInfo.name} ${profile.userInfo.lastName}".trim().ifBlank {
+        currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
+      }
+  val imageUrl =
+      profile.userInfo.profilePicture
+          ?.takeIf { it.isNotBlank() }
+          ?.let { runCatching { getFirebasePhotoDownloadUrl(it) }.getOrNull().orEmpty() }
+          .orEmpty()
   withTimeout(10000) {
     StreamChatProvider.connectUser(
-        firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = "")
+        firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = imageUrl)
   }
+}
+
+/** Local helper to build a Firebase Storage download URL for Stream user image. */
+private suspend fun getFirebasePhotoDownloadUrl(fileName: String): String {
+  return Firebase.storage.reference.child("photos/$fileName").downloadUrl.await().toString()
 }
 
 suspend fun loadChannelsDefault(
@@ -188,7 +205,6 @@ fun ChannelsScreen(
   var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
   var isLoading by remember { mutableStateOf(true) }
   val coroutineScope = rememberCoroutineScope()
-  var isLoadInProgress by remember { mutableStateOf(false) }
   // Cache of resolved names (from ProfileRepository) to make search match what the UI shows.
   val resolvedNameCache = remember { mutableStateMapOf<String, String>() }
 
@@ -302,25 +318,12 @@ fun ChannelsScreen(
       val query = searchQuery.trim()
       if (query.isBlank()) return@derivedStateOf channels
 
-      val q = query.lowercase()
       channels.filter { channel ->
-        val otherMember = channel.members.find { it.user.id != currentUser.uid }
-        val streamName = otherMember?.user?.name.orEmpty()
-        val otherId = otherUserIdFromChannel(channel, currentUser.uid)
-        val resolvedName = otherId?.let { resolvedNameCache[it] }.orEmpty()
-        val lastMessageText = channel.messages.lastOrNull()?.text.orEmpty()
-
-        val haystack =
-            buildString {
-                  append(streamName).append(' ')
-                  append(resolvedName).append(' ')
-                  append(lastMessageText).append(' ')
-                  append(channel.name.orEmpty()).append(' ')
-                  append(channel.cid)
-                }
-                .lowercase()
-
-        haystack.contains(q)
+        channelMatchesSearchQuery(
+            channel = channel,
+            currentUserId = currentUser.uid,
+            resolvedNameCache = resolvedNameCache,
+            query = query)
       }
     }
   }
@@ -505,8 +508,6 @@ internal fun ChannelItem(
   // Fallback: If name is missing/unknown, try to fetch from ProfileRepository
   var displayedName by remember { mutableStateOf(initialOtherUserName) }
   var displayedImage by remember { mutableStateOf<Any?>(otherUserImage) }
-  val context = LocalContext.current
-  val unknownUserString = stringResource(R.string.channels_screen_unknown_user)
 
   LaunchedEffect(targetUserId) {
     if (targetUserId != null) {
@@ -516,17 +517,12 @@ internal fun ChannelItem(
               ProfileRepositoryProvider.repository.getProfile(targetUserId)
             }
 
-        // Update name if needed
-        val isNameInvalid =
-            displayedName.isBlank() ||
-                displayedName == "Unknown User" ||
-                displayedName == unknownUserString
-
-        if (isNameInvalid) {
-          val fullName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
-          if (fullName.isNotBlank()) {
-            displayedName = fullName
-          }
+        // Prefer showing the profile full name when available.
+        // This keeps the UI consistent with the rest of the app (and with the search behavior),
+        // even if Stream provides a non-empty member.user.name.
+        val fullName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+        if (fullName.isNotBlank() && fullName != displayedName) {
+          displayedName = fullName
         }
 
         // Update image
@@ -695,6 +691,39 @@ internal fun formatMessageTime(timestamp: Date, context: Context): String {
     days < 7 -> context.getString(R.string.channels_screen_days_ago, days)
     else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(timestamp)
   }
+}
+
+/**
+ * Returns true if [channel] should be included for a given [query].
+ *
+ * Extracted into a pure function so it can be covered by fast JVM unit tests (CI-friendly).
+ */
+internal fun channelMatchesSearchQuery(
+    channel: Channel,
+    currentUserId: String,
+    resolvedNameCache: Map<String, String>,
+    query: String,
+): Boolean {
+  val trimmed = query.trim()
+  if (trimmed.isBlank()) return true
+
+  val otherMember = channel.members.find { it.user.id != currentUserId }
+  val streamName = otherMember?.user?.name.orEmpty()
+  val otherId = otherUserIdFromChannel(channel, currentUserId)
+  val resolvedName = otherId?.let { resolvedNameCache[it] }.orEmpty()
+  val lastMessageText = channel.messages.lastOrNull()?.text.orEmpty()
+
+  val haystack =
+      buildString {
+            append(streamName).append(' ')
+            append(resolvedName).append(' ')
+            append(lastMessageText).append(' ')
+            append(channel.name.orEmpty()).append(' ')
+            append(channel.cid)
+          }
+          .lowercase()
+
+  return haystack.contains(trimmed.lowercase())
 }
 
 /** Returns the "other" user id for a 1:1 channel, when possible. */

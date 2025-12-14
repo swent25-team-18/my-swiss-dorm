@@ -86,3 +86,15 @@ class PhotoRepositoryStorage(
     return dirRef.child(uid)
   }
 }
+
+/**
+ * Returns a Firebase Storage download URL for a stored photo filename (in `photos/`).
+ *
+ * Kept here (photo layer) so UI can reuse it when a URL is required (e.g., Stream Chat user image).
+ */
+suspend fun getPhotoDownloadUrl(
+    fileName: String,
+    storageRef: StorageReference = Firebase.storage.reference,
+): String {
+  return storageRef.child("$DIR/$fileName").downloadUrl.await().toString()
+}

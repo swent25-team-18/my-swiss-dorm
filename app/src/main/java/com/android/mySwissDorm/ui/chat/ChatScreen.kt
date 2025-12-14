@@ -12,27 +12,34 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.photo.getPhotoDownloadUrl
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.ui.theme.ThemePreferenceState
@@ -40,10 +47,34 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.compose.ui.messages.MessagesScreen
+import io.getstream.chat.android.compose.ui.messages.header.MessageListHeader
 import io.getstream.chat.android.compose.ui.theme.ChatTheme
 import io.getstream.chat.android.compose.viewmodel.messages.MessagesViewModelFactory
+import io.getstream.chat.android.models.Channel
+import io.getstream.chat.android.models.ConnectionState
 import io.getstream.chat.android.models.User
 import kotlinx.coroutines.delay
+
+/** Calculates the soft input mode that should be restored when leaving ChatScreen. */
+internal fun computeRestoreSoftInputMode(originalSoftInputMode: Int): Int {
+  val originalStateBits = originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_STATE
+  val originalAdjustBits =
+      originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_ADJUST
+  val restoreAdjustBits =
+      if (originalAdjustBits == WindowManager.LayoutParams.SOFT_INPUT_ADJUST_UNSPECIFIED) {
+        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
+      } else {
+        originalAdjustBits
+      }
+  return originalStateBits or restoreAdjustBits
+}
+
+/** Calculates the soft input mode to apply while ChatScreen is visible (RESUMED). */
+@Suppress("DEPRECATION")
+internal fun computeResizeSoftInputMode(originalSoftInputMode: Int): Int {
+  val originalStateBits = originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_STATE
+  return originalStateBits or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+}
 
 /**
  * Chat screen displaying the full messaging interface for a specific channel.
@@ -118,7 +149,11 @@ fun MyChatScreen(
     },
     messagesScreen: @Composable (MessagesViewModelFactory, () -> Unit) -> Unit =
         { viewModelFactory, onBack ->
-          MessagesScreen(viewModelFactory = viewModelFactory, onBackPressed = onBack)
+          MessagesScreenWithAppAvatarHeader(
+              viewModelFactory = viewModelFactory,
+              channelCid = channelId,
+              firebaseCurrentUserId = currentUserProvider()?.uid,
+              onBackPressed = onBack)
         },
     viewModelFactoryProvider: (Context, ChatClient, String, Int) -> MessagesViewModelFactory =
         { ctx, chatClient, cid, limit ->
@@ -149,22 +184,12 @@ fun MyChatScreen(
       val activity = context.findActivity()
       val window = activity?.window
       val originalSoftInputMode = window?.attributes?.softInputMode ?: 0
-      val originalStateBits =
-          originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_STATE
-      val originalAdjustBits =
-          originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_ADJUST
-      val restoreAdjustBits =
-          if (originalAdjustBits == WindowManager.LayoutParams.SOFT_INPUT_ADJUST_UNSPECIFIED) {
-            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
-          } else {
-            originalAdjustBits
-          }
-      val restoreSoftInputMode = originalStateBits or restoreAdjustBits
+      val restoreSoftInputMode = computeRestoreSoftInputMode(originalSoftInputMode)
+      val resizeSoftInputMode = computeResizeSoftInputMode(originalSoftInputMode)
 
       fun applyResize() {
         if (window != null) {
-          window.setSoftInputMode(
-              originalStateBits or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+          window.setSoftInputMode(resizeSoftInputMode)
         }
       }
 
@@ -269,7 +294,129 @@ internal suspend fun connectUserById(
     }
 ) {
   val profile = repository.getProfile(firebaseUserId)
-  connector(firebaseUserId, "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(), "")
+  // Accessing properties on a mock can throw in unit tests; keep this safe.
+  val profilePictureFileName = runCatching { profile.userInfo.profilePicture }.getOrNull()
+  val imageUrl =
+      profilePictureFileName
+          ?.takeIf { it.isNotBlank() }
+          ?.let { runCatching { getPhotoDownloadUrl(it) }.getOrNull().orEmpty() }
+          .orEmpty()
+  connector(
+      firebaseUserId,
+      "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
+      imageUrl,
+  )
+}
+
+@Composable
+private fun MessagesScreenWithAppAvatarHeader(
+    viewModelFactory: MessagesViewModelFactory,
+    channelCid: String,
+    firebaseCurrentUserId: String?,
+    onBackPressed: () -> Unit,
+) {
+  val streamClient = StreamChatProvider.getClient()
+  val streamCurrentUser by streamClient.clientState.user.collectAsState(initial = null)
+  val connectionState by
+      streamClient.clientState.connectionState.collectAsState(initial = ConnectionState.Connected)
+
+  var channel by remember(channelCid) { mutableStateOf<Channel?>(null) }
+
+  LaunchedEffect(channelCid) {
+    val parts = channelCid.split(":", limit = 2)
+    val type = parts.getOrNull(0).orEmpty()
+    val id = parts.getOrNull(1).orEmpty()
+    if (type.isBlank() || id.isBlank()) return@LaunchedEffect
+    channel =
+        runCatching { StreamChatProvider.getClient().channel(type, id).watch().await().getOrNull() }
+            .getOrNull()
+  }
+
+  Column(modifier = Modifier.fillMaxSize()) {
+    val ch = channel
+    if (ch != null) {
+      MessageListHeader(
+          channel = ch,
+          currentUser = streamCurrentUser,
+          connectionState = connectionState,
+          onBackPressed = onBackPressed,
+          trailingContent = {
+            AppProfileAvatarTrailingContent(
+                channel = ch,
+                currentUserId = firebaseCurrentUserId ?: streamCurrentUser?.id,
+            )
+          },
+      )
+    }
+
+    MessagesScreen(
+        viewModelFactory = viewModelFactory,
+        onBackPressed = onBackPressed,
+        showHeader = false,
+    )
+  }
+}
+
+@Composable
+internal fun AppProfileAvatarTrailingContent(
+    channel: Channel,
+    currentUserId: String?,
+    avatarModelLoader: suspend (String) -> Any? = { userId -> loadAppProfileAvatarModel(userId) },
+) {
+  val otherMember = channel.members.firstOrNull { it.user.id != currentUserId }
+  val otherId = otherMember?.user?.id
+
+  var avatarModel by remember(otherId) { mutableStateOf<Any?>(null) }
+
+  LaunchedEffect(otherId) {
+    if (otherId.isNullOrBlank()) return@LaunchedEffect
+    val model = runCatching { avatarModelLoader(otherId) }.getOrNull()
+    avatarModel = model
+  }
+
+  if (avatarModel != null) {
+    AsyncImage(
+        model = avatarModel,
+        contentDescription = "chat_header_avatar",
+        modifier = Modifier.size(36.dp).clip(CircleShape),
+    )
+  } else {
+    // Simple fallback: initials in a circle (same behavior as Stream when no image).
+    val initials = computeFallbackInitials(otherMember?.user?.name, otherMember?.user?.id)
+
+    Box(
+        modifier = Modifier.size(36.dp).clip(CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+      Text(initials)
+    }
+  }
+}
+
+internal fun computeFallbackInitials(name: String?, id: String?): String {
+  val fromName =
+      name
+          ?.trim()
+          ?.split(" ")
+          ?.filter { it.isNotBlank() }
+          ?.take(2)
+          ?.joinToString("") { it.first().uppercaseChar().toString() }
+          .orEmpty()
+  if (fromName.isNotBlank()) return fromName
+  return id?.take(2)?.uppercase().orEmpty().ifBlank { "?" }
+}
+
+internal suspend fun loadAppProfileAvatarModel(
+    userId: String,
+    profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
+    photoModelLoader: suspend (String) -> Any? = { fileName ->
+      PhotoRepositoryProvider.cloud_repository.retrievePhoto(fileName).image
+    },
+): Any? {
+  val profile = profileRepository.getProfile(userId)
+  val fileName = profile.userInfo.profilePicture
+  if (fileName.isNullOrBlank()) return null
+  return runCatching { photoModelLoader(fileName) }.getOrNull()
 }
 
 /**

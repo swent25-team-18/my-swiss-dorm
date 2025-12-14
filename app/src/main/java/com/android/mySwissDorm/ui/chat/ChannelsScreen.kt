@@ -189,6 +189,8 @@ fun ChannelsScreen(
   var isLoading by remember { mutableStateOf(true) }
   val coroutineScope = rememberCoroutineScope()
   var isLoadInProgress by remember { mutableStateOf(false) }
+  // Cache of resolved names (from ProfileRepository) to make search match what the UI shows.
+  val resolvedNameCache = remember { mutableStateMapOf<String, String>() }
 
   // Provide injectable hooks (used by tests) with sensible defaults
   val effectiveIsStreamInitialized = isStreamInitialized ?: { StreamChatProvider.isInitialized() }
@@ -253,6 +255,33 @@ fun ChannelsScreen(
     loadChannels()
   }
 
+  // Resolve other-user full names once channels are loaded.
+  // Stream often doesn't populate member.user.name reliably, but ChannelItem fetches Profile names,
+  // so search must use the same source to "work".
+  LaunchedEffect(channels) {
+    val currentUid = currentUser.uid
+    val idsToResolve =
+        channels.mapNotNull { channel -> otherUserIdFromChannel(channel, currentUid) }.distinct()
+
+    idsToResolve.forEach { otherId ->
+      if (resolvedNameCache.containsKey(otherId)) return@forEach
+      coroutineScope.launch {
+        val fullName =
+            withContext(Dispatchers.IO) {
+              runCatching {
+                    val profile = ProfileRepositoryProvider.repository.getProfile(otherId)
+                    "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                  }
+                  .getOrNull()
+                  .orEmpty()
+            }
+        if (fullName.isNotBlank()) {
+          resolvedNameCache[otherId] = fullName
+        }
+      }
+    }
+  }
+
   // Pull-to-refresh state
   var isRefreshing by remember { mutableStateOf(false) }
   val pullRefreshState =
@@ -268,20 +297,33 @@ fun ChannelsScreen(
 
   // Search state
   var searchQuery by remember { mutableStateOf("") }
-  val filteredChannels =
-      remember(channels, searchQuery) {
-        if (searchQuery.isBlank()) {
-          channels
-        } else {
-          channels.filter { channel ->
-            val otherMember = channel.members.find { it.user.id != currentUser.uid }
-            val otherName = otherMember?.user?.name ?: ""
-            otherName.contains(searchQuery, ignoreCase = true) ||
-                channel.messages.lastOrNull()?.text?.contains(searchQuery, ignoreCase = true) ==
-                    true
-          }
-        }
+  val filteredChannels by remember {
+    derivedStateOf {
+      val query = searchQuery.trim()
+      if (query.isBlank()) return@derivedStateOf channels
+
+      val q = query.lowercase()
+      channels.filter { channel ->
+        val otherMember = channel.members.find { it.user.id != currentUser.uid }
+        val streamName = otherMember?.user?.name.orEmpty()
+        val otherId = otherUserIdFromChannel(channel, currentUser.uid)
+        val resolvedName = otherId?.let { resolvedNameCache[it] }.orEmpty()
+        val lastMessageText = channel.messages.lastOrNull()?.text.orEmpty()
+
+        val haystack =
+            buildString {
+                  append(streamName).append(' ')
+                  append(resolvedName).append(' ')
+                  append(lastMessageText).append(' ')
+                  append(channel.name.orEmpty()).append(' ')
+                  append(channel.cid)
+                }
+                .lowercase()
+
+        haystack.contains(q)
       }
+    }
+  }
 
   Box(modifier = modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
     Column(modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.ROOT)) {
@@ -388,7 +430,7 @@ fun ChannelsScreen(
             }
       } else {
         LazyColumn(modifier = Modifier.testTag(C.ChannelsScreenTestTags.CHANNELS_LIST)) {
-          items(filteredChannels) { channel ->
+          items(items = filteredChannels, key = { it.cid }) { channel ->
             ChannelItem(
                 channel = channel,
                 currentUserId = currentUser.uid,
@@ -652,5 +694,25 @@ internal fun formatMessageTime(timestamp: Date, context: Context): String {
     days == 1L -> context.getString(R.string.channels_screen_yesterday)
     days < 7 -> context.getString(R.string.channels_screen_days_ago, days)
     else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(timestamp)
+  }
+}
+
+/** Returns the "other" user id for a 1:1 channel, when possible. */
+private fun otherUserIdFromChannel(channel: Channel, currentUserId: String): String? {
+  // Prefer members list
+  channel.members
+      .firstOrNull { it.user.id != currentUserId }
+      ?.user
+      ?.id
+      ?.let {
+        return it
+      }
+
+  // Fallback: infer from channel.id (uid1-uid2) convention used in this project.
+  val parts = channel.id.split("-")
+  return if (parts.size == 2) {
+    if (parts[0] == currentUserId) parts[1] else parts[0]
+  } else {
+    null
   }
 }

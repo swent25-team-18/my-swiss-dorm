@@ -20,6 +20,7 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import io.mockk.unmockkAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
@@ -47,6 +48,8 @@ class SettingsScreenTest : FirestoreTest() {
 
   override fun createRepositories() {
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    // Set the provider so DarkModePreferenceHelper uses the emulator repository
+    com.android.mySwissDorm.model.profile.ProfileRepositoryProvider.repository = profileRepo
   }
 
   /** VM backed by emulator singletons. */
@@ -331,11 +334,7 @@ class SettingsScreenTest : FirestoreTest() {
     compose.setContent {
       MySwissDormAppTheme {
         SettingsScreen(
-            vm = makeVm(),
-            navigationActions = null, // Pass null to avoid mocking complexities
-            onContributionClick = {},
-            onProfileClick = {},
-            onViewBookmarks = {})
+            vm = makeVm(), navigationActions = null) // Pass null to avoid mocking complexities
       }
     }
 
@@ -483,6 +482,7 @@ class SettingsScreenTest : FirestoreTest() {
     // Wait for the save operation to complete
     // setPreference uses apply() which is async, so we need to wait for it
     compose.waitForIdle()
+    delay(500) // Give SharedPreferences apply() time to complete
 
     // Wait for preference to be saved in SharedPreferences
     // The apply() call is async, so we poll until it's written
@@ -501,18 +501,28 @@ class SettingsScreenTest : FirestoreTest() {
         "Dark mode preference should be saved as true in SharedPreferences", true, savedPreference)
 
     // Wait for Firestore sync to complete (poll until value appears)
-    // The sync happens in a fire-and-forget coroutine, so we need to wait for it
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    compose.waitUntil(10_000) {
+    // The sync happens in a fire-and-forget coroutine on Dispatchers.IO, so we need to wait for it
+    // Add a delay to allow the coroutine to start
+    delay(1000)
+    // Poll Firestore with retries
+    var synced = false
+    var attempts = 0
+    val maxAttempts = 30 // 30 attempts * 500ms = 15 seconds max
+    while (!synced && attempts < maxAttempts) {
       try {
-        runBlocking {
-          val savedProfile = profileRepo.getProfile(uid)
-          savedProfile.userSettings.darkMode == true
+        val savedProfile = runBlocking { profileRepo.getProfile(uid) }
+        if (savedProfile.userSettings.darkMode == true) {
+          synced = true
+        } else {
+          attempts++
+          delay(500)
         }
       } catch (e: Exception) {
-        false
+        attempts++
+        delay(500)
       }
     }
+    assertTrue("Firestore sync should complete within timeout", synced)
 
     // Verify preference is also synced to Firestore (for logged-in users)
     val savedProfile = runBlocking { profileRepo.getProfile(uid) }
@@ -586,6 +596,7 @@ class SettingsScreenTest : FirestoreTest() {
     // Wait for the save operation to complete
     // setPreference uses apply() which is async, so we need to wait for it
     compose.waitForIdle()
+    delay(500) // Give SharedPreferences apply() time to complete
 
     // Wait for preference to be saved in SharedPreferences
     // The apply() call is async, so we poll until it's written
@@ -606,18 +617,28 @@ class SettingsScreenTest : FirestoreTest() {
         savedPreference)
 
     // Wait for Firestore sync to complete (poll until value appears)
-    // The sync happens in a fire-and-forget coroutine, so we need to wait for it
-    val profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    compose.waitUntil(10_000) {
+    // The sync happens in a fire-and-forget coroutine on Dispatchers.IO, so we need to wait for it
+    // Add a delay to allow the coroutine to start
+    delay(1000)
+    // Poll Firestore with retries
+    var synced = false
+    var attempts = 0
+    val maxAttempts = 30 // 30 attempts * 500ms = 15 seconds max
+    while (!synced && attempts < maxAttempts) {
       try {
-        runBlocking {
-          val savedProfile = profileRepo.getProfile(uid)
-          savedProfile.userSettings.darkMode == false
+        val savedProfile = runBlocking { profileRepo.getProfile(uid) }
+        if (savedProfile.userSettings.darkMode == false) {
+          synced = true
+        } else {
+          attempts++
+          delay(500)
         }
       } catch (e: Exception) {
-        false
+        attempts++
+        delay(500)
       }
     }
+    assertTrue("Firestore sync should complete within timeout", synced)
 
     // Verify preference is also synced to Firestore (for logged-in users)
     val savedProfile = runBlocking { profileRepo.getProfile(uid) }

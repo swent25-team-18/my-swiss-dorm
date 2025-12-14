@@ -1026,4 +1026,338 @@ class SettingsViewModelTest : FirestoreTest() {
         "Blocked contact with blank name should be skipped",
         vm.uiState.value.blockedContacts.isEmpty())
   }
+
+  @Test
+  fun blockUser_success_addsUserToBlockedList() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile for current user (FakeUser1)
+    val currentUserProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(uid)
+        .set(currentUserProfile)
+        .await()
+
+    // Create another user to block
+    switchToUser(FakeUser.FakeUser2)
+    val targetUid = FirebaseEmulator.auth.currentUser!!.uid
+    val targetProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Blocked",
+                    lastName = "User",
+                    email = FakeUser.FakeUser2.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = targetUid)
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(targetUid)
+        .set(targetProfile)
+        .await()
+
+    // Switch back to FakeUser1
+    switchToUser(FakeUser.FakeUser1)
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    val vm = vm(repo = repo)
+
+    vm.blockUser(targetUid, context)
+    // Wait for both blockUser and refresh to complete
+    awaitUntil(timeoutMs = 10000) { vm.uiState.value.blockedContacts.any { it.uid == targetUid } }
+
+    assertTrue(
+        "Blocked user should be in the list",
+        vm.uiState.value.blockedContacts.any { it.uid == targetUid })
+    assertNull("No error should be set", vm.uiState.value.errorMsg)
+  }
+
+  @Test
+  fun blockUser_error_setsErrorMsg() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create a profile for the current user so refresh() can succeed
+    val userProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+
+    // Create a mock repository that throws exception for addBlockedUser but returns profile for
+    // getProfile
+    val throwingRepo =
+        object : ProfileRepository {
+          override suspend fun createProfile(profile: Profile) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun getProfile(ownerId: String): Profile {
+            if (ownerId == uid) {
+              return userProfile
+            }
+            throw NoSuchElementException("Profile not found")
+          }
+
+          override suspend fun getAllProfile(): List<Profile> = emptyList()
+
+          override suspend fun editProfile(profile: Profile) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun deleteProfile(ownerId: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun getBlockedUserIds(ownerId: String): List<String> = emptyList()
+
+          override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
+            throw Exception("Failed to block user")
+          }
+
+          override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun getBookmarkedListingIds(ownerId: String): List<String> = emptyList()
+
+          override suspend fun addBookmark(ownerId: String, listingId: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun removeBookmark(ownerId: String, listingId: String) {
+            throw UnsupportedOperationException()
+          }
+        }
+
+    val vm = vm(repo = throwingRepo)
+
+    vm.blockUser("targetUid", context)
+    awaitUntil { vm.uiState.value.errorMsg != null }
+
+    assertNotNull("Error message should be set", vm.uiState.value.errorMsg)
+    assertTrue(
+        "Error message should contain failure text",
+        vm.uiState.value.errorMsg!!.contains("Failed to block user"))
+  }
+
+  @Test
+  fun blockUser_userNotLoggedIn_doesNothing() = runTest {
+    FirebaseEmulator.auth.signOut()
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    val vm = vm(repo = repo)
+
+    vm.blockUser("targetUid", context)
+    delay(500)
+
+    // Should not crash, but nothing should happen
+    assertNull("No error should be set", vm.uiState.value.errorMsg)
+  }
+
+  @Test
+  fun unblockUser_error_setsErrorMsg() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create a profile for the current user so refresh() can succeed
+    val userProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+
+    // Create a mock repository that throws exception for removeBlockedUser but returns profile for
+    // getProfile
+    val throwingRepo =
+        object : ProfileRepository {
+          override suspend fun createProfile(profile: Profile) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun getProfile(ownerId: String): Profile {
+            if (ownerId == uid) {
+              return userProfile
+            }
+            throw NoSuchElementException("Profile not found")
+          }
+
+          override suspend fun getAllProfile(): List<Profile> = emptyList()
+
+          override suspend fun editProfile(profile: Profile) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun deleteProfile(ownerId: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun getBlockedUserIds(ownerId: String): List<String> = emptyList()
+
+          override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
+            throw Exception("Failed to unblock user")
+          }
+
+          override suspend fun getBookmarkedListingIds(ownerId: String): List<String> = emptyList()
+
+          override suspend fun addBookmark(ownerId: String, listingId: String) {
+            throw UnsupportedOperationException()
+          }
+
+          override suspend fun removeBookmark(ownerId: String, listingId: String) {
+            throw UnsupportedOperationException()
+          }
+        }
+
+    val vm = vm(repo = throwingRepo)
+
+    vm.unblockUser("targetUid", context)
+    awaitUntil { vm.uiState.value.errorMsg != null }
+
+    assertNotNull("Error message should be set", vm.uiState.value.errorMsg)
+    assertTrue(
+        "Error message should contain failure text",
+        vm.uiState.value.errorMsg!!.contains("Failed to unblock user"))
+  }
+
+  @Test
+  fun refresh_photoRetrievalError_handlesGracefully() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null,
+                    profilePicture = "test-photo-id"),
+            userSettings = UserSettings(),
+            ownerId = uid)
+
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    repo.createProfile(profile)
+
+    // Photo repository that throws exception
+    val mockPhotoRepo =
+        object : PhotoRepositoryCloud() {
+          override suspend fun retrievePhoto(uid: String): Photo {
+            throw NoSuchElementException("Photo not found")
+          }
+        }
+
+    val vm =
+        SettingsViewModel(
+            auth = FirebaseEmulator.auth, profiles = repo, photoRepositoryCloud = mockPhotoRepo)
+
+    vm.refresh()
+    awaitUntil { vm.uiState.value.userName == "Test User" }
+
+    assertEquals("User name should be set", "Test User", vm.uiState.value.userName)
+    assertNull("Photo should be null when retrieval fails", vm.uiState.value.profilePicture)
+  }
+
+  @Test
+  fun refresh_getBlockedUserIdsError_handlesGracefully() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    val profile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+
+    // Repository that throws exception on getBlockedUserIds
+    val throwingRepo =
+        object : ProfileRepository {
+          override suspend fun createProfile(profile: Profile) {}
+
+          override suspend fun getProfile(ownerId: String): Profile {
+            if (ownerId == uid) {
+              return profile
+            }
+            throw NoSuchElementException("Profile not found")
+          }
+
+          override suspend fun getAllProfile(): List<Profile> = emptyList()
+
+          override suspend fun editProfile(profile: Profile) {}
+
+          override suspend fun deleteProfile(ownerId: String) {}
+
+          override suspend fun getBlockedUserIds(ownerId: String): List<String> {
+            throw Exception("Error fetching blocked users")
+          }
+
+          override suspend fun addBlockedUser(ownerId: String, targetUid: String) {}
+
+          override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {}
+
+          override suspend fun getBookmarkedListingIds(ownerId: String): List<String> = emptyList()
+
+          override suspend fun addBookmark(ownerId: String, listingId: String) {}
+
+          override suspend fun removeBookmark(ownerId: String, listingId: String) {}
+        }
+
+    val vm = vm(repo = throwingRepo)
+
+    vm.refresh()
+    awaitUntil { vm.uiState.value.userName == "Test User" }
+
+    assertEquals("User name should be set", "Test User", vm.uiState.value.userName)
+    assertTrue(
+        "Blocked contacts should be empty when error occurs",
+        vm.uiState.value.blockedContacts.isEmpty())
+  }
 }

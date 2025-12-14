@@ -131,4 +131,19 @@ class RentalListingRepositoryLocal(private val rentalListingDao: RentalListingDa
   override suspend fun deleteRentalListing(rentalPostId: String) {
     rentalListingDao.deleteRentalListing(rentalPostId)
   }
+
+  override suspend fun getAllRentalListingsForUser(userId: String?): List<RentalListing> {
+    // Local repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getAllRentalListings()
+  }
+
+  override suspend fun getRentalListingForUser(
+      rentalPostId: String,
+      userId: String?
+  ): RentalListing {
+    // Local repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getRentalListing(rentalPostId)
+  }
 }

@@ -92,11 +92,13 @@ class ReviewsByResidencyViewModel(
 
     viewModelScope.launch {
       try {
-        // Fetch all and filter by city
-        val all = reviewsRepository.getAllReviewsByResidency(residencyName)
         val currentUserId = auth.currentUser?.uid
+        // Get reviews filtered by blocking (repository handles bidirectional blocking)
+        val filteredReviews =
+            reviewsRepository.getAllReviewsByResidencyForUser(residencyName, currentUserId)
+
         val mapped =
-            all.map {
+            filteredReviews.map {
               val fullName =
                   if (it.isAnonymous) {
                     context.getString(R.string.anonymous)

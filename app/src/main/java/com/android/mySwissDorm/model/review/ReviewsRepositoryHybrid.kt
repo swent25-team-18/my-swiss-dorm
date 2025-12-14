@@ -119,6 +119,87 @@ class ReviewsRepositoryHybrid(
             }
           })
 
+  override suspend fun getAllReviewsByResidencyForUser(
+      residencyName: String,
+      userId: String?
+  ): List<Review> {
+    val allReviews = getAllReviewsByResidency(residencyName)
+    if (userId == null) return allReviews
+
+    return filterReviewsByBlocking(allReviews, userId)
+  }
+
+  override suspend fun getReviewForUser(reviewId: String, userId: String?): Review {
+    val review = getReview(reviewId)
+    if (userId == null || userId == review.ownerId) return review
+
+    // Check bidirectional blocking
+    val isBlocked = isBlockedBidirectionally(review.ownerId, userId)
+    if (isBlocked) {
+      throw NoSuchElementException(
+          "ReviewsRepositoryHybrid: Review $reviewId is not available due to blocking restrictions")
+    }
+    return review
+  }
+
+  /**
+   * Filters reviews based on bidirectional blocking.
+   *
+   * @param reviews The reviews to filter.
+   * @param userId The current user's ID.
+   * @return Filtered list of reviews visible to the user.
+   */
+  private suspend fun filterReviewsByBlocking(reviews: List<Review>, userId: String): List<Review> {
+    // Load current user's blocked list once for efficiency
+    val currentUserBlockedList =
+        runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(userId) }
+            .onFailure { Log.w(TAG, "Failed to fetch current user's blocked list", it) }
+            .getOrDefault(emptyList())
+
+    val blockedCache = mutableMapOf<String, Boolean>()
+    return reviews.filter { review ->
+      if (review.ownerId == userId) return@filter true
+      !isBlockedBidirectionally(review.ownerId, userId, currentUserBlockedList, blockedCache)
+    }
+  }
+
+  /**
+   * Checks if two users have blocked each other bidirectionally.
+   *
+   * @param ownerId The owner of the content.
+   * @param userId The current user's ID.
+   * @param currentUserBlockedList Pre-loaded list of users blocked by current user (optional).
+   * @param blockedCache Cache for owner's blocked lists (optional).
+   * @return true if either user has blocked the other.
+   */
+  private suspend fun isBlockedBidirectionally(
+      ownerId: String,
+      userId: String,
+      currentUserBlockedList: List<String>? = null,
+      blockedCache: MutableMap<String, Boolean>? = null
+  ): Boolean {
+    // Check if current user has blocked owner
+    val currentUserBlockedOwner =
+        currentUserBlockedList?.contains(ownerId)
+            ?: runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(userId) }
+                .getOrDefault(emptyList())
+                .contains(ownerId)
+
+    // Check if owner has blocked current user
+    val ownerBlockedCurrentUser =
+        blockedCache?.getOrPut(ownerId) {
+          runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(ownerId) }
+              .onFailure { Log.w(TAG, "Failed to fetch blocked list for owner $ownerId", it) }
+              .getOrDefault(emptyList())
+              .contains(userId)
+        }
+            ?: runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(ownerId) }
+                .getOrDefault(emptyList())
+                .contains(userId)
+
+    return currentUserBlockedOwner || ownerBlockedCurrentUser
+  }
+
   /**
    * Syncs reviews to the local database for offline access.
    *

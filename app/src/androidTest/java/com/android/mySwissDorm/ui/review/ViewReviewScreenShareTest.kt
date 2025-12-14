@@ -144,6 +144,10 @@ class ViewReviewScreenShareTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
+    // Wait for ViewModel to finish loading
+    compose.waitUntil(10_000) { vm.uiState.value.review.uid == testReview.uid }
+    compose.waitForIdle()
+
     compose.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
     compose.waitUntil(2_000) {

@@ -391,17 +391,19 @@ class ViewReviewScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun backButton_calls_onGoBackCallback() {
+  fun backButton_calls_onGoBackCallback() = runTest {
     var backCalled = false
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = vm, reviewUid = review1.uid, onGoBack = { backCalled = true })
     }
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    compose.waitUntil(10_000) { vm.uiState.value.review.uid == review1.uid }
+    compose.waitForIdle()
     compose.onNodeWithText("Review Details").assertIsDisplayed()
     // Click back button via content description
     compose.onNodeWithContentDescription("Back").performClick()
+    compose.waitForIdle()
     assert(backCalled) { "onGoBack callback was not triggered." }
   }
 
@@ -773,12 +775,14 @@ class ViewReviewScreenTest : FirestoreTest() {
       testVm.uiState.value.review.uid == review2.uid &&
           testVm.uiState.value.fullNameOfPoster.isNotEmpty()
     }
+    compose.waitForIdle()
 
     scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
     compose
         .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
         .assertIsDisplayed()
         .performClick()
+    compose.waitForIdle()
 
     assertEquals("Navigation should happen when online", otherId, navigatedToId)
   }

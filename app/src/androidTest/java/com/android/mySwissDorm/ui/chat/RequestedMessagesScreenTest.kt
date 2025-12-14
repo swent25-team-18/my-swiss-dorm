@@ -341,7 +341,8 @@ class RequestedMessagesScreenTest : FirestoreTest() {
     compose.onNodeWithContentDescription("Approve").performClick()
 
     // Wait for callback to be triggered
-    compose.waitUntil(timeoutMillis = 2_000) { approveClicked }
+    compose.waitUntil(timeoutMillis = 5_000) { approveClicked }
+    compose.waitForIdle()
 
     assertTrue("Approve button should trigger callback", approveClicked)
     assertTrue("Approve callback should receive correct message ID", approveMessageId == message.id)

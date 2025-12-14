@@ -83,6 +83,9 @@ class SettingsViewModelTest : FirestoreTest() {
 
           override suspend fun getBlockedUserIds(ownerId: String): List<String> = emptyList()
 
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> =
+              emptyMap()
+
           override suspend fun addBlockedUser(ownerId: String, targetUid: String) {}
 
           override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {}

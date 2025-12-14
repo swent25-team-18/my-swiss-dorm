@@ -1139,6 +1139,9 @@ class SettingsViewModelTest : FirestoreTest() {
 
           override suspend fun getBlockedUserIds(ownerId: String): List<String> = emptyList()
 
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> =
+              emptyMap()
+
           override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
             throw Exception("Failed to block user")
           }
@@ -1228,6 +1231,9 @@ class SettingsViewModelTest : FirestoreTest() {
           }
 
           override suspend fun getBlockedUserIds(ownerId: String): List<String> = emptyList()
+
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> =
+              emptyMap()
 
           override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
             throw UnsupportedOperationException()
@@ -1342,6 +1348,9 @@ class SettingsViewModelTest : FirestoreTest() {
             throw Exception("Error fetching blocked users")
           }
 
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> =
+              emptyMap()
+
           override suspend fun addBlockedUser(ownerId: String, targetUid: String) {}
 
           override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {}
@@ -1362,5 +1371,366 @@ class SettingsViewModelTest : FirestoreTest() {
     assertTrue(
         "Blocked contacts should be empty when error occurs",
         vm.uiState.value.blockedContacts.isEmpty())
+  }
+
+  @Test
+  fun refresh_usesStoredBlockedUserName_whenAvailable() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile
+    val seeded =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = Location("Seed", 0.0, 0.0),
+                    residencyName = ""),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    FirebaseEmulator.firestore.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+
+    // Create another user and block them
+    switchToUser(FakeUser.FakeUser2)
+    val blockedUid = FirebaseEmulator.auth.currentUser!!.uid
+    val blockedProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Blocked",
+                    lastName = "User",
+                    email = FakeUser.FakeUser2.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = blockedUid)
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(blockedUid)
+        .set(blockedProfile)
+        .await()
+
+    switchToUser(FakeUser.FakeUser1)
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    repo.addBlockedUser(uid, blockedUid)
+
+    // Create a mock repo that returns stored name but throws when getting profile
+    // This simulates offline scenario where stored name is available
+    val mockRepo =
+        object : ProfileRepository by repo {
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+            // Return stored name for blocked user
+            return mapOf(blockedUid to "Stored Blocked Name")
+          }
+
+          override suspend fun getProfile(ownerId: String): Profile {
+            // Simulate offline - can't fetch profile
+            if (ownerId == blockedUid) {
+              throw Exception("Network error - offline")
+            }
+            return repo.getProfile(ownerId)
+          }
+        }
+
+    val vm = vm(repo = mockRepo)
+    vm.refresh()
+
+    // Wait for refresh to complete - both userName and blockedContacts should be set
+    awaitUntil(timeoutMs = 10000) {
+      vm.uiState.value.userName == "Test User" &&
+          vm.uiState.value.blockedContacts.any { it.uid == blockedUid }
+    }
+
+    // Should use stored name even though profile fetch fails (offline scenario)
+    val blockedContact = vm.uiState.value.blockedContacts.find { it.uid == blockedUid }
+    assertNotNull(
+        "Blocked contact should be found. Blocked contacts: ${vm.uiState.value.blockedContacts}",
+        blockedContact)
+    assertEquals("Should use stored name", "Stored Blocked Name", blockedContact!!.displayName)
+  }
+
+  @Test
+  fun refresh_fetchesRemoteName_whenStoredNameNotAvailable() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile
+    val seeded =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = Location("Seed", 0.0, 0.0),
+                    residencyName = ""),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    FirebaseEmulator.firestore.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+
+    // Create another user and block them
+    switchToUser(FakeUser.FakeUser2)
+    val blockedUid = FirebaseEmulator.auth.currentUser!!.uid
+    val blockedProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Remote",
+                    lastName = "User",
+                    email = FakeUser.FakeUser2.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = blockedUid)
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(blockedUid)
+        .set(blockedProfile)
+        .await()
+
+    switchToUser(FakeUser.FakeUser1)
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    repo.addBlockedUser(uid, blockedUid)
+
+    // Create a mock repo that returns empty stored names (no stored name available)
+    val mockRepo =
+        object : ProfileRepository by repo {
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+            // No stored name available
+            return emptyMap()
+          }
+        }
+
+    val vm = vm(repo = mockRepo)
+    vm.refresh()
+    awaitUntil { vm.uiState.value.userName == "Test User" }
+
+    // Wait for blocked contacts to be populated
+    awaitUntil(timeoutMs = 10000) { vm.uiState.value.blockedContacts.any { it.uid == blockedUid } }
+
+    // Should fetch from remote since no stored name
+    val blockedContact = vm.uiState.value.blockedContacts.find { it.uid == blockedUid }
+    assertNotNull("Blocked contact should be found", blockedContact)
+    assertEquals("Should use remote name", "Remote User", blockedContact!!.displayName)
+  }
+
+  @Test
+  fun refresh_fallsBackToUid_whenNameIsBlank() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile
+    val seeded =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = Location("Seed", 0.0, 0.0),
+                    residencyName = ""),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    FirebaseEmulator.firestore.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+
+    // Create another user with blank name and block them
+    switchToUser(FakeUser.FakeUser2)
+    val blockedUid = FirebaseEmulator.auth.currentUser!!.uid
+    val blockedProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "",
+                    lastName = "",
+                    email = FakeUser.FakeUser2.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = blockedUid)
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(blockedUid)
+        .set(blockedProfile)
+        .await()
+
+    switchToUser(FakeUser.FakeUser1)
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    repo.addBlockedUser(uid, blockedUid)
+
+    // Create a mock repo that returns empty stored names
+    val mockRepo =
+        object : ProfileRepository by repo {
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+            return emptyMap()
+          }
+        }
+
+    val vm = vm(repo = mockRepo)
+    vm.refresh()
+    awaitUntil { vm.uiState.value.userName == "Test User" }
+
+    // Wait for blocked contacts to be populated
+    awaitUntil(timeoutMs = 10000) { vm.uiState.value.blockedContacts.any { it.uid == blockedUid } }
+
+    // Should fallback to UID when name is blank
+    val blockedContact = vm.uiState.value.blockedContacts.find { it.uid == blockedUid }
+    assertNotNull("Blocked contact should be found", blockedContact)
+    assertEquals("Should use UID as fallback", blockedUid, blockedContact!!.displayName)
+  }
+
+  @Test
+  fun refresh_usesStoredNameOverRemote_whenBothAvailable() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile
+    val seeded =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = Location("Seed", 0.0, 0.0),
+                    residencyName = ""),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    FirebaseEmulator.firestore.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+
+    // Create another user and block them
+    switchToUser(FakeUser.FakeUser2)
+    val blockedUid = FirebaseEmulator.auth.currentUser!!.uid
+    val blockedProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Remote",
+                    lastName = "Name",
+                    email = FakeUser.FakeUser2.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = blockedUid)
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(blockedUid)
+        .set(blockedProfile)
+        .await()
+
+    switchToUser(FakeUser.FakeUser1)
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    repo.addBlockedUser(uid, blockedUid)
+
+    // Create a mock repo that returns stored name (should be preferred over remote)
+    val mockRepo =
+        object : ProfileRepository by repo {
+          override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+            // Return stored name (different from remote name to verify preference)
+            return mapOf(blockedUid to "Stored Preferred Name")
+          }
+        }
+
+    val vm = vm(repo = mockRepo)
+    vm.refresh()
+    awaitUntil { vm.uiState.value.userName == "Test User" }
+
+    // Wait for blocked contacts to be populated
+    awaitUntil(timeoutMs = 10000) { vm.uiState.value.blockedContacts.any { it.uid == blockedUid } }
+
+    // Should use stored name (preferred) even though remote name is available
+    val blockedContact = vm.uiState.value.blockedContacts.find { it.uid == blockedUid }
+    assertNotNull("Blocked contact should be found", blockedContact)
+    assertEquals("Should prefer stored name", "Stored Preferred Name", blockedContact!!.displayName)
+    assertNotEquals("Should not use remote name", "Remote Name", blockedContact.displayName)
+  }
+
+  @Test
+  fun unblockUser_success_removesUserFromBlockedList() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val uid = FirebaseEmulator.auth.currentUser!!.uid
+
+    // Create profile for current user
+    val currentUserProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Test",
+                    lastName = "User",
+                    email = FakeUser.FakeUser1.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = uid)
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(uid)
+        .set(currentUserProfile)
+        .await()
+
+    // Create another user to block
+    switchToUser(FakeUser.FakeUser2)
+    val targetUid = FirebaseEmulator.auth.currentUser!!.uid
+    val targetProfile =
+        Profile(
+            userInfo =
+                UserInfo(
+                    name = "Blocked",
+                    lastName = "User",
+                    email = FakeUser.FakeUser2.email,
+                    phoneNumber = "",
+                    universityName = "",
+                    location = null,
+                    residencyName = null),
+            userSettings = UserSettings(),
+            ownerId = targetUid)
+    FirebaseEmulator.firestore
+        .collection(PROFILE_COLLECTION_PATH)
+        .document(targetUid)
+        .set(targetProfile)
+        .await()
+
+    // Switch back to FakeUser1 and block the user
+    switchToUser(FakeUser.FakeUser1)
+    val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+    repo.addBlockedUser(uid, targetUid)
+
+    val vm = vm(repo = repo)
+    vm.refresh()
+    awaitUntil { vm.uiState.value.blockedContacts.any { it.uid == targetUid } }
+
+    // Verify user is blocked
+    assertTrue(
+        "User should be in blocked list",
+        vm.uiState.value.blockedContacts.any { it.uid == targetUid })
+
+    // Now unblock
+    vm.unblockUser(targetUid, context)
+    awaitUntil(timeoutMs = 10000) { !vm.uiState.value.blockedContacts.any { it.uid == targetUid } }
+
+    // Verify user is removed from blocked list
+    assertFalse(
+        "User should be removed from blocked list",
+        vm.uiState.value.blockedContacts.any { it.uid == targetUid })
+    assertNull("No error should be set", vm.uiState.value.errorMsg)
   }
 }

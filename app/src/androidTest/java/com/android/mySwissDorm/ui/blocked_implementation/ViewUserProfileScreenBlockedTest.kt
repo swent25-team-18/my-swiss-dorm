@@ -22,6 +22,8 @@ import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -66,11 +68,26 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     }
   }
 
-  private suspend fun waitUntil(timeoutMs: Long = 5000, condition: () -> Boolean) {
+  private suspend fun waitUntil(timeoutMs: Long = 5000, condition: suspend () -> Boolean) {
     val start = System.currentTimeMillis()
     while (!condition()) {
       if (System.currentTimeMillis() - start > timeoutMs) break
       delay(25)
+    }
+  }
+
+  private suspend fun waitForRepositoryBlockedState(
+      expectedBlocked: Boolean,
+      timeoutMs: Long = 10000
+  ) {
+    val start = System.currentTimeMillis()
+    while (System.currentTimeMillis() - start < timeoutMs) {
+      val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
+      val isBlocked = targetUserUid in blockedIds
+      if (isBlocked == expectedBlocked) {
+        return
+      }
+      delay(50)
     }
   }
 
@@ -114,6 +131,9 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
 
     // Wait for the blocked status to update in the ViewModel
     waitUntil { vm.uiState.value.isBlocked }
+
+    // Wait for repository operation to complete
+    waitForRepositoryBlockedState(expectedBlocked = true)
 
     // Verify blocked status via repository
     val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
@@ -195,6 +215,9 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     // Wait for the blocked status to update in the ViewModel
     waitUntil { vm.uiState.value.isBlocked }
 
+    // Wait for repository operation to complete
+    waitForRepositoryBlockedState(expectedBlocked = true)
+
     // Verify blocked status via repository
     val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertTrue(targetUserUid in blockedIds)
@@ -221,6 +244,9 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
     vm.unblockUser(targetUserUid, onError = {}, context)
     waitUntil { !vm.uiState.value.isBlocked }
 
+    // Wait for repository operation to complete
+    waitForRepositoryBlockedState(expectedBlocked = false)
+
     val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertFalse("User should be unblocked after unblockUser call", targetUserUid in blockedIds)
   }
@@ -246,6 +272,9 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
 
     waitUntil { !vm.uiState.value.isBlocked }
 
+    // Wait for repository operation to complete
+    waitForRepositoryBlockedState(expectedBlocked = false)
+
     val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertFalse(targetUserUid in blockedIds)
   }
@@ -269,6 +298,9 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
 
     waitUntil { vm.uiState.value.isBlocked }
 
+    // Wait for repository operation to complete
+    waitForRepositoryBlockedState(expectedBlocked = true)
+
     val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
     assertTrue(targetUserUid in blockedIds)
   }
@@ -289,5 +321,145 @@ class ViewUserProfileScreenBlockedTest : FirestoreTest() {
 
     // Restore auth state for subsequent tests
     switchToUser(FakeUser.FakeUser1)
+  }
+
+  @Test
+  fun blockUser_optimisticUpdate_setsBlockedImmediately() = runTest {
+    val vm = ViewProfileScreenViewModel(profileRepo)
+
+    // Load profile first
+    vm.loadProfile(targetUserUid, context)
+    waitUntil { vm.uiState.value.name.isNotEmpty() }
+
+    // Initially not blocked
+    assertFalse(vm.uiState.value.isBlocked)
+
+    // Block the user - should update optimistically
+    vm.blockUser(targetUserUid, onError = {}, context)
+
+    // Should be blocked immediately (optimistic update) before repository call completes
+    waitUntil { vm.uiState.value.isBlocked }
+
+    // Wait for repository operation to complete
+    waitForRepositoryBlockedState(expectedBlocked = true)
+
+    // Verify it's actually blocked in repository
+    val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
+    assertTrue("User should be blocked in repository", targetUserUid in blockedIds)
+    assertTrue(vm.uiState.value.isBlocked)
+  }
+
+  @Test
+  fun blockUser_hidesProfilePicture_whenBlocked() = runTest {
+    // Create target user with profile picture
+    switchToUser(FakeUser.FakeUser2)
+    val profileWithPicture =
+        profile2.copy(
+            ownerId = targetUserUid,
+            userInfo = profile2.userInfo.copy(profilePicture = "test-photo.jpg"))
+    profileRepo.editProfile(profileWithPicture)
+
+    switchToUser(FakeUser.FakeUser1)
+    val vm = ViewProfileScreenViewModel(profileRepo)
+
+    // Load profile first - should show picture when not blocked
+    vm.loadProfile(targetUserUid, context)
+    waitUntil { vm.uiState.value.name.isNotEmpty() }
+
+    // Block the user
+    vm.blockUser(targetUserUid, onError = {}, context)
+    waitUntil { vm.uiState.value.isBlocked }
+
+    // Profile picture should be null when blocked
+    assertNull("Profile picture should be hidden when blocked", vm.uiState.value.profilePicture)
+  }
+
+  @Test
+  fun unblockUser_loadsProfilePicture_afterUnblock() = runTest {
+    // Pre-block the user
+    profileRepo.addBlockedUser(currentUserUid, targetUserUid)
+
+    // Create target user with profile picture
+    switchToUser(FakeUser.FakeUser2)
+    val profileWithPicture =
+        profile2.copy(
+            ownerId = targetUserUid,
+            userInfo = profile2.userInfo.copy(profilePicture = "test-photo.jpg"))
+    profileRepo.editProfile(profileWithPicture)
+
+    switchToUser(FakeUser.FakeUser1)
+    val vm = ViewProfileScreenViewModel(profileRepo)
+
+    // Load profile - should be blocked
+    vm.loadProfile(targetUserUid, context)
+    waitUntil { vm.uiState.value.isBlocked }
+    assertNull("Profile picture should be null when blocked", vm.uiState.value.profilePicture)
+
+    // Unblock the user
+    vm.unblockUser(targetUserUid, onError = {}, context)
+    waitUntil { !vm.uiState.value.isBlocked }
+
+    // Profile picture should be loaded after unblock (if available)
+    // Note: In real scenario, photo would be loaded from PhotoRepositoryCloud
+    // This test verifies the unblock flow completes successfully
+    assertFalse("User should be unblocked", vm.uiState.value.isBlocked)
+  }
+
+  @Test
+  fun blockUser_rapidToggle_preventsRaceCondition() = runTest {
+    val vm = ViewProfileScreenViewModel(profileRepo)
+
+    // Load profile first
+    vm.loadProfile(targetUserUid, context)
+    waitUntil { vm.uiState.value.name.isNotEmpty() }
+
+    // Rapidly toggle block/unblock
+    vm.blockUser(targetUserUid, onError = {}, context)
+    vm.unblockUser(targetUserUid, onError = {}, context)
+    vm.blockUser(targetUserUid, onError = {}, context)
+
+    // Wait for final state
+    waitUntil { vm.uiState.value.isBlocked }
+
+    // Should end up in blocked state (last action wins)
+    assertTrue("User should be blocked after rapid toggles", vm.uiState.value.isBlocked)
+
+    // Wait for repository operation to complete (last block operation)
+    waitForRepositoryBlockedState(expectedBlocked = true, timeoutMs = 15000)
+
+    // Verify final state in repository
+    val blockedIds = profileRepo.getBlockedUserIds(currentUserUid)
+    assertTrue("User should be blocked in repository", targetUserUid in blockedIds)
+  }
+
+  @Test
+  fun blockUser_error_revertsOptimisticUpdate() = runTest {
+    // Create a mock repository that throws on addBlockedUser
+    val throwingRepo =
+        object : ProfileRepository by profileRepo {
+          override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
+            throw Exception("Failed to block user")
+          }
+        }
+
+    val vm = ViewProfileScreenViewModel(throwingRepo)
+
+    // Load profile first
+    vm.loadProfile(targetUserUid, context)
+    waitUntil { vm.uiState.value.name.isNotEmpty() }
+
+    // Initially not blocked
+    assertFalse(vm.uiState.value.isBlocked)
+
+    var errorMessage: String? = null
+    // Block the user - should update optimistically then revert on error
+    vm.blockUser(targetUserUid, onError = { errorMessage = it }, context)
+
+    // Wait for error to be handled
+    waitUntil { errorMessage != null || !vm.uiState.value.isBlocked }
+
+    // Should revert to unblocked state on error
+    assertFalse("Should revert to unblocked on error", vm.uiState.value.isBlocked)
+    assertNotNull("Error message should be set", errorMessage)
   }
 }

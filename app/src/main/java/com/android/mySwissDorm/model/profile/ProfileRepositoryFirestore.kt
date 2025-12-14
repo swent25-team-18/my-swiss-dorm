@@ -48,7 +48,13 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
 
   override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
     val profile = getProfile(ownerId)
-    val updatedBlockedUsers = profile.userInfo.blockedUserIds + targetUid
+    // Only add if not already blocked to prevent duplicates
+    val updatedBlockedUsers =
+        if (profile.userInfo.blockedUserIds.contains(targetUid)) {
+          profile.userInfo.blockedUserIds // Already blocked, return as-is
+        } else {
+          profile.userInfo.blockedUserIds + targetUid
+        }
     val updatedUserInfo = profile.userInfo.copy(blockedUserIds = updatedBlockedUsers)
     val updatedProfile = profile.copy(userInfo = updatedUserInfo)
     editProfile(updatedProfile)

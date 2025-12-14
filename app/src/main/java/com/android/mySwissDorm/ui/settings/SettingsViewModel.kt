@@ -144,65 +144,12 @@ class SettingsViewModel(
       var msg: String? = null
       try {
         val userId = user.uid
-
-        // Delete all user's listings
-        try {
-          val userListings = rentalListingRepository.getAllRentalListingsByUser(userId)
-          userListings.forEach { listing ->
-            try {
-              rentalListingRepository.deleteRentalListing(listing.uid)
-            } catch (e: Exception) {
-              Log.e("SettingsViewModel", "Error deleting listing ${listing.uid}", e)
-              // Continue with other listings even if one fails
-            }
-          }
-        } catch (e: Exception) {
-          Log.e("SettingsViewModel", "Error fetching user listings for deletion", e)
-          // Continue with account deletion even if listing deletion fails
-        }
-
-        // Anonymize all user's reviews
-        try {
-          val userReviews = reviewsRepository.getAllReviewsByUser(userId)
-          userReviews.forEach { review ->
-            try {
-              val anonymizedReview = review.copy(ownerName = "[Deleted user]", isAnonymous = true)
-              reviewsRepository.editReview(review.uid, anonymizedReview)
-            } catch (e: Exception) {
-              Log.e("SettingsViewModel", "Error anonymizing review ${review.uid}", e)
-              // Continue with other reviews even if one fails
-            }
-          }
-        } catch (e: Exception) {
-          Log.e("SettingsViewModel", "Error fetching user reviews for anonymization", e)
-          // Continue with account deletion even if review anonymization fails
-        }
-
-        // Delete profile
+        deleteUserListings(userId)
+        anonymizeUserReviews(userId)
         profiles.deleteProfile(userId)
-
-        // Try deleting the auth user; may throw recent-login required
-        runCatching { user.delete() }
-            .onFailure { e ->
-              if (e is FirebaseAuthRecentLoginRequiredException) {
-                ok = false
-                msg = context.getString(R.string.settings_re_authenticate_to_delete)
-              } else {
-                ok = false
-                msg = e.message
-              }
-            }
-            .onSuccess {
-              // After successful deletion, sign out to clear cached auth state
-              // This ensures that when the app restarts, NavigationViewModel will correctly
-              // detect that the user is not logged in
-              try {
-                auth.signOut()
-              } catch (e: Exception) {
-                Log.e("SettingsViewModel", "Error signing out after account deletion", e)
-                // Don't fail the deletion if signOut fails - the account is already deleted
-              }
-            }
+        val deleteResult = deleteAuthUser(user, context)
+        ok = deleteResult.first
+        msg = deleteResult.second
       } catch (e: Exception) {
         ok = false
         msg = e.message
@@ -211,6 +158,68 @@ class SettingsViewModel(
         onDone(ok, msg)
       }
     }
+  }
+
+  private suspend fun deleteUserListings(userId: String) {
+    try {
+      val userListings = rentalListingRepository.getAllRentalListingsByUser(userId)
+      userListings.forEach { listing ->
+        try {
+          rentalListingRepository.deleteRentalListing(listing.uid)
+        } catch (e: Exception) {
+          Log.e("SettingsViewModel", "Error deleting listing ${listing.uid}", e)
+          // Continue with other listings even if one fails
+        }
+      }
+    } catch (e: Exception) {
+      Log.e("SettingsViewModel", "Error fetching user listings for deletion", e)
+      // Continue with account deletion even if listing deletion fails
+    }
+  }
+
+  private suspend fun anonymizeUserReviews(userId: String) {
+    try {
+      val userReviews = reviewsRepository.getAllReviewsByUser(userId)
+      userReviews.forEach { review ->
+        try {
+          val anonymizedReview = review.copy(ownerName = "[Deleted user]", isAnonymous = true)
+          reviewsRepository.editReview(review.uid, anonymizedReview)
+        } catch (e: Exception) {
+          Log.e("SettingsViewModel", "Error anonymizing review ${review.uid}", e)
+          // Continue with other reviews even if one fails
+        }
+      }
+    } catch (e: Exception) {
+      Log.e("SettingsViewModel", "Error fetching user reviews for anonymization", e)
+      // Continue with account deletion even if review anonymization fails
+    }
+  }
+
+  private suspend fun deleteAuthUser(
+      user: com.google.firebase.auth.FirebaseUser,
+      context: Context
+  ): Pair<Boolean, String?> {
+    val result = runCatching { user.delete() }
+    return result.fold(
+        onSuccess = {
+          // After successful deletion, sign out to clear cached auth state
+          // This ensures that when the app restarts, NavigationViewModel will correctly
+          // detect that the user is not logged in
+          try {
+            auth.signOut()
+          } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error signing out after account deletion", e)
+            // Don't fail the deletion if signOut fails - the account is already deleted
+          }
+          Pair(true, null)
+        },
+        onFailure = { e ->
+          if (e is FirebaseAuthRecentLoginRequiredException) {
+            Pair(false, context.getString(R.string.settings_re_authenticate_to_delete))
+          } else {
+            Pair(false, e.message)
+          }
+        })
   }
 
   /** Add a user to the current user's blocked list in Firestore. */

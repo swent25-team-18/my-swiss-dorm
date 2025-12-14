@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.material3.TextButton
@@ -106,7 +105,15 @@ fun SettingsScreen(
   SettingsScreenContent(
       ui = ui,
       onBack = onBack,
-      onDeleteAccount = { vm.deleteAccount({ _, _ -> }, context) },
+      onDeleteAccount = {
+        vm.deleteAccount(
+            { success, _ ->
+              if (success) {
+                navigationActions?.navigateTo(Screen.SignIn)
+              }
+            },
+            context)
+      },
       onUnblockUser = { uid -> vm.unblockUser(uid, context) },
       navigationActions = navigationActions,
       isAdmin = isAdmin,
@@ -410,19 +417,25 @@ fun SettingsScreenContent(
         onDismissRequest = { showDeleteConfirm = false },
         title = { Text(stringResource(R.string.settings_delete_dialog_title)) },
         text = { Text(stringResource(R.string.settings_delete_dialog_text)) },
+        containerColor = BackGroundColor,
+        titleContentColor = TextColor,
+        textContentColor = TextColor,
         confirmButton = {
           TextButton(
               onClick = {
                 showDeleteConfirm = false
                 onDeleteAccount()
-              }) {
+              },
+              colors = ButtonDefaults.textButtonColors(contentColor = MainColor)) {
                 Text(stringResource(R.string.delete))
               }
         },
         dismissButton = {
-          TextButton(onClick = { showDeleteConfirm = false }) {
-            Text(stringResource(R.string.cancel))
-          }
+          TextButton(
+              onClick = { showDeleteConfirm = false },
+              colors = ButtonDefaults.textButtonColors(contentColor = TextColor)) {
+                Text(stringResource(R.string.cancel))
+              }
         })
   }
 }

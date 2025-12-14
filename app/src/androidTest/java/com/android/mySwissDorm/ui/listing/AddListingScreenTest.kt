@@ -217,8 +217,9 @@ class AddListingScreenTest : FirestoreTest() {
     confirmBtn.assertIsEnabled()
     confirmBtn.performClick()
 
-    // Allow VM coroutine to persist
-    runBlocking { delay(250) }
+    // Wait for the submission to complete and onConfirm to be called
+    // The ViewModel's submitForm runs in a coroutine, so we need to wait for it
+    composeRule.waitUntil(timeoutMillis = 10_000) { capturedUid != null }
 
     runTest {
       assertEquals("UI should insert one listing into Firestore", 1, getRentalListingCount())

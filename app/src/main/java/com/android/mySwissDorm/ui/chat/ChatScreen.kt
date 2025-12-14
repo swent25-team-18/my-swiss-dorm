@@ -1,6 +1,9 @@
 package com.android.mySwissDorm.ui.chat
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.view.WindowManager
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,11 +11,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,9 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
@@ -133,6 +139,60 @@ fun MyChatScreen(
         }
   } else {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Chat-only keyboard fix:
+    // Force ADJUST_RESIZE while ChatScreen is RESUMED, and restore on PAUSE/STOP.
+    // This prevents "leaking" adjustResize into other screens.
+    // made with the help of AI
+    DisposableEffect(lifecycleOwner, context) {
+      val activity = context.findActivity()
+      val window = activity?.window
+      val originalSoftInputMode = window?.attributes?.softInputMode ?: 0
+      val originalStateBits =
+          originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_STATE
+      val originalAdjustBits =
+          originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_ADJUST
+      val restoreAdjustBits =
+          if (originalAdjustBits == WindowManager.LayoutParams.SOFT_INPUT_ADJUST_UNSPECIFIED) {
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
+          } else {
+            originalAdjustBits
+          }
+      val restoreSoftInputMode = originalStateBits or restoreAdjustBits
+
+      fun applyResize() {
+        if (window != null) {
+          window.setSoftInputMode(
+              originalStateBits or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
+      }
+
+      fun restore() {
+        if (window != null) {
+          window.setSoftInputMode(restoreSoftInputMode)
+        }
+      }
+
+      val observer = LifecycleEventObserver { _, event ->
+        when (event) {
+          Lifecycle.Event.ON_RESUME -> applyResize()
+          Lifecycle.Event.ON_PAUSE,
+          Lifecycle.Event.ON_STOP -> restore()
+          else -> Unit
+        }
+      }
+
+      lifecycleOwner.lifecycle.addObserver(observer)
+      // Apply immediately for first composition
+      applyResize()
+
+      onDispose {
+        lifecycleOwner.lifecycle.removeObserver(observer)
+        restore()
+      }
+    }
+
     val chatClient = chatClientProvider()
     val currentUser = currentUserProvider()
 
@@ -184,13 +244,18 @@ fun MyChatScreen(
           }
 
       chatTheme {
-        Box(modifier = modifier.fillMaxSize().imePadding()) {
-          messagesScreen(viewModelFactory, onBackClick)
-        }
+        Box(modifier = modifier.fillMaxSize()) { messagesScreen(viewModelFactory, onBackClick) }
       }
     }
   }
 }
+
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+      is Activity -> this
+      is ContextWrapper -> baseContext.findActivity()
+      else -> null
+    }
 
 /**
  * Default connector reused in tests without needing a FirebaseUser mock. Allows injecting a fake

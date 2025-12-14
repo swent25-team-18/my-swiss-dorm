@@ -691,6 +691,247 @@ class ReviewsRepositoryHybridTest {
     ProfileRepositoryProvider.repository = profileRepository
   }
 
+  @Test
+  fun getAllReviewsByResidencyForUser_nullUserId_returnsAllReviews() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val reviews = listOf(createTestReview("review-1"), createTestReview("review-2"))
+    coEvery { remoteRepository.getAllReviewsByResidency("Vortex") } returns reviews
+
+    val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", null)
+
+    assertEquals(reviews, result)
+    coVerify(exactly = 0) { profileRepository.getBlockedUserIds(any()) }
+  }
+
+  @Test
+  fun getAllReviewsByResidencyForUser_filtersWhenCurrentUserBlockedOwner() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val review1 = createTestReview("review-1", ownerId = user1Id)
+    val review2 = createTestReview("review-2", ownerId = user2Id)
+    val review3 = createTestReview("review-3", ownerId = "user-3")
+
+    coEvery { remoteRepository.getAllReviewsByResidency("Vortex") } returns
+        listOf(review1, review2, review3)
+    // User1 has blocked user2
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    // User2 and user3 have not blocked anyone
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+    // Should filter out review2 (user2's review) because user1 blocked user2
+    assertEquals(2, result.size)
+    assertTrue(result.contains(review1))
+    assertTrue(result.contains(review3))
+    assertFalse(result.contains(review2))
+  }
+
+  @Test
+  fun getAllReviewsByResidencyForUser_filtersWhenOwnerBlockedCurrentUser() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val review1 = createTestReview("review-1", ownerId = user1Id)
+    val review2 = createTestReview("review-2", ownerId = user2Id)
+    val review3 = createTestReview("review-3", ownerId = "user-3")
+
+    coEvery { remoteRepository.getAllReviewsByResidency("Vortex") } returns
+        listOf(review1, review2, review3)
+    // User1 has not blocked anyone
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    // User2 has blocked user1
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+    // Should filter out review2 (user2's review) because user2 blocked user1
+    assertEquals(2, result.size)
+    assertTrue(result.contains(review1))
+    assertTrue(result.contains(review3))
+    assertFalse(result.contains(review2))
+  }
+
+  @Test
+  fun getAllReviewsByResidencyForUser_returnsOwnReviews() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val review1 = createTestReview("review-1", ownerId = user1Id)
+    val review2 = createTestReview("review-2", ownerId = "user-2")
+
+    coEvery { remoteRepository.getAllReviewsByResidency("Vortex") } returns listOf(review1, review2)
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds("user-2") } returns emptyList()
+
+    val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+    // Should include own review even if blocked
+    assertTrue(result.contains(review1))
+  }
+
+  @Test
+  fun getReviewForUser_nullUserId_returnsReview() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val review = createTestReview("review-1")
+    coEvery { remoteRepository.getReview("review-1") } returns review
+
+    val result = hybridRepository.getReviewForUser("review-1", null)
+
+    assertEquals(review, result)
+    coVerify(exactly = 0) { profileRepository.getBlockedUserIds(any()) }
+  }
+
+  @Test
+  fun getReviewForUser_ownerViewingOwnReview_returnsReview() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val review = createTestReview("review-1", ownerId = user1Id)
+    coEvery { remoteRepository.getReview("review-1") } returns review
+
+    val result = hybridRepository.getReviewForUser("review-1", user1Id)
+
+    assertEquals(review, result)
+    coVerify(exactly = 0) { profileRepository.getBlockedUserIds(any()) }
+  }
+
+  @Test
+  fun getReviewForUser_throwsWhenCurrentUserBlockedOwner() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val review = createTestReview("review-1", ownerId = user2Id)
+
+    coEvery { remoteRepository.getReview("review-1") } returns review
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+
+    val result = runCatching { hybridRepository.getReviewForUser("review-1", user1Id) }
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is NoSuchElementException)
+    assertTrue(result.exceptionOrNull()?.message?.contains("blocking restrictions") == true)
+  }
+
+  @Test
+  fun getReviewForUser_throwsWhenOwnerBlockedCurrentUser() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val review = createTestReview("review-1", ownerId = user2Id)
+
+    coEvery { remoteRepository.getReview("review-1") } returns review
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+
+    val result = runCatching { hybridRepository.getReviewForUser("review-1", user1Id) }
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is NoSuchElementException)
+    assertTrue(result.exceptionOrNull()?.message?.contains("blocking restrictions") == true)
+  }
+
+  @Test
+  fun getReviewForUser_returnsWhenNotBlocked() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val review = createTestReview("review-1", ownerId = user2Id)
+
+    coEvery { remoteRepository.getReview("review-1") } returns review
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+
+    val result = hybridRepository.getReviewForUser("review-1", user1Id)
+
+    assertEquals(review, result)
+  }
+
+  @Test
+  fun getAllReviewsByResidencyForUser_handlesBlockedListFetchFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val review1 = createTestReview("review-1", ownerId = user1Id)
+    val review2 = createTestReview("review-2", ownerId = "user-2")
+
+    coEvery { remoteRepository.getAllReviewsByResidency("Vortex") } returns listOf(review1, review2)
+    // Simulate failure when fetching blocked list - should default to empty list
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } throws IOException("Network error")
+
+    val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+    // Should return all reviews when blocked list fetch fails (defaults to empty)
+    assertEquals(2, result.size)
+  }
+
+  @Test
+  fun getReviewForUser_handlesBlockedListFetchFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val review = createTestReview("review-1", ownerId = user2Id)
+
+    coEvery { remoteRepository.getReview("review-1") } returns review
+    // Simulate failure when fetching blocked lists - should default to empty (not blocked)
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } throws IOException("Network error")
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } throws IOException("Network error")
+
+    val result = hybridRepository.getReviewForUser("review-1", user1Id)
+
+    // Should return review when blocked list fetch fails (defaults to not blocked)
+    assertEquals(review, result)
+  }
+
+  @Test
+  fun getAllReviewsByResidencyForUser_usesCacheForMultipleReviewsFromSameOwner() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val review1 = createTestReview("review-1", ownerId = user1Id)
+    val review2 = createTestReview("review-2", ownerId = user2Id)
+    val review3 = createTestReview("review-3", ownerId = user2Id) // Same owner as review2
+
+    coEvery { remoteRepository.getAllReviewsByResidency("Vortex") } returns
+        listOf(review1, review2, review3)
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    // Should only be called once for user2, even though there are 2 reviews
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+
+    val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+    // Should filter out both reviews from user2
+    assertEquals(1, result.size)
+    assertTrue(result.contains(review1))
+    // Verify getBlockedUserIds was called only once for user2 (cache used)
+    coVerify(exactly = 1) { profileRepository.getBlockedUserIds(user2Id) }
+  }
+
   private fun createTestReview(
       uid: String,
       ownerId: String = "user-1",

@@ -62,6 +62,11 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     editProfile(updatedProfile)
   }
 
+  override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+    // Firestore doesn't store display names (local-only feature)
+    return emptyMap()
+  }
+
   override suspend fun getBookmarkedListingIds(ownerId: String): List<String> {
     val profile = getProfile(ownerId)
     return profile.userInfo.bookmarkedListingIds

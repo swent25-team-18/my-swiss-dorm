@@ -153,12 +153,18 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun initialElements_viewMode_and_nonClickable_avatar() {
     compose.setContent {
-      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}, onLanguageChange = {})
+      ProfileScreen(
+          onLogout = {},
+          onSettingsClicked = {},
+          onEditPreferencesClick = {},
+          onLanguageChange = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
     waitForProfileScreenReady()
 
     compose.onNodeWithTag("profile_title").assertIsDisplayed().assertTextEquals("Profile")
-    compose.onNodeWithTag("profile_back_button").assertIsDisplayed()
+    compose.onNodeWithTag(C.ProfileTags.SETTINGS_ICON).assertIsDisplayed()
     compose.onNodeWithTag("profile_edit_toggle").assertIsDisplayed()
 
     compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag("profile_logout_button"))
@@ -170,6 +176,11 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.onNodeWithTag("field_last_name").assertIsNotEnabled()
     compose.onNodeWithTag("field_language").assertIsNotEnabled()
     compose.onNodeWithTag("field_residence").assertIsNotEnabled()
+    compose
+        .onNodeWithTag(C.ProfileTags.profilePictureTag(null), useUnmergedTree = true)
+        .performScrollTo()
+
+    compose.waitForIdle()
     compose
         .onNodeWithTag(C.ProfileTags.profilePictureTag(null), useUnmergedTree = true)
         .assertIsDisplayed()
@@ -185,7 +196,13 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   fun editToggle_enablesFields_save_writes_to_firestore() = runTest {
     // Screen AFTER repos + seed are ready
     compose.setContent {
-      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}, onLanguageChange = {})
+      ProfileScreen(
+          onLogout = {},
+          onSettingsClicked = {},
+          onEditPreferencesClick = {},
+          onLanguageChange = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
     waitForProfileScreenReady()
 
@@ -266,7 +283,13 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun editToggle_tap_twice_cancels_and_restores_viewMode() {
     compose.setContent {
-      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}, onLanguageChange = {})
+      ProfileScreen(
+          onLogout = {},
+          onSettingsClicked = {},
+          onEditPreferencesClick = {},
+          onLanguageChange = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
     waitForProfileScreenReady()
 
@@ -286,7 +309,13 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
   @Test
   fun avatar_clickable_only_in_edit_mode() {
     compose.setContent {
-      ProfileScreen(onLogout = {}, onBack = {}, onEditPreferencesClick = {}, onLanguageChange = {})
+      ProfileScreen(
+          onLogout = {},
+          onSettingsClicked = {},
+          onEditPreferencesClick = {},
+          onLanguageChange = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
     waitForProfileScreenReady()
 
@@ -310,9 +339,11 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.setContent {
       ProfileScreen(
           onLogout = {},
-          onBack = {},
+          onSettingsClicked = {},
           onLanguageChange = { languageChanged = true },
-          onEditPreferencesClick = {})
+          onEditPreferencesClick = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
     waitForProfileScreenReady()
 
@@ -357,10 +388,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.setContent {
       ProfileScreen(
           onLogout = {},
-          onBack = {},
+          onSettingsClicked = {},
           viewModel = vm,
           onEditPreferencesClick = {},
-          onLanguageChange = {})
+          onLanguageChange = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
     waitForProfileScreenReady()
 
@@ -408,10 +441,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.setContent {
       ProfileScreen(
           onLogout = {},
-          onBack = {},
+          onSettingsClicked = {},
           viewModel = vm,
           onEditPreferencesClick = {},
-          onLanguageChange = {})
+          onLanguageChange = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
 
     waitForProfileScreenReady()
@@ -468,10 +503,12 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.setContent {
       ProfileScreen(
           onLogout = {},
-          onBack = {},
+          onSettingsClicked = {},
           viewModel = vm,
           onEditPreferencesClick = {},
-          onLanguageChange = {})
+          onLanguageChange = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
 
     waitForProfileScreenReady()
@@ -522,9 +559,11 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.setContent {
       ProfileScreen(
           onLogout = {},
-          onBack = {},
+          onSettingsClicked = {},
           onEditPreferencesClick = { clicked = true },
-          onLanguageChange = {})
+          onLanguageChange = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
     waitForProfileScreenReady()
     compose.onNodeWithText("Preferences").performScrollTo().assertIsDisplayed().performClick()
@@ -538,9 +577,11 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     compose.setContent {
       ProfileScreen(
           onLogout = {},
-          onBack = {},
+          onSettingsClicked = {},
           onLanguageChange = { languageChanged = true },
-          onEditPreferencesClick = {})
+          onEditPreferencesClick = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
     }
     waitForProfileScreenReady()
 
@@ -616,5 +657,71 @@ class ProfileScreenFirestoreTest : FirestoreTest() {
     assertNotNull("Room types should not be null", preferredRoomTypes)
     val minPrice = userInfo["minPrice"] as? Number
     assertNotNull("minPrice should be saved", minPrice)
+  }
+
+  @Test
+  fun contributionsButton_triggersCallback() = runTest {
+    var clicked = false
+
+    compose.setContent {
+      ProfileScreen(
+          onLogout = {},
+          onSettingsClicked = {},
+          onLanguageChange = {},
+          onEditPreferencesClick = {},
+          onContributionClick = { clicked = true },
+          onViewBookmarks = {})
+    }
+    waitForProfileScreenReady()
+
+    val buttonTag = C.ProfileTags.CONTRIBUTIONS_BUTTON
+
+    compose.onNodeWithTag(buttonTag).performScrollTo()
+    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    assert(clicked)
+  }
+
+  @Test
+  fun emailField_isDisabledAndReadOnly() {
+    compose.setContent {
+      ProfileScreen(
+          onLogout = {},
+          onSettingsClicked = {},
+          onLanguageChange = {},
+          onEditPreferencesClick = {},
+          onContributionClick = {},
+          onViewBookmarks = {})
+    }
+    waitForProfileScreenReady()
+
+    compose.onNodeWithTag(C.ProfileTags.EMAIL_FIELD, useUnmergedTree = true).performScrollTo()
+    compose.waitForIdle()
+    compose.onNodeWithTag(C.ProfileTags.EMAIL_FIELD, useUnmergedTree = true).assertIsNotEnabled()
+  }
+
+  @Test
+  fun bookmarksButton_triggersCallback() = runTest {
+    var clicked = false
+    compose.setContent {
+      ProfileScreen(
+          onLogout = {},
+          onSettingsClicked = {},
+          onLanguageChange = {},
+          onEditPreferencesClick = {},
+          onContributionClick = {},
+          onViewBookmarks = { clicked = true })
+    }
+    waitForProfileScreenReady()
+
+    val buttonTag = C.ProfileTags.BOOKMARKS_BUTTON
+
+    compose.onNodeWithTag("profile_list").performScrollToNode(hasTestTag(buttonTag))
+
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(buttonTag, useUnmergedTree = true).performClick()
+    compose.waitForIdle()
+    assert(clicked)
   }
 }

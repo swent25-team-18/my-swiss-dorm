@@ -140,7 +140,7 @@ fun AddListingScreen(
                   modifier = Modifier.testTag(C.AddListingScreenTags.RESIDENCY_DROPDOWN))
 
               HousingTypeDropdown(
-                  selected = ui.housingType,
+                  selected = ui.housingType.getName(context),
                   onSelected = { addListingViewModel.setHousingType(it) },
                   accentColor = MainColor)
 

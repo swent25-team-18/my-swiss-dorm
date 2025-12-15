@@ -226,6 +226,9 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     // Should return false for unauthenticated user
     assertFalse("Should return false for unauthenticated user", result)
+
+    // Advance coroutines to ensure any background operations complete
+    advanceUntilIdle()
   }
 
   @Test
@@ -252,6 +255,9 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     // Should return false for anonymous user
     assertFalse("Should return false for anonymous user", result)
+
+    // Advance coroutines to ensure any background operations complete
+    advanceUntilIdle()
   }
 
   @Test
@@ -329,6 +335,9 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     // Should return false for blank owner ID
     assertFalse("Should return false for blank owner ID", result)
+
+    // Advance coroutines to ensure any background operations complete
+    advanceUntilIdle()
   }
 
   @Test
@@ -619,6 +628,14 @@ class ViewListingViewModelTest : FirestoreTest() {
     viewModel.loadListing(listing.uid, context)
     advanceUntilIdle()
 
+    // Wait for POI calculation to complete
+    var attempts = 0
+    while (viewModel.uiState.value.isLoadingPOIs && attempts < 50) {
+      delay(100)
+      advanceUntilIdle()
+      attempts++
+    }
+
     // Verify initial bookmark state
     val initialBookmarkState = viewModel.uiState.value.isBookmarked
 
@@ -627,6 +644,7 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     // Advance coroutines to let the exception be caught
     advanceUntilIdle()
+    delay(500) // Give coroutines time to complete
 
     // Verify error message is set
     val errorMsg = viewModel.uiState.value.errorMsg

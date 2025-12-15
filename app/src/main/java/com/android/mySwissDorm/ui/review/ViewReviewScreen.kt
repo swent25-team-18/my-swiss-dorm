@@ -187,18 +187,16 @@ fun ViewReviewScreen(
                                 else "",
                         style = baseTextStyle.copy(fontWeight = FontWeight.Bold, color = MainColor),
                         modifier =
-                            Modifier.testTag(C.ViewReviewTags.POSTED_BY_NAME).clickable {
-                              // Allow navigation if online or if it's the current user's profile
-                              if (NetworkUtils.isNetworkAvailable(context) || isOwner) {
-                                onViewProfile(review.ownerId)
-                              } else {
-                                Toast.makeText(
-                                        context,
-                                        context.getString(R.string.profile_offline_message),
-                                        Toast.LENGTH_SHORT)
-                                    .show()
-                              }
-                            })
+                            Modifier.testTag(C.ViewReviewTags.POSTED_BY_NAME)
+                                .then(
+                                    // Only make clickable if review is not anonymous AND (online OR
+                                    // owner)
+                                    if (!review.isAnonymous &&
+                                        (NetworkUtils.isNetworkAvailable(context) || isOwner)) {
+                                      Modifier.clickable { onViewProfile(review.ownerId) }
+                                    } else {
+                                      Modifier
+                                    }))
                     Text(
                         text = " ${formatRelative(review.postedAt, context = context)}",
                         style = baseTextStyle,

@@ -289,7 +289,7 @@ fun SmallListingPreviewCard(
                   style = MaterialTheme.typography.bodyMedium,
                   color = MainColor,
                   fontWeight = FontWeight.Bold)
-              Spacer(modifier = Modifier.height(2.dp))
+              Spacer(modifier = Modifier.height(3.dp))
               Text(
                   text = listing.location.name,
                   style = MaterialTheme.typography.bodySmall,

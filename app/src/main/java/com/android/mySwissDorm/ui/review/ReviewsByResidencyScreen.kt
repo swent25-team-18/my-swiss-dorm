@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -62,6 +63,7 @@ fun ReviewsByResidencyScreen(
     residencyName: String,
     onSelectReview: (ReviewCardUI) -> Unit = {},
     onGoBack: () -> Unit = {},
+    onViewResidencyDetails: () -> Unit = {},
 ) {
   val context = LocalContext.current
 
@@ -93,6 +95,17 @@ fun ReviewsByResidencyScreen(
       }) { pd ->
         Column(
             modifier = Modifier.padding(pd).fillMaxSize().testTag(C.ReviewsByResidencyTag.ROOT)) {
+              // "See residency details" button below the title
+              Row(
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .padding(horizontal = 16.dp, vertical = 8.dp)
+                          .testTag(C.ReviewsByResidencyTag.VIEW_RESIDENCY_DETAILS_BUTTON),
+                  horizontalArrangement = Arrangement.Center) {
+                    TextButton(onClick = { onViewResidencyDetails() }) {
+                      Text(text = stringResource(R.string.see_residency_details), color = MainColor)
+                    }
+                  }
               when {
                 reviewsState.loading -> {
                   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -42,6 +42,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -52,6 +53,7 @@ import com.android.mySwissDorm.ui.theme.White
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.storage
 import io.getstream.chat.android.client.api.models.QueryChannelsRequest
 import io.getstream.chat.android.models.Channel
@@ -83,7 +85,25 @@ suspend fun defaultFetchChannelsForTest(
 }
 
 suspend fun defaultEnsureConnected(currentUser: FirebaseUser) {
-  val profile = ProfileRepositoryProvider.repository.getProfile(currentUser.uid)
+  defaultEnsureConnected(
+      currentUser = currentUser,
+      profileRepository = ProfileRepositoryProvider.repository,
+      firebasePhotoDownloadUrl = { fileName -> getFirebasePhotoDownloadUrl(fileName) },
+      connectUser = { id, name, imageUrl ->
+        StreamChatProvider.connectUser(firebaseUserId = id, displayName = name, imageUrl = imageUrl)
+      },
+      timeoutBlock = { block -> withTimeout(10000) { block() } },
+  )
+}
+
+internal suspend fun defaultEnsureConnected(
+    currentUser: FirebaseUser,
+    profileRepository: ProfileRepository,
+    firebasePhotoDownloadUrl: suspend (String) -> String,
+    connectUser: suspend (String, String, String) -> Unit,
+    timeoutBlock: suspend (suspend () -> Unit) -> Unit,
+) {
+  val profile = profileRepository.getProfile(currentUser.uid)
   val displayName =
       "${profile.userInfo.name} ${profile.userInfo.lastName}".trim().ifBlank {
         currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
@@ -91,17 +111,17 @@ suspend fun defaultEnsureConnected(currentUser: FirebaseUser) {
   val imageUrl =
       profile.userInfo.profilePicture
           ?.takeIf { it.isNotBlank() }
-          ?.let { runCatching { getFirebasePhotoDownloadUrl(it) }.getOrNull().orEmpty() }
+          ?.let { runCatching { firebasePhotoDownloadUrl(it) }.getOrNull().orEmpty() }
           .orEmpty()
-  withTimeout(10000) {
-    StreamChatProvider.connectUser(
-        firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = imageUrl)
-  }
+  timeoutBlock { connectUser(currentUser.uid, displayName, imageUrl) }
 }
 
 /** Local helper to build a Firebase Storage download URL for Stream user image. */
-private suspend fun getFirebasePhotoDownloadUrl(fileName: String): String {
-  return Firebase.storage.reference.child("photos/$fileName").downloadUrl.await().toString()
+internal suspend fun getFirebasePhotoDownloadUrl(
+    fileName: String,
+    storageRef: StorageReference = Firebase.storage.reference,
+): String {
+  return storageRef.child("photos/$fileName").downloadUrl.await().toString()
 }
 
 suspend fun loadChannelsDefault(

@@ -39,7 +39,7 @@ class AdminPageViewModel(
     private val adminRepo: AdminRepository = AdminRepository(),
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryStorage(photoSubDir = "cities/"),
+        PhotoRepositoryStorage(photoSubDir = "residencies/"),
     val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository
 ) : BaseLocationSearchViewModel() {
   override val logTag = "AdminPageViewModel"
@@ -56,7 +56,8 @@ class AdminPageViewModel(
       val name: String = "",
       val location: Location? = null,
       val description: String = "",
-      val image: Photo? = null,
+      val image: Photo? = null, // For CITY (single image)
+      val pickedImages: List<Photo> = emptyList(), // For RESIDENCY (multiple images)
       val city: String = "",
       val email: String = "",
       val phone: String = "",
@@ -67,15 +68,110 @@ class AdminPageViewModel(
       val customLocation: Location? = null,
       val locationSuggestions: List<Location> = emptyList(),
       val showCustomLocationDialog: Boolean = false,
-      val showAdminConfirmDialog: Boolean = false
+      val showAdminConfirmDialog: Boolean = false,
+      val showFullScreenImages: Boolean = false,
+      val fullScreenImagesIndex: Int = 0,
+      val residencies: List<Residency> = emptyList(),
+      val selectedResidencyName: String? = null, // For editing existing residency
+      val isEditingExisting: Boolean = false
   )
 
   var uiState by mutableStateOf(UiState())
     private set
 
+  init {
+    loadResidencies()
+  }
+
+  private fun loadResidencies() {
+    viewModelScope.launch {
+      try {
+        val residencies = residenciesRepo.getAllResidencies()
+        uiState = uiState.copy(residencies = residencies)
+      } catch (e: Exception) {
+        // Log error but don't block UI
+        android.util.Log.e(logTag, "Error loading residencies", e)
+      }
+    }
+  }
+
   // Handlers for all necessary form field changes
   fun onTypeChange(t: EntityType) {
-    uiState = uiState.copy(selected = t, message = null)
+    // Reset photos when switching entity types
+    viewModelScope.launch {
+      // Clean up RESIDENCY photos
+      if (uiState.pickedImages.isNotEmpty()) {
+        uiState.pickedImages.forEach { photo -> photoManager.removePhoto(photo.image, true) }
+      }
+      // Clean up CITY photo
+      if (uiState.image != null) {
+        photoManager.removePhoto(uiState.image!!.image, true)
+      }
+    }
+    uiState =
+        uiState.copy(
+            selected = t,
+            message = null,
+            pickedImages = emptyList(),
+            image = null,
+            selectedResidencyName = null,
+            isEditingExisting = false)
+  }
+
+  fun onResidencySelected(residencyName: String?) {
+    if (residencyName == null) {
+      // Creating new residency
+      uiState =
+          uiState.copy(
+              selectedResidencyName = null,
+              isEditingExisting = false,
+              name = "",
+              description = "",
+              city = "",
+              email = "",
+              phone = "",
+              website = "",
+              location = null,
+              pickedImages = emptyList())
+      viewModelScope.launch { photoManager.deleteAll() }
+      return
+    }
+
+    // Editing existing residency
+    viewModelScope.launch {
+      try {
+        val residency = residenciesRepo.getResidency(residencyName)
+        // Load existing images
+        val existingPhotos = mutableListOf<Photo>()
+        if (residency.imageUrls.isNotEmpty()) {
+          residency.imageUrls.forEach { fileName ->
+            try {
+              val photo = photoRepositoryCloud.retrievePhoto(fileName)
+              existingPhotos.add(photo)
+              photoManager.addPhoto(photo)
+            } catch (e: Exception) {
+              android.util.Log.e(logTag, "Error loading photo: $fileName", e)
+            }
+          }
+        }
+
+        uiState =
+            uiState.copy(
+                selectedResidencyName = residencyName,
+                isEditingExisting = true,
+                name = residency.name,
+                description = residency.description,
+                city = residency.city,
+                email = residency.email ?: "",
+                phone = residency.phone ?: "",
+                website = residency.website?.toString() ?: "",
+                location = residency.location,
+                pickedImages = existingPhotos)
+      } catch (e: Exception) {
+        android.util.Log.e(logTag, "Error loading residency: $residencyName", e)
+        uiState = uiState.copy(message = "Error loading residency: ${e.message}")
+      }
+    }
   }
 
   val photoManager =
@@ -93,6 +189,32 @@ class AdminPageViewModel(
       }
     }
     uiState = uiState.copy(image = photo)
+  }
+
+  // Photo management for RESIDENCY (multiple images)
+  fun addPhoto(photo: Photo) {
+    viewModelScope.launch {
+      photoManager.addPhoto(photo)
+      uiState = uiState.copy(pickedImages = photoManager.photoLoaded)
+    }
+  }
+
+  fun removePhoto(uri: Uri, removeFromLocal: Boolean) {
+    viewModelScope.launch {
+      photoManager.removePhoto(uri, removeFromLocal)
+      uiState = uiState.copy(pickedImages = photoManager.photoLoaded)
+    }
+  }
+
+  fun dismissFullScreenImages() {
+    uiState = uiState.copy(showFullScreenImages = false)
+  }
+
+  fun onClickImage(uri: Uri) {
+    val index = uiState.pickedImages.map { it.image }.indexOf(uri)
+    if (index >= 0) {
+      uiState = uiState.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
+    }
   }
 
   fun onName(v: String) {
@@ -266,6 +388,7 @@ class AdminPageViewModel(
           EntityType.RESIDENCY -> {
             // Location is validated to be non-null
             val location = uiState.location!!
+            val imageUrls = uiState.pickedImages.map { it.fileName }
             val residency =
                 Residency(
                     name = uiState.name.trim(),
@@ -274,8 +397,13 @@ class AdminPageViewModel(
                     city = uiState.city.trim(),
                     email = uiState.email.trim().ifBlank { null },
                     phone = uiState.phone.trim().ifBlank { null },
-                    website = uiState.website.trim().takeIf { it.isNotBlank() }?.let { URL(it) })
-            residenciesRepo.addResidency(residency)
+                    website = uiState.website.trim().takeIf { it.isNotBlank() }?.let { URL(it) },
+                    imageUrls = imageUrls)
+            if (uiState.isEditingExisting && uiState.selectedResidencyName != null) {
+              residenciesRepo.updateResidency(residency)
+            } else {
+              residenciesRepo.addResidency(residency)
+            }
           }
           EntityType.UNIVERSITY -> {
             // Location is validated to be non-null
@@ -292,6 +420,10 @@ class AdminPageViewModel(
           }
         }
         if (uiState.selected != EntityType.ADMIN) {
+          // Commit photo changes for RESIDENCY
+          if (uiState.selected == EntityType.RESIDENCY && uiState.pickedImages.isNotEmpty()) {
+            photoManager.commitChanges()
+          }
           uiState =
               UiState(
                   selected = uiState.selected,

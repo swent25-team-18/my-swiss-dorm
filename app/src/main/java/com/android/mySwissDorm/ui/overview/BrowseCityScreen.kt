@@ -26,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -35,8 +36,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.listing.ListingCard
@@ -61,6 +65,7 @@ import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 import com.google.firebase.Timestamp
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.launch
 
 /** Handles the result of a QR scan from the settings screen. */
 internal fun handleQrScanResult(
@@ -841,6 +846,42 @@ private fun StartDateFilterContent(
 // ListingCard has been moved to com.android.mySwissDorm.ui.listing.ListingCard for reuse
 
 @Composable
+private fun ResidencyCardImage(imageUrls: List<String>, modifier: Modifier = Modifier) {
+  val context = LocalContext.current
+  var imageUri by remember { mutableStateOf<android.net.Uri?>(null) }
+
+  LaunchedEffect(imageUrls) {
+    if (imageUrls.isNotEmpty()) {
+      val photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
+      try {
+        val photo = photoRepositoryCloud.retrievePhoto(imageUrls.first())
+        imageUri = photo.image
+      } catch (e: Exception) {
+        imageUri = null
+      }
+    } else {
+      imageUri = null
+    }
+  }
+
+  Box(modifier = modifier) {
+    if (imageUri != null) {
+      AsyncImage(
+          model = imageUri,
+          contentDescription = null,
+          modifier = Modifier.fillMaxSize(),
+          contentScale = ContentScale.Crop)
+    } else {
+      Text(
+          stringResource(R.string.image),
+          modifier = Modifier.align(Alignment.Center),
+          style = MaterialTheme.typography.bodyMedium,
+          color = Gray)
+    }
+  }
+}
+
+@Composable
 private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> Unit) {
   OutlinedCard(
       shape = RoundedCornerShape(16.dp),
@@ -850,19 +891,14 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
         Row(
             modifier = Modifier.fillMaxWidth(1f).fillMaxHeight(1f),
             verticalAlignment = Alignment.CenterVertically) {
-              // Image placeholder (left)
-              Box(
+              // Image (left)
+              ResidencyCardImage(
+                  imageUrls = data.imageUrls,
                   modifier =
                       Modifier.height(160.dp)
                           .fillMaxWidth(0.4F)
                           .clip(RoundedCornerShape(12.dp))
-                          .background(ListingCardColor)) {
-                    Text(
-                        stringResource(R.string.image),
-                        modifier = Modifier.align(Alignment.Center),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Gray)
-                  }
+                          .background(ListingCardColor))
 
               Spacer(Modifier.width(12.dp))
 

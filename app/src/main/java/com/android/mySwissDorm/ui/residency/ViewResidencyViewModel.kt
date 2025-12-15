@@ -5,6 +5,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.photo.Photo
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -24,13 +27,18 @@ data class ViewResidencyUIState(
     val errorMsg: String? = null,
     val poiDistances: List<POIDistance> = emptyList(),
     val loading: Boolean = false,
-    val isLoadingPOIs: Boolean = false
+    val isLoadingPOIs: Boolean = false,
+    val images: List<Photo> = emptyList(),
+    val showFullScreenImages: Boolean = false,
+    val fullScreenImagesIndex: Int = 0
 )
 
 open class ViewResidencyViewModel(
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
-    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository
+    private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
+    private val photoRepositoryCloud: PhotoRepositoryCloud =
+        PhotoRepositoryProvider.cloud_repository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewResidencyUIState(loading = true))
   val uiState: StateFlow<ViewResidencyUIState> = _uiState.asStateFlow()
@@ -42,8 +50,26 @@ open class ViewResidencyViewModel(
         // Load residency first and show it immediately
         val residency = residenciesRepository.getResidency(residencyName)
 
+        // Load images
+        val images = mutableListOf<Photo>()
+        if (residency.imageUrls.isNotEmpty()) {
+          residency.imageUrls.forEach { fileName ->
+            try {
+              val photo = photoRepositoryCloud.retrievePhoto(fileName)
+              images.add(photo)
+            } catch (e: Exception) {
+              Log.e("ViewResidencyViewModel", "Error loading photo: $fileName", e)
+            }
+          }
+        }
+
         _uiState.update {
-          it.copy(residency = residency, loading = false, errorMsg = null, isLoadingPOIs = true)
+          it.copy(
+              residency = residency,
+              images = images,
+              loading = false,
+              errorMsg = null,
+              isLoadingPOIs = true)
         }
 
         // Load POI distances in background (non-blocking)
@@ -90,5 +116,13 @@ open class ViewResidencyViewModel(
 
   fun clearErrorMsg() {
     _uiState.update { it.copy(errorMsg = null) }
+  }
+
+  fun dismissFullScreenImages() {
+    _uiState.update { it.copy(showFullScreenImages = false) }
+  }
+
+  fun onClickImage(index: Int) {
+    _uiState.update { it.copy(showFullScreenImages = true, fullScreenImagesIndex = index) }
   }
 }

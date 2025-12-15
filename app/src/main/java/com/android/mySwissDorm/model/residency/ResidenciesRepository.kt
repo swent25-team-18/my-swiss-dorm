@@ -35,4 +35,11 @@ interface ResidenciesRepository {
    * @param residency The residency to persist.
    */
   suspend fun addResidency(residency: Residency)
+
+  /**
+   * Updates an existing [Residency] item in the repository.
+   *
+   * @param residency The residency to update with new data.
+   */
+  suspend fun updateResidency(residency: Residency)
 }

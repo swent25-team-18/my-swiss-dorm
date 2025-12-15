@@ -37,21 +37,33 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
   }
 
   override suspend fun addResidency(residency: Residency) {
-    val residencyData =
-        mapOf(
-            "name" to residency.name,
-            "description" to residency.description,
-            "location" to
-                mapOf(
-                    "name" to residency.location.name,
-                    "latitude" to residency.location.latitude,
-                    "longitude" to residency.location.longitude,
-                ),
-            "cityName" to residency.city,
-            "email" to residency.email,
-            "phone" to residency.phone,
-            "website" to residency.website?.toString())
+    val residencyData = createResidencyDataMap(residency)
     db.collection(RESIDENCIES_COLLECTION_PATH).document(residency.name).set(residencyData).await()
+  }
+
+  override suspend fun updateResidency(residency: Residency) {
+    val residencyData = createResidencyDataMap(residency)
+    db.collection(RESIDENCIES_COLLECTION_PATH)
+        .document(residency.name)
+        .update(residencyData)
+        .await()
+  }
+
+  private fun createResidencyDataMap(residency: Residency): Map<String, Any?> {
+    return mapOf(
+        "name" to residency.name,
+        "description" to residency.description,
+        "location" to
+            mapOf(
+                "name" to residency.location.name,
+                "latitude" to residency.location.latitude,
+                "longitude" to residency.location.longitude,
+            ),
+        "cityName" to residency.city,
+        "email" to residency.email,
+        "phone" to residency.phone,
+        "website" to residency.website?.toString(),
+        "imageUrls" to residency.imageUrls)
   }
 
   private fun documentToResidency(document: DocumentSnapshot): Residency? {
@@ -76,6 +88,8 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
           } else {
             URL(websiteString)
           }
+      val imageUrls =
+          (document.get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
 
       Residency(
           name = name,
@@ -84,7 +98,8 @@ class ResidenciesRepositoryFirestore(private val db: FirebaseFirestore) : Reside
           city = cityName,
           email = email,
           phone = phone,
-          website = website)
+          website = website,
+          imageUrls = imageUrls)
     } catch (e: Exception) {
       Log.e("ResidenciesRepositoryFirestore", "Error converting document to Residency", e)
       null

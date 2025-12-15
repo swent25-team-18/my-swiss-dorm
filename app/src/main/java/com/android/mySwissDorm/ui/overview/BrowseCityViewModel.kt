@@ -80,7 +80,8 @@ data class ResidencyCardUI(
     val meanGrade: Double,
     val location: String,
     val latestReview: Review?,
-    val fullNameOfPoster: String
+    val fullNameOfPoster: String,
+    val imageUrls: List<String> = emptyList()
 )
 
 /**
@@ -408,7 +409,7 @@ class BrowseCityViewModel(
                   location = it.location.name,
                   latestReview = latestReview,
                   fullNameOfPoster = fullName,
-              )
+                  imageUrls = it.imageUrls)
             }
 
         _uiState.update {

@@ -903,8 +903,13 @@ class ViewReviewScreenTest : FirestoreTest() {
 
   @Test
   fun translateButtonTextUpdatesWhenClicked() {
+    // Set the locale to French so the translate button appears
+    Locale.setDefault(Locale.FRENCH)
+
     setOwnerReview()
     waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.translatedDescription != "" }
 
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
     compose
@@ -917,6 +922,19 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose
         .onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN)
         .assertTextEquals(context.getString(R.string.see_original))
+  }
+
+  @Test
+  fun translateButtonDoesNotAppearIfSameLanguage() {
+    // Set the locale to English so the translate button doesn't appear
+    Locale.setDefault(Locale.ENGLISH)
+
+    setOwnerReview()
+    waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.translatedDescription != "" }
+
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsNotDisplayed()
   }
 
   @Test

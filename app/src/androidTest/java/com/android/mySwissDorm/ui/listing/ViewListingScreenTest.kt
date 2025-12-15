@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.listing
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
@@ -985,12 +986,17 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun translateButtonTextUpdatesWhenClicked() {
+    // Set the locale to French so the button appears
+    Locale.setDefault(Locale.FRENCH)
+
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
 
     compose.setContent {
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
     waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.translatedDescription != "" }
 
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsDisplayed()
     compose
@@ -1003,6 +1009,23 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     compose
         .onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN)
         .assertTextEquals(context.getString(R.string.see_original))
+  }
+
+  @Test
+  fun translateButtonDoesNotAppearIfSameLanguage() {
+    // Set the locale to English so the button doesn't appear
+    Locale.setDefault(Locale.ENGLISH)
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.translatedDescription != "" }
+
+    compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsNotDisplayed()
   }
 
   @Test

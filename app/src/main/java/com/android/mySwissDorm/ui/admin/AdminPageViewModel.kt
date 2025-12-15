@@ -97,6 +97,16 @@ class AdminPageViewModel(
 
   // Handlers for all necessary form field changes
   fun onTypeChange(t: EntityType) {
+    // Update state synchronously first
+    uiState =
+        uiState.copy(
+            selected = t,
+            message = null,
+            pickedImages = emptyList(),
+            image = null,
+            selectedResidencyName = null,
+            isEditingExisting = false)
+
     // Reset photos when switching entity types
     viewModelScope.launch {
       // Clean up RESIDENCY photos
@@ -107,15 +117,16 @@ class AdminPageViewModel(
       if (uiState.image != null) {
         photoManager.removePhoto(uiState.image!!.image, true)
       }
+      // Reload residencies when switching to RESIDENCY type
+      if (t == EntityType.RESIDENCY) {
+        try {
+          val allResidencies = residenciesRepo.getAllResidencies()
+          uiState = uiState.copy(residencies = allResidencies)
+        } catch (e: Exception) {
+          android.util.Log.e(logTag, "Error loading residencies", e)
+        }
+      }
     }
-    uiState =
-        uiState.copy(
-            selected = t,
-            message = null,
-            pickedImages = emptyList(),
-            image = null,
-            selectedResidencyName = null,
-            isEditingExisting = false)
   }
 
   fun onResidencySelected(residencyName: String?) {

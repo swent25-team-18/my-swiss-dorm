@@ -307,6 +307,40 @@ class ProfileRepositoryFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun addBlockedUser_whenAlreadyBlocked_doesNotDuplicate() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    profile1 =
+        profile1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.createProfile(profile1)
+
+    switchToUser(FakeUser.FakeUser2)
+    profile2 =
+        profile2.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.createProfile(profile2)
+
+    switchToUser(FakeUser.FakeUser1)
+    // First add blocked user
+    repo.addBlockedUser(profile1.ownerId, profile2.ownerId)
+    var blockedIds = repo.getBlockedUserIds(profile1.ownerId)
+    assertEquals(1, blockedIds.size)
+    assertTrue(profile2.ownerId in blockedIds)
+
+    // Try to add again (should not duplicate)
+    repo.addBlockedUser(profile1.ownerId, profile2.ownerId)
+
+    // Verify still only one entry
+    blockedIds = repo.getBlockedUserIds(profile1.ownerId)
+    assertEquals(1, blockedIds.size)
+    assertTrue(profile2.ownerId in blockedIds)
+  }
+
+  @Test
   fun canRemoveBlockedUser() = runTest {
     switchToUser(FakeUser.FakeUser1)
     profile1 =

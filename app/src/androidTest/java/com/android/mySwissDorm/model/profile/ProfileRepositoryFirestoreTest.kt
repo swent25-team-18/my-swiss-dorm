@@ -349,6 +349,21 @@ class ProfileRepositoryFirestoreTest : FirestoreTest() {
     assertTrue(blockedIds.isEmpty())
   }
 
+  @Test
+  fun getBlockedUserNames_returnsEmptyMap() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    profile1 =
+        profile1.copy(
+            ownerId =
+                FirebaseEmulator.auth.currentUser?.uid
+                    ?: throw NullPointerException("No user logged in"))
+    repo.createProfile(profile1)
+
+    // Firestore doesn't store display names (local-only feature)
+    val names = repo.getBlockedUserNames(profile1.ownerId)
+    assertTrue("Should return empty map", names.isEmpty())
+  }
+
   @After
   override fun tearDown() {
     super.tearDown()

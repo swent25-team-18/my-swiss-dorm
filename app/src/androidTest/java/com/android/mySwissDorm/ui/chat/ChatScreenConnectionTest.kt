@@ -1,8 +1,11 @@
 package com.android.mySwissDorm.ui.chat
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.models.User
@@ -56,6 +59,32 @@ class ChatScreenConnectionTest {
 
     composeRule.waitUntil(timeoutMillis = 5_000) { connectCalled && userStateFlow.value != null }
     composeRule.waitUntil(timeoutMillis = 5_000) { messagesShown }
+  }
+
+  @Test
+  fun showsConnectingUi_whenConnectedOverrideIsFalse_withoutStreamInitialization() {
+    val fakeClient = mockk<ChatClient>(relaxed = true)
+    val connectingText =
+        InstrumentationRegistry.getInstrumentation()
+            .targetContext
+            .getString(R.string.chat_screen_connecting)
+
+    composeRule.setContent {
+      MySwissDormAppTheme {
+        MyChatScreen(
+            channelId = "messaging:test-loading",
+            onBackClick = {},
+            isConnectedOverride = false,
+            chatClientProvider = { fakeClient },
+            currentUserProvider = { null },
+            userStateProvider = { null },
+            connectUser = { _, _ -> },
+            viewModelFactoryProvider = { _, _, _, _ -> mockk(relaxed = true) },
+            messagesScreen = { _, _ -> })
+      }
+    }
+
+    composeRule.onNodeWithText(connectingText, substring = true).assertIsDisplayed()
   }
 
   @Test

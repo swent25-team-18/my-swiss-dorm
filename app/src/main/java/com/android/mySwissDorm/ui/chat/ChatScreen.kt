@@ -55,6 +55,7 @@ import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.ConnectionState
 import io.getstream.chat.android.models.User
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 
 /** Calculates the soft input mode that should be restored when leaving ChatScreen. */
 internal fun computeRestoreSoftInputMode(originalSoftInputMode: Int): Int {
@@ -75,6 +76,50 @@ internal fun computeRestoreSoftInputMode(originalSoftInputMode: Int): Int {
 internal fun computeResizeSoftInputMode(originalSoftInputMode: Int): Int {
   val originalStateBits = originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_STATE
   return originalStateBits or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+}
+
+/**
+ * Extracted connection flow so we can unit test all branches without needing Compose runtime.
+ *
+ * This preserves the original behavior of updating [setIsConnecting] before/after the network call,
+ * and uses [delayFn] for the post-connect and post-failure waits.
+ */
+internal suspend fun ensureConnectedToStream(
+    isConnectedOverride: Boolean?,
+    currentUserPresent: Boolean,
+    userStateProvider: () -> Any?,
+    isConnecting: Boolean,
+    setIsConnected: (Boolean) -> Unit,
+    setIsConnecting: (Boolean) -> Unit,
+    connectUser: suspend () -> Unit,
+    delayFn: suspend (Long) -> Unit = { delay(it) },
+    logError: (Throwable) -> Unit = {},
+) {
+  // Skip connection logic when overridden (tests)
+  if (isConnectedOverride != null) return
+
+  val user = userStateProvider()
+  if (user != null) {
+    setIsConnected(true)
+    return
+  }
+
+  if (currentUserPresent && !isConnecting) {
+    setIsConnecting(true)
+    try {
+      connectUser()
+      // Wait for connection to establish
+      delayFn(1500)
+      setIsConnected(true)
+    } catch (e: Exception) {
+      logError(e)
+      // Still try to proceed, might work if connection was already in progress
+      delayFn(1000)
+      setIsConnected(userStateProvider() != null)
+    } finally {
+      setIsConnecting(false)
+    }
+  }
 }
 
 /**
@@ -151,10 +196,17 @@ fun MyChatScreen(
     messagesScreen: @Composable (MessagesViewModelFactory, () -> Unit) -> Unit =
         { viewModelFactory, onBack ->
           MessagesScreenWithAppAvatarHeader(
-              viewModelFactory = viewModelFactory,
               channelCid = channelId,
               firebaseCurrentUserId = currentUserProvider()?.uid,
-              onBackPressed = onBack)
+              onBackPressed = onBack,
+              messagesContent = {
+                MessagesScreen(
+                    viewModelFactory = viewModelFactory,
+                    onBackPressed = onBack,
+                    showHeader = false,
+                )
+              },
+          )
         },
     viewModelFactoryProvider: (Context, ChatClient, String, Int) -> MessagesViewModelFactory =
         { ctx, chatClient, cid, limit ->
@@ -229,29 +281,22 @@ fun MyChatScreen(
 
     // Check connection and connect if needed
     LaunchedEffect(channelId, isConnectedOverride) {
-      // Skip connection logic when overridden (tests)
-      if (isConnectedOverride != null) return@LaunchedEffect
-
-      val user = userStateProvider(chatClient)
-      if (user != null) {
-        isConnected = true
-      } else if (currentUser != null && !isConnecting) {
-        // User not connected, try to connect
-        isConnecting = true
-        try {
-          connectUser(currentUser, chatClient)
-          // Wait for connection to establish
-          delay(1500)
-          isConnected = true
-        } catch (e: Exception) {
-          android.util.Log.e("MyChatScreen", "Failed to connect to Stream Chat", e)
-          // Still try to proceed, might work if connection was already in progress
-          delay(1000)
-          isConnected = userStateProvider(chatClient) != null
-        } finally {
-          isConnecting = false
-        }
-      }
+      ensureConnectedToStream(
+          isConnectedOverride = isConnectedOverride,
+          currentUserPresent = currentUser != null,
+          userStateProvider = { userStateProvider(chatClient) },
+          isConnecting = isConnecting,
+          setIsConnected = { isConnected = it },
+          setIsConnecting = { isConnecting = it },
+          connectUser = {
+            if (currentUser != null) {
+              connectUser(currentUser, chatClient)
+            }
+          },
+          logError = { e ->
+            android.util.Log.e("MyChatScreen", "Failed to connect to Stream Chat", e)
+          },
+      )
     }
 
     if (!isConnected || isConnecting) {
@@ -310,16 +355,17 @@ internal suspend fun connectUserById(
 }
 
 @Composable
-private fun MessagesScreenWithAppAvatarHeader(
-    viewModelFactory: MessagesViewModelFactory,
+internal fun MessagesScreenWithAppAvatarHeader(
     channelCid: String,
     firebaseCurrentUserId: String?,
     onBackPressed: () -> Unit,
+    messagesContent: @Composable () -> Unit,
+    streamState: StreamState = DefaultStreamState(),
+    avatarModelLoader: suspend (String) -> Any? = { userId -> loadAppProfileAvatarModel(userId) },
 ) {
-  val streamClient = StreamChatProvider.getClient()
-  val streamCurrentUser by streamClient.clientState.user.collectAsState(initial = null)
+  val streamCurrentUser by streamState.currentUserFlow.collectAsState(initial = null)
   val connectionState by
-      streamClient.clientState.connectionState.collectAsState(initial = ConnectionState.Connected)
+      streamState.connectionStateFlow.collectAsState(initial = ConnectionState.Connected)
 
   var channel by remember(channelCid) { mutableStateOf<Channel?>(null) }
 
@@ -328,9 +374,7 @@ private fun MessagesScreenWithAppAvatarHeader(
     val type = parts.getOrNull(0).orEmpty()
     val id = parts.getOrNull(1).orEmpty()
     if (type.isBlank() || id.isBlank()) return@LaunchedEffect
-    channel =
-        runCatching { StreamChatProvider.getClient().channel(type, id).watch().await().getOrNull() }
-            .getOrNull()
+    channel = streamState.watchChannel(type, id)
   }
 
   Column(modifier = Modifier.fillMaxSize()) {
@@ -345,16 +389,31 @@ private fun MessagesScreenWithAppAvatarHeader(
             AppProfileAvatarTrailingContent(
                 channel = ch,
                 currentUserId = firebaseCurrentUserId ?: streamCurrentUser?.id,
+                avatarModelLoader = avatarModelLoader,
             )
           },
       )
     }
 
-    MessagesScreen(
-        viewModelFactory = viewModelFactory,
-        onBackPressed = onBackPressed,
-        showHeader = false,
-    )
+    messagesContent()
+  }
+}
+
+internal interface StreamState {
+  val currentUserFlow: StateFlow<User?>
+  val connectionStateFlow: StateFlow<ConnectionState>
+
+  suspend fun watchChannel(type: String, id: String): Channel?
+}
+
+private class DefaultStreamState : StreamState {
+  private val client: ChatClient = StreamChatProvider.getClient()
+
+  override val currentUserFlow: StateFlow<User?> = client.clientState.user
+  override val connectionStateFlow: StateFlow<ConnectionState> = client.clientState.connectionState
+
+  override suspend fun watchChannel(type: String, id: String): Channel? {
+    return runCatching { client.channel(type, id).watch().await().getOrNull() }.getOrNull()
   }
 }
 

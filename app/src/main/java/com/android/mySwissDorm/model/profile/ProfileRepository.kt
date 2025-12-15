@@ -43,6 +43,18 @@ interface ProfileRepository {
   /** Returns the list of blocked user ids for the given [ownerId]. */
   suspend fun getBlockedUserIds(ownerId: String): List<String>
 
+  /**
+   * Returns a map of blocked user IDs to their display names (local-only data).
+   *
+   * This method returns locally stored display names for blocked users, which may be incomplete if
+   * names were not stored when blocking. Returns empty map if no names are stored.
+   *
+   * @param ownerId The identifier of the profile.
+   * @return A map of blocked user IDs to their display names (may be empty if names weren't
+   *   stored).
+   */
+  suspend fun getBlockedUserNames(ownerId: String): Map<String, String>
+
   /** Adds [targetUid] to the blocked list of [ownerId]. */
   suspend fun addBlockedUser(ownerId: String, targetUid: String)
 

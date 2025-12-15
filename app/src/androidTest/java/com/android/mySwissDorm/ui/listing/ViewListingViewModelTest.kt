@@ -628,6 +628,14 @@ class ViewListingViewModelTest : FirestoreTest() {
     viewModel.loadListing(listing.uid, context)
     advanceUntilIdle()
 
+    // Wait for POI calculation to complete
+    var attempts = 0
+    while (viewModel.uiState.value.isLoadingPOIs && attempts < 50) {
+      delay(100)
+      advanceUntilIdle()
+      attempts++
+    }
+
     // Verify initial bookmark state
     val initialBookmarkState = viewModel.uiState.value.isBookmarked
 
@@ -636,6 +644,7 @@ class ViewListingViewModelTest : FirestoreTest() {
 
     // Advance coroutines to let the exception be caught
     advanceUntilIdle()
+    delay(500) // Give coroutines time to complete
 
     // Verify error message is set
     val errorMsg = viewModel.uiState.value.errorMsg

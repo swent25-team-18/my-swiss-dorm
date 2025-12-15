@@ -153,6 +153,32 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
   }
 
   /**
+   * Returns a map of blocked user IDs to their display names (local-only data).
+   *
+   * This method only works for the current user's profile. Returns the locally stored display names
+   * for blocked users, which may be incomplete if names were not stored when blocking.
+   *
+   * @param ownerId The identifier of the profile.
+   * @return A map of blocked user IDs to their display names (may be empty if names weren't
+   *   stored).
+   * @throws NoSuchElementException if the profile is not found or doesn't match the requested
+   *   ownerId.
+   */
+  override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+    val entity =
+        profileDao.getUserProfile()
+            ?: throw NoSuchElementException(
+                "ProfileRepositoryLocal: Profile not found. Cannot get blocked user names for non-existent profile.")
+
+    require(entity.ownerId == ownerId) {
+      "ProfileRepositoryLocal: Cannot get blocked user names for profile with ownerId $ownerId. " +
+          "Only the current user's profile (${entity.ownerId}) is stored locally."
+    }
+
+    return entity.blockedUserNames
+  }
+
+  /**
    * Updates a list field in UserInfo and saves the profile.
    *
    * @param ownerId The identifier of the profile.
@@ -177,14 +203,59 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
    *   ownerId.
    */
   override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
-    updateListField(ownerId) { it.copy(blockedUserIds = it.blockedUserIds + targetUid) }
+    addBlockedUserWithName(ownerId, targetUid, null)
+  }
+
+  /**
+   * Adds a user to the blocked list with optional display name (internal method).
+   *
+   * This method only works for the current user's profile. It retrieves the profile, adds the
+   * blocked user, and saves it back to local storage. If a display name is provided, it's stored
+   * locally for offline access.
+   *
+   * @param ownerId The identifier of the profile.
+   * @param targetUid The identifier of the user to block.
+   * @param targetDisplayName Optional display name of the blocked user (for local storage only).
+   * @throws NoSuchElementException if the profile is not found or doesn't match the requested
+   *   ownerId.
+   */
+  suspend fun addBlockedUserWithName(
+      ownerId: String,
+      targetUid: String,
+      targetDisplayName: String?
+  ) {
+    val entity =
+        profileDao.getUserProfile()
+            ?: throw NoSuchElementException(
+                "ProfileRepositoryLocal: Profile not found. Cannot add blocked user to non-existent profile.")
+
+    require(entity.ownerId == ownerId) {
+      "ProfileRepositoryLocal: Cannot add blocked user to profile with ownerId $ownerId. " +
+          "Only the current user's profile (${entity.ownerId}) can be modified locally."
+    }
+
+    val profile = entity.toProfile()
+    val updatedUserInfo =
+        profile.userInfo.copy(blockedUserIds = profile.userInfo.blockedUserIds + targetUid)
+    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+
+    // Update the entity with the new blocked user and optionally store the display name
+    val updatedEntity = ProfileEntity.fromProfile(updatedProfile)
+    val updatedNames =
+        if (targetDisplayName != null) {
+          entity.blockedUserNames + (targetUid to targetDisplayName)
+        } else {
+          entity.blockedUserNames
+        }
+
+    profileDao.updateProfile(updatedEntity.copy(blockedUserNames = updatedNames))
   }
 
   /**
    * Removes a user from the blocked list.
    *
    * This method only works for the current user's profile. It retrieves the profile, removes the
-   * blocked user, and saves it back to local storage.
+   * blocked user, and saves it back to local storage. Also removes the stored display name.
    *
    * @param ownerId The identifier of the profile.
    * @param targetUid The identifier of the user to unblock.
@@ -192,7 +263,26 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
    *   ownerId.
    */
   override suspend fun removeBlockedUser(ownerId: String, targetUid: String) {
-    updateListField(ownerId) { it.copy(blockedUserIds = it.blockedUserIds - targetUid) }
+    val entity =
+        profileDao.getUserProfile()
+            ?: throw NoSuchElementException(
+                "ProfileRepositoryLocal: Profile not found. Cannot remove blocked user from non-existent profile.")
+
+    require(entity.ownerId == ownerId) {
+      "ProfileRepositoryLocal: Cannot remove blocked user from profile with ownerId $ownerId. " +
+          "Only the current user's profile (${entity.ownerId}) can be modified locally."
+    }
+
+    val profile = entity.toProfile()
+    val updatedUserInfo =
+        profile.userInfo.copy(blockedUserIds = profile.userInfo.blockedUserIds - targetUid)
+    val updatedProfile = profile.copy(userInfo = updatedUserInfo)
+
+    // Update the entity and remove the stored display name
+    val updatedEntity = ProfileEntity.fromProfile(updatedProfile)
+    val updatedNames = entity.blockedUserNames - targetUid
+
+    profileDao.updateProfile(updatedEntity.copy(blockedUserNames = updatedNames))
   }
 
   /**

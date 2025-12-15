@@ -2,12 +2,13 @@ package com.android.mySwissDorm.end2end
 
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.MySwissDormApp
@@ -166,69 +167,72 @@ class Epic1Test : FirestoreTest() {
 
         composeTestRule.waitForIdle()
 
-        // Ensure bottom bar is visible and go to Settings
+        // Ensure bottom bar is visible and go to Profile
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
+          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
         }
-        composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).performClick()
+        composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).performClick()
 
-        // Wait until Settings screen is shown (use Profile button which exists there)
+        // Wait until Profile screen is shown (use Settings button which exists there)
         composeTestRule.waitUntil(5_000) {
           composeTestRule
-              .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
+              .onNodeWithTag(C.ProfileTags.SETTINGS_ICON, useUnmergedTree = true)
               .isDisplayed()
         }
 
-        // Go to profile screen from settings
+        // Go to settings screen from profile
         composeTestRule
-            .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
+            .onNodeWithTag(C.ProfileTags.SETTINGS_ICON, useUnmergedTree = true)
             .performClick()
 
-        // Wait for profile screen title
+        // Wait for settings screen back button
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.Tag.PROFILE_SCREEN_TITLE).isDisplayed()
+          composeTestRule.onNodeWithTag(C.SettingsTags.BACK_BUTTON).isDisplayed()
         }
 
-        // Go back to settings (profile screen has its own back button)
-        composeTestRule
-            .onNodeWithTag(C.Tag.PROFILE_SCREEN_BACK_BUTTON)
-            .assertIsDisplayed()
-            .performClick()
+        // Go back to profile (settings screen has its own back button)
+        composeTestRule.onNodeWithTag(C.SettingsTags.BACK_BUTTON).assertIsDisplayed().performClick()
 
-        // Now we're back on Settings; assert again via Profile button visibility
+        // Now we're back on Profile; assert again via Settings button visibility
         composeTestRule.waitUntil(5_000) {
           composeTestRule
-              .onNodeWithTag(C.SettingsTags.PROFILE_BUTTON, useUnmergedTree = true)
+              .onNodeWithTag(C.ProfileTags.SETTINGS_ICON, useUnmergedTree = true)
               .isDisplayed()
         }
 
-        // Return to Homepage via the bottom navigation (no back button on Settings)
+        // Return to Homepage via the bottom navigation (no back button on Profile)
         composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).performClick()
 
+        // Wait for navigation to complete and Homepage screen to be composed
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
+          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
         }
 
-        // Wait for cities list to be available
+        // Wait for Homepage screen elements to appear (search bar should appear immediately)
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+          composeTestRule.onNodeWithTag(HomePageScreenTestTags.SEARCH_BAR).isDisplayed()
+        }
+
+        // Wait for cities list container to be available
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
           composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
         }
 
-        // Scroll the cities list to Lausanne's index (third city, index 2) to bring it into view
-        composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
+        // Scroll inside the cities list until the Lausanne card is composed
+        composeTestRule
+            .onNodeWithTag(HomePageScreenTestTags.CITIES_LIST)
+            .performScrollToNode(
+                hasTestTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne")))
 
-        // Wait for Lausanne card to be displayed after scrolling
+        // Now the Lausanne card should be in the composition; wait until it is actually displayed
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
           composeTestRule
-              .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+              .onNodeWithTag(
+                  HomePageScreenTestTags.getTestTagForCityCard("Lausanne"), useUnmergedTree = true)
               .isDisplayed()
         }
 
         // Go to Lausanne's listings
-        composeTestRule
-            .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
-            .performScrollTo()
-        composeTestRule.waitForIdle()
         composeTestRule
             .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
             .performClick()

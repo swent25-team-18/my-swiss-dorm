@@ -137,7 +137,7 @@ fun AddListingScreen(
                   modifier = Modifier.testTag(C.AddListingScreenTags.RESIDENCY_DROPDOWN))
 
               HousingTypeDropdown(
-                  selected = ui.housingType,
+                  selected = ui.housingType.getName(context),
                   onSelected = { addListingViewModel.setHousingType(it) },
                   accentColor = MainColor)
 
@@ -247,6 +247,12 @@ fun AddListingScreen(
                         onImageClick = { addListingViewModel.onClickImage(it) },
                         modifier = Modifier.testTag(C.AddReviewTags.PHOTOS))
                   }
+              if (ui.requireAtLeastOnePhoto && ui.pickedImages.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.add_listing_photo_required),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall)
+              }
             }
 
         // Date Picker Dialog

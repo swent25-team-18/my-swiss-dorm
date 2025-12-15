@@ -93,6 +93,7 @@ fun ViewReviewScreen(
   val errorMsg = uiState.errorMsg //
   val isOwner = uiState.isOwner
   var showShareDialog by remember { mutableStateOf(false) }
+  var isTranslated by remember { mutableStateOf(false) }
 
   // Generate share link
   val shareLink = "https://my-swiss-dorm.web.app/review/$reviewUid"
@@ -104,6 +105,8 @@ fun ViewReviewScreen(
       viewReviewViewModel.clearErrorMsg()
     }
   }
+
+  LaunchedEffect(review) { viewReviewViewModel.translateReview(context) }
 
   if (uiState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -143,8 +146,21 @@ fun ViewReviewScreen(
                     .imePadding()
                     .testTag(C.ViewReviewTags.ROOT),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
+              val clickableText =
+                  if (isTranslated) {
+                    context.getString(R.string.see_original)
+                  } else {
+                    context.getString(R.string.view_review_translate_review)
+                  }
               Text(
-                  text = review.title,
+                  text = clickableText,
+                  modifier =
+                      Modifier.clickable(onClick = { isTranslated = !isTranslated })
+                          .testTag(C.ViewReviewTags.TRANSLATE_BTN),
+                  color = MainColor)
+              val titleToDisplay = if (isTranslated) uiState.translatedTitle else review.title
+              Text(
+                  text = titleToDisplay,
                   style =
                       MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                   modifier = Modifier.testTag(C.ViewReviewTags.TITLE),
@@ -170,18 +186,16 @@ fun ViewReviewScreen(
                                 else "",
                         style = baseTextStyle.copy(fontWeight = FontWeight.Bold, color = MainColor),
                         modifier =
-                            Modifier.testTag(C.ViewReviewTags.POSTED_BY_NAME).clickable {
-                              // Allow navigation if online or if it's the current user's profile
-                              if (NetworkUtils.isNetworkAvailable(context) || isOwner) {
-                                onViewProfile(review.ownerId)
-                              } else {
-                                Toast.makeText(
-                                        context,
-                                        context.getString(R.string.profile_offline_message),
-                                        Toast.LENGTH_SHORT)
-                                    .show()
-                              }
-                            })
+                            Modifier.testTag(C.ViewReviewTags.POSTED_BY_NAME)
+                                .then(
+                                    // Only make clickable if review is not anonymous AND (online OR
+                                    // owner)
+                                    if (!review.isAnonymous &&
+                                        (NetworkUtils.isNetworkAvailable(context) || isOwner)) {
+                                      Modifier.clickable { onViewProfile(review.ownerId) }
+                                    } else {
+                                      Modifier
+                                    }))
                     Text(
                         text = " ${formatRelative(review.postedAt, context = context)}",
                         style = baseTextStyle,
@@ -201,7 +215,12 @@ fun ViewReviewScreen(
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.REVIEW_TEXT)) {
                 Text("${stringResource(R.string.review)}:", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(3.dp))
-                Text(review.reviewText, style = MaterialTheme.typography.bodyLarge)
+                val descriptionToDisplay =
+                    if (isTranslated) uiState.translatedDescription else review.reviewText
+                Text(
+                    descriptionToDisplay,
+                    modifier = Modifier.testTag(C.ViewReviewTags.DESCRIPTION_TEXT),
+                    style = MaterialTheme.typography.bodyLarge)
               }
 
               ImageGrid(

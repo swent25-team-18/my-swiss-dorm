@@ -20,6 +20,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
@@ -42,6 +43,7 @@ import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import java.util.Date
+import java.util.Locale
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
@@ -108,7 +110,7 @@ class ViewReviewScreenTest : FirestoreTest() {
               ownerId = ownerId,
               ownerName = profile1.userInfo.name + " " + profile1.userInfo.lastName,
               postedAt = Timestamp.now(),
-              title = "First Title",
+              title = "First title",
               reviewText = "My first review",
               grade = 3.5,
               residencyName = "Vortex",
@@ -124,7 +126,7 @@ class ViewReviewScreenTest : FirestoreTest() {
               ownerId = otherId,
               ownerName = profile2.userInfo.name + " " + profile2.userInfo.lastName,
               postedAt = Timestamp(Date(1678886400000L)),
-              title = "Second Title",
+              title = "Second title",
               reviewText = "My second review",
               grade = 4.5,
               residencyName = "Atrium",
@@ -389,17 +391,19 @@ class ViewReviewScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun backButton_calls_onGoBackCallback() {
+  fun backButton_calls_onGoBackCallback() = runTest {
     var backCalled = false
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = vm, reviewUid = review1.uid, onGoBack = { backCalled = true })
     }
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    compose.waitUntil(10_000) { vm.uiState.value.review.uid == review1.uid }
+    compose.waitForIdle()
     compose.onNodeWithText("Review Details").assertIsDisplayed()
     // Click back button via content description
     compose.onNodeWithContentDescription("Back").performClick()
+    compose.waitForIdle()
     assert(backCalled) { "onGoBack callback was not triggered." }
   }
 
@@ -417,7 +421,9 @@ class ViewReviewScreenTest : FirestoreTest() {
           })
     }
     waitForScreenRoot()
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
+    compose.waitUntil(5_000) {
+      vm.uiState.value.review.uid == review1.uid && !vm.uiState.value.review.isAnonymous
+    }
     scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
     // Click on the name (which is the clickable element)
     compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()
@@ -450,11 +456,11 @@ class ViewReviewScreenTest : FirestoreTest() {
     waitForScreenRoot()
     compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
     // Wait a bit more for content to be fully rendered
-    compose.waitUntil(5_000) { vm.uiState.value.review.title == "First Title" }
+    compose.waitUntil(5_000) { vm.uiState.value.review.title == "First title" }
     scrollListTo(C.ViewReviewTags.TITLE)
     compose.onNodeWithTag(C.ViewReviewTags.TITLE, useUnmergedTree = true).assertIsDisplayed()
     // Use onNodeWithText to find text directly
-    compose.onNodeWithText("First Title").assertIsDisplayed()
+    compose.onNodeWithText("First title").assertIsDisplayed()
     // The text is "Review :" with a space before the colon
     compose.onNodeWithText("Review:").assertIsDisplayed()
     compose.onNodeWithText("My first review").assertIsDisplayed()
@@ -718,7 +724,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun clickingPosterName_offline_showsToast() = runTest {
+  fun clickingPosterName_offline_nonOwner_doesNotNavigate() = runTest {
     switchToUser(FakeUser.FakeUser1)
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(any()) } returns false
@@ -736,14 +742,19 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     compose.waitUntil(10_000) {
       testVm.uiState.value.review.uid == review2.uid &&
-          testVm.uiState.value.fullNameOfPoster.isNotEmpty()
+          testVm.uiState.value.fullNameOfPoster.isNotEmpty() &&
+          !testVm.uiState.value.review.isAnonymous
     }
 
     scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
     compose
         .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
         .assertIsDisplayed()
-        .performClick()
+    // The name should not be clickable when offline and not owner, so clicking should not trigger
+    // navigation
+    // Note: performClick might still work on the Text element, but the clickable modifier won't be
+    // applied
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()
 
     // Verify navigation did NOT happen (since we're offline and it's not our profile)
     compose.waitForIdle()
@@ -769,7 +780,43 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     compose.waitUntil(10_000) {
       testVm.uiState.value.review.uid == review2.uid &&
-          testVm.uiState.value.fullNameOfPoster.isNotEmpty()
+          testVm.uiState.value.fullNameOfPoster.isNotEmpty() &&
+          !testVm.uiState.value.review.isAnonymous
+    }
+    compose.waitForIdle()
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+    compose.waitForIdle()
+
+    assertEquals("Navigation should happen when online", otherId, navigatedToId)
+  }
+
+  @Test
+  fun clickingPosterName_offline_owner_navigates() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(any()) } returns false
+
+    var navigatedToId: String? = null
+
+    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = testVm,
+          reviewUid = review1.uid, // viewing own review (owner)
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == review1.uid &&
+          testVm.uiState.value.fullNameOfPoster.isNotEmpty() &&
+          testVm.uiState.value.isOwner &&
+          !testVm.uiState.value.review.isAnonymous
     }
 
     scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
@@ -778,7 +825,43 @@ class ViewReviewScreenTest : FirestoreTest() {
         .assertIsDisplayed()
         .performClick()
 
-    assertEquals("Navigation should happen when online", otherId, navigatedToId)
+    // Verify navigation happens even when offline (because it's the owner's review)
+    compose.waitForIdle()
+    assertEquals("Navigation should happen when offline for owner", ownerId, navigatedToId)
+  }
+
+  @Test
+  fun clickingPosterName_anonymous_notClickable() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(any()) } returns true
+
+    var navigatedToId: String? = null
+
+    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = testVm,
+          reviewUid = anonymousReviewOwned.uid, // anonymous review
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == anonymousReviewOwned.uid &&
+          testVm.uiState.value.review.isAnonymous
+    }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+    // The name should not be clickable for anonymous reviews, even when online
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()
+
+    // Verify navigation did NOT happen (anonymous reviews are not clickable)
+    compose.waitForIdle()
+    assertNull("Navigation should not happen for anonymous reviews", navigatedToId)
   }
 
   @Test
@@ -816,5 +899,52 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.waitUntil("The listing page is not shown after leaving the full screen mode", 5_000) {
       compose.onNodeWithTag(C.ImageGridTags.imageTag(photo.image)).isDisplayed()
     }
+  }
+
+  @Test
+  fun translateButtonTextUpdatesWhenClicked() {
+    setOwnerReview()
+    waitForScreenRoot()
+
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
+    compose
+        .onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN)
+        .assertTextEquals(context.getString(R.string.view_review_translate_review))
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).performClick()
+
+    compose.waitForIdle()
+
+    compose
+        .onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN)
+        .assertTextEquals(context.getString(R.string.see_original))
+  }
+
+  @Test
+  fun translateButtonSuccessfullyTranslatesReview() {
+    // Set the locale to French so it translates the review in French
+    Locale.setDefault(Locale.FRENCH)
+
+    setOtherReview()
+    waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review2.uid }
+
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewReviewTags.DESCRIPTION_TEXT).assertIsDisplayed()
+
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).performClick()
+
+    compose.waitForIdle()
+
+    compose.waitUntil(20_000) {
+      compose.onNodeWithText("Deuxième titre").isDisplayed() &&
+          compose.onNodeWithText("Ma deuxième critique").isDisplayed()
+    }
+
+    compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertTextEquals("Deuxième titre")
+    compose
+        .onNodeWithTag(C.ViewReviewTags.DESCRIPTION_TEXT)
+        .assertTextEquals("Ma deuxième critique")
   }
 }

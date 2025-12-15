@@ -65,6 +65,7 @@ import com.android.mySwissDorm.ui.profile.ProfileScreenViewModel
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.qr.MySwissDormQrResult
 import com.android.mySwissDorm.ui.qr.parseMySwissDormQr
+import com.android.mySwissDorm.ui.residency.ViewResidencyScreen
 import com.android.mySwissDorm.ui.review.AddReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewScreen
 import com.android.mySwissDorm.ui.review.EditReviewViewModel
@@ -75,13 +76,27 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.utils.SignInPopUp
 import com.google.firebase.auth.FirebaseAuth
 import io.getstream.chat.android.models.Channel
+import java.net.URLEncoder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 // Shared state for refreshing channels when returning from RequestedMessagesScreen
 private object ChannelsRefreshState {
   val refreshKey = mutableIntStateOf(0)
+}
+
+/**
+ * Encodes the provided channel ID and navigates to the chat screen.
+ *
+ * The Stream CID can contain characters that are unsafe in navigation routes (such as ":" or "/"),
+ * so we URL-encode it before pushing it into the NavController.
+ */
+private fun openChatChannel(channelId: String, navActions: NavigationActions) {
+  val encodedChannelId = URLEncoder.encode(channelId, "UTF-8")
+  navActions.navigateTo(Screen.ChatChannel(encodedChannelId))
 }
 
 /**
@@ -161,7 +176,7 @@ fun AppNavHost(
           composable(Screen.SignIn.route) {
             SignInScreen(
                 credentialManager = credentialManager,
-                onSignedIn = { navigationViewModel.determineInitialDestination() },
+                onSignedIn = { navActions.navigateTo(Screen.Homepage) },
                 onSignUp = { navActions.navigateTo(Screen.SignUp) },
             )
           }
@@ -182,7 +197,20 @@ fun AppNavHost(
                 signUpViewModel = viewModel,
                 credentialManager = credentialManager,
                 onBack = { navActions.goBack() },
-                onSignedUp = { navigationViewModel.determineInitialDestination() })
+                onSignedUp = {
+                  // After successful sign-up, navigate to Homepage and clear the entire auth flow
+                  coroutineScope.launch {
+                    val destination = navigationViewModel.getHomepageDestination()
+                    // Switch to main thread for navigation (required by Navigation Component)
+                    withContext(Dispatchers.Main) {
+                      navController.navigate(destination.route) {
+                        // Clear entire back stack including sign-in and sign-up screens
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                      }
+                    }
+                  }
+                })
           }
 
           // --- Bottom bar destinations ---
@@ -225,12 +253,7 @@ fun AppNavHost(
                       selectedScreen = Screen.Inbox, onTabSelected = { navActions.navigateTo(it) })
                 }) { paddingValues ->
                   ChannelsScreen(
-                      onChannelClick = { channelId ->
-                        // navActions.navigateTo(Screen.ChatChannel(channelId))
-                        Toast.makeText(
-                                context, "Chat screen not implemented yet", Toast.LENGTH_SHORT)
-                            .show()
-                      },
+                      onChannelClick = { channelId -> openChatChannel(channelId, navActions) },
                       onRequestedMessagesClick = {
                         navActions.navigateTo(Screen.RequestedMessages)
                       },
@@ -247,7 +270,6 @@ fun AppNavHost(
             val adminRepo = remember { AdminRepository() }
             var isAdmin by remember { mutableStateOf(false) }
             val currentUser = FirebaseAuth.getInstance().currentUser
-            val userAnonymous = currentUser != null && currentUser.isAnonymous
 
             LaunchedEffect(Unit) {
               isAdmin =
@@ -263,34 +285,10 @@ fun AppNavHost(
                   }
             }
             SettingsScreen(
-                onProfileClick = {
-                  if (userAnonymous) {
-                    Toast.makeText(
-                            context,
-                            context.getString(R.string.app_nav_host_sign_in_to_create_profile),
-                            Toast.LENGTH_SHORT)
-                        .show()
-                    navActions.navigateTo(Screen.Profile)
-                  } else {
-                    navActions.navigateTo(Screen.Profile)
-                  }
-                },
+                onBack = { navActions.goBack() },
                 navigationActions = navActions,
                 onAdminClick = { navActions.navigateTo(Screen.Admin) },
-                isAdmin = isAdmin,
-                onContributionClick = {
-                  if (userAnonymous) {
-                    Toast.makeText(
-                            context,
-                            context.getString(R.string.app_nav_host_sign_in_to_see_contributions),
-                            Toast.LENGTH_SHORT)
-                        .show()
-                    navActions.navigateTo(Screen.ProfileContributions)
-                  } else {
-                    navActions.navigateTo(Screen.ProfileContributions)
-                  }
-                },
-                onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) })
+                isAdmin = isAdmin)
           }
 
           // --- Secondary destinations ---
@@ -423,10 +421,35 @@ fun AppNavHost(
               ReviewsByResidencyScreen(
                   residencyName = residencyName,
                   onGoBack = { navActions.goBack() },
-                  onSelectReview = { navActions.navigateTo(Screen.ReviewOverview(it.reviewUid)) })
+                  onSelectReview = { navActions.navigateTo(Screen.ReviewOverview(it.reviewUid)) },
+                  onViewResidencyDetails = {
+                    navActions.navigateTo(Screen.ResidencyDetails(residencyName))
+                  })
             }
                 ?: run {
                   Log.e("AppNavHost", "residencyName is null")
+                  Toast.makeText(
+                          context,
+                          context.getString(R.string.app_nav_host_residency_name_is_null),
+                          Toast.LENGTH_SHORT)
+                      .show()
+                }
+          }
+
+          composable(Screen.ResidencyDetails.route) { navBackStackEntry ->
+            val residencyName = navBackStackEntry.arguments?.getString("residencyName")
+
+            residencyName?.let {
+              ViewResidencyScreen(
+                  residencyName = residencyName,
+                  onGoBack = { navActions.goBack() },
+                  onViewMap = { lat, lng, title, name ->
+                    navController.navigate(
+                        Screen.Map(lat.toFloat(), lng.toFloat(), title, name).route)
+                  })
+            }
+                ?: run {
+                  Log.e("AppNavHost", "residencyName is null for ResidencyDetails")
                   Toast.makeText(
                           context,
                           context.getString(R.string.app_nav_host_residency_name_is_null),
@@ -646,21 +669,49 @@ fun AppNavHost(
                   onBack = { navActions.goBack() },
                   title = stringResource(R.string.app_nav_host_profile))
             } else {
+              val userAnonymous = currentUser != null && currentUser.isAnonymous
               ProfileScreen(
-                  onBack = { navActions.goBack() },
+                  onSettingsClicked = { navActions.navigateTo(Screen.Settings) },
                   onLogout = {
                     coroutineScope.launch {
                       try {
-                        StreamChatProvider.disconnectUser()
+                        // Flush persistence to ensure clean state for next login
+                        StreamChatProvider.disconnectUser(flushPersistence = true)
                       } catch (e: Exception) {
                         Log.e("AppNavHost", "Error disconnecting stream user", e)
                       }
-                      AuthRepositoryProvider.repository.signOut()
+                      val signOutResult = AuthRepositoryProvider.repository.signOut()
+                      signOutResult.onFailure { error ->
+                        Log.e("AppNavHost", "Error signing out", error)
+                      }
+                      // Update navigation state and navigate to SignIn regardless of signOut result
                       navigationViewModel.determineInitialDestination()
+                      try {
+                        navController.navigate(Screen.SignIn.route) {
+                          popUpTo(0) { inclusive = true }
+                          launchSingleTop = true
+                        }
+                      } catch (e: Exception) {
+                        Log.e("AppNavHost", "Error navigating to SignIn after logout", e)
+                      }
                     }
                   },
                   onLanguageChange = { activity?.updateLanguage(it) },
-                  onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) })
+                  onEditPreferencesClick = { navActions.navigateTo(Screen.EditPreferences) },
+                  onContributionClick = {
+                    if (userAnonymous) {
+                      Toast.makeText(
+                              context,
+                              context.getString(R.string.app_nav_host_sign_in_to_see_contributions),
+                              Toast.LENGTH_SHORT)
+                          .show()
+                      navActions.navigateTo(Screen.ProfileContributions)
+                    } else {
+                      navActions.navigateTo(Screen.ProfileContributions)
+                    }
+                  },
+                  onViewBookmarks = { navActions.navigateTo(Screen.BookmarkedListings) },
+                  navigationActions = navActions)
             }
           }
           composable(Screen.Admin.route) {
@@ -691,9 +742,7 @@ fun AppNavHost(
           composable(Screen.SelectUserToChat.route) {
             SelectUserToChatScreen(
                 onBackClick = { navActions.goBack() },
-                onUserSelected = { channelCid ->
-                  navActions.navigateTo(Screen.ChatChannel(channelCid))
-                })
+                onUserSelected = { channelCid -> openChatChannel(channelCid, navActions) })
           }
 
           composable(Screen.RequestedMessages.route) {

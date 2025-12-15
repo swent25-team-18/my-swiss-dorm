@@ -94,4 +94,55 @@ class Converters {
   fun toStringList(value: String?): List<String>? {
     return if (value.isNullOrEmpty()) emptyList() else value.split(",")
   }
+
+  /**
+   * Converts a Map<String, String> to a pipe-delimited string format.
+   *
+   * Format: "key1:value1|key2:value2|..." Uses URL encoding for keys and values to handle special
+   * characters (:, |, etc.)
+   *
+   * @param value The map to convert, or null.
+   * @return A string representation of the map, or null if the input was null or empty.
+   */
+  @TypeConverter
+  fun fromStringMap(value: Map<String, String>?): String {
+    if (value.isNullOrEmpty()) return ""
+    return value.entries.joinToString("|") {
+      "${java.net.URLEncoder.encode(it.key, "UTF-8")}:${java.net.URLEncoder.encode(it.value, "UTF-8")}"
+    }
+  }
+
+  /**
+   * Converts a pipe-delimited string to a Map<String, String>.
+   *
+   * Expected format: "key1:value1|key2:value2|..." Keys and values are URL decoded to handle
+   * special characters.
+   *
+   * @param value The string representation of the map, or null.
+   * @return A map, or an empty map if the input was null, empty, or invalid.
+   */
+  @TypeConverter
+  fun toStringMap(value: String?): Map<String, String> {
+    return if (value.isNullOrEmpty()) {
+      emptyMap()
+    } else {
+      try {
+        value
+            .split("|")
+            .mapNotNull { entry ->
+              val parts = entry.split(":", limit = 2)
+              if (parts.size == 2) {
+                val key = java.net.URLDecoder.decode(parts[0], "UTF-8")
+                val decodedValue = java.net.URLDecoder.decode(parts[1], "UTF-8")
+                key to decodedValue
+              } else {
+                null
+              }
+            }
+            .toMap()
+      } catch (e: Exception) {
+        emptyMap() // Return empty map on parsing error
+      }
+    }
+  }
 }

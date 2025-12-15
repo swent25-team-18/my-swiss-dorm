@@ -40,7 +40,6 @@ object C {
     }
 
     const val PROFILE_SCREEN_TITLE = "profile_title"
-    const val PROFILE_SCREEN_BACK_BUTTON = "profile_back_button"
 
     fun buttonNavBarTestTag(screen: Screen): String {
       return "bottom_nav_${screen.route}"
@@ -52,8 +51,11 @@ object C {
     const val TITLE = "viewListingTitle"
     const val POSTED_BY = "viewListingPostedBy"
     const val POSTED_BY_NAME = "viewListingPostedByName"
+    const val RESIDENCY_NAME = "viewListingResidencyName"
+    const val RESIDENCY_NAME_CLICKABLE = "viewListingResidencyNameClickable"
     const val BULLETS = "viewListingBullets"
     const val DESCRIPTION = "viewListingDescription"
+    const val DESCRIPTION_TEXT = "viewListingDescriptionText"
     const val PHOTOS = "viewListingPhotos"
     const val LOCATION = "viewListingLocation"
     const val POI_DISTANCES = "viewListingPOIDistances"
@@ -66,6 +68,7 @@ object C {
     const val BOOKMARK_BTN = "viewListingBookmarkBtn"
     const val LOADING_POI = "loadingPoi"
     const val EXISTING_MSG = "existingMessage"
+    const val TRANSLATE_BTN = "viewListingTranslateButton"
   }
 
   object ViewReviewTags {
@@ -85,6 +88,8 @@ object C {
     const val VOTE_UPVOTE_BUTTON = "viewReviewVoteUpvoteButton"
     const val VOTE_DOWNVOTE_BUTTON = "viewReviewVoteDownvoteButton"
     const val VOTE_SCORE = "viewReviewVoteScore"
+    const val TRANSLATE_BTN = "viewReviewTranslateButton"
+    const val DESCRIPTION_TEXT = "viewReviewDescriptionText"
   }
 
   object ViewUserProfileTags {
@@ -168,6 +173,7 @@ object C {
     const val ERROR = "reviewsByResidencyError"
     const val EMPTY = "reviewsByResidencyEmpty"
     const val REVIEW_LIST = "reviewsByResidencyReviewList"
+    const val VIEW_RESIDENCY_DETAILS_BUTTON = "reviewsByResidencyViewResidencyDetailsButton"
 
     fun reviewCard(reviewUid: String) = "reviewsByResidencyReviewCard_$reviewUid"
 
@@ -297,18 +303,10 @@ object C {
   object SettingsTags {
     const val SETTINGS_SCROLL = "SettingsScroll"
     const val PROFILE_BUTTON = "ProfileButton"
-    const val EMAIL_FIELD = "EmailField"
     const val DELETE_ACCOUNT_BUTTON = "DeleteAccountButton"
     const val BLOCKED_CONTACTS_TOGGLE = "BlockedContactsToggle"
     const val BLOCKED_CONTACTS_LIST = "BlockedContactsList"
-    const val BOTTOM_BAR = "bottom_nav"
-    const val CONTRIBUTIONS_BUTTON = "ContributionsButton"
-    const val QR_SECTION_TITLE = "SettingsQrSectionTitle"
-    const val QR_SECTION_SUBTITLE = "SettingsQrSectionSubtitle"
-    const val QR_SCAN_BUTTON = "SettingsScanQrButton"
-    const val BOOKMARKS_BUTTON = "BookmarksButton"
-
-    fun avatarTag(uri: Uri?) = "SettingsAvatarTag$uri"
+    const val BACK_BUTTON = "settingsBackButton"
 
     fun switch(label: String): String = "SettingSwitch_$label"
   }
@@ -348,8 +346,14 @@ object C {
   object ProfileTags {
     fun profilePictureTag(uri: Uri?) = "profileScreenProfilePictureTag$uri"
 
+    const val ACCOUNT_CARD = "profilAccountCard"
+    const val PREFERENCES_BUTTON = "profilPreferencesButton"
     const val SAVE_BUTTON = "profile_save_button"
     const val DELETE_PP_BUTTON = "profilePictureDeleteButton"
+    const val EMAIL_FIELD = "profileEmailField"
+    const val CONTRIBUTIONS_BUTTON = "profileContributionsButton"
+    const val BOOKMARKS_BUTTON = "profileBookmarksButton"
+    const val SETTINGS_ICON = "profileSettingsIcon"
   }
 
   object FilterTestTags {
@@ -373,6 +377,20 @@ object C {
     const val QR_ERROR = "shareLinkDialogQrError"
     const val COPY_LINK_BUTTON = "shareLinkDialogCopyLinkButton"
     const val CANCEL_TEXT = "shareLinkDialogCancelText"
+  }
+
+  object ViewResidencyTags {
+    const val ROOT = "viewResidencyRoot"
+    const val TOP_BAR_TITLE = "viewResidencyTopBarTitle"
+    const val BACK_BUTTON = "viewResidencyBackButton"
+    const val LOADING = "viewResidencyLoading"
+    const val ERROR = "viewResidencyError"
+    const val NAME = "viewResidencyName"
+    const val PHOTOS = "viewResidencyPhotos"
+    const val DESCRIPTION = "viewResidencyDescription"
+    const val POI_DISTANCES = "viewResidencyPOIDistances"
+    const val CONTACT_INFO = "viewResidencyContactInfo"
+    const val LOCATION = "viewResidencyLocation"
   }
 
   object TranslatableTextTestTags {

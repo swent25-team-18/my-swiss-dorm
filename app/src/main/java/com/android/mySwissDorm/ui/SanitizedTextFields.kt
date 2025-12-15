@@ -330,7 +330,7 @@ fun DescriptionField(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HousingTypeDropdown(selected: RoomType?, onSelected: (RoomType) -> Unit, accentColor: Color) {
+fun HousingTypeDropdown(selected: String?, onSelected: (RoomType) -> Unit, accentColor: Color) {
   var expanded by remember { mutableStateOf(false) }
   val label = selected.toString()
 

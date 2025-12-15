@@ -55,6 +55,7 @@
     <string name="room_type">Type de chambre</string>
     <string name="save">Enregistrer</string>
     <string name="search">Rechercher</string>
+    <string name="see_original">Voir l\'original</string>
     <string name="size">Taille</string>
     <string name="start_date">Date de début</string>
     <string name="starting">Début</string>
@@ -176,6 +177,7 @@
     <string name="add_listing_text">Ajouter une annonce</string>
     <string name="add_listing_select_location">Sélectionner une localisation</string>
     <string name="confirm_listing">Confirmer l’annonce</string>
+    <string name="add_listing_photo_required">Veuillez ajouter une image pour publier votre annonce.</string>
     <string name="add_listing_invalid_form_text">Veuillez compléter tous les champs requis (taille, prix et date de début valides) ou connectez-vous si vous êtes invité.</string>
     <string name="add_listing_invalid_size_text">Entrez 1.0–1000.0 avec un seul décimal (ex : 18.5).</string>
     <string name="add_listing_invalid_price_text">Entrez un entier entre 1 et 10’000.</string>
@@ -210,6 +212,7 @@
     <string name="view_listing_listing_location">Localisation de l’annonce</string>
     <string name="view_listing_sign_in_to_apply">Connectez-vous pour contacter le propriétaire et postuler.</string>
     <string name="poi_loading_message">Recherche des points d\'intérêt à proximité…</string>
+    <string name="view_listing_translate_listing">Traduire l\'annonce</string>
 
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Impossible de charger l\'annonce :</string>
@@ -369,14 +372,24 @@
     <string name="reviews_by_residency_vm_failed_to_load_reviews">Impossible de charger les avis</string>
 
     <!-- ViewReviewScreen -->
-    <string name="view_review_title">Détails de l’avis</string>
+    <string name="view_review_title">Détails de l\'avis</string>
     <string name="view_review_posted_by">Publié par </string>
     <string name="view_review_posted_by_you">(Vous)</string>
     <string name="view_review_price_per_month">.-/mois</string>
     <string name="view_review_was_this_useful">Cet avis vous a-t-il été utile ?</string>
+    <string name="view_review_translate_review">Traduire l\'avis</string>
 
     <!-- ViewReviewViewModel -->
-    <string name="view_review_failed_to_load_review">Impossible de charger l’avis</string>
+    <string name="view_review_failed_to_load_review">Impossible de charger l\'avis</string>
+
+    <!-- ViewResidency -->
+    <string name="view_residency_failed_to_load">Échec du chargement de la résidence :</string>
+    <string name="view_residency_not_found">Résidence introuvable</string>
+    <string name="view_residency_location">Localisation de la résidence</string>
+    <string name="view_residency_no_contact_info">Aucune information de contact disponible</string>
+    <string name="see_residency_details">Voir les détails de la résidence</string>
+    <string name="screen_residency_details">Détails de la résidence</string>
+    <string name="contact_information">Informations de contact</string>
 
     <!-- Share dialog -->
     <string name="share">Partager</string>
@@ -443,10 +456,12 @@
 
     <!-- CameraButton -->
     <string name="camera_button_default_text">Prendre une photo</string>
+    <string name="camera_button_permission_denied_text">Cette application n\'a pas accès à la caméra</string>
 
     <!-- GalleryButton -->
     <string name="gallery_button_default_text">Choisir une photo</string>
     <string name="gallery_button_default_multiple_text">Choisir des photos</string>
+    <string name="gallery_button_permission_denied_text">Cette application n\'a pas accès aux médias</string>
 
     <!-- SanitizedTextFields -->
     <string name="sanitized_text_fields_email_placeholder">nom@domaine.com</string>

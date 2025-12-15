@@ -19,13 +19,14 @@ import androidx.credentials.CredentialManager
 import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.navigation.AppNavHost
 import com.android.mySwissDorm.ui.navigation.Screen
+import com.android.mySwissDorm.ui.theme.DarkModePreferenceHelper
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
-import com.android.mySwissDorm.ui.theme.ThemePreferenceManager
 import com.android.mySwissDorm.ui.theme.ThemePreferenceState
 import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
@@ -81,9 +82,8 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
 
     // Initialize theme preference synchronously from SharedPreferences BEFORE setContent
-    // This ensures the theme is correct from the very first render, including login screen
-    // Always load from SharedPreferences - this persists even after logout
-    val savedPreference = ThemePreferenceManager.getLocalPreferenceSync(this)
+    // This ensures the theme is correct from the very first render
+    val savedPreference = DarkModePreferenceHelper.getPreference(this)
     // Set the preference in global state - this will be used by the theme composable
     // If savedPreference is null, we leave it null to follow system theme
     ThemePreferenceState.updatePreference(savedPreference)
@@ -95,6 +95,7 @@ class MainActivity : ComponentActivity() {
     setContent {
       val context = LocalContext.current
       PhotoRepositoryProvider.initialize(context)
+      ProfileRepositoryProvider.initialize(context)
       ReviewsRepositoryProvider.initialize(context)
       RentalListingRepositoryProvider.initialize(context)
       Log.d("", Screen.topLevel.joinToString { context.getString(it.nameId) })

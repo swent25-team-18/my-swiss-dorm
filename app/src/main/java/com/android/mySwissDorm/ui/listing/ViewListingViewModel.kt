@@ -11,11 +11,9 @@ import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
 import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
-import com.android.mySwissDorm.model.map.WalkingRouteServiceProvider
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
-import com.android.mySwissDorm.model.poi.DistanceService
 import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -26,9 +24,10 @@ import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
-import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
+import com.android.mySwissDorm.ui.utils.calculatePOIDistances
+import com.android.mySwissDorm.ui.utils.translateTextField
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -70,7 +69,9 @@ data class ViewListingUIState(
     val isBookmarked: Boolean = false,
     val poiDistances: List<POIDistance> = emptyList(),
     val hasExistingMessage: Boolean = false,
-    val isLoadingPOIs: Boolean = false
+    val isLoadingPOIs: Boolean = false,
+    val translatedTitle: String = "",
+    val translatedDescription: String = "",
 )
 
 class ViewListingViewModel(
@@ -98,6 +99,29 @@ class ViewListingViewModel(
     val index = _uiState.value.images.map { it.image }.indexOf(uri)
     require(index >= 0)
     _uiState.value = _uiState.value.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
+  }
+
+  /**
+   * Translates the listing's title and description to the user's app language.
+   *
+   * @param context The Android context, mainly used for accessing string resources.
+   */
+  fun translateListing(context: Context) {
+    val listing = _uiState.value.listing
+    translateTextField(
+        text = listing.title,
+        context = context,
+        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedTitle = msg) } },
+        onUpdateTranslated = { translated ->
+          _uiState.update { it.copy(translatedTitle = translated) }
+        })
+    translateTextField(
+        text = listing.description,
+        context = context,
+        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedDescription = msg) } },
+        onUpdateTranslated = { translated ->
+          _uiState.update { it.copy(translatedDescription = translated) }
+        })
   }
 
   /** Clears the error message in the UI state. */
@@ -197,10 +221,12 @@ class ViewListingViewModel(
                 poiDistances = emptyList(),
                 hasExistingMessage = hasExistingMessage)
         updateUIState(listing, uiData, isLoadingPOIs = true)
+
         launch {
           try {
             val userUniversityName = getUserUniversityName(currentUserId, isGuest)
-            val poiDistances = calculatePOIDistances(listing, userUniversityName)
+            val poiDistances =
+                calculatePOIDistances(listing.location, userUniversityName, listing.uid)
             _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIs = false) }
           } catch (e: Exception) {
             Log.e("ViewListingViewModel", "Error calculating POI distances asynchronously", e)
@@ -228,26 +254,6 @@ class ViewListingViewModel(
           "Could not get user profile for university, showing 2 nearest universities",
           e)
       null
-    }
-  }
-
-  private suspend fun calculatePOIDistances(
-      listing: RentalListing,
-      userUniversityName: String?
-  ): List<POIDistance> {
-    return try {
-      val distanceService =
-          DistanceService(
-              universitiesRepository = UniversitiesRepositoryProvider.repository,
-              walkingRouteService = WalkingRouteServiceProvider.service)
-      val distances = distanceService.calculateDistancesToPOIs(listing.location, userUniversityName)
-      Log.d(
-          "ViewListingViewModel",
-          "Calculated ${distances.size} POI distances for listing ${listing.uid} at lat=${listing.location.latitude}, lng=${listing.location.longitude}${if (userUniversityName != null) " (user university: $userUniversityName)" else " (showing 2 nearest universities)"}")
-      distances
-    } catch (e: Exception) {
-      Log.e("ViewListingViewModel", "Error calculating POI distances", e)
-      emptyList()
     }
   }
 

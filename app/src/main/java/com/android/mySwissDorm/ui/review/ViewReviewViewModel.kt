@@ -23,6 +23,7 @@ import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.model.review.computeDownvoteChange
 import com.android.mySwissDorm.model.review.computeUpvoteChange
 import com.android.mySwissDorm.ui.photo.PhotoManager
+import com.android.mySwissDorm.ui.utils.translateTextField
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +59,8 @@ data class ViewReviewUIState(
     val images: List<Photo> = emptyList(),
     val showFullScreenImages: Boolean = false,
     val fullScreenImagesIndex: Int = 0,
+    val translatedTitle: String = "",
+    val translatedDescription: String = ""
 )
 
 class ViewReviewViewModel(
@@ -94,6 +97,29 @@ class ViewReviewViewModel(
   /** Sets an error message in the UI state. */
   private fun setErrorMsg(errorMsg: String) {
     _uiState.update { it.copy(errorMsg = errorMsg) }
+  }
+
+  /**
+   * Translates the review's title and description to the user's app language.
+   *
+   * @param context The Android context, mainly used for accessing string resources.
+   */
+  fun translateReview(context: Context) {
+    val review = _uiState.value.review
+    translateTextField(
+        text = review.title,
+        context = context,
+        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedTitle = msg) } },
+        onUpdateTranslated = { translated ->
+          _uiState.update { it.copy(translatedTitle = translated) }
+        })
+    translateTextField(
+        text = review.reviewText,
+        context = context,
+        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedDescription = msg) } },
+        onUpdateTranslated = { translated ->
+          _uiState.update { it.copy(translatedDescription = translated) }
+        })
   }
 
   /**

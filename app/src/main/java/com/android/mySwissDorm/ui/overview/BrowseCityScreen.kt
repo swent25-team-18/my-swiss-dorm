@@ -306,6 +306,7 @@ private fun BrowseCityScreenUI(
                   onClick = {
                     val options =
                         ScanOptions().apply {
+                          setOrientationLocked(false)
                           setDesiredBarcodeFormats(ScanOptions.QR_CODE) // QR only
                           setBeepEnabled(true)
                           setPrompt(context.getString(R.string.settings_qr_prompt))

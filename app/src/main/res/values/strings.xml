@@ -53,6 +53,7 @@
     <string name="room_type">Room Type</string>
     <string name="save">Save</string>
     <string name="search">Search</string>
+    <string name="see_original">See original</string>
     <string name="size">Size</string>
     <string name="start_date">Start Date</string>
     <string name="starting">Starting</string>
@@ -173,6 +174,7 @@
     <string name="add_listing_select_location">Select location</string>
     <string name="confirm_listing">Confirm listing</string>
     <string name="add_listing_invalid_form_text">Please complete all required fields (valid size, price, and starting date) or Sign-in if you\'re a guest.</string>
+    <string name="add_listing_photo_required">Add at least one photo to publish your listing.</string>
     <string name="add_listing_invalid_size_text">Enter 1.0–1000.0 with one decimal (e.g., 18.5).</string>
     <string name="add_listing_invalid_price_text">Enter an integer between 1 and 10\'000.</string>
     <!-- ListingCard -->
@@ -207,6 +209,7 @@
     <string name="view_listing_listing_location">Listing Location</string>
     <string name="view_listing_sign_in_to_apply">Sign in to contact the owner and apply.</string>
     <string name="poi_loading_message">Fetching nearby points of interest…</string>
+    <string name="view_listing_translate_listing">Translate listing</string>
 
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Failed to load listing:</string>
@@ -227,6 +230,15 @@
     <string name="view_listing_please_wait_for_response">Please wait for a response from the owner.</string>
     <string name="view_listing_failed_to_submit_message">Failed to submit message:</string>
     <string name="view_listing_message_sent">Message sent! The owner will be notified.</string>
+
+    <!-- ViewResidency -->
+    <string name="view_residency_failed_to_load">Failed to load residency:</string>
+    <string name="view_residency_not_found">Residency not found</string>
+    <string name="view_residency_location">Residency Location</string>
+    <string name="view_residency_no_contact_info">No contact information available</string>
+    <string name="see_residency_details">See residency details</string>
+    <string name="screen_residency_details">Residency Details</string>
+    <string name="contact_information">Contact Information</string>
 
     <!-- AppNavHost -->
     <string name="app_nav_host_not_implemented_yet">Not implemented yet</string>
@@ -370,6 +382,7 @@
     <string name="view_review_posted_by_you"> (You)</string>
     <string name="view_review_price_per_month">.-/month</string>
     <string name="view_review_was_this_useful">Was this review helpful?</string>
+    <string name="view_review_translate_review">Translate review</string>
 
     <!-- ViewReviewViewModel -->
     <string name="view_review_failed_to_load_review">Failed to load Review</string>
@@ -438,10 +451,12 @@
 
     <!-- CameraButton -->
     <string name="camera_button_default_text">Take a picture</string>
+    <string name="camera_button_permission_denied_text">This application has no access to the camera</string>
 
     <!-- GalleryButton -->
     <string name="gallery_button_default_text">Choose a picture</string>
     <string name="gallery_button_default_multiple_text">Choose pictures</string>
+    <string name="gallery_button_permission_denied_text">This application has no access to the media</string>
 
     <!-- SanitizedTextFields -->
     <string name="sanitized_text_fields_email_placeholder">name@domain.com</string>

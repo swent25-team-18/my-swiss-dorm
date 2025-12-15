@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.profile
 
 import android.util.Log
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,14 +11,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -26,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -42,11 +45,14 @@ import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.profile.Language
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.AddPhotoDialog
+import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
+import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.Red0
+import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 
@@ -59,14 +65,17 @@ import com.android.mySwissDorm.ui.theme.White
  * Test tags used in this file (stable for tests):
  * - "profile_title", "profile_back_button", "profile_edit_toggle", "profile_list"
  * - "profile_picture_box", "profile_logout_button", "profile_save_button"
- * - "field_first_name", "field_last_name", "field_language", "field_residence"
+ * - "field_first_name", "field_last_name", "field_university", "field_language", "field_residence"
  */
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
     onLanguageChange: (String) -> Unit,
-    onBack: () -> Unit,
+    onSettingsClicked: () -> Unit,
     onEditPreferencesClick: () -> Unit,
+    onContributionClick: () -> Unit,
+    onViewBookmarks: () -> Unit,
+    navigationActions: NavigationActions? = null,
     viewModel: ProfileScreenViewModel = viewModel()
 ) {
   // Collect VM state (initial ensures preview/first composition has data)
@@ -81,6 +90,7 @@ fun ProfileScreen(
       state = state,
       onFirstNameChange = viewModel::onFirstNameChange,
       onLastNameChange = viewModel::onLastNameChange,
+      onUniversityChange = viewModel::onUniversityChange,
       onLanguageChange = {
         if (state.language != it) {
           newLanguage = it
@@ -90,10 +100,13 @@ fun ProfileScreen(
       onResidenceChange = viewModel::onResidenceChange,
       onLogout = onLogout,
       onChangeProfilePicture = { viewModel.onProfilePictureChange(it) },
-      onBack = onBack,
+      onSettingsClicked = onSettingsClicked,
       onToggleEditing = viewModel::toggleEditing,
       onSave = { viewModel.saveProfile(context) },
-      onEditPreferencesClick = onEditPreferencesClick)
+      onEditPreferencesClick = onEditPreferencesClick,
+      onContributionClick = onContributionClick,
+      onViewBookmarks = onViewBookmarks,
+      navigationActions = navigationActions)
 
   if (restartPopUpIsDisplayed && !state.isSaving) {
     RestartDialog(
@@ -127,13 +140,18 @@ fun ProfileScreen(
  * @param state Immutable UI state from the VM.
  * @param onFirstNameChange Pushes final first name to VM on save.
  * @param onLastNameChange Pushes final last name to VM on save.
+ * @param onUniversityChange Pushes final university to VM on save.
  * @param onLanguageChange Pushes final language to VM on save.
  * @param onResidenceChange Pushes final residence to VM on save.
  * @param onLogout Invoked in view mode by the "LOGOUT" button.
  * @param onChangeProfilePicture Invoked when avatar is tapped in edit mode.
- * @param onBack Invoked by top app bar back button.
+ * @param onSettingsClicked Invoked by top app bar button.
  * @param onToggleEditing Toggles between view and edit mode.
  * @param onSave Persists profile (Firestore) via the VM; also exits edit mode on success.
+ * @param onEditPreferencesClick Invoked by the "Preferences" button.
+ * @param onContributionClick Invoked by the "My contributions" button.
+ * @param onViewBookmarks Invoked by the "View bookmarks" button.
+ * @param navigationActions Optional [NavigationActions] for bottom bar navigation.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,18 +159,25 @@ private fun ProfileScreenContent(
     state: ProfileUiState,
     onFirstNameChange: (String) -> Unit,
     onLastNameChange: (String) -> Unit,
+    onUniversityChange: (String) -> Unit,
     onLanguageChange: (String) -> Unit,
     onResidenceChange: (String) -> Unit,
     onLogout: () -> Unit,
     onChangeProfilePicture: (Photo?) -> Unit,
-    onBack: () -> Unit,
+    onSettingsClicked: () -> Unit,
     onToggleEditing: () -> Unit,
     onSave: () -> Unit,
-    onEditPreferencesClick: () -> Unit
+    onEditPreferencesClick: () -> Unit,
+    onContributionClick: () -> Unit,
+    onViewBookmarks: () -> Unit,
+    navigationActions: NavigationActions? = null,
 ) {
+  val focusManager = LocalFocusManager.current
+
   // Local editable buffers used ONLY in edit mode (remembered across recompositions)
   var firstLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.firstName) }
   var lastLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.lastName) }
+  var universityLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.university) }
   var languageLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.language) }
   var residenceLocal by rememberSaveable(state.isEditing) { mutableStateOf(state.residence) }
   var displayPhotoDialog by rememberSaveable(state.isEditing) { mutableStateOf(false) }
@@ -165,6 +190,7 @@ private fun ProfileScreenContent(
     if (state.isEditing) {
       firstLocal = state.firstName
       lastLocal = state.lastName
+      universityLocal = state.university
       languageLocal = state.language
       residenceLocal = state.residence
       displayPhotoDialog = false
@@ -183,10 +209,11 @@ private fun ProfileScreenContent(
             },
             navigationIcon = {
               IconButton(
-                  onClick = onBack, modifier = Modifier.testTag(C.Tag.PROFILE_SCREEN_BACK_BUTTON)) {
+                  onClick = onSettingsClicked,
+                  modifier = Modifier.testTag(C.ProfileTags.SETTINGS_ICON)) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Go back",
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
                         tint = MainColor)
                   }
             },
@@ -207,6 +234,11 @@ private fun ProfileScreenContent(
                     }
                   }
             })
+      },
+      bottomBar = {
+        if (navigationActions != null) {
+          BottomBarFromNav(navigationActions)
+        }
       }) { innerPadding ->
         Column(
             modifier =
@@ -299,6 +331,15 @@ private fun ProfileScreenContent(
                         modifier = Modifier.weight(1f))
                   }
 
+              DropdownField(
+                  label = stringResource(R.string.university),
+                  value = if (state.isEditing) universityLocal else state.university,
+                  onValueChange = { universityLocal = it },
+                  tag = "field_university",
+                  enabled = state.isEditing,
+                  modifier = Modifier.fillMaxWidth(),
+                  options = state.allUniversities.map { it.name })
+
               // Language dropdown (from Language enum)
               DropdownField(
                   label = stringResource(R.string.language),
@@ -320,21 +361,6 @@ private fun ProfileScreenContent(
                   modifier = Modifier.fillMaxWidth(),
                   tag = "field_residence",
                   options = state.allResidencies.map { it.name })
-
-              Spacer(Modifier.height(10.dp))
-              Button(
-                  onClick = onEditPreferencesClick,
-                  modifier =
-                      Modifier.fillMaxWidth()
-                          .padding(top = 16.dp)
-                          .height(52.dp)
-                          .clip(RoundedCornerShape(12.dp)),
-                  colors =
-                      ButtonDefaults.buttonColors(
-                          containerColor = BackGroundColor, contentColor = MainColor),
-                  border = androidx.compose.foundation.BorderStroke(1.dp, MainColor)) {
-                    Text(stringResource(R.string.listing_preferences), color = MainColor)
-                  }
               // Bottom action area: Save (edit mode) or Logout (view mode)
               if (state.isEditing) {
                 Button(
@@ -342,6 +368,7 @@ private fun ProfileScreenContent(
                       // Push local edits to VM, then persist
                       onFirstNameChange(firstLocal)
                       onLastNameChange(lastLocal)
+                      onUniversityChange(universityLocal)
                       onLanguageChange(languageLocal)
                       onResidenceChange(residenceLocal)
                       onSave()
@@ -361,7 +388,73 @@ private fun ProfileScreenContent(
                               if (state.isSaving) stringResource(R.string.profile_saving)
                               else stringResource(R.string.profile_save))
                     }
-              } else {
+              }
+
+              // Optional inline error message (e.g., Firestore write failure or auth issue)
+              if (state.errorMsg != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = state.errorMsg,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("profile_error_text"))
+              }
+
+              if (!state.isEditing) {
+                Spacer(Modifier.height(12.dp))
+
+                // ---- Account ---------------------------------------------------------
+                SectionLabel(stringResource(R.string.account))
+                CardBlock(modifier = Modifier.testTag(C.ProfileTags.ACCOUNT_CARD)) {
+                  OutlinedTextField(
+                      value = state.email,
+                      onValueChange = {},
+                      label = { Text(stringResource(R.string.email_address)) },
+                      singleLine = true,
+                      readOnly = true,
+                      enabled = false,
+                      keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                      keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                      colors =
+                          OutlinedTextFieldDefaults.colors(
+                              disabledTextColor = TextColor.copy(alpha = 0.9f),
+                              disabledBorderColor = TextBoxColor,
+                              disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                              disabledContainerColor = MaterialTheme.colorScheme.surface),
+                      modifier = Modifier.fillMaxWidth().testTag(C.ProfileTags.EMAIL_FIELD))
+                  Spacer(Modifier.height(12.dp))
+                  Button(
+                      onClick = onContributionClick,
+                      modifier =
+                          Modifier.fillMaxWidth().testTag(C.ProfileTags.CONTRIBUTIONS_BUTTON),
+                      shape = RoundedCornerShape(16.dp),
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = MainColor, contentColor = White)) {
+                        Text(stringResource(R.string.settings_view_contributions))
+                      }
+                  Spacer(Modifier.height(12.dp))
+                  Button(
+                      onClick = onViewBookmarks,
+                      modifier = Modifier.fillMaxWidth().testTag(C.ProfileTags.BOOKMARKS_BUTTON),
+                      shape = RoundedCornerShape(16.dp),
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = MainColor, contentColor = White)) {
+                        Text(stringResource(R.string.profile_view_bookmarks))
+                      }
+                  Spacer(Modifier.height(12.dp))
+                  Button(
+                      onClick = onEditPreferencesClick,
+                      modifier = Modifier.fillMaxWidth().testTag(C.ProfileTags.PREFERENCES_BUTTON),
+                      shape = RoundedCornerShape(16.dp),
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = MainColor, contentColor = White)) {
+                        Text(stringResource(R.string.listing_preferences))
+                      }
+                }
+
+                // Logout button
                 Button(
                     onClick = onLogout,
                     modifier =
@@ -375,15 +468,6 @@ private fun ProfileScreenContent(
                             containerColor = BackGroundColor, contentColor = MainColor)) {
                       Text(text = stringResource(R.string.profile_logout), color = MainColor)
                     }
-              }
-
-              // Optional inline error message (e.g., Firestore write failure or auth issue)
-              if (state.errorMsg != null) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = state.errorMsg,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.testTag("profile_error_text"))
               }
             }
         if (displayPhotoDialog) {
@@ -471,7 +555,14 @@ private fun DropdownField(
             enabled = enabled,
             singleLine = true,
             label = { Text(label, color = Gray) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            // Only show trailing dropdown icon when enabled (edit mode) to avoid confusion in view
+            // mode
+            trailingIcon =
+                if (enabled) {
+                  { ExposedDropdownMenuDefaults.TrailingIcon(expanded) }
+                } else {
+                  null
+                },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.menuAnchor().fillMaxWidth().height(64.dp).testTag(tag),
             colors =
@@ -552,6 +643,28 @@ private fun RestartPopUpButton(@StringRes textId: Int, onClick: () -> Unit, modi
   }
 }
 
+@Composable
+private fun CardBlock(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+  Surface(
+      color = BackGroundColor,
+      shape = MaterialTheme.shapes.large,
+      border = BorderStroke(1.dp, TextBoxColor),
+      shadowElevation = 0.dp,
+      tonalElevation = 0.dp,
+      modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), content = content)
+      }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+  Text(
+      text = text,
+      style = MaterialTheme.typography.titleMedium,
+      color = TextColor,
+      modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
+}
+
 /**
  * Interactive preview that lets you toggle between view/edit modes and simulate typing/selection
  * locally without a ViewModel.
@@ -570,6 +683,7 @@ private fun Preview_Profile_Interactive() {
   var isEditing by rememberSaveable { mutableStateOf(false) }
   var firstName by rememberSaveable { mutableStateOf("Mansour") }
   var lastName by rememberSaveable { mutableStateOf("Kanaan") }
+  var university by rememberSaveable { mutableStateOf("EPFL") }
   var language by rememberSaveable { mutableStateOf("English") }
   var residence by rememberSaveable { mutableStateOf("Vortex, Coloc") }
 
@@ -577,6 +691,7 @@ private fun Preview_Profile_Interactive() {
       ProfileUiState(
           firstName = firstName,
           lastName = lastName,
+          university = university,
           language = language,
           residence = residence,
           isEditing = isEditing,
@@ -588,13 +703,16 @@ private fun Preview_Profile_Interactive() {
         state = ui,
         onFirstNameChange = { firstName = it },
         onLastNameChange = { lastName = it },
+        onUniversityChange = { university = it },
         onLanguageChange = { language = it },
         onResidenceChange = { residence = it },
         onLogout = {},
         onChangeProfilePicture = {},
-        onBack = {},
+        onSettingsClicked = {},
         onToggleEditing = { isEditing = !isEditing },
         onSave = { isEditing = false },
-        onEditPreferencesClick = {})
+        onEditPreferencesClick = {},
+        onContributionClick = {},
+        onViewBookmarks = {})
   }
 }

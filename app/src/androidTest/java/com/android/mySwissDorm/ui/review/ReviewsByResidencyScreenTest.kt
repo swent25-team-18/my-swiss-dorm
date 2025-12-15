@@ -2,12 +2,14 @@ package com.android.mySwissDorm.ui.review
 
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -177,6 +179,36 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
     assertEquals(false, clicked)
 
     compose.onNodeWithTag(C.ReviewsByResidencyTag.BACK_BUTTON).performClick()
+
+    assertEquals(true, clicked)
+  }
+
+  @Test
+  fun seeResidencyDetailsButton_isDisplayed() {
+    compose.setContent { ReviewsByResidencyScreen(vm, "Vortex") }
+
+    compose.onNodeWithTag(C.ReviewsByResidencyTag.ROOT).assertIsDisplayed()
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.VIEW_RESIDENCY_DETAILS_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun clickingSeeResidencyDetailsButton_callsOnViewResidencyDetails() {
+    var clicked = false
+    compose.setContent {
+      ReviewsByResidencyScreen(vm, "Vortex", onViewResidencyDetails = { clicked = true })
+    }
+
+    compose.onNodeWithTag(C.ReviewsByResidencyTag.ROOT).assertIsDisplayed()
+    assertEquals(false, clicked)
+
+    compose
+        .onNodeWithTag(
+            C.ReviewsByResidencyTag.VIEW_RESIDENCY_DETAILS_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
 
     assertEquals(true, clicked)
   }
@@ -452,32 +484,30 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
     val voteButtonsContainer = compose.onNodeWithTag(voteButtonsTag, useUnmergedTree = true)
     voteButtonsContainer.assertIsDisplayed()
 
-    // Wait for upvote button to be available
+    // Find the upvote button - we scrolled to the specific review's vote buttons container,
+    // so the first enabled upvote button should be the one for our review
     val upvoteButtonTag = C.ReviewsByResidencyTag.COMPACT_VOTE_UPVOTE_BUTTON
+
+    // Wait for upvote button to be available and ensure it's enabled
     compose.waitUntil(5_000) {
-      val nodes =
-          compose.onAllNodesWithTag(upvoteButtonTag, useUnmergedTree = true).fetchSemanticsNodes()
+      val buttons = compose.onAllNodesWithTag(upvoteButtonTag, useUnmergedTree = true)
+      val nodes = buttons.fetchSemanticsNodes()
       nodes.isNotEmpty()
     }
     compose.waitForIdle()
 
-    // After scrolling to the specific review's vote buttons container,
-    // find and click the upvote button. Since there are multiple reviews with upvote buttons,
-    // we use onAllNodesWithTag and click the first one. The scroll ensures the correct
-    // review's button is visible and accessible.
+    // Get all upvote buttons and click the first enabled one
+    // The onClick handler in the UI is bound to the specific review UID, so it will call
+    // upvoteReview with the correct reviewUid regardless of which visual button we click
     val upvoteButtons = compose.onAllNodesWithTag(upvoteButtonTag, useUnmergedTree = true)
-    val nodes = upvoteButtons.fetchSemanticsNodes()
-    assert(nodes.isNotEmpty()) { "Upvote button should be available" }
-
-    // Click the first available upvote button
-    // Note: The onClick callback is bound to the specific review's UID in the UI,
-    // and we verify below that the state change is for otherUserReview
-    upvoteButtons[0].performClick()
+    val upvoteButton = upvoteButtons.onFirst()
+    upvoteButton.assertIsEnabled()
+    upvoteButton.performClick()
     compose.waitForIdle()
 
     // Wait for the vote to be registered
-    // The optimistic update should happen immediately in the ViewModel
-    // We check for either vote type change or score change to be more lenient
+    // The optimistic update happens synchronously in the ViewModel's upvoteReview method,
+    // but we need to wait for the state flow to propagate and be observed
     compose.waitUntil(10_000) {
       val updatedItem =
           testVm.uiState.value.reviews.items.find { it.reviewUid == otherUserReview.uid }

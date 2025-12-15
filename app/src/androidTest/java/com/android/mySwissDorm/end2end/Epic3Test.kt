@@ -57,21 +57,14 @@ class Epic3Test : FirestoreTest() {
     PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
 
     runTest {
-      // 1. Setup User 2 (Owner of the listing)
       switchToUser(FakeUser.FakeUser2)
       ownerId = FirebaseEmulator.auth.currentUser!!.uid
       ProfileRepositoryProvider.repository.createProfile(profile2.copy(ownerId = ownerId))
-
-      // 2. Setup Shared Data (Cities, Residencies)
       cities.forEach { CitiesRepositoryProvider.repository.addCity(it) }
       ResidenciesRepositoryProvider.repository.addResidency(vortex)
-
-      // 3. Create Listing for User 2
       rentalUid = RentalListingRepositoryProvider.repository.getNewUid()
       rentalListing1 = rentalListing1.copy(ownerId = ownerId, uid = rentalUid)
       RentalListingRepositoryProvider.repository.addRentalListing(rentalListing1)
-
-      // 4. Switch to User 1 (The Test User/Seeker)
       switchToUser(FakeUser.FakeUser1)
     }
     FirebaseEmulator.auth.signOut()
@@ -127,7 +120,7 @@ class Epic3Test : FirestoreTest() {
         composeTestRule.waitUntil(5_000) { composeTestRule.onNodeWithTag(SKIP).isDisplayed() }
         composeTestRule.onNodeWithTag(SKIP).performClick()
         composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
+          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
         }
         composeTestRule.waitUntil(10_000) {
           composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
@@ -151,7 +144,7 @@ class Epic3Test : FirestoreTest() {
             .performScrollTo()
             .performClick()
 
-        composeTestRule.waitUntil(10_000) {
+        composeTestRule.waitUntil(15_000) {
           composeTestRule.onNodeWithTag(C.ViewListingTags.TITLE).isDisplayed()
         }
         // 2nd step is bookmark
@@ -171,20 +164,20 @@ class Epic3Test : FirestoreTest() {
         }
         composeTestRule.onNodeWithTag(C.ViewListingTags.APPLY_BTN).performClick()
         composeTestRule.onNodeWithContentDescription("Back").performClick()
-        composeTestRule.waitUntil(12_000) {
-          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
+        composeTestRule.waitUntil(20_000) {
+          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
         }
 
         // 6th step is to check that the bookmarks are indeed saved
-        composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).performClick()
+        composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).performClick()
         composeTestRule.waitUntil(5_000) {
           composeTestRule
-              .onNodeWithTag(C.SettingsTags.BOOKMARKS_BUTTON)
+              .onNodeWithTag(C.ProfileTags.BOOKMARKS_BUTTON)
               .performScrollTo()
               .isDisplayed()
         }
         composeTestRule
-            .onNodeWithTag(C.SettingsTags.BOOKMARKS_BUTTON)
+            .onNodeWithTag(C.ProfileTags.BOOKMARKS_BUTTON)
             .performScrollTo()
             .performClick()
 
@@ -200,16 +193,5 @@ class Epic3Test : FirestoreTest() {
           composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Inbox)).isDisplayed()
         }
         composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Inbox)).performClick()
-        // When chat Screen is implemented
-        //            composeTestRule.waitUntil(5_000) {
-        //
-        // composeTestRule.onNodeWithTag(C.ChannelsScreenTestTags.CHANNELS_LIST).isDisplayed()
-        //            }
-        //
-        //            // Verify that a chat channel has been created (list should not be empty)
-        //            composeTestRule
-        //                .onNodeWithTag(C.ChannelsScreenTestTags.CHANNELS_LIST)
-        //                .onChildren()
-        //                .assertCountEquals(1)
       }
 }

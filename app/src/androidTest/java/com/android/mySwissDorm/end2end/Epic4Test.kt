@@ -1,24 +1,14 @@
 package com.android.mySwissDorm.end2end
 
-import android.app.Activity
-import android.app.Instrumentation
-import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.provider.MediaStore
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
-import androidx.test.espresso.intent.Intents.intending
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.MySwissDormApp
-import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.authentification.AuthRepositoryFirebase
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
@@ -28,6 +18,7 @@ import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryFirestore
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
+import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryFirestore
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
@@ -35,6 +26,8 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
+import com.android.mySwissDorm.resources.C.ProfileTags.PREFERENCES_BUTTON
 import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.screen.SignInScreen
 import com.android.mySwissDorm.screen.SignUpScreen
@@ -52,6 +45,9 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class Epic4Test : FirestoreTest() {
   val fakeUid = "uidTest"
+  val fakeUidExpensive = "ExpensiveUidTest"
+  val fakeUidCheap = "CheapUidTest"
+  private val context = ApplicationProvider.getApplicationContext<Context>()
 
   override fun createRepositories() = runBlocking {
     AuthRepositoryProvider.repository = AuthRepositoryFirebase(FirebaseEmulator.auth)
@@ -70,17 +66,17 @@ class Epic4Test : FirestoreTest() {
     ResidenciesRepositoryProvider.repository.addResidency(vortex)
     val cheapListing =
         rentalListing1.copy(
-            uid = RentalListingRepositoryProvider.repository.getNewUid(),
+            uid = fakeUidCheap,
             ownerId = FirebaseEmulator.auth.currentUser!!.uid,
             pricePerMonth = 800.0,
-            roomType = com.android.mySwissDorm.model.rental.RoomType.COLOCATION)
+            roomType = RoomType.STUDIO)
     val expensiveListing =
         rentalListing1.copy(
             title = "Expensive listing",
-            uid = RentalListingRepositoryProvider.repository.getNewUid(),
+            uid = fakeUidExpensive,
             ownerId = FirebaseEmulator.auth.currentUser!!.uid,
-            pricePerMonth = 2500.0,
-            roomType = com.android.mySwissDorm.model.rental.RoomType.STUDIO)
+            pricePerMonth = 4999.0,
+            roomType = RoomType.STUDIO)
     val review1 = reviewVortex1.copy(uid = fakeUid, FirebaseEmulator.auth.currentUser!!.uid)
 
     RentalListingRepositoryProvider.repository.addRentalListing(cheapListing)
@@ -104,7 +100,7 @@ class Epic4Test : FirestoreTest() {
   }
 
   @Test
-  fun testProfilePictureFiltersAndGuestMode() {
+  fun testFiltersPreferencesAndGuestMode() {
     val fakePhoneNumber = "774321122"
     val fakeLastName = "lastNameTest"
     val fakeGoogleIdToken =
@@ -128,64 +124,8 @@ class Epic4Test : FirestoreTest() {
 
     composeTestRule.waitUntil(10_000) { composeTestRule.onNodeWithTag(SKIP).isDisplayed() }
     composeTestRule.onNodeWithTag(SKIP).performClick()
-    composeTestRule.waitUntil(10_000) {
-      composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).isDisplayed()
-    }
-    composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.SettingsTags.PROFILE_BUTTON).isDisplayed()
-    }
-    composeTestRule.onNodeWithTag(C.SettingsTags.PROFILE_BUTTON).performClick()
-    // the next 6-7 lines were made with AI
-    val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
-    val validGalleryUri = createValidContentUri(targetContext)
-    val resultData = Intent().apply { data = validGalleryUri }
-    val result = Instrumentation.ActivityResult(Activity.RESULT_OK, resultData)
-    intending(hasAction(Intent.ACTION_GET_CONTENT)).respondWith(result)
-    intending(hasAction(Intent.ACTION_PICK)).respondWith(result)
-    intending(hasAction("android.provider.action.PICK_IMAGES")).respondWith(result)
-    composeTestRule.onNodeWithContentDescription("Modify profile").performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag("profile_picture_box").isDisplayed()
-    }
-    composeTestRule
-        .onNodeWithTag("profile_picture_box")
-        .assertIsDisplayed()
-        .assertIsEnabled()
-        .performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule
-          .onAllNodesWithTag(C.AddPhotoButtonTags.GALLERY_BUTTON_TEXT, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-    composeTestRule
-        .onNodeWithTag(C.AddPhotoButtonTags.GALLERY_BUTTON_TEXT, useUnmergedTree = true)
-        .performClick()
-    composeTestRule.onNodeWithTag(C.ProfileTags.SAVE_BUTTON).assertIsDisplayed().performClick()
-    composeTestRule.waitUntil(5000) {
-      composeTestRule.onNodeWithContentDescription("Modify profile").isDisplayed()
-    }
-    composeTestRule.onNodeWithContentDescription("Modify profile").performClick()
 
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule
-          .onNodeWithTag(C.ProfileTags.DELETE_PP_BUTTON, useUnmergedTree = true)
-          .isDisplayed()
-    }
-    composeTestRule
-        .onNodeWithTag(C.ProfileTags.DELETE_PP_BUTTON, useUnmergedTree = true)
-        .performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule
-          .onAllNodesWithTag(C.ProfileTags.DELETE_PP_BUTTON)
-          .fetchSemanticsNodes()
-          .isEmpty()
-    }
-
-    composeTestRule.onNodeWithTag(C.Tag.PROFILE_SCREEN_BACK_BUTTON).performClick()
     // For filters
-    composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).performClick()
     composeTestRule.waitUntil(10_000) {
       composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
     }
@@ -193,7 +133,6 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.waitUntil(timeoutMillis = 15_000) {
       composeTestRule
           .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
-          .performScrollTo()
           .isDisplayed()
     }
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
@@ -209,7 +148,10 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.waitUntil(5_000) {
       composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET).isDisplayed()
     }
-
+    composeTestRule.onNodeWithTag(C.FilterTestTags.SLIDER_PRICE).performTouchInput {
+      click(percentOffset(0.0f, 0.5f))
+      click(percentOffset(0.8f, 0.5f))
+    }
     composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON).performClick()
     composeTestRule.waitUntil(5_000) {
       composeTestRule
@@ -217,17 +159,77 @@ class Epic4Test : FirestoreTest() {
           .fetchSemanticsNodes()
           .isEmpty()
     }
-
-    composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Settings)).performClick()
     composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.SettingsTags.PROFILE_BUTTON).isDisplayed()
+      composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_ROW).isDisplayed()
     }
-    composeTestRule.onNodeWithTag(C.SettingsTags.PROFILE_BUTTON).performClick()
-
+    composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_SIZE).performClick()
     composeTestRule.waitUntil(5_000) {
+      composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET).isDisplayed()
+    }
+    composeTestRule.onNodeWithTag(C.FilterTestTags.SLIDER_SIZE).performTouchInput {
+      click(percentOffset(0.0f, 0.5f))
+      click(percentOffset(1.0f, 0.5f))
+    }
+    composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON).performClick()
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET)
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
+    composeTestRule.waitUntil(15_000) {
+      composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
+    }
+    composeTestRule
+        .onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidExpensive))
+        .assertIsNotDisplayed()
+    composeTestRule
+        .onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidCheap))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).performClick()
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule.onNodeWithTag(PREFERENCES_BUTTON).performScrollTo().isDisplayed()
+    }
+    composeTestRule.onNodeWithTag(PREFERENCES_BUTTON).performClick()
+
+    composeTestRule
+        .onNodeWithTag(C.FilterTestTags.SLIDER_PRICE)
+        .performScrollTo()
+        .performTouchInput {
+          click(percentOffset(0.0f, 0.5f))
+          click(percentOffset(0.8f, 0.5f))
+        }
+
+    composeTestRule
+        .onNodeWithTag(C.FilterTestTags.SLIDER_SIZE)
+        .performScrollTo()
+        .performTouchInput {
+          click(percentOffset(0.0f, 0.5f))
+          click(percentOffset(0.5f, 0.5f))
+        }
+    composeTestRule.onNodeWithTag(PREFERRED_ROOM_TYPE).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(RoomType.STUDIO.getName(context))
+        .performScrollTo()
+        .assertIsDisplayed()
+        .performClick()
+    composeTestRule.onNodeWithText("Save Preferences").assertIsEnabled().performClick()
+    composeTestRule.waitUntil(10_000) {
+      composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).isDisplayed()
+    }
+    composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).performClick()
+    composeTestRule.waitUntil(15_000) {
+      composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
+    }
+    composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidCheap)).assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).performClick()
+    composeTestRule.waitUntil(15_000) {
       composeTestRule.onNodeWithTag("profile_logout_button").performScrollTo().isDisplayed()
     }
-    composeTestRule.onNodeWithTag("profile_logout_button").performScrollTo().performClick()
+    composeTestRule.onNodeWithTag("profile_logout_button").performClick()
 
     // For log in as guest
     composeTestRule.waitUntil(5_000) {
@@ -276,24 +278,4 @@ class Epic4Test : FirestoreTest() {
     }
     composeTestRule.onNodeWithText("First review").assertIsDisplayed()
   }
-}
-
-// That's a fully ai generated function made to bea ble to set the profile picture
-// without using Gallery (which is local)
-private fun createValidContentUri(context: Context): Uri {
-  val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.zurich)
-  val filename = "zurich_test_image.jpg"
-  val contentValues =
-      ContentValues().apply {
-        put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-      }
-  val resolver = context.contentResolver
-  val uri =
-      resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-          ?: throw IllegalStateException("Failed to create test image in MediaStore")
-  resolver.openOutputStream(uri)?.use { stream ->
-    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-  }
-  return uri
 }

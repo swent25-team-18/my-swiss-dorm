@@ -40,6 +40,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.photo.getPhotoDownloadUrl
+import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.ui.theme.ThemePreferenceState
@@ -408,12 +409,14 @@ internal fun computeFallbackInitials(name: String?, id: String?): String {
 
 internal suspend fun loadAppProfileAvatarModel(
     userId: String,
-    profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
+    profileLoader: suspend (String) -> Profile = { id ->
+      ProfileRepositoryProvider.repository.getProfile(id)
+    },
     photoModelLoader: suspend (String) -> Any? = { fileName ->
       PhotoRepositoryProvider.cloud_repository.retrievePhoto(fileName).image
     },
 ): Any? {
-  val profile = profileRepository.getProfile(userId)
+  val profile = profileLoader(userId)
   val fileName = profile.userInfo.profilePicture
   if (fileName.isNullOrBlank()) return null
   return runCatching { photoModelLoader(fileName) }.getOrNull()

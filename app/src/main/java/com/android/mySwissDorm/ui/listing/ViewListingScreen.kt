@@ -94,6 +94,7 @@ fun ViewListingScreen(
   val hasExistingMessage = listingUIState.hasExistingMessage
   var showShareDialog by remember { mutableStateOf(false) }
   var isTranslated by remember { mutableStateOf(false) }
+  var showTranslateButton by remember { mutableStateOf(false) }
 
   // Button is enabled only if there's a message, user is not blocked, and no existing message
   val canApply = hasMessage && !isBlockedByOwner && !hasExistingMessage
@@ -112,6 +113,15 @@ fun ViewListingScreen(
   }
 
   LaunchedEffect(listing) { viewListingViewModel.translateListing(context) }
+
+  LaunchedEffect(listingUIState.translatedDescription) {
+    showTranslateButton =
+        if (listingUIState.translatedDescription == "") {
+          false
+        } else {
+          listing.description != listingUIState.translatedDescription
+        }
+  }
 
   if (listingUIState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -202,18 +212,20 @@ fun ViewListingScreen(
                       .imePadding()
                       .testTag(C.ViewListingTags.ROOT),
               verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                val clickableText =
-                    if (isTranslated) {
-                      context.getString(R.string.see_original)
-                    } else {
-                      context.getString(R.string.view_listing_translate_listing)
-                    }
-                Text(
-                    text = clickableText,
-                    modifier =
-                        Modifier.clickable(onClick = { isTranslated = !isTranslated })
-                            .testTag(C.ViewListingTags.TRANSLATE_BTN),
-                    color = MainColor)
+                if (showTranslateButton) {
+                  val clickableText =
+                      if (isTranslated) {
+                        context.getString(R.string.see_original)
+                      } else {
+                        context.getString(R.string.view_listing_translate_listing)
+                      }
+                  Text(
+                      text = clickableText,
+                      modifier =
+                          Modifier.clickable(onClick = { isTranslated = !isTranslated })
+                              .testTag(C.ViewListingTags.TRANSLATE_BTN),
+                      color = MainColor)
+                }
                 val titleToDisplay =
                     if (isTranslated) listingUIState.translatedTitle else listing.title
                 Text(

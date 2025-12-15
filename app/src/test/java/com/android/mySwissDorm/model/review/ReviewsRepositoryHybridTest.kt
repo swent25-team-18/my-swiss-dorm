@@ -691,6 +691,160 @@ class ReviewsRepositoryHybridTest {
     ProfileRepositoryProvider.repository = profileRepository
   }
 
+  @Test
+  fun getAllReviews_online_deletesStaleReviewsDuringFullSync() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add some stale reviews to local database
+    val staleReview1 = createTestReview("stale-1")
+    val staleReview2 = createTestReview("stale-2")
+    val currentReview = createTestReview("current-1")
+    localRepository.addReview(staleReview1)
+    localRepository.addReview(staleReview2)
+    localRepository.addReview(currentReview)
+
+    // Remote only has current review (stale ones were deleted from Firestore)
+    coEvery { remoteRepository.getAllReviews() } returns listOf(currentReview)
+
+    val result = hybridRepository.getAllReviews()
+
+    assertEquals(listOf(currentReview), result)
+    // Verify stale reviews were deleted
+    val localReviews = localRepository.getAllReviews()
+    assertEquals(1, localReviews.size)
+    assertEquals("current-1", localReviews[0].uid)
+    // Verify stale reviews are gone
+    val result1 = runCatching { localRepository.getReview("stale-1") }
+    assertTrue(result1.isFailure)
+    assertTrue(result1.exceptionOrNull() is NoSuchElementException)
+    val result2 = runCatching { localRepository.getReview("stale-2") }
+    assertTrue(result2.isFailure)
+    assertTrue(result2.exceptionOrNull() is NoSuchElementException)
+  }
+
+  @Test
+  fun getAllReviews_online_deletesAllReviewsWhenRemoteIsEmpty() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add some reviews to local database
+    val review1 = createTestReview("review-1")
+    val review2 = createTestReview("review-2")
+    localRepository.addReview(review1)
+    localRepository.addReview(review2)
+
+    // Remote is empty (all reviews deleted from Firestore)
+    coEvery { remoteRepository.getAllReviews() } returns emptyList()
+
+    val result = hybridRepository.getAllReviews()
+
+    assertEquals(emptyList<Review>(), result)
+    // Verify all local reviews were deleted
+    assertEquals(0, localRepository.getAllReviews().size)
+  }
+
+  @Test
+  fun getAllReviewsByUser_online_doesNotDeleteStaleReviews() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add a review from a different user
+    val otherUserReview = createTestReview("other-1", ownerId = "user-2")
+    localRepository.addReview(otherUserReview)
+
+    val userReview = createTestReview("user-1", ownerId = "user-1")
+    coEvery { remoteRepository.getAllReviewsByUser("user-1") } returns listOf(userReview)
+
+    val result = hybridRepository.getAllReviewsByUser("user-1")
+
+    assertEquals(listOf(userReview), result)
+    // Verify other user's review is still in local database (not deleted because it's a partial
+    // sync)
+    val localReviews = localRepository.getAllReviews()
+    assertEquals(2, localReviews.size)
+    assertTrue(localReviews.any { it.uid == "other-1" })
+    assertTrue(localReviews.any { it.uid == "user-1" })
+  }
+
+  @Test
+  fun getAllReviewsByResidency_online_doesNotDeleteStaleReviews() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add a review for a different residency
+    val otherResidencyReview = createTestReview("other-1", residencyName = "OtherResidency")
+    localRepository.addReview(otherResidencyReview)
+
+    val residencyReview = createTestReview("residency-1", residencyName = "Vortex")
+    coEvery { remoteRepository.getAllReviewsByResidency("Vortex") } returns listOf(residencyReview)
+
+    val result = hybridRepository.getAllReviewsByResidency("Vortex")
+
+    assertEquals(listOf(residencyReview), result)
+    // Verify other residency's review is still in local database (not deleted because it's a
+    // partial sync)
+    val localReviews = localRepository.getAllReviews()
+    assertEquals(2, localReviews.size)
+    assertTrue(localReviews.any { it.uid == "other-1" })
+    assertTrue(localReviews.any { it.uid == "residency-1" })
+  }
+
+  @Test
+  fun getAllReviews_online_handlesDeletionFailureGracefully() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val currentReview = createTestReview("current-1")
+    coEvery { remoteRepository.getAllReviews() } returns listOf(currentReview)
+
+    // Close database to simulate deletion failure
+    database.close()
+    val newDatabase =
+        Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+    localRepository = ReviewsRepositoryLocal(newDatabase.reviewDao())
+    hybridRepository = ReviewsRepositoryHybrid(context, remoteRepository, localRepository)
+
+    // Should not throw even if deletion fails
+    val result = hybridRepository.getAllReviews()
+
+    assertEquals(listOf(currentReview), result)
+    // Verify review was still synced despite deletion failure
+    assertEquals(1, localRepository.getAllReviews().size)
+    newDatabase.close()
+  }
+
+  @Test
+  fun getAllReviews_online_updatesExistingAndDeletesStale() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add existing review with old data
+    val oldReview = createTestReview("review-1", title = "Old Title")
+    val staleReview = createTestReview("stale-1")
+    localRepository.addReview(oldReview)
+    localRepository.addReview(staleReview)
+
+    // Remote has updated review-1 and a new review-2, but no stale-1
+    val updatedReview = createTestReview("review-1", title = "Updated Title")
+    val newReview = createTestReview("review-2")
+    coEvery { remoteRepository.getAllReviews() } returns listOf(updatedReview, newReview)
+
+    val result = hybridRepository.getAllReviews()
+
+    assertEquals(2, result.size)
+    val localReviews = localRepository.getAllReviews()
+    assertEquals(2, localReviews.size)
+    // Verify review-1 was updated
+    assertEquals("Updated Title", localReviews.find { it.uid == "review-1" }?.title)
+    // Verify review-2 was added
+    assertTrue(localReviews.any { it.uid == "review-2" })
+    // Verify stale-1 was deleted
+    assertFalse(localReviews.any { it.uid == "stale-1" })
+  }
+
   private fun createTestReview(
       uid: String,
       ownerId: String = "user-1",

@@ -133,7 +133,10 @@ class ReviewsRepositoryHybrid(
     val review = getReview(reviewId)
     if (userId == null || userId == review.ownerId) return review
 
-    // Check bidirectional blocking
+    // Always allow anonymous reviews to preserve anonymity (security/privacy requirement)
+    if (review.isAnonymous) return review
+
+    // Check bidirectional blocking for non-anonymous reviews
     val isBlocked = isBlockedBidirectionally(review.ownerId, userId)
     if (isBlocked) {
       throw NoSuchElementException(
@@ -158,7 +161,11 @@ class ReviewsRepositoryHybrid(
 
     val blockedCache = mutableMapOf<String, Boolean>()
     return reviews.filter { review ->
+      // Always show own reviews
       if (review.ownerId == userId) return@filter true
+      // Always show anonymous reviews to preserve anonymity (security/privacy requirement)
+      if (review.isAnonymous) return@filter true
+      // For non-anonymous reviews, apply blocking filter
       !isBlockedBidirectionally(review.ownerId, userId, currentUserBlockedList, blockedCache)
     }
   }

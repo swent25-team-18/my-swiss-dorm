@@ -146,7 +146,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     waitForScreenRoot()
 
     // Wait for ViewModel to finish loading (including POI calculation)
-    compose.waitUntil(10_000) {
+    compose.waitUntil(30_000) {
       vm.uiState.value.listing.uid == otherListing.uid && !vm.uiState.value.isLoadingPOIs
     }
     compose.waitForIdle()

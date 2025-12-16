@@ -91,7 +91,13 @@ class ViewProfileScreenViewModel(
     viewModelScope.launch {
       try {
         // Repository call; throws on failure.
-        val profile = repo.getProfile(ownerId)
+        val profile =
+            runCatching { repo.getProfile(ownerId) }
+                .getOrElse {
+                  setErrorMsg(
+                      "${context.getString(R.string.view_user_profile_failed_to_load_profile)} ${it.message}")
+                  return@launch
+                }
 
         // Check if current user has blocked this user
         val currentUid = auth.currentUser?.uid
@@ -115,13 +121,17 @@ class ViewProfileScreenViewModel(
         val photo =
             if (!isBlocked) {
               profile.userInfo.profilePicture?.let { fileName ->
-                try {
-                  Log.d("ViewUserProfileViewModel", "Try to retrieve $fileName")
-                  photoRepositoryCloud.retrievePhoto(fileName)
-                } catch (_: NoSuchElementException) {
-                  Log.d("ViewUserProfileViewModel", "Failed to retrieve the image $fileName")
-                  null
-                }
+                runCatching {
+                      Log.d("ViewUserProfileViewModel", "Try to retrieve $fileName")
+                      photoRepositoryCloud.retrievePhoto(fileName)
+                    }
+                    .getOrElse {
+                      Log.d(
+                          "ViewUserProfileViewModel",
+                          "Failed to retrieve the image $fileName",
+                          it)
+                      null
+                    }
               }
             } else {
               null
@@ -220,26 +230,23 @@ class ViewProfileScreenViewModel(
             photoJob =
                 viewModelScope.launch {
                   val photo =
-                      try {
-                        val profile = repo.getProfile(targetUid)
-                        profile.userInfo.profilePicture?.let { fileName ->
-                          try {
-                            Log.d("ViewUserProfileViewModel", "Try to retrieve $fileName")
-                            photoRepositoryCloud.retrievePhoto(fileName)
-                          } catch (_: NoSuchElementException) {
-                            Log.d(
-                                "ViewUserProfileViewModel",
-                                "Failed to retrieve the image $fileName")
-                            null
+                      runCatching { repo.getProfile(targetUid) }
+                          .getOrNull()
+                          ?.userInfo
+                          ?.profilePicture
+                          ?.let { fileName ->
+                            runCatching {
+                                  Log.d("ViewUserProfileViewModel", "Try to retrieve $fileName")
+                                  photoRepositoryCloud.retrievePhoto(fileName)
+                                }
+                                .getOrElse {
+                                  Log.d(
+                                      "ViewUserProfileViewModel",
+                                      "Failed to retrieve the image $fileName",
+                                      it)
+                                  null
+                                }
                           }
-                        }
-                      } catch (e: Exception) {
-                        Log.e(
-                            "ViewProfileScreenViewModel",
-                            "Error loading profile picture after unblock",
-                            e)
-                        null
-                      }
 
                   // Apply only if this is still the latest intent.
                   if (toggleToken == myToken) {

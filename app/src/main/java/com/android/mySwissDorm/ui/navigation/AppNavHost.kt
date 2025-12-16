@@ -62,6 +62,7 @@ import com.android.mySwissDorm.ui.profile.ProfileContributionsScreen
 import com.android.mySwissDorm.ui.profile.ProfileContributionsViewModel
 import com.android.mySwissDorm.ui.profile.ProfileScreen
 import com.android.mySwissDorm.ui.profile.ProfileScreenViewModel
+import com.android.mySwissDorm.ui.profile.ViewProfileScreenViewModel
 import com.android.mySwissDorm.ui.profile.ViewUserProfileScreen
 import com.android.mySwissDorm.ui.qr.MySwissDormQrResult
 import com.android.mySwissDorm.ui.qr.parseMySwissDormQr
@@ -612,9 +613,28 @@ fun AppNavHost(
             val userId = navBackStackEntry.arguments?.getString("userId")
 
             userId?.let {
+              // Check if we came from a listing or review screen
+              val previousRoute = navController.previousBackStackEntry?.destination?.route
+              val cameFromListingOrReview =
+                  previousRoute?.startsWith("listingOverview/") == true ||
+                      previousRoute?.startsWith("reviewOverview/") == true
+
+              // Get ViewModel to check blocked status
+              val viewModel: ViewProfileScreenViewModel = viewModel()
+              val uiState by viewModel.uiState.collectAsState()
+
               ViewUserProfileScreen(
+                  viewModel = viewModel,
                   ownerId = it,
-                  onBack = { navActions.goBack() },
+                  onBack = {
+                    // If user is blocked AND we came from listing/review, pop 2 screens
+                    if (uiState.isBlocked && cameFromListingOrReview) {
+                      navController.popBackStack() // Pop profile screen
+                      navController.popBackStack() // Pop listing/review screen
+                    } else {
+                      navActions.goBack()
+                    }
+                  },
                   onSendMessage = {
                     Toast.makeText(
                             context,

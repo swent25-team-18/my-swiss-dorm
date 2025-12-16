@@ -220,18 +220,21 @@ class Epic4Test : FirestoreTest() {
 
     composeTestRule
         .onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_ROW, useUnmergedTree = true)
-        .performScrollToIndex(2)
+        .performScrollToNode(hasTestTag(FILTER_CHIP_SIZE))
     composeTestRule.waitForIdle()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule
-          .onAllNodesWithTag(FILTER_CHIP_SIZE, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    println("DEBUG_STEP: Waiting for Size Filter Chip to be visible")
+    try {
+      composeTestRule.waitUntil(5_000) {
+        composeTestRule
+            .onAllNodesWithTag(FILTER_CHIP_SIZE, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError(
+          "DEBUG_FAIL: Timeout waiting for Size Filter Chip to be displayed after scroll", e)
     }
-    composeTestRule
-        .onNodeWithTag(FILTER_CHIP_SIZE, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
+    composeTestRule.onNodeWithTag(FILTER_CHIP_SIZE, useUnmergedTree = true).performClick()
     composeTestRule.waitForIdle()
     try {
       composeTestRule.waitUntil(5_000) {

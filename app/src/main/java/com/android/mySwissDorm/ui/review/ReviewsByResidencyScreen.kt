@@ -208,6 +208,7 @@ private fun ReviewCard(
                       textAlign = TextAlign.Start,
                       color = TextColor,
                       maxLines = 2,
+                      overflow = TextOverflow.Ellipsis,
                       modifier =
                           Modifier.testTag(
                               C.ReviewsByResidencyTag.reviewDescription(data.reviewUid)))
@@ -307,18 +308,5 @@ private fun CompactVoteButtons(
       }
 }
 
-fun truncateText(text: String, maxLength: Int): String {
-  return text.let {
-    if (it.length <= maxLength) {
-      it
-    } else {
-      val truncated = it.take(maxLength)
-      val lastSpace = truncated.lastIndexOf(' ')
-      if (lastSpace != -1) {
-        "${truncated.substring(0, lastSpace)}..."
-      } else {
-        "$truncated..." // No space, probably unreadable text
-      }
-    }
-  }
-}
+// Manual text truncation is no longer needed; Text composables rely on
+// maxLines + overflow = TextOverflow.Ellipsis to handle truncation responsively.

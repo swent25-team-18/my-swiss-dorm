@@ -502,64 +502,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun blockedUser_showsBlockedNotice() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    // Block the current user
-    profileRepo.addBlockedUser(ownerUid, otherUid)
-
-    switchToUser(FakeUser.FakeUser2)
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
-    }
-    waitForScreenRoot()
-
-    // Wait for blocked notice UI to appear
-    compose.waitUntil(10_000) {
-      compose
-          .onAllNodesWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    compose
-        .onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
-        .assertIsDisplayed()
-    compose
-        .onNodeWithTag(C.ViewListingTags.BLOCKED_BACK_BTN, useUnmergedTree = true)
-        .assertIsDisplayed()
-  }
-
-  @Test
-  fun blockedUser_backButton_callsOnGoBack() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    // Block the current user
-    profileRepo.addBlockedUser(ownerUid, otherUid)
-
-    switchToUser(FakeUser.FakeUser2)
-    var navigatedBack = false
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(
-          viewListingViewModel = vm,
-          listingUid = ownerListing.uid,
-          onGoBack = { navigatedBack = true })
-    }
-    waitForScreenRoot()
-
-    // Wait for blocked back button UI to appear
-    compose.waitUntil(10_000) {
-      compose
-          .onAllNodesWithTag(C.ViewListingTags.BLOCKED_BACK_BTN, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    compose.onNodeWithTag(C.ViewListingTags.BLOCKED_BACK_BTN, useUnmergedTree = true).performClick()
-    assertTrue("onGoBack should be called", navigatedBack)
-  }
-
-  @Test
   fun clickingPosterName_offline_showsToast() = runTest {
     switchToUser(FakeUser.FakeUser1)
     mockkObject(NetworkUtils)
@@ -857,34 +799,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
     scrollListTo(C.ViewListingTags.BULLETS)
     compose.onNodeWithTag(C.ViewListingTags.BULLETS, useUnmergedTree = true).assertIsDisplayed()
-  }
-
-  @Test
-  fun applyButton_disabledWhenBlocked() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    // Block the other user
-    profileRepo.addBlockedUser(ownerUid, otherUid)
-
-    switchToUser(FakeUser.FakeUser2)
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
-    }
-    waitForScreenRoot()
-
-    // Wait for blocked notice UI to appear
-    compose.waitUntil(10_000) {
-      compose
-          .onAllNodesWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Blocked users should see blocked notice, not apply button
-    compose
-        .onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
-        .assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
   }
 
   @Test

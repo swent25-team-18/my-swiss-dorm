@@ -202,9 +202,8 @@ private fun ReviewCard(
                                 Modifier.testTag(
                                     C.ReviewsByResidencyTag.reviewPostDate(data.reviewUid)))
                       }
-                  val truncatedReview = truncateText(data.reviewText, 60)
                   Text( // Review Text
-                      text = truncatedReview,
+                      text = data.reviewText,
                       style = MaterialTheme.typography.bodyMedium,
                       textAlign = TextAlign.Start,
                       color = TextColor,

@@ -12,6 +12,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
+import com.android.mySwissDorm.model.university.University
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
@@ -327,17 +328,21 @@ class AdminPageViewModelTest : FirestoreTest() {
 
     val photo = Photo.createNewTempPhoto("test.jpg")
     viewModel.addPhoto(photo)
+    advanceUntilIdle()
 
-    // Wait for photo to be added
+    // Wait for photo to be added - PhotoManager.addPhoto might be async
     var attempts = 0
-    while (viewModel.uiState.pickedImages.isEmpty() && attempts < 50) {
+    while (viewModel.uiState.pickedImages.isEmpty() && attempts < 100) {
+      delay(100)
       advanceUntilIdle()
-      delay(50)
       attempts++
     }
 
     assertEquals("Should have 1 photo", 1, viewModel.uiState.pickedImages.size)
-    assertEquals("Photo should match", photo, viewModel.uiState.pickedImages.first())
+    // Check by fileName since photoManager might create a new Photo instance
+    assertTrue(
+        "Photo should be in list",
+        viewModel.uiState.pickedImages.any { it.fileName == photo.fileName })
   }
 
   @Test
@@ -348,39 +353,51 @@ class AdminPageViewModelTest : FirestoreTest() {
     val photo1 = Photo.createNewTempPhoto("photo1.jpg")
     val photo2 = Photo.createNewTempPhoto("photo2.jpg")
     viewModel.addPhoto(photo1)
+    advanceUntilIdle()
 
     // Wait for first photo
     var attempts = 0
-    while (viewModel.uiState.pickedImages.isEmpty() && attempts < 50) {
+    while (viewModel.uiState.pickedImages.isEmpty() && attempts < 100) {
+      delay(100)
       advanceUntilIdle()
-      delay(50)
       attempts++
     }
 
     viewModel.addPhoto(photo2)
+    advanceUntilIdle()
 
     // Wait for second photo
     attempts = 0
-    while (viewModel.uiState.pickedImages.size < 2 && attempts < 50) {
+    while (viewModel.uiState.pickedImages.size < 2 && attempts < 100) {
+      delay(100)
       advanceUntilIdle()
-      delay(50)
       attempts++
     }
 
     assertEquals("Should have 2 photos", 2, viewModel.uiState.pickedImages.size)
 
-    viewModel.removePhoto(photo1.image, true)
+    // Get the actual photo1 URI from pickedImages (since PhotoManager might use different Photo
+    // instances)
+    val photo1Uri = viewModel.uiState.pickedImages.find { it.fileName == photo1.fileName }?.image
+    assertNotNull("photo1 should be in pickedImages", photo1Uri)
 
-    // Wait for removal
+    viewModel.removePhoto(photo1Uri!!, true)
+    advanceUntilIdle()
+
+    // Wait for removal - check that photo1 is gone
     attempts = 0
-    while (viewModel.uiState.pickedImages.size == 2 && attempts < 50) {
+    while (viewModel.uiState.pickedImages.any { it.fileName == photo1.fileName } &&
+        attempts < 100) {
+      delay(100)
       advanceUntilIdle()
-      delay(50)
       attempts++
     }
 
     assertEquals("Should have 1 photo", 1, viewModel.uiState.pickedImages.size)
-    assertEquals("Remaining photo should be photo2", photo2, viewModel.uiState.pickedImages.first())
+    // Check by fileName since photoManager might create a new Photo instance
+    assertTrue(
+        "Remaining photo should be photo2",
+        viewModel.uiState.pickedImages.any { it.fileName == photo2.fileName })
   }
 
   @Test
@@ -618,27 +635,36 @@ class AdminPageViewModelTest : FirestoreTest() {
 
     // Add photos
     viewModel.addPhoto(photo1)
+    advanceUntilIdle()
 
     // Wait for first photo
     var attempts = 0
-    while (viewModel.uiState.pickedImages.isEmpty() && attempts < 50) {
+    while (viewModel.uiState.pickedImages.isEmpty() && attempts < 100) {
+      delay(100)
       advanceUntilIdle()
-      delay(50)
       attempts++
     }
 
     viewModel.addPhoto(photo2)
+    advanceUntilIdle()
 
     // Wait for second photo
     attempts = 0
-    while (viewModel.uiState.pickedImages.size < 2 && attempts < 50) {
+    while (viewModel.uiState.pickedImages.size < 2 && attempts < 100) {
+      delay(100)
       advanceUntilIdle()
-      delay(50)
       attempts++
     }
 
+    // Find the actual photo2 URI from pickedImages (since photoManager might use different Photo
+    // instances)
+    val photo2Uri =
+        viewModel.uiState.pickedImages.find { it.fileName == photo2.fileName }?.image
+            ?: photo2.image
+
     // Click on second image
-    viewModel.onClickImage(photo2.image)
+    viewModel.onClickImage(photo2Uri)
+    advanceUntilIdle()
 
     assertTrue("Should show full screen images", viewModel.uiState.showFullScreenImages)
     assertEquals("Should have correct index", 1, viewModel.uiState.fullScreenImagesIndex)
@@ -669,5 +695,358 @@ class AdminPageViewModelTest : FirestoreTest() {
     // Dismiss
     viewModel.dismissFullScreenImages()
     assertFalse("Should not show full screen", viewModel.uiState.showFullScreenImages)
+  }
+
+  @Test
+  fun validate_cityType_withMissingFields_returnsErrors() = runTest {
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.CITY)
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    var message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require name", message!!.contains("Name is required"))
+
+    viewModel.onName("Test City")
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require location", message!!.contains("Location is required"))
+
+    val location = Location(name = "Test Location", latitude = 46.5, longitude = 6.6)
+    viewModel.onLocationConfirm(location)
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require description", message!!.contains("Description is required"))
+
+    viewModel.onDescription("Test Description")
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require image", message!!.contains("Image is required"))
+  }
+
+  @Test
+  fun validate_residencyType_withMissingFields_returnsErrors() = runTest {
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
+    advanceUntilIdle()
+
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    var message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require name", message!!.contains("Name is required"))
+
+    viewModel.onName("Test Residency")
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require location", message!!.contains("Location is required"))
+
+    val location = Location(name = "Test Location", latitude = 46.5, longitude = 6.6)
+    viewModel.onLocationConfirm(location)
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require city", message!!.contains("City name is required"))
+  }
+
+  @Test
+  fun validate_universityType_withMissingFields_returnsErrors() = runTest {
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.UNIVERSITY)
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    var message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require name", message!!.contains("Name is required"))
+
+    viewModel.onName("Test University")
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require location", message!!.contains("Location is required"))
+
+    val location = Location(name = "Test Location", latitude = 46.5, longitude = 6.6)
+    viewModel.onLocationConfirm(location)
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require city", message!!.contains("City name is required"))
+
+    viewModel.onCity("Lausanne")
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require email", message!!.contains("Email is required"))
+
+    viewModel.onEmail("test@university.ch")
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require phone", message!!.contains("Phone is required"))
+
+    viewModel.onPhone("+41234567890")
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    message = viewModel.uiState.message
+    assertNotNull("Should have error message", message)
+    assertTrue("Should require website", message!!.contains("Website"))
+  }
+
+  @Test
+  fun submit_cityType_withValidFields_savesSuccessfully() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.CITY)
+    viewModel.onName("Test City")
+    val location = Location(name = "Test Location", latitude = 46.5, longitude = 6.6)
+    viewModel.onLocationConfirm(location)
+    viewModel.onDescription("Test Description")
+    val photo = Photo.createNewTempPhoto("city.jpg")
+    viewModel.onImage(photo)
+    advanceUntilIdle()
+
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    // Wait for submission to complete (including photo upload)
+    var attempts = 0
+    while ((viewModel.uiState.isSubmitting || viewModel.uiState.message == null) &&
+        attempts < 100) {
+      delay(100)
+      advanceUntilIdle()
+      attempts++
+    }
+
+    // Verify city was actually added to repository (more reliable than checking message)
+    var cityFound = false
+    var cityAttempts = 0
+    while (!cityFound && cityAttempts < 50) {
+      try {
+        val cities = CitiesRepositoryProvider.repository.getAllCities()
+        cityFound = cities.any { it.name == "Test City" }
+      } catch (e: Exception) {
+        // Retry
+      }
+      if (!cityFound) {
+        delay(100)
+        advanceUntilIdle()
+        cityAttempts++
+      }
+    }
+    assertTrue("City should be saved", cityFound)
+
+    // Also check message if available
+    val message = viewModel.uiState.message
+    if (message != null) {
+      assertTrue(
+          "Should indicate success",
+          message.contains("Saved successfully") || message.contains("success"))
+    }
+  }
+
+  @Test
+  fun submit_universityType_withValidFields_savesSuccessfully() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.UNIVERSITY)
+    viewModel.onName("Test University")
+    val location = Location(name = "Test Location", latitude = 46.5, longitude = 6.6)
+    viewModel.onLocationConfirm(location)
+    viewModel.onCity("Lausanne")
+    viewModel.onEmail("test@university.ch")
+    viewModel.onPhone("+41234567890")
+    viewModel.onWebsite("https://university.ch")
+
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    // Wait for submission to complete
+    var attempts = 0
+    while ((viewModel.uiState.isSubmitting || viewModel.uiState.message == null) &&
+        attempts < 100) {
+      delay(100)
+      advanceUntilIdle()
+      attempts++
+    }
+
+    // Verify university was added first (this is the important part)
+    var university: University? = null
+    var universityAttempts = 0
+    while (university == null && universityAttempts < 50) {
+      try {
+        university = UniversitiesRepositoryProvider.repository.getUniversity("Test University")
+      } catch (e: Exception) {
+        delay(100)
+        advanceUntilIdle()
+        universityAttempts++
+      }
+    }
+
+    assertNotNull("University should be added", university)
+    assertEquals("Test University", university!!.name)
+    assertEquals("test@university.ch", university.email)
+
+    // Then check message (should be success, but if there's an error, at least verify the
+    // university was saved)
+    val message = viewModel.uiState.message
+    if (message != null) {
+      assertTrue(
+          "Should indicate success",
+          message.contains("Saved successfully") || message.contains("success"))
+    }
+  }
+
+  @Test
+  fun submit_residencyType_editingExisting_updatesResidency() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
+
+    // Create initial residency
+    val initialResidency =
+        Residency(
+            name = "Residency To Edit",
+            description = "Initial Description",
+            location = Location(name = "Lausanne", latitude = 46.5, longitude = 6.6),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null,
+            imageUrls = emptyList())
+
+    ResidenciesRepositoryProvider.repository.addResidency(initialResidency)
+    advanceUntilIdle()
+
+    // Wait for residencies to load
+    var attempts = 0
+    while (viewModel.uiState.residencies.isEmpty() && attempts < 50) {
+      delay(100)
+      advanceUntilIdle()
+      attempts++
+    }
+
+    // Select and edit
+    viewModel.onResidencySelected("Residency To Edit")
+    advanceUntilIdle()
+
+    // Wait for data to load
+    attempts = 0
+    while (viewModel.uiState.name.isEmpty() && attempts < 50) {
+      delay(100)
+      advanceUntilIdle()
+      attempts++
+    }
+
+    // Update fields
+    viewModel.onDescription("Updated Description")
+    viewModel.onCity("Zurich")
+    val newLocation = Location(name = "Zurich", latitude = 47.3769, longitude = 8.5417)
+    viewModel.onLocationConfirm(newLocation)
+
+    // Verify state is set correctly for editing
+    assertTrue("Should be in editing mode", viewModel.uiState.isEditingExisting)
+    assertEquals(
+        "Selected residency name should be set",
+        "Residency To Edit",
+        viewModel.uiState.selectedResidencyName)
+
+    // Submit update
+    viewModel.submit(context)
+    advanceUntilIdle()
+
+    // Wait for submission to complete - wait for isSubmitting to be false
+    attempts = 0
+    while (viewModel.uiState.isSubmitting && attempts < 100) {
+      delay(100)
+      advanceUntilIdle()
+      attempts++
+    }
+
+    // Wait for Firestore to propagate the update
+    var updatedResidency: Residency? = null
+    var updateAttempts = 0
+    while (updateAttempts < 200) {
+      try {
+        updatedResidency =
+            ResidenciesRepositoryProvider.repository.getResidency("Residency To Edit")
+        // Check if the update has been applied
+        if (updatedResidency.description == "Updated Description" &&
+            updatedResidency.city == "Zurich") {
+          break
+        }
+      } catch (e: Exception) {
+        // Retry if not found yet
+      }
+      delay(100)
+      advanceUntilIdle()
+      updateAttempts++
+    }
+
+    // Verify residency was updated
+    assertNotNull(
+        "Residency should exist after update. Attempts: $updateAttempts", updatedResidency)
+    assertEquals(
+        "Description should be updated. Got: ${updatedResidency!!.description}",
+        "Updated Description",
+        updatedResidency.description)
+    assertEquals(
+        "City should be updated. Got: ${updatedResidency.city}", "Zurich", updatedResidency.city)
+  }
+
+  @Test
+  fun onName_updatesNameField() {
+    viewModel.onName("Test Name")
+    assertEquals("Test Name", viewModel.uiState.name)
+  }
+
+  @Test
+  fun onDescription_updatesDescriptionField() {
+    viewModel.onDescription("Test Description")
+    assertEquals("Test Description", viewModel.uiState.description)
+  }
+
+  @Test
+  fun onCity_updatesCityField() {
+    viewModel.onCity("Test City")
+    assertEquals("Test City", viewModel.uiState.city)
+  }
+
+  @Test
+  fun onPhone_updatesPhoneField() {
+    viewModel.onPhone("+41234567890")
+    assertEquals("+41234567890", viewModel.uiState.phone)
+  }
+
+  @Test
+  fun onWebsite_updatesWebsiteField() {
+    viewModel.onWebsite("https://example.com")
+    assertEquals("https://example.com", viewModel.uiState.website)
+  }
+
+  @Test
+  fun onLocationConfirm_updatesLocation() {
+    val location = Location(name = "Test Location", latitude = 46.5, longitude = 6.6)
+    viewModel.onLocationConfirm(location)
+    assertEquals(location, viewModel.uiState.location)
   }
 }

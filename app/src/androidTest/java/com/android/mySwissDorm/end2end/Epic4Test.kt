@@ -144,13 +144,20 @@ class Epic4Test : FirestoreTest() {
     } catch (e: Throwable) {
       throw AssertionError("DEBUG_FAIL: Timeout waiting for CITIES_LIST on Homepage", e)
     }
-
+    println("DEBUG_STEP: Scrolling to Lausanne City Card")
+    try {
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.CITIES_LIST)
+          .performScrollToNode(hasTestTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne")))
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout scrolling to Lausanne", e)
+    }
     println("DEBUG_STEP: Waiting for Lausanne City Card")
     try {
       composeTestRule.waitUntil(timeoutMillis = 15_000) {
         composeTestRule
-            .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
-            .performScrollTo()
+            .onNodeWithTag(
+                HomePageScreenTestTags.getTestTagForCityCard("Lausanne"), useUnmergedTree = true)
             .isDisplayed()
       }
     } catch (e: Throwable) {
@@ -351,19 +358,27 @@ class Epic4Test : FirestoreTest() {
       throw AssertionError("DEBUG_FAIL: Timeout waiting for CITIES_LIST in Guest Mode", e)
     }
 
+    println("DEBUG_STEP: Scrolling to Lausanne City Card")
+    try {
+      composeTestRule
+          .onNodeWithTag(HomePageScreenTestTags.CITIES_LIST)
+          .performScrollToNode(hasTestTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne")))
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout scrolling to Lausanne", e)
+    }
+
+    println("DEBUG_STEP: Waiting for Lausanne City Card")
     try {
       composeTestRule.waitUntil(timeoutMillis = 5_000) {
         composeTestRule
-            .onAllNodesWithTag(
+            .onNodeWithTag(
                 HomePageScreenTestTags.getTestTagForCityCard("Lausanne"), useUnmergedTree = true)
-            .fetchSemanticsNodes()
-            .isNotEmpty()
+            .isDisplayed()
       }
     } catch (e: Throwable) {
-      throw AssertionError("DEBUG_FAIL: Timeout waiting for 'Lausanne' city card in Guest Mode", e)
+      throw AssertionError(
+          "DEBUG_FAIL: Timeout waiting for 'Lausanne' city card to exist in the tree", e)
     }
-
-    composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
 
     composeTestRule
         .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))

@@ -31,6 +31,7 @@ import com.android.mySwissDorm.ui.utils.translateTextField
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -210,20 +211,18 @@ class ViewListingViewModel(
               false
             }
 
-        photoManager.initialize(listing.imageUrls)
-        val photos = photoManager.photoLoaded
-
         val uiData =
             UIUpdateData(
                 fullNameOfPoster = fullNameOfPoster,
                 isOwner = isOwner,
                 isBlockedByOwner = isBlockedByOwner,
-                photos = photos,
+                photos = emptyList(),
                 isGuest = isGuest,
                 isBookmarked = isBookmarked,
                 poiDistances = emptyList(),
                 hasExistingMessage = hasExistingMessage)
         updateUIState(listing, uiData, isLoadingPOIs = true)
+
         launch {
           try {
             val userUniversityName = getUserUniversityName(currentUserId, isGuest)
@@ -234,6 +233,11 @@ class ViewListingViewModel(
             Log.e("ViewListingViewModel", "Error calculating POI distances asynchronously", e)
             _uiState.update { it.copy(isLoadingPOIs = false) }
           }
+        }
+        launch(Dispatchers.IO) {
+          photoManager.initialize(listing.imageUrls)
+          val photos = photoManager.photoLoaded
+          _uiState.update { it.copy(images = photos) }
         }
       } catch (e: NoSuchElementException) {
         // Handle blocked listing or not found

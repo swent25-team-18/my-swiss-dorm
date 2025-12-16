@@ -79,4 +79,14 @@ interface ReviewDao {
    * @param reviewId The unique identifier of the review to delete.
    */
   @Query("DELETE FROM reviews WHERE uid = :reviewId") suspend fun deleteReview(reviewId: String)
+
+  /**
+   * Deletes all reviews whose UIDs are not in the provided list.
+   *
+   * This is used during full sync operations to remove items that have been deleted from Firestore.
+   *
+   * @param keepIds The set of UIDs to keep. All other reviews will be deleted.
+   */
+  @Query("DELETE FROM reviews WHERE uid NOT IN (:keepIds)")
+  suspend fun deleteReviewsNotIn(keepIds: List<String>)
 }

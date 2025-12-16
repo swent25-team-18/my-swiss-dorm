@@ -37,7 +37,7 @@ class RentalListingRepositoryHybrid(
           operationName = "getAllRentalListings",
           remoteCall = { remoteRepository.getAllRentalListings() },
           localFallback = { localRepository.getAllRentalListings() },
-          syncToLocal = { listings -> syncListingsToLocal(listings) })
+          syncToLocal = { listings -> syncListingsToLocal(listings, isFullSync = true) })
 
   override suspend fun getAllRentalListingsByLocation(
       location: Location,
@@ -47,27 +47,27 @@ class RentalListingRepositoryHybrid(
           operationName = "getAllRentalListingsByLocation",
           remoteCall = { remoteRepository.getAllRentalListingsByLocation(location, radius) },
           localFallback = { localRepository.getAllRentalListingsByLocation(location, radius) },
-          syncToLocal = { listings -> syncListingsToLocal(listings) })
+          syncToLocal = { listings -> syncListingsToLocal(listings, isFullSync = false) })
 
   override suspend fun getAllRentalListingsByUser(userId: String): List<RentalListing> =
       performRead(
           operationName = "getAllRentalListingsByUser",
           remoteCall = { remoteRepository.getAllRentalListingsByUser(userId) },
           localFallback = { localRepository.getAllRentalListingsByUser(userId) },
-          syncToLocal = { listings -> syncListingsToLocal(listings) })
+          syncToLocal = { listings -> syncListingsToLocal(listings, isFullSync = false) })
 
   override suspend fun getRentalListing(rentalPostId: String): RentalListing =
       performRead(
           operationName = "getRentalListing",
           remoteCall = { remoteRepository.getRentalListing(rentalPostId) },
           localFallback = { localRepository.getRentalListing(rentalPostId) },
-          syncToLocal = { listing -> syncListingsToLocal(listOf(listing)) })
+          syncToLocal = { listing -> syncListingsToLocal(listOf(listing), isFullSync = false) })
 
   override suspend fun addRentalListing(rentalPost: RentalListing) =
       performWrite(
           operationName = "addRentalListing",
           remoteCall = { remoteRepository.addRentalListing(rentalPost) },
-          localSync = { syncListingsToLocal(listOf(rentalPost)) })
+          localSync = { syncListingsToLocal(listOf(rentalPost), isFullSync = false) })
 
   override suspend fun editRentalListing(rentalPostId: String, newValue: RentalListing) =
       performWrite(
@@ -173,12 +173,41 @@ class RentalListingRepositoryHybrid(
    * [RentalListingRepositoryLocal.addRentalListing] method which handles syncing. Also records the
    * sync timestamp for the offline banner.
    *
+   * When [isFullSync] is true (e.g., from [getAllRentalListings]), this method will also delete any
+   * local listings that are not in the remote list, ensuring the local database stays in sync with
+   * Firestore deletions.
+   *
    * @param listings The rental listings to sync to local storage.
+   * @param isFullSync Whether this represents a complete sync of all listings. If true, local
+   *   listings not in this list will be deleted.
    */
-  private suspend fun syncListingsToLocal(listings: List<RentalListing>) {
-    if (listings.isEmpty()) return
-
+  private suspend fun syncListingsToLocal(listings: List<RentalListing>, isFullSync: Boolean) {
     try {
+      // If this is a full sync, delete local listings that are no longer in Firestore
+      if (isFullSync) {
+        try {
+          val remoteIds = listings.map { it.uid }.toSet()
+          val localListingsBefore = localRepository.getAllRentalListings()
+          val localIdsBefore = localListingsBefore.map { it.uid }.toSet()
+          localRepository.deleteRentalListingsNotIn(remoteIds.toList())
+          val deletedIds = localIdsBefore - remoteIds
+          if (deletedIds.isNotEmpty()) {
+            Log.d(
+                TAG,
+                "[syncListingsToLocal] Deleted ${deletedIds.size} stale listings during full sync")
+          }
+        } catch (e: Exception) {
+          Log.w(TAG, "[syncListingsToLocal] Error deleting stale listings during full sync", e)
+          // Continue with sync even if deletion fails
+        }
+      }
+
+      if (listings.isEmpty()) {
+        // Record sync even if no listings to sync (might have just deleted stale data)
+        LastSyncTracker.recordSync(context)
+        return
+      }
+
       listings.forEach { listing ->
         try {
           // Fetch owner name if missing (only when online)

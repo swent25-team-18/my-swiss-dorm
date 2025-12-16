@@ -74,4 +74,14 @@ interface RentalListingDao {
    */
   @Query("DELETE FROM rental_listings WHERE uid = :listingId")
   suspend fun deleteRentalListing(listingId: String)
+
+  /**
+   * Deletes all rental listings whose UIDs are not in the provided list.
+   *
+   * This is used during full sync operations to remove items that have been deleted from Firestore.
+   *
+   * @param keepIds The set of UIDs to keep. All other listings will be deleted.
+   */
+  @Query("DELETE FROM rental_listings WHERE uid NOT IN (:keepIds)")
+  suspend fun deleteRentalListingsNotIn(keepIds: List<String>)
 }

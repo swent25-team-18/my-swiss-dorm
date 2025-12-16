@@ -364,10 +364,14 @@ class ProfileRepositoryHybridTest {
     val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
     localRepository.createProfile(profile)
 
+    // Mock target user profile fetch (for display name)
+    val targetProfile = createTestProfile("user-3")
+    coEvery { remoteRepository.getProfile("user-3") } returns targetProfile
     coEvery { remoteRepository.addBlockedUser("user-1", "user-3") } returns Unit
 
     hybridRepository.addBlockedUser("user-1", "user-3")
 
+    coVerify { remoteRepository.getProfile("user-3") }
     coVerify { remoteRepository.addBlockedUser("user-1", "user-3") }
     val blocked = localRepository.getBlockedUserIds("user-1")
     assertTrue(blocked.contains("user-2"))
@@ -530,14 +534,118 @@ class ProfileRepositoryHybridTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
 
-    // Try to get blocked users for user-2 (not current user, current user is user-1)
+    // Create a profile for user-1 locally (current user)
+    val localProfile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    localRepository.createProfile(localProfile)
+
+    // Try to get blocked users for user-2 (not current user)
     // syncProfile should skip because ownerId != currentUserId
+    hybridRepository.getBlockedUserIds("user-2")
+
+    // Should not try to sync user-2's profile to remote (syncProfile skips)
+    coVerify(exactly = 0) { remoteRepository.editProfile(any()) }
+  }
+
+  @Test
+  fun getBlockedUserIds_otherUser_online_fetchesFromRemote() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Try to get blocked users for user-2 (not current user, current user is user-1)
+    val remoteBlockedUsers = listOf("user-3", "user-4")
+    coEvery { remoteRepository.getBlockedUserIds("user-2") } returns remoteBlockedUsers
+
     val result = hybridRepository.getBlockedUserIds("user-2")
 
-    // Should not try to sync (skip because not current user)
+    // Should fetch from remote (not try to sync local to remote)
     coVerify(exactly = 0) { remoteRepository.editProfile(any()) }
-    // Should return empty list (no local profile for other user)
+    coVerify { remoteRepository.getBlockedUserIds("user-2") }
+    // Should return remote data
+    assertEquals(remoteBlockedUsers, result)
+  }
+
+  @Test
+  fun getBlockedUserIds_otherUser_offline_returnsEmpty() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    // Try to get blocked users for user-2 (not current user) while offline
+    val result = hybridRepository.getBlockedUserIds("user-2")
+
+    // Should return empty list (can't fetch other users' data offline)
     assertEquals(emptyList<String>(), result)
+    coVerify(exactly = 0) { remoteRepository.getBlockedUserIds(any()) }
+  }
+
+  @Test
+  fun getBlockedUserNames_currentUser_returnsStoredNames() = runTest {
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    localRepository.createProfile(profile)
+
+    // Store a name for blocked user
+    localRepository.addBlockedUserWithName("user-1", "user-3", "Jane Smith")
+
+    val names = hybridRepository.getBlockedUserNames("user-1")
+    assertEquals("Jane Smith", names["user-3"])
+    assertEquals(1, names.size)
+  }
+
+  @Test
+  fun getBlockedUserNames_currentUser_returnsEmptyWhenNoNamesStored() = runTest {
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2", "user-3"))
+    localRepository.createProfile(profile)
+
+    val names = hybridRepository.getBlockedUserNames("user-1")
+    assertTrue(names.isEmpty())
+  }
+
+  @Test
+  fun getBlockedUserNames_otherUser_returnsEmpty() = runTest {
+    // Try to get blocked user names for user-2 (not current user)
+    val names = hybridRepository.getBlockedUserNames("user-2")
+
+    // Should return empty map (names are only stored for current user)
+    assertTrue(names.isEmpty())
+  }
+
+  @Test
+  fun getBlockedUserNames_currentUser_handlesProfileNotFound() = runTest {
+    // Profile doesn't exist
+    val names = hybridRepository.getBlockedUserNames("user-1")
+
+    // Should return empty map (gracefully handles missing profile)
+    assertTrue(names.isEmpty())
+  }
+
+  @Test
+  fun getBookmarkedListingIds_otherUser_online_fetchesFromRemote() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Try to get bookmarks for user-2 (not current user, current user is user-1)
+    val remoteBookmarks = listOf("listing-1", "listing-2")
+    coEvery { remoteRepository.getBookmarkedListingIds("user-2") } returns remoteBookmarks
+
+    val result = hybridRepository.getBookmarkedListingIds("user-2")
+
+    // Should fetch from remote (not try to sync local to remote)
+    coVerify(exactly = 0) { remoteRepository.editProfile(any()) }
+    coVerify { remoteRepository.getBookmarkedListingIds("user-2") }
+    // Should return remote data
+    assertEquals(remoteBookmarks, result)
+  }
+
+  @Test
+  fun getBookmarkedListingIds_otherUser_offline_returnsEmpty() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    // Try to get bookmarks for user-2 (not current user) while offline
+    val result = hybridRepository.getBookmarkedListingIds("user-2")
+
+    // Should return empty list (can't fetch other users' data offline)
+    assertEquals(emptyList<String>(), result)
+    coVerify(exactly = 0) { remoteRepository.getBookmarkedListingIds(any()) }
   }
 
   @Test
@@ -587,6 +695,10 @@ class ProfileRepositoryHybridTest {
     val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
     localRepository.createProfile(profile)
 
+    // Mock target user profile fetch (for display name) - this succeeds
+    val targetProfile = createTestProfile("user-3")
+    coEvery { remoteRepository.getProfile("user-3") } returns targetProfile
+    // But adding to remote fails
     coEvery { remoteRepository.addBlockedUser("user-1", "user-3") } throws
         IOException("Network error")
 
@@ -617,9 +729,169 @@ class ProfileRepositoryHybridTest {
     assertTrue(blocked.contains("user-3"))
   }
 
+  @Test
+  fun addBlockedUser_online_fetchesAndStoresDisplayName() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val currentUserProfile = createTestProfile("user-1")
+    localRepository.createProfile(currentUserProfile)
+
+    val targetUserProfile = createTestProfile("user-3", name = "Jane", lastName = "Smith")
+    coEvery { remoteRepository.getProfile("user-3") } returns targetUserProfile
+    coEvery { remoteRepository.addBlockedUser("user-1", "user-3") } returns Unit
+
+    hybridRepository.addBlockedUser("user-1", "user-3")
+
+    // Verify blocked user ID is added
+    val blocked = localRepository.getBlockedUserIds("user-1")
+    assertTrue(blocked.contains("user-3"))
+
+    // Verify display name is stored
+    val blockedUserNames = localRepository.getBlockedUserNames("user-1")
+    assertEquals("Jane Smith", blockedUserNames["user-3"])
+
+    coVerify { remoteRepository.getProfile("user-3") }
+    coVerify { remoteRepository.addBlockedUser("user-1", "user-3") }
+  }
+
+  @Test
+  fun addBlockedUser_online_noDisplayNameWhenFetchFails() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val currentUserProfile = createTestProfile("user-1")
+    localRepository.createProfile(currentUserProfile)
+
+    coEvery { remoteRepository.getProfile("user-3") } throws IOException("Network error")
+    coEvery { remoteRepository.addBlockedUser("user-1", "user-3") } returns Unit
+
+    hybridRepository.addBlockedUser("user-1", "user-3")
+
+    // Verify blocked user ID is still added
+    val blocked = localRepository.getBlockedUserIds("user-1")
+    assertTrue(blocked.contains("user-3"))
+
+    // Verify display name is NOT stored (fetch failed)
+    val blockedUserNames = localRepository.getBlockedUserNames("user-1")
+    assertFalse(blockedUserNames.containsKey("user-3"))
+
+    coVerify { remoteRepository.getProfile("user-3") }
+    coVerify { remoteRepository.addBlockedUser("user-1", "user-3") }
+  }
+
+  @Test
+  fun addBlockedUser_offline_noDisplayName() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    val currentUserProfile = createTestProfile("user-1")
+    localRepository.createProfile(currentUserProfile)
+
+    hybridRepository.addBlockedUser("user-1", "user-3")
+
+    // Verify blocked user ID is added
+    val blocked = localRepository.getBlockedUserIds("user-1")
+    assertTrue(blocked.contains("user-3"))
+
+    // Verify display name is NOT stored (offline, can't fetch)
+    val blockedUserNames = localRepository.getBlockedUserNames("user-1")
+    assertFalse(blockedUserNames.containsKey("user-3"))
+
+    // Verify no remote calls were made
+    coVerify(exactly = 0) { remoteRepository.getProfile(any()) }
+    coVerify(exactly = 0) { remoteRepository.addBlockedUser(any(), any()) }
+  }
+
+  @Test
+  fun addBlockedUser_online_createsLocalProfileIfMissing() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Local profile doesn't exist yet
+    val remoteProfile = createTestProfile("user-1")
+    val targetUserProfile = createTestProfile("user-3", name = "Jane", lastName = "Smith")
+
+    coEvery { remoteRepository.getProfile("user-1") } returns remoteProfile
+    coEvery { remoteRepository.getProfile("user-3") } returns targetUserProfile
+    coEvery { remoteRepository.addBlockedUser("user-1", "user-3") } returns Unit
+
+    hybridRepository.addBlockedUser("user-1", "user-3")
+
+    // Verify local profile was created (with blocked user added)
+    val localProfile = localRepository.getProfile("user-1")
+    // Profile should match remote except for blockedUserIds which now includes user-3
+    assertEquals(remoteProfile.userInfo.name, localProfile.userInfo.name)
+    assertEquals(remoteProfile.userInfo.lastName, localProfile.userInfo.lastName)
+    assertEquals(remoteProfile.userSettings, localProfile.userSettings)
+    assertEquals(remoteProfile.ownerId, localProfile.ownerId)
+
+    // Verify blocked user ID is added
+    val blocked = localRepository.getBlockedUserIds("user-1")
+    assertTrue(blocked.contains("user-3"))
+
+    // Verify display name is stored
+    val blockedUserNames = localRepository.getBlockedUserNames("user-1")
+    assertEquals("Jane Smith", blockedUserNames["user-3"])
+
+    coVerify { remoteRepository.getProfile("user-1") }
+    coVerify { remoteRepository.getProfile("user-3") }
+    coVerify { remoteRepository.addBlockedUser("user-1", "user-3") }
+  }
+
+  @Test
+  fun addBlockedUser_offline_throwsWhenLocalProfileMissing() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    // Local profile doesn't exist and we're offline
+    try {
+      hybridRepository.addBlockedUser("user-1", "user-3")
+      fail("Expected NoSuchElementException")
+    } catch (e: NoSuchElementException) {
+      // Expected - cannot proceed without local profile when offline
+      assertTrue(e.message?.contains("Profile not found") == true)
+    }
+
+    // Verify no remote calls were made
+    coVerify(exactly = 0) { remoteRepository.getProfile(any()) }
+    coVerify(exactly = 0) { remoteRepository.addBlockedUser(any(), any()) }
+  }
+
+  @Test
+  fun addBlockedUser_online_storesMultipleDisplayNames() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val currentUserProfile = createTestProfile("user-1")
+    localRepository.createProfile(currentUserProfile)
+
+    val targetUser1 = createTestProfile("user-2", name = "Alice", lastName = "Johnson")
+    val targetUser2 = createTestProfile("user-3", name = "Bob", lastName = "Williams")
+
+    coEvery { remoteRepository.getProfile("user-2") } returns targetUser1
+    coEvery { remoteRepository.getProfile("user-3") } returns targetUser2
+    coEvery { remoteRepository.addBlockedUser(any(), any()) } returns Unit
+
+    hybridRepository.addBlockedUser("user-1", "user-2")
+    hybridRepository.addBlockedUser("user-1", "user-3")
+
+    // Verify both blocked user IDs are added
+    val blocked = localRepository.getBlockedUserIds("user-1")
+    assertTrue(blocked.contains("user-2"))
+    assertTrue(blocked.contains("user-3"))
+
+    // Verify both display names are stored
+    val blockedUserNames = localRepository.getBlockedUserNames("user-1")
+    assertEquals("Alice Johnson", blockedUserNames["user-2"])
+    assertEquals("Bob Williams", blockedUserNames["user-3"])
+    assertEquals(2, blockedUserNames.size)
+  }
+
   private fun createTestProfile(
       ownerId: String,
       name: String = "John",
+      lastName: String = "Doe",
       bookmarkedListingIds: List<String> = emptyList(),
       blockedUserIds: List<String> = emptyList()
   ): Profile {
@@ -627,7 +899,7 @@ class ProfileRepositoryHybridTest {
         userInfo =
             UserInfo(
                 name = name,
-                lastName = "Doe",
+                lastName = lastName,
                 email = "john.doe@example.com",
                 phoneNumber = "+1234567890",
                 universityName = "EPFL",

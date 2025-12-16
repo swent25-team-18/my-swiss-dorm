@@ -146,4 +146,22 @@ class RentalListingRepositoryLocal(private val rentalListingDao: RentalListingDa
     // Hybrid repository will apply filtering
     return getRentalListing(rentalPostId)
   }
+
+  /**
+   * Deletes all rental listings whose UIDs are not in the provided list.
+   *
+   * This is used during full sync operations to remove items that have been deleted from Firestore.
+   *
+   * @param keepIds The set of UIDs to keep. All other listings will be deleted.
+   */
+  suspend fun deleteRentalListingsNotIn(keepIds: List<String>) {
+    if (keepIds.isEmpty()) {
+      // If no IDs to keep, delete all listings
+      rentalListingDao.getAllRentalListings().forEach {
+        rentalListingDao.deleteRentalListing(it.uid)
+      }
+    } else {
+      rentalListingDao.deleteRentalListingsNotIn(keepIds)
+    }
+  }
 }

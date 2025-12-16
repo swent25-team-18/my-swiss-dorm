@@ -182,6 +182,12 @@ class ProfileRepositoryHybrid(
     }
   }
 
+  /** Checks if the given ownerId belongs to the current logged-in user. */
+  private fun isCurrentUserProfile(ownerId: String): Boolean {
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+    return ownerId == currentUserId
+  }
+
   /**
    * Attempts to sync a profile to local storage, catching all exceptions.
    *
@@ -213,21 +219,66 @@ class ProfileRepositoryHybrid(
   /**
    * Returns the list of blocked user IDs for the given profile.
    *
-   * If online, syncs the entire profile first (pushes local offline changes to remote). Returns the
-   * list from local storage.
+   * Strategy: Offline-first for current user's profile. For other users' profiles, fetches from
+   * remote when online.
    *
    * @param ownerId The identifier of the profile.
    * @return The list of blocked user IDs, or empty list if profile not found.
    */
   override suspend fun getBlockedUserIds(ownerId: String): List<String> {
-    if (NetworkUtils.isNetworkAvailable(context)) {
-      syncProfile(ownerId)
+    val isCurrentUser = isCurrentUserProfile(ownerId)
+
+    // For current user: offline-first approach
+    if (isCurrentUser) {
+      return getCurrentUserBlockedUserIds(ownerId)
+    }
+
+    // For other users: fetch from remote when online
+    return getOtherUserBlockedUserIds(ownerId)
+  }
+
+  /** Gets blocked user IDs for the current user (offline-first). */
+  private suspend fun getCurrentUserBlockedUserIds(ownerId: String): List<String> {
+    return getCurrentUserListField(
+        ownerId = ownerId,
+        getLocal = { localRepo.getBlockedUserIds(it) },
+        getRemote = { remoteRepo.getBlockedUserIds(it) })
+  }
+
+  /** Gets blocked user IDs for other users (remote-only). */
+  private suspend fun getOtherUserBlockedUserIds(ownerId: String): List<String> {
+    if (!NetworkUtils.isNetworkAvailable(context)) {
+      return emptyList() // Can't fetch other users' data offline
     }
 
     return try {
-      localRepo.getBlockedUserIds(ownerId)
+      remoteRepo.getBlockedUserIds(ownerId)
     } catch (e: Exception) {
       emptyList()
+    }
+  }
+
+  /**
+   * Returns a map of blocked user IDs to their display names (local-only data).
+   *
+   * This method returns locally stored display names for blocked users. For the current user,
+   * returns names from local storage. For other users, returns empty map (names are only stored for
+   * the current user's blocked list).
+   *
+   * @param ownerId The identifier of the profile.
+   * @return A map of blocked user IDs to their display names (may be empty if names weren't
+   *   stored).
+   */
+  override suspend fun getBlockedUserNames(ownerId: String): Map<String, String> {
+    // Only current user has names stored locally
+    if (!isCurrentUserProfile(ownerId)) {
+      return emptyMap()
+    }
+
+    return try {
+      localRepo.getBlockedUserNames(ownerId)
+    } catch (e: Exception) {
+      emptyMap() // Return empty if profile doesn't exist or other error
     }
   }
 
@@ -235,14 +286,53 @@ class ProfileRepositoryHybrid(
    * Adds a user to the blocked list in both local and remote repositories.
    *
    * Adds to local first (offline-first), then to remote if online. If remote operation fails, the
-   * local change is preserved.
+   * local change is preserved. Fetches the target user's display name when online to store locally
+   * for offline access.
    *
    * @param ownerId The identifier of the profile.
    * @param targetUid The identifier of the user to block.
    */
   override suspend fun addBlockedUser(ownerId: String, targetUid: String) {
-    localRepo.addBlockedUser(ownerId, targetUid)
+    // Try to fetch the target user's display name if online
+    var targetDisplayName: String? = null
+    if (NetworkUtils.isNetworkAvailable(context)) {
+      try {
+        val targetProfile = remoteRepo.getProfile(targetUid)
+        // Construct display name from name and lastName
+        targetDisplayName =
+            "${targetProfile.userInfo.name} ${targetProfile.userInfo.lastName}".trim()
+      } catch (e: Exception) {
+        Log.w(
+            TAG, "Failed to fetch target user's profile for display name, continuing without it", e)
+      }
+    }
 
+    // Ensure local profile exists before adding blocked user
+    try {
+      localRepo.getProfile(ownerId)
+    } catch (e: NoSuchElementException) {
+      // Profile doesn't exist locally - fetch from remote if online
+      if (NetworkUtils.isNetworkAvailable(context)) {
+        try {
+          val remoteProfile = remoteRepo.getProfile(ownerId)
+          localRepo.createProfile(remoteProfile)
+        } catch (e2: Exception) {
+          Log.w(TAG, "Failed to fetch and create local profile before adding blocked user", e2)
+          throw e // Re-throw original exception
+        }
+      } else {
+        throw e // Offline and no local profile, cannot proceed
+      }
+    }
+
+    // Add to local with the display name (if available)
+    if (targetDisplayName != null) {
+      localRepo.addBlockedUserWithName(ownerId, targetUid, targetDisplayName)
+    } else {
+      localRepo.addBlockedUser(ownerId, targetUid)
+    }
+
+    // Add to remote if online
     if (NetworkUtils.isNetworkAvailable(context)) {
       try {
         remoteRepo.addBlockedUser(ownerId, targetUid)
@@ -276,22 +366,91 @@ class ProfileRepositoryHybrid(
   /**
    * Returns the list of bookmarked listing IDs for the given profile.
    *
-   * If online, syncs the entire profile first (pushes local offline changes to remote). Returns the
-   * list from local storage.
+   * Strategy: Offline-first for current user's profile. For other users' profiles, fetches from
+   * remote when online.
    *
    * @param ownerId The identifier of the profile.
    * @return The list of bookmarked listing IDs, or empty list if profile not found.
    */
   override suspend fun getBookmarkedListingIds(ownerId: String): List<String> {
-    if (NetworkUtils.isNetworkAvailable(context)) {
+    val isCurrentUser = isCurrentUserProfile(ownerId)
+
+    // For current user: offline-first approach
+    if (isCurrentUser) {
+      return getCurrentUserBookmarkedListingIds(ownerId)
+    }
+
+    // For other users: fetch from remote when online
+    return getOtherUserBookmarkedListingIds(ownerId)
+  }
+
+  /** Gets bookmarked listing IDs for the current user (offline-first). */
+  private suspend fun getCurrentUserBookmarkedListingIds(ownerId: String): List<String> {
+    return getCurrentUserListField(
+        ownerId = ownerId,
+        getLocal = { localRepo.getBookmarkedListingIds(it) },
+        getRemote = { remoteRepo.getBookmarkedListingIds(it) },
+        logTag = "[getBookmarkedListingIds]")
+  }
+
+  /**
+   * Generic helper for getting list fields (blocked users, bookmarks) for current user. Implements
+   * offline-first strategy: tries local first, syncs if online, falls back to remote.
+   */
+  private suspend fun getCurrentUserListField(
+      ownerId: String,
+      getLocal: suspend (String) -> List<String>,
+      getRemote: suspend (String) -> List<String>,
+      logTag: String = ""
+  ): List<String> {
+    // Try to get from local first
+    val localIds =
+        try {
+          getLocal(ownerId)
+        } catch (e: Exception) {
+          if (logTag.isNotEmpty()) {
+            Log.w(TAG, "$logTag Failed to get local data", e)
+          }
+          null
+        }
+
+    // If we have local data and we're online, sync to remote
+    if (localIds != null && NetworkUtils.isNetworkAvailable(context)) {
       syncProfile(ownerId)
+      return localIds
+    }
+
+    // If we have local data but offline, return it
+    if (localIds != null) {
+      return localIds
+    }
+
+    // No local data - fetch from remote if online
+    if (NetworkUtils.isNetworkAvailable(context)) {
+      return try {
+        getRemote(ownerId)
+      } catch (e: Exception) {
+        if (logTag.isNotEmpty()) {
+          Log.w(TAG, "$logTag Failed to get remote data", e)
+        }
+        emptyList()
+      }
+    }
+
+    // Offline and no local data
+    return emptyList()
+  }
+
+  /** Gets bookmarked listing IDs for other users (remote-only). */
+  private suspend fun getOtherUserBookmarkedListingIds(ownerId: String): List<String> {
+    if (!NetworkUtils.isNetworkAvailable(context)) {
+      return emptyList() // Can't fetch other users' data offline
     }
 
     return try {
-      val result = localRepo.getBookmarkedListingIds(ownerId)
-      result
+      remoteRepo.getBookmarkedListingIds(ownerId)
     } catch (e: Exception) {
-      Log.w(TAG, "[getBookmarkedListingIds] Failed to get local bookmarks", e)
+      Log.w(TAG, "[getBookmarkedListingIds] Failed to get remote bookmarks", e)
       emptyList()
     }
   }

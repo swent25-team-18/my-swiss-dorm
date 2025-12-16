@@ -253,6 +253,81 @@ class ProfileRepositoryLocalTest {
     assertTrue(blocked.contains("user-3"))
   }
 
+  @Test
+  fun getBlockedUserNames_returnsEmptyMapWhenNoNamesStored() = runTest {
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2", "user-3"))
+    repository.createProfile(profile)
+
+    val names = repository.getBlockedUserNames("user-1")
+    assertTrue(names.isEmpty())
+  }
+
+  @Test
+  fun getBlockedUserNames_returnsStoredNames() = runTest {
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    repository.createProfile(profile)
+
+    // Add blocked user with name
+    repository.addBlockedUserWithName("user-1", "user-3", "Jane Smith")
+
+    val names = repository.getBlockedUserNames("user-1")
+    assertEquals("Jane Smith", names["user-3"])
+    assertEquals(1, names.size)
+  }
+
+  @Test
+  fun getBlockedUserNames_returnsMultipleStoredNames() = runTest {
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    repository.createProfile(profile)
+
+    // Add multiple blocked users with names
+    repository.addBlockedUserWithName("user-1", "user-3", "Jane Smith")
+    repository.addBlockedUserWithName("user-1", "user-4", "Bob Johnson")
+
+    val names = repository.getBlockedUserNames("user-1")
+    assertEquals("Jane Smith", names["user-3"])
+    assertEquals("Bob Johnson", names["user-4"])
+    assertEquals(2, names.size)
+  }
+
+  @Test
+  fun getBlockedUserNames_removesNameWhenUnblocking() = runTest {
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    repository.createProfile(profile)
+
+    // Add blocked user with name
+    repository.addBlockedUserWithName("user-1", "user-3", "Jane Smith")
+    var names = repository.getBlockedUserNames("user-1")
+    assertEquals("Jane Smith", names["user-3"])
+
+    // Remove blocked user
+    repository.removeBlockedUser("user-1", "user-3")
+
+    // Name should also be removed
+    names = repository.getBlockedUserNames("user-1")
+    assertFalse(names.containsKey("user-3"))
+    assertTrue(names.isEmpty())
+  }
+
+  @Test
+  fun getBlockedUserNames_throwsWhenProfileNotFound() = runTest {
+    val result = runCatching { repository.getBlockedUserNames("user-1") }
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is NoSuchElementException)
+  }
+
+  @Test
+  fun getBlockedUserNames_throwsWhenOwnerIdMismatch() = runTest {
+    val profile = createTestProfile("user-1")
+    repository.createProfile(profile)
+
+    val result = runCatching { repository.getBlockedUserNames("user-2") }
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+  }
+
   private fun createTestProfile(
       ownerId: String,
       name: String = "John",

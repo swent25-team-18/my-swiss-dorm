@@ -164,9 +164,8 @@ private fun ReviewCard(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically) {
-                val truncatedTitle = truncateText(data.title, 20)
                 Text(
-                    text = truncatedTitle,
+                    text = data.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Start,

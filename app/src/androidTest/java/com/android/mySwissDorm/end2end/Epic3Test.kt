@@ -86,6 +86,7 @@ class Epic3Test : FirestoreTest() {
   @Test
   fun canBookmarkShareAndContactOwner() =
       runTest(timeout = 120.toDuration(unit = DurationUnit.SECONDS)) {
+        println("DEBUG_STEP: Starting canBookmarkShareAndContactOwner test")
         val fakePhoneNumber = "774321122"
         val fakeLastName = "testLastName"
         val fakeGoogleIdToken =
@@ -96,6 +97,7 @@ class Epic3Test : FirestoreTest() {
         composeTestRule.setContent { MySwissDormApp(LocalContext.current, fakeCredentialManager) }
 
         // 1st step is Sign Up
+        println("DEBUG_STEP: Handling Sign In Screen")
         ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
           assertIsDisplayed()
           signUpButton {
@@ -105,6 +107,7 @@ class Epic3Test : FirestoreTest() {
         }
         composeTestRule.waitForIdle()
 
+        println("DEBUG_STEP: Handling Sign Up Screen input")
         ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
           assertIsDisplayed()
           signUpNameField { performTextInput(FakeUser.FakeUser1.userName) }
@@ -117,81 +120,175 @@ class Epic3Test : FirestoreTest() {
           }
         }
 
-        composeTestRule.waitUntil(5_000) { composeTestRule.onNodeWithTag(SKIP).isDisplayed() }
+        println("DEBUG_STEP: Waiting for SKIP button")
+        try {
+          composeTestRule.waitUntil(5_000) { composeTestRule.onNodeWithTag(SKIP).isDisplayed() }
+        } catch (e: Throwable) {
+          throw AssertionError("DEBUG_FAIL: Timeout waiting for SKIP button to appear", e)
+        }
+
         composeTestRule.onNodeWithTag(SKIP).performClick()
-        composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
+
+        println("DEBUG_STEP: Waiting for Profile NavBar")
+        try {
+          composeTestRule.waitUntil(5_000) {
+            composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError(
+              "DEBUG_FAIL: Timeout waiting for Profile NavBar to appear after Skip", e)
         }
-        composeTestRule.waitUntil(10_000) {
-          composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
+
+        println("DEBUG_STEP: Waiting for Cities List")
+        try {
+          composeTestRule.waitUntil(10_000) {
+            composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError("DEBUG_FAIL: Timeout waiting for CITIES_LIST to appear", e)
         }
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
-          composeTestRule
-              .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
-              .fetchSemanticsNodes()
-              .isNotEmpty()
+
+        println("DEBUG_STEP: Waiting for Lausanne City Card")
+        try {
+          composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule
+                .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError(
+              "DEBUG_FAIL: Timeout waiting for 'Lausanne' city card to exist in the tree", e)
         }
+
         composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
         composeTestRule
             .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
             .performClick()
 
-        composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(rentalUid)).isDisplayed()
+        println("DEBUG_STEP: Waiting for Rental Listing Card ($rentalUid)")
+        try {
+          composeTestRule.waitUntil(5_000) {
+            composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(rentalUid)).isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError(
+              "DEBUG_FAIL: Timeout waiting for rental listing card ($rentalUid) to appear", e)
         }
+
         composeTestRule
             .onNodeWithTag(C.BrowseCityTags.listingCard(rentalUid))
             .performScrollTo()
             .performClick()
 
-        composeTestRule.waitUntil(15_000) {
-          composeTestRule.onNodeWithTag(C.ViewListingTags.TITLE).isDisplayed()
+        println("DEBUG_STEP: Waiting for Listing Details Title")
+        try {
+          composeTestRule.waitUntil(15_000) {
+            composeTestRule.onNodeWithTag(C.ViewListingTags.TITLE).isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError("DEBUG_FAIL: Timeout waiting for Listing Details TITLE to appear", e)
         }
+
         // 2nd step is bookmark
+        println("DEBUG_STEP: Clicking Bookmark button")
         composeTestRule.onNodeWithTag(C.ViewListingTags.BOOKMARK_BTN).performClick()
 
         // 3rd step is sharing the listing with copy link
+        println("DEBUG_STEP: Clicking Share button")
         composeTestRule.onNodeWithTag(C.ShareLinkDialogTags.SHARE_BTN).performClick()
 
-        composeTestRule.waitUntil(5_000) {
-          composeTestRule.onNodeWithTag(C.ShareLinkDialogTags.DIALOG_TITLE).isDisplayed()
+        println("DEBUG_STEP: Waiting for Share Dialog")
+        try {
+          composeTestRule.waitUntil(5_000) {
+            composeTestRule.onNodeWithTag(C.ShareLinkDialogTags.DIALOG_TITLE).isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError("DEBUG_FAIL: Timeout waiting for Share Dialog Title to appear", e)
         }
+
         composeTestRule.onNodeWithTag(C.ShareLinkDialogTags.COPY_LINK_BUTTON).performClick()
+
         // 4th step is contacting the owner of the listing
+        println("DEBUG_STEP: Entering contact message")
         composeTestRule.onNodeWithTag(C.ViewListingTags.CONTACT_FIELD).performTextInput("Hello")
-        composeTestRule.waitUntil(10_000) {
-          composeTestRule.onNodeWithTag(C.ViewListingTags.APPLY_BTN).performScrollTo().isDisplayed()
+
+        println("DEBUG_STEP: Waiting for Apply Button")
+        try {
+          composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onNodeWithTag(C.ViewListingTags.APPLY_BTN)
+                .performScrollTo()
+                .isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError("DEBUG_FAIL: Timeout waiting for APPLY_BTN to appear/scroll", e)
         }
+
         composeTestRule.onNodeWithTag(C.ViewListingTags.APPLY_BTN).performClick()
         composeTestRule.onNodeWithContentDescription("Back").performClick()
-        composeTestRule.waitUntil(20_000) {
-          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
+
+        println("DEBUG_STEP: Waiting for NavBar (Profile) after going back")
+        try {
+          composeTestRule.waitUntil(20_000) {
+            composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError(
+              "DEBUG_FAIL: Timeout waiting for NavBar (Profile) to appear after backing out of listing",
+              e)
         }
 
         // 6th step is to check that the bookmarks are indeed saved
+        println("DEBUG_STEP: Navigating to Profile")
         composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).performClick()
-        composeTestRule.waitUntil(5_000) {
-          composeTestRule
-              .onNodeWithTag(C.ProfileTags.BOOKMARKS_BUTTON)
-              .performScrollTo()
-              .isDisplayed()
+
+        println("DEBUG_STEP: Waiting for Bookmarks Button in Profile")
+        try {
+          composeTestRule.waitUntil(5_000) {
+            composeTestRule
+                .onNodeWithTag(C.ProfileTags.BOOKMARKS_BUTTON)
+                .performScrollTo()
+                .isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError(
+              "DEBUG_FAIL: Timeout waiting for BOOKMARKS_BUTTON to appear in profile", e)
         }
+
         composeTestRule
             .onNodeWithTag(C.ProfileTags.BOOKMARKS_BUTTON)
             .performScrollTo()
             .performClick()
 
-        composeTestRule.waitUntil(10_000) {
-          composeTestRule.onNodeWithTag(C.BrowseCityTags.BOOKMARKED_LISTINGS_ROOT).isDisplayed() &&
-              composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(rentalUid)).isDisplayed()
+        println("DEBUG_STEP: Waiting for Bookmarked Listing to appear")
+        try {
+          composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onNodeWithTag(C.BrowseCityTags.BOOKMARKED_LISTINGS_ROOT)
+                .isDisplayed() &&
+                composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(rentalUid)).isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError(
+              "DEBUG_FAIL: Timeout waiting for BOOKMARKED_LISTINGS_ROOT or the specific listing card to appear",
+              e)
         }
 
         composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(rentalUid)).assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Back").performClick()
+
         // 7th step is to check the message is visible
-        composeTestRule.waitUntil(10_000) {
-          composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Inbox)).isDisplayed()
+        println("DEBUG_STEP: Waiting for Inbox NavBar")
+        try {
+          composeTestRule.waitUntil(10_000) {
+            composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Inbox)).isDisplayed()
+          }
+        } catch (e: Throwable) {
+          throw AssertionError("DEBUG_FAIL: Timeout waiting for Inbox NavBar to appear", e)
         }
+
         composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Inbox)).performClick()
+        println("DEBUG_STEP: Test Completed Successfully")
       }
 }

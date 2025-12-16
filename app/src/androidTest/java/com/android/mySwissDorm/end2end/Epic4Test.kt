@@ -101,6 +101,7 @@ class Epic4Test : FirestoreTest() {
 
   @Test
   fun testFiltersPreferencesAndGuestMode() {
+    println("DEBUG_STEP: Starting testFiltersPreferencesAndGuestMode")
     val fakePhoneNumber = "774321122"
     val fakeLastName = "lastNameTest"
     val fakeGoogleIdToken =
@@ -109,9 +110,12 @@ class Epic4Test : FirestoreTest() {
     val fakeCredentialManager = FakeCredentialManager.create(fakeGoogleIdToken)
 
     composeTestRule.setContent { MySwissDormApp(LocalContext.current, fakeCredentialManager) }
+
+    println("DEBUG_STEP: Handling Sign In")
     ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) { signUpButton { performClick() } }
     composeTestRule.waitForIdle()
 
+    println("DEBUG_STEP: Handling Sign Up Input")
     ComposeScreen.onComposeScreen<SignUpScreen>(composeTestRule) {
       signUpNameField { performTextInput(FakeUser.FakeUser1.userName) }
       signUpLastNameField { performTextInput(fakeLastName) }
@@ -122,64 +126,125 @@ class Epic4Test : FirestoreTest() {
       }
     }
 
-    composeTestRule.waitUntil(10_000) { composeTestRule.onNodeWithTag(SKIP).isDisplayed() }
+    println("DEBUG_STEP: Waiting for SKIP button")
+    try {
+      composeTestRule.waitUntil(10_000) { composeTestRule.onNodeWithTag(SKIP).isDisplayed() }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for SKIP button to appear", e)
+    }
+
     composeTestRule.onNodeWithTag(SKIP).performClick()
 
     // For filters
-    composeTestRule.waitUntil(10_000) {
-      composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
+    println("DEBUG_STEP: Waiting for CITIES_LIST")
+    try {
+      composeTestRule.waitUntil(10_000) {
+        composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for CITIES_LIST on Homepage", e)
     }
 
-    composeTestRule.waitUntil(timeoutMillis = 15_000) {
-      composeTestRule
-          .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
-          .isDisplayed()
+    println("DEBUG_STEP: Waiting for Lausanne City Card")
+    try {
+      composeTestRule.waitUntil(timeoutMillis = 15_000) {
+        composeTestRule
+            .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+            .isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for 'Lausanne' city card to appear", e)
     }
+
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
 
     composeTestRule
         .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
         .performClick()
 
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_ROW).isDisplayed()
+    println("DEBUG_STEP: Waiting for Filter Chip Row")
+    try {
+      composeTestRule.waitUntil(5_000) {
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_ROW).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for Filter Chips to appear", e)
     }
+
+    // Price Filter Interactions
+    println("DEBUG_STEP: Interacting with Price Filter")
     composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_PRICE).performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET).isDisplayed()
+
+    try {
+      composeTestRule.waitUntil(5_000) {
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for Price Filter Bottom Sheet", e)
     }
+
     composeTestRule.onNodeWithTag(C.FilterTestTags.SLIDER_PRICE).performTouchInput {
       click(percentOffset(0.0f, 0.5f))
       click(percentOffset(0.8f, 0.5f))
     }
     composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON).performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule
-          .onAllNodesWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET)
-          .fetchSemanticsNodes()
-          .isEmpty()
+
+    try {
+      composeTestRule.waitUntil(5_000) {
+        composeTestRule
+            .onAllNodesWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET)
+            .fetchSemanticsNodes()
+            .isEmpty()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for Price Filter Sheet to close", e)
     }
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_ROW).isDisplayed()
+
+    println("DEBUG_STEP: Interacting with Size Filter")
+    try {
+      composeTestRule.waitUntil(5_000) {
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_ROW).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for Filter Chips to reappear", e)
     }
+
     composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_SIZE).performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET).isDisplayed()
+
+    try {
+      composeTestRule.waitUntil(5_000) {
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for Size Filter Bottom Sheet", e)
     }
+
     composeTestRule.onNodeWithTag(C.FilterTestTags.SLIDER_SIZE).performTouchInput {
       click(percentOffset(0.0f, 0.5f))
       click(percentOffset(1.0f, 0.5f))
     }
     composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET_APPLY_BUTTON).performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule
-          .onAllNodesWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET)
-          .fetchSemanticsNodes()
-          .isEmpty()
+
+    try {
+      composeTestRule.waitUntil(5_000) {
+        composeTestRule
+            .onAllNodesWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET)
+            .fetchSemanticsNodes()
+            .isEmpty()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for Size Filter Sheet to close", e)
     }
-    composeTestRule.waitUntil(15_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
+
+    println("DEBUG_STEP: Waiting for Filtered Listings")
+    try {
+      composeTestRule.waitUntil(15_000) {
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for LISTING_LIST after filters", e)
     }
+
     composeTestRule
         .onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidExpensive))
         .assertIsNotDisplayed()
@@ -188,12 +253,21 @@ class Epic4Test : FirestoreTest() {
         .performScrollTo()
         .assertIsDisplayed()
 
+    // Profile Preferences
+    println("DEBUG_STEP: Navigating to Profile for Preferences")
     composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).performClick()
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onNodeWithTag(PREFERENCES_BUTTON).performScrollTo().isDisplayed()
+
+    try {
+      composeTestRule.waitUntil(5_000) {
+        composeTestRule.onNodeWithTag(PREFERENCES_BUTTON).performScrollTo().isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for PREFERENCES_BUTTON in Profile", e)
     }
+
     composeTestRule.onNodeWithTag(PREFERENCES_BUTTON).performClick()
 
+    println("DEBUG_STEP: Setting User Preferences")
     composeTestRule
         .onNodeWithTag(C.FilterTestTags.SLIDER_PRICE)
         .performScrollTo()
@@ -215,48 +289,94 @@ class Epic4Test : FirestoreTest() {
         .performScrollTo()
         .assertIsDisplayed()
         .performClick()
+
+    println("DEBUG_STEP: Saving Preferences")
     composeTestRule.onNodeWithText("Save Preferences").assertIsEnabled().performClick()
-    composeTestRule.waitUntil(10_000) {
-      composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).isDisplayed()
+
+    try {
+      composeTestRule.waitUntil(10_000) {
+        composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError(
+          "DEBUG_FAIL: Timeout waiting for Homepage NavBar after saving preferences", e)
     }
+
     composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Homepage)).performClick()
-    composeTestRule.waitUntil(15_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
+
+    println("DEBUG_STEP: verifying Preferences on Homepage")
+    try {
+      composeTestRule.waitUntil(15_000) {
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError(
+          "DEBUG_FAIL: Timeout waiting for Listing List with applied preferences", e)
     }
+
     composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidCheap)).assertIsDisplayed()
 
+    // Log out
+    println("DEBUG_STEP: Logging out")
     composeTestRule.onNodeWithTag(C.Tag.buttonNavBarTestTag(Screen.Profile)).performClick()
-    composeTestRule.waitUntil(15_000) {
-      composeTestRule.onNodeWithTag("profile_logout_button").performScrollTo().isDisplayed()
+
+    try {
+      composeTestRule.waitUntil(15_000) {
+        composeTestRule.onNodeWithTag("profile_logout_button").performScrollTo().isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for Logout Button in Profile", e)
     }
+
     composeTestRule.onNodeWithTag("profile_logout_button").performClick()
 
     // For log in as guest
-    composeTestRule.waitUntil(5_000) {
-      composeTestRule.onAllNodesWithText("Continue as guest").fetchSemanticsNodes().isNotEmpty()
+    println("DEBUG_STEP: Starting Guest Mode")
+    try {
+      composeTestRule.waitUntil(5_000) {
+        composeTestRule.onAllNodesWithText("Continue as guest").fetchSemanticsNodes().isNotEmpty()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for 'Continue as guest' button", e)
     }
+
     composeTestRule.onNodeWithText("Continue as guest").performClick()
 
-    composeTestRule.waitUntil(10_000) {
-      composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
+    try {
+      composeTestRule.waitUntil(10_000) {
+        composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for CITIES_LIST in Guest Mode", e)
     }
 
-    composeTestRule.waitUntil(timeoutMillis = 5_000) {
-      composeTestRule
-          .onAllNodesWithTag(
-              HomePageScreenTestTags.getTestTagForCityCard("Lausanne"), useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
+    try {
+      composeTestRule.waitUntil(timeoutMillis = 5_000) {
+        composeTestRule
+            .onAllNodesWithTag(
+                HomePageScreenTestTags.getTestTagForCityCard("Lausanne"), useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for 'Lausanne' city card in Guest Mode", e)
     }
+
     composeTestRule.onNodeWithTag(HomePageScreenTestTags.CITIES_LIST).performScrollToIndex(2)
 
     composeTestRule
         .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
         .performClick()
 
-    composeTestRule.waitUntil(10_000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
+    println("DEBUG_STEP: Waiting for Guest Mode Listings")
+    try {
+      composeTestRule.waitUntil(10_000) {
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.LISTING_LIST).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for Listing List in Guest Mode", e)
     }
+
     composeTestRule
         .onNodeWithText("Expensive listing")
         .performScrollTo()
@@ -264,18 +384,39 @@ class Epic4Test : FirestoreTest() {
         .performClick()
     composeTestRule.onNodeWithContentDescription("Back").performClick()
 
+    // Reviews interactions
+    println("DEBUG_STEP: Checking Reviews Section")
     composeTestRule.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
-    composeTestRule.waitUntil(5000) {
-      composeTestRule.onNodeWithTag(C.BrowseCityTags.residencyCard("Vortex")).isDisplayed()
+
+    try {
+      composeTestRule.waitUntil(5000) {
+        composeTestRule.onNodeWithTag(C.BrowseCityTags.residencyCard("Vortex")).isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for 'Vortex' residency card", e)
     }
+
     composeTestRule.onNodeWithTag(C.BrowseCityTags.residencyCard("Vortex")).performClick()
-    composeTestRule.waitUntil(5000) {
-      composeTestRule.onNodeWithText("Vortex Review 1").isDisplayed()
+
+    try {
+      composeTestRule.waitUntil(5000) {
+        composeTestRule.onNodeWithText("Vortex Review 1").isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for 'Vortex Review 1' title", e)
     }
+
     composeTestRule.onNodeWithText("Vortex Review 1").assertHasClickAction().performClick()
-    composeTestRule.waitUntil(5000) {
-      composeTestRule.onNodeWithText("First review").performScrollTo().isDisplayed()
+
+    try {
+      composeTestRule.waitUntil(5000) {
+        composeTestRule.onNodeWithText("First review").performScrollTo().isDisplayed()
+      }
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for 'First review' content body", e)
     }
+
     composeTestRule.onNodeWithText("First review").assertIsDisplayed()
+    println("DEBUG_STEP: Test Completed Successfully")
   }
 }

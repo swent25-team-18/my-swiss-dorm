@@ -269,14 +269,18 @@ class Epic4Test : FirestoreTest() {
     } catch (e: Throwable) {
       throw AssertionError("DEBUG_FAIL: Timeout waiting for LISTING_LIST after filters", e)
     }
-
+    composeTestRule.waitForIdle()
     composeTestRule
         .onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidExpensive))
         .assertIsNotDisplayed()
-    composeTestRule
-        .onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidCheap))
-        .performScrollTo()
-        .assertIsDisplayed()
+    try {
+      composeTestRule
+          .onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidCheap))
+          .performScrollTo()
+          .assertIsDisplayed()
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Cheap listing not found after filtering", e)
+    }
 
     // Profile Preferences
     println("DEBUG_STEP: Navigating to Profile for Preferences")

@@ -577,6 +577,11 @@ class SettingsViewModelTest : FirestoreTest() {
           override suspend fun deleteRentalListing(uid: String) {}
 
           override fun getNewUid(): String = "test-uid"
+
+          override suspend fun getAllRentalListingsForUser(userId: String?) = getAllRentalListings()
+
+          override suspend fun getRentalListingForUser(rentalPostId: String, userId: String?) =
+              getRentalListing(rentalPostId)
         }
 
     val vm = vm(rentalListingRepo = mockRentalRepo)
@@ -659,6 +664,14 @@ class SettingsViewModelTest : FirestoreTest() {
           }
 
           override fun getNewUid(): String = "test-uid"
+
+          override suspend fun getAllReviewsByResidencyForUser(
+              residencyName: String,
+              userId: String?
+          ) = getAllReviewsByResidency(residencyName)
+
+          override suspend fun getReviewForUser(reviewId: String, userId: String?) =
+              getReview(reviewId)
         }
 
     val vm = vm(reviewsRepo = mockReviewsRepo)

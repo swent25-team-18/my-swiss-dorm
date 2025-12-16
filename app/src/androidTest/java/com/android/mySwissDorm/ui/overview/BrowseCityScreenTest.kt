@@ -848,6 +848,14 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
       override suspend fun getRentalListing(rentalPostId: String): RentalListing = error("unused")
 
+      override suspend fun getAllRentalListingsForUser(userId: String?): List<RentalListing> =
+          error("unused")
+
+      override suspend fun getRentalListingForUser(
+          rentalPostId: String,
+          userId: String?
+      ): RentalListing = error("unused")
+
       override suspend fun addRentalListing(rentalPost: RentalListing) {}
 
       override suspend fun editRentalListing(rentalPostId: String, newValue: RentalListing) {}

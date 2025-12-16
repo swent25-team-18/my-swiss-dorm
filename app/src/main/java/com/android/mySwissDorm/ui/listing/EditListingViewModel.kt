@@ -18,6 +18,8 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class EditListingViewModel(
@@ -47,8 +49,6 @@ class EditListingViewModel(
         val listing = rentalListingRepository.getRentalListing(rentalPostID)
         val isPrivateAccommodation = listing.residencyName == "Private Accommodation"
         val listingLocation = listing.location
-        photoManager.initialize(listing.imageUrls)
-        val photos = photoManager.photoLoaded
 
         _uiState.value =
             uiState.value.copy(
@@ -59,13 +59,19 @@ class EditListingViewModel(
                 sizeSqm = listing.areaInM2.toString(),
                 startDate = listing.startDate,
                 description = listing.description,
-                pickedImages = photos,
                 mapLat = listingLocation.latitude,
                 mapLng = listingLocation.longitude,
                 customLocation = if (isPrivateAccommodation) listingLocation else null,
                 customLocationQuery = if (isPrivateAccommodation) listingLocation.name else "",
                 errorMsg = null,
                 ownerName = listing.ownerName)
+        launch(Dispatchers.IO) {
+          photoManager.initialize(listing.imageUrls)
+          val photos = photoManager.photoLoaded
+
+          _uiState.update { current -> current.copy(pickedImages = photos) }
+          Log.d(logTag, "Images loaded")
+        }
       } catch (e: Exception) {
         Log.e(logTag, "Error loading listing by ID: $rentalPostID", e)
         setErrorMsg(

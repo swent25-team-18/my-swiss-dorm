@@ -780,6 +780,78 @@ class RentalListingRepositoryHybridTest {
   }
 
   @Test
+  fun getAllRentalListingsForUser_online_onlySyncsFilteredListingsToLocal() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing1 = createTestListing("listing-1", ownerId = user1Id)
+    val listing2 = createTestListing("listing-2", ownerId = user2Id)
+    val listing3 = createTestListing("listing-3", ownerId = "user-3")
+
+    // Remote has all listings
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listing1, listing2, listing3)
+    // User1 has blocked user2
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllRentalListingsForUser(user1Id)
+
+    // Should return filtered listings (listing1 and listing3, not listing2)
+    assertEquals(2, result.size)
+    assertTrue(result.contains(listing1))
+    assertTrue(result.contains(listing3))
+    assertFalse(result.contains(listing2))
+
+    // Verify only filtered listings were synced to local (not listing2 from blocked user)
+    val localListings = localRepository.getAllRentalListings()
+    assertEquals(2, localListings.size)
+    assertTrue(localListings.any { it.uid == "listing-1" })
+    assertTrue(localListings.any { it.uid == "listing-3" })
+    assertFalse(localListings.any { it.uid == "listing-2" })
+  }
+
+  @Test
+  fun getAllRentalListingsForUser_online_onlySyncsFilteredListingsWhenOwnerBlockedCurrentUser() =
+      runTest {
+        mockkObject(NetworkUtils)
+        every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+        val user1Id = "user-1"
+        val user2Id = "user-2"
+        val listing1 = createTestListing("listing-1", ownerId = user1Id)
+        val listing2 = createTestListing("listing-2", ownerId = user2Id)
+        val listing3 = createTestListing("listing-3", ownerId = "user-3")
+
+        // Remote has all listings
+        coEvery { remoteRepository.getAllRentalListings() } returns
+            listOf(listing1, listing2, listing3)
+        // User1 has not blocked anyone
+        coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+        // User2 has blocked user1
+        coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+        coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+        val result = hybridRepository.getAllRentalListingsForUser(user1Id)
+
+        // Should return filtered listings (listing1 and listing3, not listing2)
+        assertEquals(2, result.size)
+        assertTrue(result.contains(listing1))
+        assertTrue(result.contains(listing3))
+        assertFalse(result.contains(listing2))
+
+        // Verify only filtered listings were synced to local (not listing2 from user who blocked
+        // us)
+        val localListings = localRepository.getAllRentalListings()
+        assertEquals(2, localListings.size)
+        assertTrue(localListings.any { it.uid == "listing-1" })
+        assertTrue(localListings.any { it.uid == "listing-3" })
+        assertFalse(localListings.any { it.uid == "listing-2" })
+      }
+
+  @Test
   fun getAllRentalListings_online_deletesStaleListingsDuringFullSync() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true

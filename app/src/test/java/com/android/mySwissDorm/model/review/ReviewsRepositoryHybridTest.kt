@@ -868,6 +868,79 @@ class ReviewsRepositoryHybridTest {
   }
 
   @Test
+  fun getAllReviewsByResidencyForUser_doesNotFilterAnonymousReviewsWhenBlocked() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val normalReview = createTestReview("review-1", ownerId = user2Id, isAnonymous = false)
+    val anonymousReview = createTestReview("review-2", ownerId = user2Id, isAnonymous = true)
+    val review3 = createTestReview("review-3", ownerId = "user-3")
+
+    coEvery { remoteRepository.getAllReviewsByResidency("Vortex") } returns
+        listOf(normalReview, anonymousReview, review3)
+    // User1 has blocked user2
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+    // Should filter out normalReview (user2's non-anonymous review) but keep anonymousReview
+    // to preserve anonymity
+    assertEquals(2, result.size)
+    assertTrue(result.contains(anonymousReview)) // Anonymous review should be visible
+    assertTrue(result.contains(review3))
+    assertFalse(result.contains(normalReview)) // Non-anonymous blocked review should be filtered
+  }
+
+  @Test
+  fun getReviewForUser_returnsAnonymousReviewEvenWhenBlocked() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val anonymousReview = createTestReview("review-1", ownerId = user2Id, isAnonymous = true)
+
+    coEvery { remoteRepository.getReview("review-1") } returns anonymousReview
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+
+    val result = hybridRepository.getReviewForUser("review-1", user1Id)
+
+    // Anonymous review should be returned even if owner is blocked (privacy requirement)
+    assertEquals(anonymousReview, result)
+  }
+
+  @Test
+  fun getAllReviewsByResidencyForUser_doesNotFilterAnonymousReviewsWhenOwnerBlockedCurrentUser() =
+      runTest {
+        mockkObject(NetworkUtils)
+        every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+        val user1Id = "user-1"
+        val user2Id = "user-2"
+        val normalReview = createTestReview("review-1", ownerId = user2Id, isAnonymous = false)
+        val anonymousReview = createTestReview("review-2", ownerId = user2Id, isAnonymous = true)
+
+        coEvery { remoteRepository.getAllReviewsByResidency("Vortex") } returns
+            listOf(normalReview, anonymousReview)
+        coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+        // User2 has blocked user1
+        coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+
+        val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+        // Should filter out normalReview but keep anonymousReview to preserve anonymity
+        assertEquals(1, result.size)
+        assertTrue(result.contains(anonymousReview)) // Anonymous review should be visible
+        assertFalse(
+            result.contains(normalReview)) // Non-anonymous blocked review should be filtered
+  }
+
+  @Test
   fun getAllReviewsByResidencyForUser_handlesBlockedListFetchFailure() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true
@@ -1093,7 +1166,8 @@ class ReviewsRepositoryHybridTest {
       residencyName: String = "Vortex",
       upvotedBy: Set<String> = emptySet(),
       downvotedBy: Set<String> = emptySet(),
-      ownerName: String? = null
+      ownerName: String? = null,
+      isAnonymous: Boolean = false
   ): Review {
     val fixedTimestamp = Timestamp(1000000L, 0)
     return Review(
@@ -1111,6 +1185,6 @@ class ReviewsRepositoryHybridTest {
         imageUrls = emptyList(),
         upvotedBy = upvotedBy,
         downvotedBy = downvotedBy,
-        isAnonymous = false)
+        isAnonymous = isAnonymous)
   }
 }

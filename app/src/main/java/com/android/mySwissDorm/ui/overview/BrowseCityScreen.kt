@@ -40,7 +40,7 @@ import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
-import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryStorage
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.listing.ListingCard
@@ -852,7 +852,8 @@ private fun ResidencyCardImage(imageUrls: List<String>, modifier: Modifier = Mod
 
   LaunchedEffect(imageUrls) {
     if (imageUrls.isNotEmpty()) {
-      val photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
+      val photoRepositoryCloud: PhotoRepositoryCloud =
+          PhotoRepositoryStorage(photoSubDir = "residencies/")
       try {
         val photo = photoRepositoryCloud.retrievePhoto(imageUrls.first())
         imageUri = photo.image

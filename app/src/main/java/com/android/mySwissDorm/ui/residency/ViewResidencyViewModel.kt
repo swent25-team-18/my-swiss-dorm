@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
-import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryStorage
 import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -38,7 +38,7 @@ open class ViewResidencyViewModel(
         ResidenciesRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository
+        PhotoRepositoryStorage(photoSubDir = "residencies/")
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewResidencyUIState(loading = true))
   val uiState: StateFlow<ViewResidencyUIState> = _uiState.asStateFlow()

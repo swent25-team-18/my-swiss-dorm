@@ -312,12 +312,20 @@ class Epic4Test : FirestoreTest() {
           click(percentOffset(0.0f, 0.5f))
           click(percentOffset(0.5f, 0.5f))
         }
-    composeTestRule.onNodeWithTag(PREFERRED_ROOM_TYPE).assertIsDisplayed()
-    composeTestRule
-        .onNodeWithText(RoomType.STUDIO.getName(context))
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
+    try {
+      composeTestRule.onNodeWithTag(PREFERRED_ROOM_TYPE).performScrollTo().assertIsDisplayed()
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for PREFERRED_ROOM_TYPE to be visible", e)
+    }
+    try {
+      composeTestRule
+          .onNodeWithText(RoomType.STUDIO.getName(context))
+          .performScrollTo()
+          .assertIsDisplayed()
+          .performClick()
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Timeout waiting for STUDIO room type to be visible", e)
+    }
 
     println("DEBUG_STEP: Saving Preferences")
     composeTestRule.onNodeWithText("Save Preferences").assertIsEnabled().performClick()
@@ -342,8 +350,11 @@ class Epic4Test : FirestoreTest() {
       throw AssertionError(
           "DEBUG_FAIL: Timeout waiting for Listing List with applied preferences", e)
     }
-
-    composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidCheap)).assertIsDisplayed()
+    try {
+      composeTestRule.onNodeWithTag(C.BrowseCityTags.listingCard(fakeUidCheap)).assertIsDisplayed()
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Cheap fake listing not found after filtering", e)
+    }
 
     // Log out
     println("DEBUG_STEP: Logging out")
@@ -413,12 +424,15 @@ class Epic4Test : FirestoreTest() {
     } catch (e: Throwable) {
       throw AssertionError("DEBUG_FAIL: Timeout waiting for Listing List in Guest Mode", e)
     }
-
-    composeTestRule
-        .onNodeWithText("Expensive listing")
-        .performScrollTo()
-        .assertIsDisplayed()
-        .performClick()
+    try {
+      composeTestRule
+          .onNodeWithText("Expensive listing")
+          .performScrollTo()
+          .assertIsDisplayed()
+          .performClick()
+    } catch (e: Throwable) {
+      throw AssertionError("DEBUG_FAIL: Expensive fake listing not found in Guest Mode", e)
+    }
     composeTestRule.onNodeWithContentDescription("Back").performClick()
 
     // Reviews interactions

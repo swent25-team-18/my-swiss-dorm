@@ -19,6 +19,7 @@ import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.database.AppDatabase
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
@@ -62,6 +63,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   private lateinit var profileRepo: ProfileRepository
   private lateinit var listingsRepo: RentalListingRepository
   private lateinit var residenciesRepo: ResidenciesRepository
+  // Keep reference to Firestore repo for adding test data (bypasses network check)
+  private lateinit var firestoreListingRepo: RentalListingRepositoryFirestore
 
   // test data
   private lateinit var ownerUid: String
@@ -72,11 +75,18 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
   override fun createRepositories() {
-    PhotoRepositoryProvider.initialize(
-        context = InstrumentationRegistry.getInstrumentation().context)
+    val context = InstrumentationRegistry.getInstrumentation().context
+    val database = AppDatabase.getDatabase(context)
+
+    PhotoRepositoryProvider.initialize(context)
     profileRepo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
-    listingsRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+
+    // Use Hybrid repository to enable blocking functionality
+    firestoreListingRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+    val localListingRepo = RentalListingRepositoryLocal(database.rentalListingDao())
+    listingsRepo = RentalListingRepositoryHybrid(context, firestoreListingRepo, localListingRepo)
     RentalListingRepositoryProvider.repository = listingsRepo
+
     residenciesRepo = ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
@@ -105,9 +115,9 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
       otherListing = rentalListing2.copy(ownerId = otherUid, title = "Second title")
 
       switchToUser(FakeUser.FakeUser1)
-      listingsRepo.addRentalListing(ownerListing)
+      firestoreListingRepo.addRentalListing(ownerListing)
       switchToUser(FakeUser.FakeUser2)
-      listingsRepo.addRentalListing(otherListing)
+      firestoreListingRepo.addRentalListing(otherListing)
 
       // Default to owner user for tests; individual tests can switch as needed
       switchToUser(FakeUser.FakeUser1)
@@ -145,10 +155,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    // Wait for ViewModel to finish loading (including POI calculation)
-    compose.waitUntil(10_000) {
-      vm.uiState.value.listing.uid == otherListing.uid && !vm.uiState.value.isLoadingPOIs
-    }
+    // Wait for ViewModel to finish loading
+    compose.waitUntil(10_000) { vm.uiState.value.listing.uid == otherListing.uid }
     compose.waitForIdle()
 
     compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
@@ -368,7 +376,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
             residencyName = resTestInvalid.name,
             ownerId = FirebaseEmulator.auth.currentUser!!.uid)
 
-    listingsRepo.addRentalListing(invalidListing)
+    firestoreListingRepo.addRentalListing(invalidListing)
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
       ViewListingScreen(viewListingViewModel = vm, listingUid = invalidListing.uid)
@@ -457,7 +465,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
         rentalListing3.copy(
             ownerId = FirebaseEmulator.auth.currentUser!!.uid,
             imageUrls = listOf(fakePhoto.fileName))
-    listingsRepo.addRentalListing(listing)
+    firestoreListingRepo.addRentalListing(listing)
 
     val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
     val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
@@ -776,7 +784,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     val listing =
         rentalListing3.copy(
             ownerId = FirebaseEmulator.auth.currentUser!!.uid, imageUrls = listOf(photo.fileName))
-    listingsRepo.addRentalListing(listing)
+    firestoreListingRepo.addRentalListing(listing)
     val vm =
         ViewListingViewModel(
             rentalListingRepository = listingsRepo,

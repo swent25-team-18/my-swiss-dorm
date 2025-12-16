@@ -1,7 +1,7 @@
 package com.android.mySwissDorm.ui.profile
 
 import android.content.Context
-import androidx.core.net.toUri
+import android.net.Uri
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
@@ -17,7 +17,6 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -219,8 +218,8 @@ class ViewProfileScreenViewModelTest {
         // Given
         val ownerId = "ownerId"
         val photoFileName = "photo.jpg"
-        val photoFile = File.createTempFile("photo", ".jpg")
-        val photo = Photo(photoFile.toUri(), photoFileName)
+        val mockUri = mockk<Uri>(relaxed = true)
+        val photo = Photo(mockUri, photoFileName)
 
         val profile =
             Profile(
@@ -485,8 +484,8 @@ class ViewProfileScreenViewModelTest {
         // Given
         val targetUid = "targetUserId"
         val photoFileName = "photo.jpg"
-        val photoFile = File.createTempFile("photo", ".jpg")
-        val photo = Photo(photoFile.toUri(), photoFileName)
+        val mockUri = mockk<Uri>(relaxed = true)
+        val photo = Photo(mockUri, photoFileName)
 
         var errorCallbackInvoked = false
         val onError: (String) -> Unit = { errorCallbackInvoked = true }
@@ -629,8 +628,8 @@ class ViewProfileScreenViewModelTest {
         // Given - simulate a race condition where user is blocked again before photo loads
         val targetUid = "targetUserId"
         val photoFileName = "photo.jpg"
-        val photoFile = File.createTempFile("photo", ".jpg")
-        val photo = Photo(photoFile.toUri(), photoFileName)
+        val mockUri = mockk<Uri>(relaxed = true)
+        val photo = Photo(mockUri, photoFileName)
 
         coEvery { profileRepository.removeBlockedUser("currentUserId", targetUid) } returns Unit
 

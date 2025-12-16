@@ -950,7 +950,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                                   style = MaterialTheme.typography.bodySmall,
                                   textAlign = TextAlign.Justify,
                                   color = TextColor,
-                                  maxLines = 3,
+                                  maxLines = 2,
                                   overflow = TextOverflow.Ellipsis,
                                   modifier =
                                       Modifier.testTag(

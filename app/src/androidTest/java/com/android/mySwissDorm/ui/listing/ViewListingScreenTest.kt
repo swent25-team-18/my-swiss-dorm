@@ -871,6 +871,26 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun residencyName_isDisplayedInBulletSection() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid
+    }
+
+    scrollListTo(C.ViewListingTags.BULLETS)
+    compose
+        .onNodeWithTag(C.ViewListingTags.RESIDENCY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals(otherListing.residencyName)
+  }
+
+  @Test
   fun applyButton_disabledWhenBlocked() = runTest {
     switchToUser(FakeUser.FakeUser1)
     // Block the other user

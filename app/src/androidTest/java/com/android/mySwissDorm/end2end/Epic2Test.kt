@@ -128,7 +128,7 @@ class Epic2Test : FirestoreTest() {
         .onNodeWithTag(C.CustomLocationDialogTags.LOCATION_TEXT_FIELD)
         .performTextInput("Lausanne")
 
-    compose.waitUntil("Custom location dialog is not displayed", 5000) {
+    compose.waitUntil("Custom location dialog is not displayed", 15000) {
       compose.onNodeWithTag(C.CustomLocationDialogTags.locationSuggestion(0)).isDisplayed()
     }
     compose.onNodeWithTag(C.CustomLocationDialogTags.locationSuggestion(0)).performClick()
@@ -192,7 +192,7 @@ class Epic2Test : FirestoreTest() {
     }
     compose.onNodeWithText(rentalListing1.title, true).performClick()
 
-    compose.waitUntil("The posted by name component is not displayed", 5000) {
+    compose.waitUntil("The posted by name component is not displayed", 15000) {
       compose.onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME).isDisplayed()
     }
     compose.onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()

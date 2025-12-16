@@ -26,6 +26,7 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryFirestore
 import com.android.mySwissDorm.model.university.UniversitiesRepositoryProvider
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.resources.C.BrowseCityTags.FILTER_CHIP_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_ROOM_TYPE
 import com.android.mySwissDorm.resources.C.ProfileTags.PREFERENCES_BUTTON
 import com.android.mySwissDorm.resources.C.Tag.SKIP
@@ -217,8 +218,21 @@ class Epic4Test : FirestoreTest() {
       throw AssertionError("DEBUG_FAIL: Timeout waiting for Filter Chips to reappear", e)
     }
 
-    composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_SIZE).performClick()
-
+    composeTestRule
+        .onNodeWithTag(C.BrowseCityTags.FILTER_CHIP_ROW, useUnmergedTree = true)
+        .performScrollToIndex(2)
+    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(FILTER_CHIP_SIZE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    composeTestRule
+        .onNodeWithTag(FILTER_CHIP_SIZE, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+    composeTestRule.waitForIdle()
     try {
       composeTestRule.waitUntil(5_000) {
         composeTestRule.onNodeWithTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET).isDisplayed()

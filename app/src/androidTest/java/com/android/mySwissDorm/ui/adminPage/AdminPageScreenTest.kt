@@ -134,7 +134,7 @@ class AdminPageScreenTest : FirestoreTest() {
     composeTestRule.waitUntil(5_000) {
       viewModel.uiState.selected == AdminPageViewModel.EntityType.RESIDENCY
     }
-    composeTestRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).performScrollTo().assertIsDisplayed()
     // Check for Residency-specific fields
     composeTestRule
         .onNode(hasText("Description") and hasSetTextAction())

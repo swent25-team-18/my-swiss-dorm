@@ -26,6 +26,7 @@ import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.translateTextField
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -151,7 +152,6 @@ class ViewReviewViewModel(
     viewModelScope.launch {
       try {
         val review = reviewsRepository.getReview(reviewId)
-        photoManager.initialize(review.imageUrls)
         val currentUserId = auth.currentUser?.uid
         val fullNameOfPoster =
             if (review.isAnonymous) {
@@ -169,8 +169,11 @@ class ViewReviewViewModel(
               isOwner = isOwner,
               netScore = review.getNetScore(),
               userVote = review.getUserVote(currentUserId),
-              images = photoManager.photoLoaded,
               errorMsg = it.errorMsg) // Preserve error message if it was set
+        }
+        launch(Dispatchers.IO) {
+          photoManager.initialize(review.imageUrls)
+          _uiState.update { it.copy(images = photoManager.photoLoaded) }
         }
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)

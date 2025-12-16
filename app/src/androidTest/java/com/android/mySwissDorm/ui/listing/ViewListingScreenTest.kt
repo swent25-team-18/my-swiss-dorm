@@ -685,34 +685,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun blockedUser_withMessage_showsBlockedNotice() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    // Block the current user
-    profileRepo.addBlockedUser(ownerUid, otherUid)
-
-    switchToUser(FakeUser.FakeUser2)
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
-    }
-    waitForScreenRoot()
-
-    // Wait for blocked notice UI to appear
-    compose.waitUntil(10_000) {
-      compose
-          .onAllNodesWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Blocked users should see blocked notice, not the apply button
-    compose
-        .onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
-        .assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
-  }
-
-  @Test
   fun errorMessage_triggersOnGoBack() = runTest {
     var navigatedBack = false
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
@@ -900,31 +872,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.waitUntil(10_000) {
-      val s = vm.uiState.value
-      s.listing.uid == ownerListing.uid && s.isBlockedByOwner
-    }
-
-    // Blocked users should see blocked notice, not apply button
-    compose
-        .onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
-        .assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
-  }
-
-  @Test
-  fun blockedUser_appliesButtonColorChanges() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    // Block the other user
-    profileRepo.addBlockedUser(ownerUid, otherUid)
-
-    switchToUser(FakeUser.FakeUser2)
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
-    }
-    waitForScreenRoot()
-
     // Wait for blocked notice UI to appear
     compose.waitUntil(10_000) {
       compose
@@ -933,10 +880,11 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
           .isNotEmpty()
     }
 
-    // When blocked, should show blocked notice instead of apply button
+    // Blocked users should see blocked notice, not apply button
     compose
         .onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
         .assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
   }
 
   @Test

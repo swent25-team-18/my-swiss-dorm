@@ -9,7 +9,8 @@ object LocationRepositoryProvider {
    * The singleton instance of the [LocationRepository]. It is lazily initialized to ensure it's
    * only created when needed.
    */
-  val repository: LocationRepository by lazy {
+  private val _repository: LocationRepository by lazy {
     NominatimLocationRepository(HttpClientProvider.client)
   }
+  var repository: LocationRepository = _repository
 }

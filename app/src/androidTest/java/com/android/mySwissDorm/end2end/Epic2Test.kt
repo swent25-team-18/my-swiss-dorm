@@ -10,6 +10,9 @@ import com.android.mySwissDorm.model.authentification.AuthRepositoryFirebase
 import com.android.mySwissDorm.model.authentification.AuthRepositoryProvider
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
+import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.map.LocationRepository
+import com.android.mySwissDorm.model.map.LocationRepositoryProvider
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -50,7 +53,20 @@ class Epic2Test : FirestoreTest() {
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
     ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
     PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
+    LocationRepositoryProvider.repository =
+        object : LocationRepository {
+          override suspend fun search(query: String): List<Location> {
+            return if (query.contains("Lausanne", ignoreCase = true)) {
+              listOf(Location("Lausanne", 46.5197, 6.6323))
+            } else {
+              emptyList()
+            }
+          }
 
+          override suspend fun reverseSearch(latitude: Double, longitude: Double): Location? {
+            return Location("Lausanne", 46.5197, 6.6323)
+          }
+        }
     // ---- SEED FIRESTORE (synchronously) ----
     switchToUser(FakeUser.FakeUser2)
     otherId = FirebaseEmulator.auth.currentUser!!.uid

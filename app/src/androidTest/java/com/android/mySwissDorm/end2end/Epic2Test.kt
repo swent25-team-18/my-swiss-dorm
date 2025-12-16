@@ -115,11 +115,11 @@ class Epic2Test : FirestoreTest() {
     }
 
     compose.waitForIdle()
-    compose.waitUntil(5_000) { compose.onNodeWithTag(SKIP).isDisplayed() }
+    compose.waitUntil("SKIP not satisfied", 5_000) { compose.onNodeWithTag(SKIP).isDisplayed() }
 
     compose.onNodeWithTag(SKIP).performClick()
     // 2. Select custom location
-    compose.waitUntil(5000) {
+    compose.waitUntil("Location selection not displayed", 5000) {
       compose.onNodeWithTag(HomePageScreenTestTags.LOCATION_SELECTION).isDisplayed()
     }
     compose.onNodeWithTag(HomePageScreenTestTags.LOCATION_SELECTION).performClick()
@@ -128,7 +128,7 @@ class Epic2Test : FirestoreTest() {
         .onNodeWithTag(C.CustomLocationDialogTags.LOCATION_TEXT_FIELD)
         .performTextInput("Lausanne")
 
-    compose.waitUntil(5000) {
+    compose.waitUntil("Custom location dialog is not displayed", 5000) {
       compose.onNodeWithTag(C.CustomLocationDialogTags.locationSuggestion(0)).isDisplayed()
     }
     compose.onNodeWithTag(C.CustomLocationDialogTags.locationSuggestion(0)).performClick()
@@ -137,13 +137,17 @@ class Epic2Test : FirestoreTest() {
     compose.waitForIdle()
 
     // 3. Add Rental Listing
-    compose.waitUntil(5000) { compose.onNodeWithTag(C.BrowseCityTags.FABSCRIM, true).isDisplayed() }
+    compose.waitUntil("FabScrim is not displayed (for add rental listing)", 5000) {
+      compose.onNodeWithTag(C.BrowseCityTags.FABSCRIM, true).isDisplayed()
+    }
     compose.onNodeWithTag(C.BrowseCityTags.FABSCRIM, true).performClick()
 
-    compose.waitUntil(5000) { compose.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).isDisplayed() }
+    compose.waitUntil("FabMenu is not displayed (for add listing)", 5000) {
+      compose.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).isDisplayed()
+    }
     compose.onNodeWithTag(C.BrowseCityTags.FABMENULISTING).performClick()
 
-    compose.waitUntil(5000) {
+    compose.waitUntil("Title for add listing is not displayed", 5000) {
       compose.onNodeWithTag(C.AddListingScreenTags.TITLE_FIELD).isDisplayed()
     }
 
@@ -183,15 +187,17 @@ class Epic2Test : FirestoreTest() {
     compose.waitForIdle()
 
     // Wait for browse screen and click on pre-seeded listing
-    compose.waitUntil(5000) { compose.onNodeWithText(rentalListing1.title, true).isDisplayed() }
+    compose.waitUntil("Rental listing 1 title not displayed", 5000) {
+      compose.onNodeWithText(rentalListing1.title, true).isDisplayed()
+    }
     compose.onNodeWithText(rentalListing1.title, true).performClick()
 
-    compose.waitUntil(5000) {
+    compose.waitUntil("The posted by name component is not displayed", 5000) {
       compose.onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME).isDisplayed()
     }
     compose.onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()
 
-    compose.waitUntil(5000) {
+    compose.waitUntil("Block button is not displayed", 5000) {
       compose.onNodeWithTag(C.ViewUserProfileTags.BLOCK_BUTTON).isDisplayed()
     }
     compose.onNodeWithTag(C.ViewUserProfileTags.BLOCK_BUTTON).performClick()
@@ -202,13 +208,19 @@ class Epic2Test : FirestoreTest() {
     // 5. Add Review
     compose.onNodeWithTag(C.ViewListingTags.BACK_BTN).performClick()
 
-    compose.waitUntil(5000) { compose.onNodeWithTag(C.BrowseCityTags.FABSCRIM).isDisplayed() }
+    compose.waitUntil("FabScrim not displayed (for add review)", 5000) {
+      compose.onNodeWithTag(C.BrowseCityTags.FABSCRIM).isDisplayed()
+    }
     compose.onNodeWithTag(C.BrowseCityTags.FABSCRIM).performClick()
 
-    compose.waitUntil(5000) { compose.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).isDisplayed() }
+    compose.waitUntil("FabMenu not displayed (for add review)", 5000) {
+      compose.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).isDisplayed()
+    }
     compose.onNodeWithTag(C.BrowseCityTags.FABMENUREVIEW).performClick()
 
-    compose.waitUntil(5000) { compose.onNodeWithTag(C.AddReviewTags.TITLE_FIELD).isDisplayed() }
+    compose.waitUntil("Title not displayed for reviews", 5000) {
+      compose.onNodeWithTag(C.AddReviewTags.TITLE_FIELD).isDisplayed()
+    }
 
     compose.onNodeWithTag(C.AddReviewTags.TITLE_FIELD).performTextInput("My first review")
 
@@ -232,11 +244,15 @@ class Epic2Test : FirestoreTest() {
     compose.waitForIdle()
 
     // 6. Edit review
-    compose.waitUntil(5000) { compose.onNodeWithTag(C.ViewReviewTags.TITLE).isDisplayed() }
+    compose.waitUntil("Title not displayed (for view review)", 5000) {
+      compose.onNodeWithTag(C.ViewReviewTags.TITLE).isDisplayed()
+    }
 
     compose.onNodeWithTag(C.ViewReviewTags.EDIT_BTN).performScrollTo().performClick()
 
-    compose.waitUntil(5000) { compose.onNodeWithTag(C.EditReviewTags.REVIEW_TITLE).isDisplayed() }
+    compose.waitUntil("Title not displayed (for edit review)", 5000) {
+      compose.onNodeWithTag(C.EditReviewTags.REVIEW_TITLE).isDisplayed()
+    }
 
     compose.onNodeWithTag(C.EditReviewTags.REVIEW_TITLE).performTextInput("Much better title")
 

@@ -82,9 +82,9 @@ fun SignUpScreen(
                     .fillMaxSize()
                     .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
               val outlinedTextModifier =
-                  Modifier.background(TextBoxColor, RoundedCornerShape(Dimens.PaddingTopSmall))
+                  Modifier.background(TextBoxColor, RoundedCornerShape(Dimens.CornerRadiusDefault))
                       .fillMaxWidth()
               val textFieldColors =
                   OutlinedTextFieldDefaults.colors(
@@ -271,7 +271,7 @@ fun SignUpScreen(
                   shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
                     Text(text = stringResource(R.string.continue_with_preferences), color = White)
                   }
-              Spacer(Modifier.height(Dimens.PaddingSmall))
+              Spacer(Modifier.height(Dimens.SpacingDefault))
               if (!signUpViewModel.isFormValid) {
                 Text(
                     stringResource(R.string.sign_up_button_help_text),

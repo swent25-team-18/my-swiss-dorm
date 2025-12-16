@@ -205,7 +205,7 @@ fun RequestedMessageItem(
                     text = "About: ${message.listingTitle}",
                     style = MaterialTheme.typography.bodySmall,
                     color = LightGray0)
-                Spacer(modifier = Modifier.height(Dimens.PaddingXSmall))
+                Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
                 Text(
                     text = message.message.ifBlank { stringResource(R.string.no_message_provided) },
                     style = MaterialTheme.typography.bodyMedium,

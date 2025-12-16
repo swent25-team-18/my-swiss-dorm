@@ -146,7 +146,7 @@ fun EditReviewScreen(
                             Text(stringResource(R.string.save), color = BackGroundColor)
                           }
                     }
-                Spacer(Modifier.height(Dimens.PaddingSmall))
+                Spacer(Modifier.height(Dimens.SpacingDefault))
                 if (!ui.isFormValid) {
                   Text(
                       stringResource(R.string.edit_review_invalid_form_text),
@@ -171,7 +171,7 @@ fun EditReviewScreen(
                 .padding(padding)
                 .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingTopSmall)
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
               TitleField(
                   value = ui.title,
                   onValueChange = { editReviewViewModel.setTitle(it) },
@@ -235,7 +235,7 @@ fun EditReviewScreen(
               Row(
                   modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
                     Text(
                         text = stringResource(R.string.edit_review_rating),
                         color = TextColor,
@@ -270,7 +270,7 @@ fun EditReviewScreen(
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingTopSmall)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingTiny)) {
                     DefaultAddPhotoButton(onSelectPhoto = { editReviewViewModel.addPhoto(it) })
                     ImageGrid(
                         imageUris = ui.images.map { it.image }.toSet(),

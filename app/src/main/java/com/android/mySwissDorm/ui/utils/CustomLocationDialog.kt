@@ -101,7 +101,7 @@ fun CustomLocationDialog(
                             imageVector = Icons.Default.MyLocation,
                             contentDescription = "My Location",
                             tint = MainColor)
-                        Spacer(modifier = Modifier.width(Dimens.PaddingXSmall))
+                        Spacer(modifier = Modifier.width(Dimens.SpacingXSmall))
                         Text(
                             text = stringResource(R.string.custom_location_dialog_current_location),
                             color = MainColor)

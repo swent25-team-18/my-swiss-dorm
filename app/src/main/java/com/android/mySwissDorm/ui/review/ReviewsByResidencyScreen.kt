@@ -176,7 +176,7 @@ private fun ReviewCard(
                   modifier =
                       Modifier.height(Dimens.CardImageHeight)
                           .fillMaxWidth(0.35F)
-                          .clip(RoundedCornerShape(Dimens.PaddingMedium))
+                          .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                           .background(LightGray)
                           .testTag(
                               C.ReviewsByResidencyTag.reviewImagePlaceholder(data.reviewUid))) {
@@ -189,7 +189,7 @@ private fun ReviewCard(
                         contentScale = ContentScale.Crop)
                   }
 
-              Spacer(Modifier.width(Dimens.PaddingXSmall))
+              Spacer(Modifier.width(Dimens.SpacingXSmall))
 
               Column(
                   modifier =
@@ -218,7 +218,7 @@ private fun ReviewCard(
                               C.ReviewsByResidencyTag.reviewGrade(data.reviewUid))
                         }
 
-                    Spacer(Modifier.height(Dimens.PaddingSmall))
+                    Spacer(Modifier.height(Dimens.SpacingDefault))
 
                     Column(
                         modifier = Modifier.fillMaxSize(),

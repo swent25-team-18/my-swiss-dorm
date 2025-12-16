@@ -52,8 +52,8 @@ fun ImageGrid(
 ) {
   LazyRow(
       modifier = modifier,
-      horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall),
-      contentPadding = PaddingValues(horizontal = Dimens.SpacingXLarge)) {
+      horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault),
+      contentPadding = PaddingValues(horizontal = Dimens.PaddingDefault)) {
         items(imageUris.toList()) { uri ->
           Box(
               modifier =
@@ -64,7 +64,7 @@ fun ImageGrid(
                     contentDescription = null,
                     modifier =
                         Modifier.fillMaxSize()
-                            .clip(RoundedCornerShape(Dimens.PaddingSmall))
+                            .clip(RoundedCornerShape(Dimens.CornerRadiusMedium))
                             .clickable { onImageClick(uri) },
                     contentScale = ContentScale.Crop)
                 if (isEditingMode) {

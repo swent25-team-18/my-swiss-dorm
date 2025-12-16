@@ -522,7 +522,7 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
           overflow = TextOverflow.Ellipsis,
           modifier = Modifier.fillMaxWidth())
       Row(
-          modifier = Modifier.fillMaxWidth().padding(top = Dimens.SpacingMedium),
+          modifier = Modifier.fillMaxWidth().padding(top = Dimens.PaddingMedium),
           horizontalArrangement = Arrangement.End) {
             Switch(
                 modifier =

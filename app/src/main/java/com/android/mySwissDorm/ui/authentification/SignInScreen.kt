@@ -79,7 +79,7 @@ fun SignInScreen(
                   authViewModel.signIn(context, credentialManager)
                 }
               },
-              shape = RoundedCornerShape(Dimens.PaddingXSmall),
+              shape = RoundedCornerShape(Dimens.CornerRadiusSmall),
               colors =
                   ButtonColors(
                       containerColor = MainColor,

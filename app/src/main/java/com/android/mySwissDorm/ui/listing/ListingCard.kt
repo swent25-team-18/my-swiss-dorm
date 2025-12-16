@@ -64,7 +64,7 @@ fun ListingCard(
                     modifier =
                         Modifier.height(Dimens.CardImageHeight)
                             .fillMaxWidth(0.35F)
-                            .clip(RoundedCornerShape(Dimens.PaddingMedium))
+                            .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                             .background(ListingCardColor)) {
                       AsyncImage(
                           model = data.image.firstOrNull(),
@@ -76,8 +76,8 @@ fun ListingCard(
                             color = MainColor,
                             shape =
                                 RoundedCornerShape(
-                                    topStart = Dimens.PaddingMedium,
-                                    bottomEnd = Dimens.PaddingSmall),
+                                    topStart = Dimens.CornerRadiusDefault,
+                                    bottomEnd = Dimens.CornerRadiusMedium),
                             modifier = Modifier.align(Alignment.TopStart)) {
                               Text(
                                   text = stringResource(R.string.recommended),
@@ -85,14 +85,14 @@ fun ListingCard(
                                   style = MaterialTheme.typography.labelSmall,
                                   modifier =
                                       Modifier.padding(
-                                              horizontal = Dimens.SpacingMedium, vertical = 2.dp)
+                                              horizontal = Dimens.PaddingMedium, vertical = Dimens.PaddingXSmall)
                                           .testTag(RECOMMENDED),
                                   fontSize = 10.sp)
                             }
                       }
                     }
 
-                Spacer(Modifier.width(Dimens.PaddingMedium))
+                Spacer(Modifier.width(Dimens.SpacingLarge))
 
                 Column(modifier = Modifier.weight(1f)) {
                   Text(
@@ -103,11 +103,11 @@ fun ListingCard(
                       color = TextColor,
                       modifier = Modifier.fillMaxWidth())
 
-                  Spacer(Modifier.height(Dimens.PaddingSmall))
+                  Spacer(Modifier.height(Dimens.SpacingDefault))
 
                   Row(modifier = Modifier.fillMaxWidth()) {
                     BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
-                    Spacer(Modifier.width(Dimens.PaddingSmall))
+                    Spacer(Modifier.width(Dimens.SpacingDefault))
                     BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
                   }
                 }

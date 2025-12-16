@@ -59,7 +59,7 @@ fun ProfileContributionsList(
 ) {
   LazyColumn(
       modifier = modifier.testTag("contributions_list"),
-      verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium),
+      verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge),
       contentPadding = PaddingValues(bottom = Dimens.PaddingLarge)) {
         if (contributions.isEmpty()) {
           item {
@@ -96,7 +96,7 @@ private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, in
                     style = MaterialTheme.typography.titleMedium,
                     color = TextColor,
                     modifier = Modifier.weight(1f, fill = true))
-                Spacer(Modifier.width(Dimens.PaddingMedium))
+                Spacer(Modifier.width(Dimens.SpacingLarge))
                 Text(
                     text = contribution.type.label,
                     style = MaterialTheme.typography.labelMedium,
@@ -107,7 +107,7 @@ private fun ContributionCard(contribution: Contribution, onClick: () -> Unit, in
               text = contribution.description,
               style = MaterialTheme.typography.bodyMedium,
               color = DarkGray)
-          Spacer(Modifier.height(Dimens.PaddingMedium))
+          Spacer(Modifier.height(Dimens.SpacingLarge))
           OutlinedButton(
               onClick = onClick,
               modifier = Modifier.testTag("btn_contrib_details_$index"),

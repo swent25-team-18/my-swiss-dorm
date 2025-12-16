@@ -70,15 +70,15 @@ fun AddFabMenu(
     Column(
         modifier =
             Modifier.align(Alignment.BottomEnd)
-                .padding(end = Dimens.SpacingXLarge, bottom = Dimens.SpacingXLarge),
-        verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium),
+                .padding(end = Dimens.PaddingDefault, bottom = Dimens.PaddingDefault),
+        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge),
         horizontalAlignment = Alignment.End) {
           AnimatedVisibility(
               visible = expanded,
               enter = fadeIn() + expandVertically(),
               exit = fadeOut() + shrinkVertically()) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault),
                     horizontalAlignment = Alignment.End) {
                       FabMiniAction(
                           textId = R.string.add_button_add_listing,
@@ -139,7 +139,7 @@ private fun FabMiniAction(
             contentPadding =
                 PaddingValues(horizontal = Dimens.PaddingMedium, vertical = Dimens.PaddingSmall)) {
               icon()
-              Spacer(modifier = Modifier.size(Dimens.PaddingSmall))
+              Spacer(modifier = Modifier.size(Dimens.SpacingDefault))
               Text(stringResource(textId), color = White, fontWeight = FontWeight.Medium)
             }
       }

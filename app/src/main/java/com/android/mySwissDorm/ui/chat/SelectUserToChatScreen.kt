@@ -255,7 +255,7 @@ private fun UserListItem(user: UserItem, onClick: () -> Unit, modifier: Modifier
             modifier = Modifier.size(Dimens.ImageSizeAvatar).clip(CircleShape),
             contentScale = ContentScale.Crop)
 
-        Spacer(modifier = Modifier.width(Dimens.PaddingMedium))
+        Spacer(modifier = Modifier.width(Dimens.SpacingLarge))
 
         // Name
         Text(

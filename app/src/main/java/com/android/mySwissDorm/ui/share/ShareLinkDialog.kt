@@ -96,7 +96,7 @@ fun ShareLinkDialog(link: String, onDismiss: () -> Unit) {
                               color = TextColor, fontWeight = FontWeight.SemiBold),
                       modifier = Modifier.testTag(C.ShareLinkDialogTags.DIALOG_TITLE))
 
-                  Spacer(modifier = Modifier.height(Dimens.PaddingXSmall))
+                  Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
 
                   if (qrBitmap != null) {
                     Image(
@@ -113,7 +113,7 @@ fun ShareLinkDialog(link: String, onDismiss: () -> Unit) {
                         modifier = Modifier.testTag(C.ShareLinkDialogTags.QR_ERROR))
                   }
 
-                  Spacer(modifier = Modifier.height(Dimens.PaddingXSmall))
+                  Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
 
                   Button(
                       onClick = {
@@ -136,13 +136,13 @@ fun ShareLinkDialog(link: String, onDismiss: () -> Unit) {
                             imageVector = Icons.Outlined.ContentCopy,
                             contentDescription = null,
                             modifier = Modifier.size(Dimens.IconSizeSmall))
-                        Spacer(modifier = Modifier.size(Dimens.PaddingSmall))
+                        Spacer(modifier = Modifier.size(Dimens.SpacingDefault))
                         Text(
                             text = stringResource(R.string.share_dialog_copy_link),
                             style = MaterialTheme.typography.labelLarge)
                       }
 
-                  Spacer(modifier = Modifier.height(Dimens.PaddingSmall))
+                  Spacer(modifier = Modifier.height(Dimens.SpacingDefault))
 
                   Text(
                       text = stringResource(R.string.cancel),

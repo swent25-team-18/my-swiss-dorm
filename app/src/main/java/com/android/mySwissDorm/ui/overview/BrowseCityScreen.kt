@@ -276,7 +276,7 @@ private fun BrowseCityScreenUI(
                         imageVector = Icons.Default.Place,
                         contentDescription = "Location",
                         tint = MainColor)
-                    Spacer(modifier = Modifier.width(Dimens.PaddingXSmall))
+                    Spacer(modifier = Modifier.width(Dimens.SpacingXSmall))
                     Text(
                         text = location.name,
                         maxLines = 1,
@@ -422,7 +422,7 @@ private fun BrowseCityScreenUI(
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                       Column(
                           horizontalAlignment = Alignment.CenterHorizontally,
-                          verticalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
+                          verticalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
                             val message =
                                 if (hasAnyFilterActive(filterState)) {
                                   stringResource(R.string.browse_city_no_listings_match_filter)
@@ -517,7 +517,7 @@ private fun FilterChipBar(
   Row(
       modifier = modifier,
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
+      horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
         Icon(
             imageVector = Icons.Default.FilterList,
             contentDescription = "Filters",
@@ -525,7 +525,7 @@ private fun FilterChipBar(
             modifier = Modifier.size(Dimens.IconSizeDefault))
         LazyRow(
             modifier = Modifier.weight(1f).testTag(C.BrowseCityTags.FILTER_CHIP_ROW),
-            horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
               item {
                 FilterChip(
                     label = stringResource(R.string.room_type),
@@ -682,7 +682,7 @@ private fun FilterBottomSheet(
 
               Row(
                   modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
                     OutlinedButton(
                         onClick = {
                           // Clear the specific filter type immediately and apply
@@ -742,7 +742,7 @@ private fun RoomTypeFilterContent(
     onSelectionChange: (Set<RoomType>) -> Unit
 ) {
   val context = LocalContext.current
-  Column(verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
+  Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
     RoomType.entries.forEach { roomType ->
       Row(
           modifier = Modifier.fillMaxWidth(),
@@ -860,7 +860,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                   modifier =
                       Modifier.height(Dimens.SpacerHeightSmall)
                           .fillMaxWidth(0.4F)
-                          .clip(RoundedCornerShape(Dimens.PaddingMedium))
+                          .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                           .background(ListingCardColor)) {
                     Text(
                         stringResource(R.string.image),
@@ -869,7 +869,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                         color = Gray)
                   }
 
-              Spacer(Modifier.width(Dimens.PaddingMedium))
+              Spacer(Modifier.width(Dimens.SpacingLarge))
 
               Column(
                   modifier =
@@ -986,7 +986,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                           }
                     }
                   }
-              Spacer(Modifier.width(Dimens.PaddingMedium))
+              Spacer(Modifier.width(Dimens.SpacingLarge))
             }
       }
 }

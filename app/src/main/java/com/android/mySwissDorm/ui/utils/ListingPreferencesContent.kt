@@ -173,7 +173,7 @@ fun ListingPreferencesContent(
                     .padding(horizontal = Dimens.PaddingDefault)
                     .fillMaxSize()
                     .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingLarge)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXXLarge)) {
               Text(
                   text = stringResource(R.string.edit_preferences),
                   style = MaterialTheme.typography.titleMedium,
@@ -198,7 +198,7 @@ fun ListingPreferencesContent(
                           disabledTextColor = TextColor,
                           disabledPlaceholderColor = BackGroundColor,
                           disabledContainerColor = BackGroundColor),
-                  shape = RoundedCornerShape(Dimens.PaddingXSmall),
+                  shape = RoundedCornerShape(Dimens.CornerRadiusSmall),
                   trailingIcon = {
                     Icon(Icons.Default.Place, contentDescription = null, tint = MainColor)
                   })
@@ -237,7 +237,7 @@ fun ListingPreferencesContent(
               roomTypes.chunked(2).forEach { rowTypes ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
                       rowTypes.forEach { type ->
                         val isSelected = selectedRoomTypes.contains(type)
                         FilterChip(
@@ -259,7 +259,7 @@ fun ListingPreferencesContent(
                     }
               }
 
-              Spacer(modifier = Modifier.height(Dimens.PaddingLarge))
+              Spacer(modifier = Modifier.height(Dimens.SpacingXXLarge))
             }
       }
 }

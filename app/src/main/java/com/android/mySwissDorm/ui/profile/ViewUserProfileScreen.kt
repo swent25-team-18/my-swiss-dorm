@@ -123,7 +123,7 @@ fun ViewUserProfileScreen(
                   Text(
                       "${stringResource(R.string.error)}: ${ui.error}",
                       modifier = Modifier.testTag(T.ERROR_TEXT))
-                  Spacer(Modifier.height(Dimens.PaddingMedium))
+                  Spacer(Modifier.height(Dimens.SpacingLarge))
                   Button(
                       onClick = { if (ownerId != null) realVm?.loadProfile(ownerId, context) },
                       modifier = Modifier.testTag(T.RETRY_BTN)) {
@@ -146,7 +146,7 @@ fun ViewUserProfileScreen(
                         modifier =
                             Modifier.size(Dimens.ImageSizeAvatarLarge)
                                 .clip(CircleShape)
-                                .border(Dimens.SpacingXSmall, MainColor, CircleShape)
+                                .border(Dimens.BorderWidthSmall, MainColor, CircleShape)
                                 .testTag(T.AVATAR_BOX)) {
                           Box(
                               modifier =
@@ -175,14 +175,14 @@ fun ViewUserProfileScreen(
                               }
                         }
                   }
-                  Spacer(Modifier.height(Dimens.IconSizeXLarge))
+                  Spacer(Modifier.height(Dimens.SpacingXXLarge))
                 }
 
                 // Residence chip (only when non-blank)
                 if (ui.residence.isNotBlank()) {
                   item {
                     Surface(
-                        shape = RoundedCornerShape(Dimens.PaddingMedium),
+                        shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
                         color = TextBoxColor,
                         modifier =
                             Modifier.fillMaxWidth()
@@ -191,7 +191,7 @@ fun ViewUserProfileScreen(
                           Box(
                               modifier =
                                   Modifier.fillMaxWidth()
-                                      .padding(horizontal = Dimens.SpacingXLarge),
+                                      .padding(horizontal = Dimens.PaddingDefault),
                               contentAlignment = Alignment.CenterStart) {
                                 Text(
                                     text = ui.residence,
@@ -208,7 +208,7 @@ fun ViewUserProfileScreen(
                   item {
                     Surface(
                         onClick = { onSendMessage() },
-                        shape = RoundedCornerShape(Dimens.PaddingMedium),
+                        shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
                         color = TextBoxColor,
                         modifier =
                             Modifier.fillMaxWidth()
@@ -218,12 +218,12 @@ fun ViewUserProfileScreen(
                               verticalAlignment = Alignment.CenterVertically,
                               modifier =
                                   Modifier.fillMaxWidth()
-                                      .padding(horizontal = Dimens.SpacingXLarge)) {
+                                      .padding(horizontal = Dimens.PaddingDefault)) {
                                 Icon(
                                     imageVector = Icons.Outlined.Forum,
                                     contentDescription = null,
                                     tint = TextColor)
-                                Spacer(Modifier.width(Dimens.PaddingMedium))
+                                Spacer(Modifier.width(Dimens.SpacingLarge))
                                 Text(
                                     text = stringResource(R.string.view_user_profile_send_message),
                                     style = MaterialTheme.typography.bodyLarge.copy(),
@@ -236,7 +236,7 @@ fun ViewUserProfileScreen(
                 // Block user row (enabled only when ownerId is non-null and not current user)
                 if (!isCurrentUser && ownerId != null && realVm != null) {
                   item {
-                    Spacer(Modifier.height(Dimens.PaddingMedium))
+                    Spacer(Modifier.height(Dimens.SpacingLarge))
                     val isBlocked = ui.isBlocked
                     val buttonColor = if (isBlocked) MainColor else Red
                     val textColor = if (isBlocked) BackGroundColor else White
@@ -265,7 +265,7 @@ fun ViewUserProfileScreen(
                             }
                           }
                         },
-                        shape = RoundedCornerShape(Dimens.PaddingMedium),
+                        shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
                         color = buttonColor,
                         modifier =
                             Modifier.fillMaxWidth()
@@ -275,12 +275,12 @@ fun ViewUserProfileScreen(
                               verticalAlignment = Alignment.CenterVertically,
                               modifier =
                                   Modifier.fillMaxWidth()
-                                      .padding(horizontal = Dimens.SpacingXLarge)) {
+                                      .padding(horizontal = Dimens.PaddingDefault)) {
                                 Icon(
                                     imageVector = Icons.Outlined.ReportProblem,
                                     contentDescription = null,
                                     tint = iconColor)
-                                Spacer(Modifier.width(Dimens.PaddingMedium))
+                                Spacer(Modifier.width(Dimens.SpacingLarge))
                                 Text(
                                     text = buttonText,
                                     style = MaterialTheme.typography.bodyLarge.copy(),

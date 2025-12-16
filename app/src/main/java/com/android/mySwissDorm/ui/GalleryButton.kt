@@ -226,7 +226,7 @@ fun DefaultGalleryButton(
       permissionContract = permissionContract,
       choosePictureContract = choosePictureContract) {
         Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
-        Spacer(Modifier.width(Dimens.PaddingSmall))
+        Spacer(Modifier.width(Dimens.SpacingDefault))
         Text(text = stringResource(R.string.gallery_button_default_text))
       }
 }
@@ -267,7 +267,7 @@ fun DefaultGalleryButtonMultiplePick(
       permissionContract = permissionContract,
       choosePicturesContract = choosePicturesContract) {
         Icon(Icons.Default.Photo, null, tint = if (enabled) MainColor else TextColor)
-        Spacer(Modifier.width(Dimens.PaddingSmall))
+        Spacer(Modifier.width(Dimens.SpacingDefault))
         Text(text = stringResource(R.string.gallery_button_default_multiple_text))
       }
 }

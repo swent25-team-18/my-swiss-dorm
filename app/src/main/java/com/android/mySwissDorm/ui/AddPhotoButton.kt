@@ -119,7 +119,7 @@ fun AddPhotoDialog(
       Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Column(
             modifier = Modifier.fillMaxWidth(0.8f).padding(vertical = Dimens.PaddingMedium),
-            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge),
             horizontalAlignment = Alignment.CenterHorizontally) {
               CameraButton(
                   onSave = { onSelectPhoto(it) },
@@ -189,7 +189,7 @@ fun DefaultAddPhotoButton(onSelectPhoto: (Photo) -> Unit, multiplePick: Boolean 
               disabledContainerColor = TextBoxColor),
       multiplePick = multiplePick) {
         Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
-        Spacer(Modifier.width(Dimens.PaddingSmall))
+        Spacer(Modifier.width(Dimens.SpacingDefault))
         Text(stringResource(R.string.add_photo_button_default_text))
       }
 }

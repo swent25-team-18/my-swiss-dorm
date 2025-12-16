@@ -185,7 +185,7 @@ fun ViewListingScreen(
                           modifier =
                               Modifier.fillMaxWidth(0.6f)
                                   .testTag(C.ViewListingTags.BLOCKED_BACK_BTN),
-                          shape = RoundedCornerShape(Dimens.PaddingMedium),
+                          shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
                           colors =
                               ButtonDefaults.buttonColors(
                                   containerColor = MainColor, contentColor = White)) {
@@ -278,7 +278,7 @@ fun ViewListingScreen(
                   Row(
                       modifier = Modifier.padding(start = Dimens.PaddingDefault, top = 2.dp),
                       verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
+                      horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(Dimens.IconSizeMedium),
                             strokeWidth = 2.dp,
@@ -379,7 +379,7 @@ fun ViewListingScreen(
                                       alpha = Dimens.AlphaSecondary)),
                       modifier = Modifier.padding(start = Dimens.PaddingDefault, top = 2.dp))
                 }
-                Spacer(Modifier.height(Dimens.PaddingSmall))
+                Spacer(Modifier.height(Dimens.SpacingDefault))
 
                 // Bullet section
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
@@ -439,7 +439,7 @@ fun ViewListingScreen(
                 if (listingUIState.isGuest) {
                   // The guest user has to sign in to apply to a listing when they view it
                   Box(
-                      modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.SpacingXLarge),
+                      modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.PaddingDefault),
                       contentAlignment = Alignment.Center) {
                         Text(
                             text = stringResource(R.string.view_listing_sign_in_to_apply),
@@ -467,7 +467,7 @@ fun ViewListingScreen(
                   if (hasExistingMessage) {
                     // Show message that user has already sent a message
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.SpacingXLarge),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.PaddingDefault),
                         contentAlignment = Alignment.Center) {
                           Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
@@ -475,7 +475,7 @@ fun ViewListingScreen(
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MainColor,
                                 fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(Dimens.PaddingSmall))
+                            Spacer(modifier = Modifier.height(Dimens.SpacingDefault))
                             Text(
                                 text =
                                     stringResource(R.string.view_listing_please_wait_for_response),
@@ -556,7 +556,7 @@ private fun SectionCard(
       tonalElevation = 0.dp) {
         Column(
             modifier = Modifier.padding(Dimens.PaddingDefault),
-            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingTopSmall),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingTiny),
             content = content)
       }
 }

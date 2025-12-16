@@ -95,7 +95,7 @@ fun AddReviewScreen(
                     Text(stringResource(R.string.add_review_submit), color = White)
                   }
                 }
-            Spacer(Modifier.height(Dimens.PaddingSmall))
+            Spacer(Modifier.height(Dimens.SpacingDefault))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
                   stringResource(R.string.add_review_invalid_form_text),
@@ -120,7 +120,7 @@ fun AddReviewScreen(
                 .padding(padding)
                 .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingTopSmall)
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
               TitleField(
                   value = ui.title,
                   onValueChange = { addReviewViewModel.setTitle(it) },
@@ -184,7 +184,7 @@ fun AddReviewScreen(
               Row(
                   modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
                     Text(
                         text = stringResource(R.string.add_review_rating),
                         color = TextColor,
@@ -219,7 +219,7 @@ fun AddReviewScreen(
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingTopSmall)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingTiny)) {
                     DefaultAddPhotoButton(onSelectPhoto = { addReviewViewModel.addPhoto(it) })
                     ImageGrid(
                         imageUris = ui.images.map { it.image }.toSet(),

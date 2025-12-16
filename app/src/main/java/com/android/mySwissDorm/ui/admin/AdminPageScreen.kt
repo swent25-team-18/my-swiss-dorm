@@ -65,8 +65,7 @@ import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 
 object AdminPageScreenSizes {
-  val CITY_IMAGE_HEIGHT = Dimens.IconSizeButton * 3
-  val VERTICAL_SPACE_EL = Dimens.IconSizeSmall
+  val AdminImageHeight = Dimens.IconSizeButton * 3
 }
 
 // Documentation was made with the help of AI
@@ -139,8 +138,8 @@ fun AdminPageScreen(
             })
       },
       bottomBar = {
-        Surface(shadowElevation = Dimens.PaddingSmall) {
-          Column(Modifier.padding(Dimens.SpacingXLarge)) {
+        Surface(shadowElevation = Dimens.PaddingDefault) {
+          Column(Modifier.padding(Dimens.PaddingDefault)) {
             Button(
                 onClick = { vm.submit(context) },
                 enabled = !ui.isSubmitting,
@@ -149,12 +148,12 @@ fun AdminPageScreen(
                     Modifier.fillMaxWidth()
                         .height(Dimens.ButtonHeight)
                         .testTag(C.AdminPageTags.SAVE_BUTTON),
-                shape = RoundedCornerShape(Dimens.IconSizeLarge)) {
+                shape = RoundedCornerShape(Dimens.CornerRadiusDefault)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(Dimens.IconSizeLarge),
+                        modifier = Modifier.size(Dimens.CircularProgressIndicatorSize),
                         color = White,
-                        strokeWidth = 2.dp)
+                        strokeWidth = Dimens.CircularProgressIndicatorStrokeWidth)
                   } else {
                     Text(stringResource(R.string.save), color = White)
                   }
@@ -167,11 +166,11 @@ fun AdminPageScreen(
                 .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingTopSmall)
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(AdminPageScreenSizes.VERTICAL_SPACE_EL)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
               // First row: City, Residency, University
               Row(
                   modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall),
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault),
                   verticalAlignment = Alignment.CenterVertically) {
                     EntityChip(
                         text = stringResource(R.string.city),
@@ -195,7 +194,7 @@ fun AdminPageScreen(
               // Second row: Admin
               Row(
                   modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall),
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault),
                   verticalAlignment = Alignment.CenterVertically) {
                     EntityChip(
                         text = stringResource(R.string.admin),
@@ -241,7 +240,7 @@ fun AdminPageScreen(
                       imeAction = ImeAction.Next)
                   Column(
                       verticalArrangement =
-                          Arrangement.spacedBy(AdminPageScreenSizes.VERTICAL_SPACE_EL),
+                          Arrangement.spacedBy(Dimens.SpacingSmall),
                       horizontalAlignment = Alignment.CenterHorizontally) {
                         DefaultAddPhotoButton(onSelectPhoto = vm::onImage)
                         if (ui.image != null) {
@@ -249,10 +248,10 @@ fun AdminPageScreen(
                           val cityNormalRate =
                               HomePageScreenSizes.CITY_IMAGE_HEIGHT.value / cityHomePageWidth
                           val cityNormalWidth =
-                              (AdminPageScreenSizes.CITY_IMAGE_HEIGHT.value / cityNormalRate).dp
+                              (AdminPageScreenSizes.AdminImageHeight.value / cityNormalRate).dp
                           ImageGrid(
                               imageUris = setOf(ui.image.image),
-                              imageHeight = AdminPageScreenSizes.CITY_IMAGE_HEIGHT,
+                              imageHeight = AdminPageScreenSizes.AdminImageHeight,
                               imageWidth = cityNormalWidth,
                               isEditingMode = true,
                               onRemove = { vm.onImage(null) },
@@ -385,7 +384,7 @@ fun AdminPageScreen(
                           imageVector = Icons.Default.Place,
                           contentDescription = stringResource(R.string.location),
                           tint = MainColor)
-                      Spacer(Modifier.width(Dimens.PaddingSmall))
+                      Spacer(Modifier.width(Dimens.SpacingDefault))
                       Text(
                           text =
                               ui.location?.name
@@ -394,7 +393,7 @@ fun AdminPageScreen(
                     }
               }
 
-              Spacer(Modifier.height(Dimens.SpacingXLarge))
+              Spacer(Modifier.height(Dimens.SpacingLarge))
             }
 
         // Custom Location Dialog

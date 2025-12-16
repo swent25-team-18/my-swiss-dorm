@@ -55,7 +55,7 @@ fun SignInPopUp(onSignInClick: () -> Unit, onBack: () -> Unit, title: String) {
                   color = BackGroundColor,
                   contentColor = TextColor,
                   shape = RoundedCornerShape(Dimens.CardCornerRadius),
-                  modifier = Modifier.fillMaxWidth(0.8f).padding(Dimens.SpacingXLarge)) {
+                  modifier = Modifier.fillMaxWidth(0.8f).padding(Dimens.PaddingDefault)) {
                     Column(
                         modifier = Modifier.padding(Dimens.PaddingLarge),
                         horizontalAlignment = Alignment.CenterHorizontally,

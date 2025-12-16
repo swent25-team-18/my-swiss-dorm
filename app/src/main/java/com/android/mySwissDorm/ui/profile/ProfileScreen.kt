@@ -313,7 +313,7 @@ private fun ProfileScreenContent(
               // Name row: First name | Last name (equal widths via weight)
               Row(
                   modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
                     EditableTextField(
                         label = stringResource(R.string.first_name),
                         value = if (state.isEditing) firstLocal else state.firstName,
@@ -379,9 +379,9 @@ private fun ProfileScreenContent(
                     },
                     modifier =
                         Modifier.fillMaxWidth()
-                            .padding(top = Dimens.SpacingXLarge)
+                            .padding(top = Dimens.PaddingDefault)
                             .height(Dimens.ButtonHeight)
-                            .clip(RoundedCornerShape(Dimens.PaddingMedium))
+                            .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                             .testTag(C.ProfileTags.SAVE_BUTTON),
                     colors =
                         ButtonDefaults.buttonColors(
@@ -463,9 +463,9 @@ private fun ProfileScreenContent(
                     onClick = onLogout,
                     modifier =
                         Modifier.fillMaxWidth()
-                            .padding(top = Dimens.SpacingXLarge)
+                            .padding(top = Dimens.PaddingDefault)
                             .height(Dimens.ButtonHeight)
-                            .clip(RoundedCornerShape(Dimens.PaddingMedium))
+                            .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                             .testTag("profile_logout_button"),
                     colors =
                         ButtonDefaults.buttonColors(
@@ -508,7 +508,7 @@ fun EditableTextField(
       label = { Text(text = label, color = Gray) },
       modifier = modifier.height(Dimens.ImageSizeSmall).testTag(tag),
       placeholder = { Text(text = label) },
-      shape = RoundedCornerShape(Dimens.PaddingMedium),
+      shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
       colors =
           TextFieldDefaults.colors(
               unfocusedIndicatorColor = Gray,
@@ -567,7 +567,7 @@ private fun DropdownField(
                 } else {
                   null
                 },
-            shape = RoundedCornerShape(Dimens.PaddingMedium),
+            shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
             modifier =
                 Modifier.menuAnchor().fillMaxWidth().height(Dimens.ImageSizeSmall).testTag(tag),
             colors =
@@ -585,7 +585,7 @@ private fun DropdownField(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            shape = RoundedCornerShape(Dimens.PaddingMedium)) {
+            shape = RoundedCornerShape(Dimens.CornerRadiusDefault)) {
               options.forEach { item ->
                 DropdownMenuItem(
                     text = { Text(item.toString()) },
@@ -612,7 +612,7 @@ private fun RestartDialog(onDismissRequest: () -> Unit, onRestart: () -> Unit) {
       Column(
           modifier = Modifier.fillMaxWidth().padding(Dimens.PaddingSmall),
           horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
+          verticalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
             Text(stringResource(R.string.profile_must_restart_pop_up), textAlign = TextAlign.Center)
             Row(
                 modifier = Modifier.fillMaxWidth(1f),

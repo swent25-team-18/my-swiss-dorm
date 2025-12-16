@@ -120,7 +120,7 @@ fun MapOverviewScreen(
           Box(
               modifier =
                   Modifier.align(Alignment.CenterEnd)
-                      .padding(Dimens.SpacingXLarge)
+                      .padding(Dimens.PaddingDefault)
                       .width(Dimens.DialogWidth)) {
                 if (group.size == 1) {
                   SmallListingPreviewCard(

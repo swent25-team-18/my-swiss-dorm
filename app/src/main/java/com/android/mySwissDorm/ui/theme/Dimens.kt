@@ -5,16 +5,24 @@ import androidx.compose.ui.unit.dp
 /**
  * Common dimension values used throughout the app. These replace hard-coded values for better
  * maintainability and consistency.
+ *
+ * Note on Padding vs Spacing:
+ * - Padding values should be used for Modifier.padding() - padding is spacing in all directions
+ * - Spacing values should be used for Spacer components and Arrangement.spacedBy()
+ * While padding is conceptually spacing in all directions, we maintain separate constants
+ * for semantic clarity and to ensure consistency across the codebase.
  */
 object Dimens {
-  // Padding
+  // Padding (for Modifier.padding() - spacing in all directions)
   val PaddingXSmall = 4.dp
   val PaddingSmall = 8.dp
   val PaddingMedium = 12.dp
   val PaddingDefault = 16.dp
   val PaddingLarge = 24.dp
+  val PaddingHorizontalLarge = 32.dp
+  val PaddingTopSmall = 10.dp
 
-  // Spacing (for Spacer components)
+  // Spacing (for Spacer components and Arrangement.spacedBy())
   val SpacingXSmall = 3.dp
   val SpacingSmall = 4.dp
   val SpacingTiny = 5.dp
@@ -51,6 +59,13 @@ object Dimens {
   val CardImageHeight = 140.dp
   val CardCornerRadius = 12.dp
 
+  // Corner radius (for RoundedCornerShape - separate from padding for modularity)
+  val CornerRadiusSmall = 4.dp
+  val CornerRadiusMedium = 8.dp
+  val CornerRadiusDefault = 12.dp
+  val CornerRadiusLarge = 16.dp
+  val CornerRadiusXLarge = 20.dp
+
   // Dialog dimensions
   val DialogWidth = 260.dp
   val DialogQRCodeSize = 280.dp
@@ -66,11 +81,15 @@ object Dimens {
   val SpacerHeightSmall = 160.dp
   val SpacerHeightLarge = 225.dp
 
-  // Horizontal padding (for lists and content)
-  val PaddingHorizontalLarge = 32.dp
+  // CircularProgressIndicator dimensions
+  val CircularProgressIndicatorSize = 24.dp
+  val CircularProgressIndicatorSizeLarge = 64.dp
+  val CircularProgressIndicatorStrokeWidth = 2.dp
 
-  // Vertical padding (for top spacing)
-  val PaddingTopSmall = 10.dp
+  // Border width (for border modifiers)
+  val BorderWidthXSmall = 2.dp
+  val BorderWidthSmall = 3.dp
+  val BorderWidthDefault = 4.dp
 
   // Alpha values
   val AlphaLow = 0.2f

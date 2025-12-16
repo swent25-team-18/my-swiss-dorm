@@ -76,7 +76,7 @@ fun BookmarkedListingsScreen(
                       text = stringResource(R.string.bookmarked_listings_no_bookmarks_yet),
                       style = MaterialTheme.typography.bodyLarge,
                       color = TextColor,
-                      modifier = Modifier.align(Alignment.Center).padding(Dimens.SpacingXLarge))
+                      modifier = Modifier.align(Alignment.Center).padding(Dimens.PaddingDefault))
                 }
                 else -> {
                   LazyColumn(
@@ -84,7 +84,7 @@ fun BookmarkedListingsScreen(
                       contentPadding =
                           PaddingValues(
                               horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingSmall),
-                      verticalArrangement = Arrangement.spacedBy(Dimens.PaddingMedium)) {
+                      verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
                         items(uiState.listings, key = { it.listingUid }) { listing ->
                           ListingCard(
                               data = listing,

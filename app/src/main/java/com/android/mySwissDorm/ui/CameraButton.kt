@@ -151,7 +151,7 @@ fun DefaultCameraButton(
       contentPadding = contentPadding,
       interactionSource = interactionSource) {
         Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
-        Spacer(Modifier.width(Dimens.PaddingSmall))
+        Spacer(Modifier.width(Dimens.SpacingDefault))
         Text(text = stringResource(R.string.camera_button_default_text))
       }
 }

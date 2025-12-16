@@ -150,7 +150,7 @@ fun MultiListingCarouselCard(
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .background(White, RoundedCornerShape(Dimens.PaddingMedium))
+                .background(White, RoundedCornerShape(Dimens.CornerRadiusDefault))
                 .padding(Dimens.PaddingXSmall),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
@@ -269,7 +269,7 @@ fun SmallListingPreviewCard(
                               .padding(Dimens.PaddingSmall)
                               .background(
                                   Dark.copy(alpha = Dimens.AlphaSecondary),
-                                  RoundedCornerShape(Dimens.PaddingXSmall))
+                                  RoundedCornerShape(Dimens.CornerRadiusSmall))
                               .padding(horizontal = Dimens.PaddingXSmall, vertical = 2.dp)
                               .testTag(C.SharedMapTags.IMAGE_COUNTER))
                 }
@@ -283,7 +283,7 @@ fun SmallListingPreviewCard(
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis,
                   color = Black)
-              Spacer(modifier = Modifier.height(Dimens.PaddingXSmall))
+              Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
               Text(
                   text = listing.leftBullets.getOrNull(1) ?: "",
                   style = MaterialTheme.typography.bodyMedium,
@@ -304,7 +304,7 @@ fun SmallListingPreviewCard(
                       .padding(Dimens.PaddingXSmall)
                       .background(
                           Dark.copy(alpha = Dimens.AlphaMedium),
-                          RoundedCornerShape(Dimens.PaddingSmall))
+                          RoundedCornerShape(Dimens.CornerRadiusMedium))
                       .clickable(onClick = onClose)
                       .padding(Dimens.PaddingXSmall)) {
                 Icon(

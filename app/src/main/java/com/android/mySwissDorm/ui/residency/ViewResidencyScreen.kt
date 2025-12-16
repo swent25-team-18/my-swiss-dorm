@@ -135,7 +135,7 @@ private fun ViewResidencyContent(
 @Composable
 private fun LoadingView(paddingValues: PaddingValues) {
   Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-    CircularProgressIndicator(modifier = Modifier.size(64.dp).testTag(C.ViewResidencyTags.LOADING))
+    CircularProgressIndicator(modifier = Modifier.size(Dimens.CircularProgressIndicatorSizeLarge).testTag(C.ViewResidencyTags.LOADING))
   }
 }
 

@@ -117,7 +117,7 @@ fun MyChatScreen(
     // Fake chat UI for preview only
     Column(
         modifier = modifier.fillMaxSize().padding(Dimens.PaddingDefault),
-        verticalArrangement = Arrangement.spacedBy(Dimens.PaddingSmall)) {
+        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
           Text("Chat with: $channelId (preview)")
           repeat(4) { Text("Message $it: Hello") }
         }

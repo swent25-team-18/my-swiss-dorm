@@ -123,9 +123,9 @@ fun HomePageScreen(
                                 vertical = Dimens.PaddingSmall,
                                 horizontal = Dimens.PaddingHorizontalLarge)
                             .border(
-                                Dimens.SpacingSmall,
+                                Dimens.BorderWidthXSmall,
                                 TextColor,
-                                RoundedCornerShape(Dimens.PaddingLarge)),
+                                RoundedCornerShape(Dimens.CornerRadiusLarge)),
                     value = inputText,
                     onValueChange = { inputText = it },
                     placeholder = {
@@ -156,7 +156,7 @@ fun HomePageScreen(
                     imageVector = Icons.Default.Place,
                     contentDescription = "Custom Location",
                     tint = MainColor)
-                Spacer(modifier = Modifier.width(Dimens.PaddingXSmall))
+                Spacer(modifier = Modifier.width(Dimens.SpacingXSmall))
                 Text(text = stringResource(R.string.custom_location), color = MainColor)
               }
 
@@ -229,8 +229,8 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
       modifier =
           Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCard(city.name))
               .fillMaxWidth()
-              .padding(vertical = Dimens.SpacingMedium)
-              .border(Dimens.SpacingSmall, TextColor, RoundedCornerShape(Dimens.PaddingTopSmall))
+              .padding(vertical = Dimens.PaddingMedium)
+              .border(Dimens.BorderWidthXSmall, TextColor, RoundedCornerShape(Dimens.CornerRadiusDefault))
               .clickable { onClick() },
   ) {
     Box {
@@ -249,7 +249,7 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
                 color = TextColor,
                 fontWeight = FontWeight.Black,
                 fontSize = 20.sp)
-            Spacer(modifier = Modifier.height(Dimens.PaddingSmall))
+            Spacer(modifier = Modifier.height(Dimens.SpacingDefault))
             Text(
                 modifier =
                     Modifier.testTag(

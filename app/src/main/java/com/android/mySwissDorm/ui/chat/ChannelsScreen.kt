@@ -347,7 +347,7 @@ fun ChannelsScreen(
                 modifier =
                     Modifier.testTag(C.ChannelsScreenTestTags.SEARCH_BAR)
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(Dimens.PaddingLarge))
+                        .clip(RoundedCornerShape(Dimens.CornerRadiusLarge))
                         .focusRequester(focusRequester)
                         .onFocusChanged { focusState ->
                           if (focusState.isFocused) {
@@ -369,7 +369,7 @@ fun ChannelsScreen(
                         focusedTextColor = TextColor,
                         unfocusedTextColor = TextColor,
                         cursorColor = TextColor),
-                shape = RoundedCornerShape(Dimens.PaddingLarge))
+                shape = RoundedCornerShape(Dimens.CornerRadiusLarge))
           }
 
       // Channel list
@@ -576,7 +576,7 @@ internal fun ChannelItem(
               }
         }
 
-        Spacer(modifier = Modifier.width(Dimens.PaddingMedium))
+        Spacer(modifier = Modifier.width(Dimens.SpacingLarge))
 
         // Name and message
         Column(modifier = Modifier.weight(1f)) {
@@ -601,7 +601,7 @@ internal fun ChannelItem(
                 }
               }
 
-          Spacer(modifier = Modifier.height(Dimens.PaddingXSmall))
+          Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
 
           Row(
               modifier = Modifier.fillMaxWidth(),
@@ -629,7 +629,7 @@ internal fun ChannelItem(
                                   color = White)
                             }
                       }
-                  Spacer(modifier = Modifier.width(Dimens.PaddingSmall))
+                  Spacer(modifier = Modifier.width(Dimens.SpacingDefault))
                 }
               }
         }

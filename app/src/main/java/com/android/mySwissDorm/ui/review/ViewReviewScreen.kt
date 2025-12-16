@@ -315,7 +315,7 @@ private fun SectionCard(
       tonalElevation = 0.dp) {
         Column(
             modifier = Modifier.padding(Dimens.PaddingDefault),
-            verticalArrangement = Arrangement.spacedBy(Dimens.PaddingTopSmall),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingTiny),
             content = content)
       }
 }

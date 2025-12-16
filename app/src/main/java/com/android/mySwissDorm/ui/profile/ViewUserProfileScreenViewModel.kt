@@ -127,9 +127,7 @@ class ViewProfileScreenViewModel(
                     }
                     .getOrElse {
                       Log.d(
-                          "ViewUserProfileViewModel",
-                          "Failed to retrieve the image $fileName",
-                          it)
+                          "ViewUserProfileViewModel", "Failed to retrieve the image $fileName", it)
                       null
                     }
               }

@@ -514,9 +514,12 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
+    // Wait for blocked notice UI to appear
     compose.waitUntil(10_000) {
-      val s = vm.uiState.value
-      s.listing.uid == ownerListing.uid && s.isBlockedByOwner
+      compose
+          .onAllNodesWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
     compose
@@ -544,9 +547,12 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
+    // Wait for blocked back button UI to appear
     compose.waitUntil(10_000) {
-      val s = vm.uiState.value
-      s.listing.uid == ownerListing.uid && s.isBlockedByOwner
+      compose
+          .onAllNodesWithTag(C.ViewListingTags.BLOCKED_BACK_BTN, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
     compose.onNodeWithTag(C.ViewListingTags.BLOCKED_BACK_BTN, useUnmergedTree = true).performClick()
@@ -691,9 +697,12 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
+    // Wait for blocked notice UI to appear
     compose.waitUntil(10_000) {
-      val s = vm.uiState.value
-      s.listing.uid == ownerListing.uid && s.isBlockedByOwner
+      compose
+          .onAllNodesWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
     // Blocked users should see blocked notice, not the apply button
@@ -916,9 +925,12 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
+    // Wait for blocked notice UI to appear
     compose.waitUntil(10_000) {
-      val s = vm.uiState.value
-      s.listing.uid == ownerListing.uid && s.isBlockedByOwner
+      compose
+          .onAllNodesWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
     // When blocked, should show blocked notice instead of apply button

@@ -152,7 +152,9 @@ class Epic3Test : FirestoreTest() {
         try {
           composeTestRule.waitUntil(timeoutMillis = 5_000) {
             composeTestRule
-                .onAllNodesWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+                .onAllNodesWithTag(
+                    HomePageScreenTestTags.getTestTagForCityCard("Lausanne"),
+                    useUnmergedTree = true)
                 .fetchSemanticsNodes()
                 .isNotEmpty()
           }

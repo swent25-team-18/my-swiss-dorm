@@ -150,6 +150,7 @@ class Epic4Test : FirestoreTest() {
       composeTestRule.waitUntil(timeoutMillis = 15_000) {
         composeTestRule
             .onNodeWithTag(HomePageScreenTestTags.getTestTagForCityCard("Lausanne"))
+            .performScrollTo()
             .isDisplayed()
       }
     } catch (e: Throwable) {

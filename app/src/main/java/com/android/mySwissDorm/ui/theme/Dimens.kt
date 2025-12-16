@@ -8,9 +8,9 @@ import androidx.compose.ui.unit.dp
  *
  * Note on Padding vs Spacing:
  * - Padding values should be used for Modifier.padding() - padding is spacing in all directions
- * - Spacing values should be used for Spacer components and Arrangement.spacedBy()
- * While padding is conceptually spacing in all directions, we maintain separate constants
- * for semantic clarity and to ensure consistency across the codebase.
+ * - Spacing values should be used for Spacer components and Arrangement.spacedBy() While padding is
+ *   conceptually spacing in all directions, we maintain separate constants for semantic clarity and
+ *   to ensure consistency across the codebase.
  */
 object Dimens {
   // Padding (for Modifier.padding() - spacing in all directions)

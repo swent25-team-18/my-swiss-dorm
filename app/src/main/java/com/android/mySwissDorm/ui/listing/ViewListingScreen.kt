@@ -467,7 +467,8 @@ fun ViewListingScreen(
                   if (hasExistingMessage) {
                     // Show message that user has already sent a message
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.PaddingDefault),
+                        modifier =
+                            Modifier.fillMaxWidth().padding(vertical = Dimens.PaddingDefault),
                         contentAlignment = Alignment.Center) {
                           Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(

@@ -230,7 +230,10 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
           Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCard(city.name))
               .fillMaxWidth()
               .padding(vertical = Dimens.PaddingMedium)
-              .border(Dimens.BorderWidthXSmall, TextColor, RoundedCornerShape(Dimens.CornerRadiusDefault))
+              .border(
+                  Dimens.BorderWidthXSmall,
+                  TextColor,
+                  RoundedCornerShape(Dimens.CornerRadiusDefault))
               .clickable { onClick() },
   ) {
     Box {

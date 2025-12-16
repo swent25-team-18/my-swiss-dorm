@@ -239,8 +239,7 @@ fun AdminPageScreen(
                       placeholder = stringResource(R.string.description),
                       imeAction = ImeAction.Next)
                   Column(
-                      verticalArrangement =
-                          Arrangement.spacedBy(Dimens.SpacingSmall),
+                      verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
                       horizontalAlignment = Alignment.CenterHorizontally) {
                         DefaultAddPhotoButton(onSelectPhoto = vm::onImage)
                         if (ui.image != null) {

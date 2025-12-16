@@ -42,6 +42,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
@@ -50,8 +51,11 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.Transparent
 import com.android.mySwissDorm.ui.theme.White
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.storage
 import io.getstream.chat.android.client.api.models.QueryChannelsRequest
 import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.Filters
@@ -61,6 +65,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
@@ -81,11 +86,43 @@ suspend fun defaultFetchChannelsForTest(
 }
 
 suspend fun defaultEnsureConnected(currentUser: FirebaseUser) {
-  val displayName = currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
-  withTimeout(10000) {
-    StreamChatProvider.connectUser(
-        firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = "")
-  }
+  defaultEnsureConnected(
+      currentUser = currentUser,
+      profileRepository = ProfileRepositoryProvider.repository,
+      firebasePhotoDownloadUrl = { fileName -> getFirebasePhotoDownloadUrl(fileName) },
+      connectUser = { id, name, imageUrl ->
+        StreamChatProvider.connectUser(firebaseUserId = id, displayName = name, imageUrl = imageUrl)
+      },
+      timeoutBlock = { block -> withTimeout(10000) { block() } },
+  )
+}
+
+internal suspend fun defaultEnsureConnected(
+    currentUser: FirebaseUser,
+    profileRepository: ProfileRepository,
+    firebasePhotoDownloadUrl: suspend (String) -> String,
+    connectUser: suspend (String, String, String) -> Unit,
+    timeoutBlock: suspend (suspend () -> Unit) -> Unit,
+) {
+  val profile = profileRepository.getProfile(currentUser.uid)
+  val displayName =
+      "${profile.userInfo.name} ${profile.userInfo.lastName}".trim().ifBlank {
+        currentUser.displayName ?: "User ${currentUser.uid.take(5)}"
+      }
+  val imageUrl =
+      profile.userInfo.profilePicture
+          ?.takeIf { it.isNotBlank() }
+          ?.let { runCatching { firebasePhotoDownloadUrl(it) }.getOrNull().orEmpty() }
+          .orEmpty()
+  timeoutBlock { connectUser(currentUser.uid, displayName, imageUrl) }
+}
+
+/** Local helper to build a Firebase Storage download URL for Stream user image. */
+internal suspend fun getFirebasePhotoDownloadUrl(
+    fileName: String,
+    storageRef: StorageReference = Firebase.storage.reference,
+): String {
+  return storageRef.child("photos/$fileName").downloadUrl.await().toString()
 }
 
 suspend fun loadChannelsDefault(
@@ -189,7 +226,8 @@ fun ChannelsScreen(
   var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
   var isLoading by remember { mutableStateOf(true) }
   val coroutineScope = rememberCoroutineScope()
-  var isLoadInProgress by remember { mutableStateOf(false) }
+  // Cache of resolved names (from ProfileRepository) to make search match what the UI shows.
+  val resolvedNameCache = remember { mutableStateMapOf<String, String>() }
 
   // Provide injectable hooks (used by tests) with sensible defaults
   val effectiveIsStreamInitialized = isStreamInitialized ?: { StreamChatProvider.isInitialized() }
@@ -254,6 +292,33 @@ fun ChannelsScreen(
     loadChannels()
   }
 
+  // Resolve other-user full names once channels are loaded.
+  // Stream often doesn't populate member.user.name reliably, but ChannelItem fetches Profile names,
+  // so search must use the same source to "work".
+  LaunchedEffect(channels) {
+    val currentUid = currentUser.uid
+    val idsToResolve =
+        channels.mapNotNull { channel -> otherUserIdFromChannel(channel, currentUid) }.distinct()
+
+    idsToResolve.forEach { otherId ->
+      if (resolvedNameCache.containsKey(otherId)) return@forEach
+      coroutineScope.launch {
+        val fullName =
+            withContext(Dispatchers.IO) {
+              runCatching {
+                    val profile = ProfileRepositoryProvider.repository.getProfile(otherId)
+                    "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                  }
+                  .getOrNull()
+                  .orEmpty()
+            }
+        if (fullName.isNotBlank()) {
+          resolvedNameCache[otherId] = fullName
+        }
+      }
+    }
+  }
+
   // Pull-to-refresh state
   var isRefreshing by remember { mutableStateOf(false) }
   val pullRefreshState =
@@ -269,20 +334,20 @@ fun ChannelsScreen(
 
   // Search state
   var searchQuery by remember { mutableStateOf("") }
-  val filteredChannels =
-      remember(channels, searchQuery) {
-        if (searchQuery.isBlank()) {
-          channels
-        } else {
-          channels.filter { channel ->
-            val otherMember = channel.members.find { it.user.id != currentUser.uid }
-            val otherName = otherMember?.user?.name ?: ""
-            otherName.contains(searchQuery, ignoreCase = true) ||
-                channel.messages.lastOrNull()?.text?.contains(searchQuery, ignoreCase = true) ==
-                    true
-          }
-        }
+  val filteredChannels by remember {
+    derivedStateOf {
+      val query = searchQuery.trim()
+      if (query.isBlank()) return@derivedStateOf channels
+
+      channels.filter { channel ->
+        channelMatchesSearchQuery(
+            channel = channel,
+            currentUserId = currentUser.uid,
+            resolvedNameCache = resolvedNameCache,
+            query = query)
       }
+    }
+  }
 
   Box(modifier = modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
     Column(modifier = Modifier.fillMaxSize().testTag(C.ChannelsScreenTestTags.ROOT)) {
@@ -396,7 +461,7 @@ fun ChannelsScreen(
             }
       } else {
         LazyColumn(modifier = Modifier.testTag(C.ChannelsScreenTestTags.CHANNELS_LIST)) {
-          items(filteredChannels) { channel ->
+          items(items = filteredChannels, key = { it.cid }) { channel ->
             ChannelItem(
                 channel = channel,
                 currentUserId = currentUser.uid,
@@ -471,8 +536,6 @@ internal fun ChannelItem(
   // Fallback: If name is missing/unknown, try to fetch from ProfileRepository
   var displayedName by remember { mutableStateOf(initialOtherUserName) }
   var displayedImage by remember { mutableStateOf<Any?>(otherUserImage) }
-  val context = LocalContext.current
-  val unknownUserString = stringResource(R.string.channels_screen_unknown_user)
 
   LaunchedEffect(targetUserId) {
     if (targetUserId != null) {
@@ -482,17 +545,12 @@ internal fun ChannelItem(
               ProfileRepositoryProvider.repository.getProfile(targetUserId)
             }
 
-        // Update name if needed
-        val isNameInvalid =
-            displayedName.isBlank() ||
-                displayedName == "Unknown User" ||
-                displayedName == unknownUserString
-
-        if (isNameInvalid) {
-          val fullName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
-          if (fullName.isNotBlank()) {
-            displayedName = fullName
-          }
+        // Prefer showing the profile full name when available.
+        // This keeps the UI consistent with the rest of the app (and with the search behavior),
+        // even if Stream provides a non-empty member.user.name.
+        val fullName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+        if (fullName.isNotBlank() && fullName != displayedName) {
+          displayedName = fullName
         }
 
         // Update image
@@ -666,5 +724,58 @@ internal fun formatMessageTime(timestamp: Date, context: Context): String {
     days == 1L -> context.getString(R.string.channels_screen_yesterday)
     days < 7 -> context.getString(R.string.channels_screen_days_ago, days)
     else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(timestamp)
+  }
+}
+
+/**
+ * Returns true if [channel] should be included for a given [query].
+ *
+ * Extracted into a pure function so it can be covered by fast JVM unit tests (CI-friendly).
+ */
+internal fun channelMatchesSearchQuery(
+    channel: Channel,
+    currentUserId: String,
+    resolvedNameCache: Map<String, String>,
+    query: String,
+): Boolean {
+  val trimmed = query.trim()
+  if (trimmed.isBlank()) return true
+
+  val otherMember = channel.members.find { it.user.id != currentUserId }
+  val streamName = otherMember?.user?.name.orEmpty()
+  val otherId = otherUserIdFromChannel(channel, currentUserId)
+  val resolvedName = otherId?.let { resolvedNameCache[it] }.orEmpty()
+  val lastMessageText = channel.messages.lastOrNull()?.text.orEmpty()
+
+  val haystack =
+      buildString {
+            append(streamName).append(' ')
+            append(resolvedName).append(' ')
+            append(lastMessageText).append(' ')
+            append(channel.name.orEmpty()).append(' ')
+            append(channel.cid)
+          }
+          .lowercase()
+
+  return haystack.contains(trimmed.lowercase())
+}
+
+/** Returns the "other" user id for a 1:1 channel, when possible. */
+private fun otherUserIdFromChannel(channel: Channel, currentUserId: String): String? {
+  // Prefer members list
+  channel.members
+      .firstOrNull { it.user.id != currentUserId }
+      ?.user
+      ?.id
+      ?.let {
+        return it
+      }
+
+  // Fallback: infer from channel.id (uid1-uid2) convention used in this project.
+  val parts = channel.id.split("-")
+  return if (parts.size == 2) {
+    if (parts[0] == currentUserId) parts[1] else parts[0]
+  } else {
+    null
   }
 }

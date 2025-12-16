@@ -85,7 +85,8 @@ fun ListingCard(
                                   style = MaterialTheme.typography.labelSmall,
                                   modifier =
                                       Modifier.padding(
-                                              horizontal = Dimens.PaddingMedium, vertical = Dimens.PaddingXSmall)
+                                              horizontal = Dimens.PaddingMedium,
+                                              vertical = Dimens.PaddingXSmall)
                                           .testTag(RECOMMENDED),
                                   fontSize = 10.sp)
                             }

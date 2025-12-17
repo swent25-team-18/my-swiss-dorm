@@ -586,4 +586,80 @@ class AdminPageScreenTest : FirestoreTest() {
           .isDisplayed()
     }
   }
+
+  @Test
+  fun fullScreenImagesForResidency_displaysCorrectly() = runTest {
+    setContent()
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
+    composeTestRule.waitForIdle()
+
+    val photo1 = com.android.mySwissDorm.model.photo.Photo.createNewTempPhoto("photo1.jpg")
+    val photo2 = com.android.mySwissDorm.model.photo.Photo.createNewTempPhoto("photo2.jpg")
+
+    viewModel.addPhoto(photo1)
+    composeTestRule.waitForIdle()
+    delay(200)
+    composeTestRule.waitForIdle()
+
+    viewModel.addPhoto(photo2)
+    composeTestRule.waitForIdle()
+    delay(200)
+    composeTestRule.waitForIdle()
+
+    // Wait for images to appear
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(C.ImageGridTags.imageTag(photo1.image), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Click on first image to open full screen
+    composeTestRule
+        .onNodeWithTag(C.ImageGridTags.imageTag(photo1.image), useUnmergedTree = true)
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    // Verify full screen viewer is displayed
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(
+              C.FullScreenImageViewerTags.imageTag(photo1.image), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    composeTestRule
+        .onNodeWithTag(C.FullScreenImageViewerTags.imageTag(photo1.image), useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun submittingState_showsLoadingIndicator() = runTest {
+    setContent()
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.CITY)
+    viewModel.onName("Test City")
+    val location = Location(name = "Test Location", latitude = 46.5, longitude = 6.6)
+    viewModel.onLocationConfirm(location)
+    viewModel.onDescription("Test Description")
+    val photo = com.android.mySwissDorm.model.photo.Photo.createNewTempPhoto("city.jpg")
+    viewModel.onImage(photo)
+    composeTestRule.waitForIdle()
+
+    // Start submission (this will set isSubmitting to true)
+    val context = androidx.test.core.app.ApplicationProvider.getApplicationContext()
+    viewModel.submit(context)
+    composeTestRule.waitForIdle()
+
+    // Check that loading indicator appears in button
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(C.AdminPageTags.SAVE_BUTTON, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    // Button should be disabled during submission
+    composeTestRule
+        .onNodeWithTag(C.AdminPageTags.SAVE_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
 }

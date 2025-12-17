@@ -648,4 +648,69 @@ class ViewResidencyViewModelTest : FirestoreTest() {
     viewModel.dismissFullScreenImages()
     assertFalse("Should not show full screen", viewModel.uiState.value.showFullScreenImages)
   }
+
+  @Test
+  fun loadResidency_imageLoadFailure_handlesGracefully() = runTest {
+    val mockPhotoRepository =
+        object : PhotoRepositoryCloud {
+          override suspend fun retrievePhoto(fileName: String): Photo {
+            throw Exception("Photo load error")
+          }
+
+          override suspend fun uploadPhoto(photo: Photo): String = error("unused")
+        }
+
+    val residencyWithImages =
+        Residency(
+            name = "ResidencyWithBrokenImages",
+            description = "Description",
+            location = Location(name = "Lausanne", latitude = 46.5, longitude = 6.6),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null,
+            imageUrls = listOf("broken_image.jpg"))
+
+    residenciesRepository.addResidency(residencyWithImages)
+    advanceUntilIdle()
+
+    val viewModel =
+        ViewResidencyViewModel(
+            residenciesRepository = residenciesRepository,
+            profileRepository = profileRepository,
+            photoRepositoryCloud = mockPhotoRepository)
+
+    viewModel.loadResidency("ResidencyWithBrokenImages", context)
+
+    // Wait for loading to complete
+    var elapsed = 0L
+    val startTime = System.currentTimeMillis()
+    val timeoutMs = 5000L
+    while (elapsed < timeoutMs) {
+      advanceUntilIdle()
+      delay(50)
+      val uiState = viewModel.uiState.value
+      if (!uiState.loading && uiState.residency != null) {
+        // Should still load residency even if images fail
+        assertNotNull("Residency should be loaded", uiState.residency)
+        assertEquals(
+            "Residency name should match", "ResidencyWithBrokenImages", uiState.residency?.name)
+        // Images might be empty or partial due to failures
+        return@runTest
+      }
+      elapsed = System.currentTimeMillis() - startTime
+    }
+    fail("Timeout waiting for residency to load")
+  }
+
+  @Test
+  fun onClickImage_withInvalidIndex_handlesGracefully() {
+    val viewModel = ViewResidencyViewModel()
+
+    // Click on image when there are no images
+    viewModel.onClickImage(0)
+    // Should not crash, state should remain consistent
+    assertFalse(
+        "Should not show full screen when no images", viewModel.uiState.value.showFullScreenImages)
+  }
 }

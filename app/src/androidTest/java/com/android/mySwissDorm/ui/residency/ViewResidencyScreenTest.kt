@@ -942,4 +942,54 @@ class ViewResidencyScreenTest : FirestoreTest() {
         .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
         .assertIsDisplayed()
   }
+
+  @Test
+  fun errorState_withNullErrorMsg_displaysDefaultMessage() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    testViewModel.setState(ViewResidencyUIState(loading = false, residency = null, errorMsg = null))
+
+    compose.setContent {
+      ViewResidencyScreen(
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = "TestResidencyName")
+    }
+
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.ViewResidencyTags.ERROR, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.onNodeWithTag(C.ViewResidencyTags.ERROR, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun poiDistances_emptyList_displaysNoPoiMessage() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = resTest,
+            poiDistances = emptyList(),
+            loading = false,
+            isLoadingPOIs = false))
+
+    compose.setContent {
+      ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
+    }
+
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose
+        .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
 }

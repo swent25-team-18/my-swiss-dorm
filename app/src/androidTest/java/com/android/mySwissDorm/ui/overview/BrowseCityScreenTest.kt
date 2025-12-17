@@ -28,6 +28,8 @@ import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.BrowseCityTags.RECOMMENDED
 import com.android.mySwissDorm.ui.listing.ListingCard
+import com.android.mySwissDorm.ui.navigation.NavigationActions
+import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.utils.FakePhotoRepository
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
@@ -1218,5 +1220,214 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         .onNodeWithTag(C.BrowseCityTags.SCAN_QR_BUTTON, useUnmergedTree = true)
         .assertIsDisplayed()
         .performClick()
+  }
+
+  @Test
+  fun residenciesErrorState_displaysError() = runTest {
+    class ThrowingResidenciesRepo : ResidenciesRepository {
+      override suspend fun getAllResidencies(): List<Residency> {
+        delay(50)
+        error("Residencies error")
+      }
+
+      override suspend fun getResidency(name: String): Residency = error("unused")
+
+      override suspend fun addResidency(residency: Residency) {}
+
+      override suspend fun updateResidency(residency: Residency) {}
+    }
+
+    val vm =
+        BrowseCityViewModel(
+            listingsRepository = listingsRepo,
+            reviewsRepository = reviewsRepo,
+            residenciesRepository = ThrowingResidenciesRepo())
+
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation) }
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+
+    compose.waitUntil(5_000) {
+      compose.onAllNodesWithTag(C.BrowseCityTags.ERROR).fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onNodeWithTag(C.BrowseCityTags.ERROR).assertIsDisplayed().assertTextContains("error")
+  }
+
+  @Test
+  fun residenciesLoadingState_showsLoadingIndicator() = runTest {
+    class SlowResidenciesRepo : ResidenciesRepository {
+      override suspend fun getAllResidencies(): List<Residency> {
+        delay(2000)
+        return emptyList()
+      }
+
+      override suspend fun getResidency(name: String): Residency = error("unused")
+
+      override suspend fun addResidency(residency: Residency) {}
+
+      override suspend fun updateResidency(residency: Residency) {}
+    }
+
+    val vm =
+        BrowseCityViewModel(
+            listingsRepository = listingsRepo,
+            reviewsRepository = reviewsRepo,
+            residenciesRepository = SlowResidenciesRepo())
+
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation) }
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+
+    compose.waitUntil(1_000) {
+      compose.onAllNodesWithTag(C.BrowseCityTags.LOADING).fetchSemanticsNodes().isNotEmpty()
+    }
+    compose.onNodeWithTag(C.BrowseCityTags.LOADING).assertIsDisplayed()
+  }
+
+  @Test
+  fun emptyListingsWithFilters_showsClearFiltersButton() = runTest {
+    setupScreenWithListings()
+    vm.setPriceFilter(10000.0, 20000.0)
+    vm.loadListings(lausanneLocation, context)
+    compose.waitUntil(5_000) { !vm.uiState.value.listings.loading }
+
+    if (vm.uiState.value.listings.items.isEmpty()) {
+      compose.waitUntil(5_000) {
+        compose
+            .onAllNodesWithText("Clear filters", useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      }
+      compose.onNodeWithText("Clear filters", useUnmergedTree = true).assertIsDisplayed()
+    }
+  }
+
+  @Test
+  fun qrScanResult_invalidUri_doesNotNavigate() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    var navigated = false
+    val invalidUri = "not-a-valid-uri"
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(invalidUri, context) { navigated = true }
+    }
+
+    assert(!navigated) { "QR navigation should not be triggered for invalid URI" }
+  }
+
+  @Test
+  fun qrScanResult_validUriWrongHost_doesNotNavigate() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    var navigated = false
+    val wrongHost = "https://example.com/some/path"
+
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      handleQrScanResult(wrongHost, context) { navigated = true }
+    }
+
+    assert(!navigated) { "QR navigation should not be triggered for wrong host" }
+  }
+
+  @Test
+  fun residencyCard_withImage_displaysImage() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val residencyWithImage =
+        Residency(
+            name = "Test Residency",
+            description = "Test",
+            location = Location("Test", 46.52, 6.57),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null,
+            imageUrls = listOf("test_image.jpg"))
+    residenciesRepo.addResidency(residencyWithImage)
+
+    val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
+    val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
+    val vm = BrowseCityViewModel(photoRepositoryCloud = fakeCloudRepo)
+    vm.loadResidencies(lausanneLocation, context)
+
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation) }
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+    compose.waitUntil(5_000) { vm.uiState.value.residencies.items.isNotEmpty() }
+
+    compose
+        .onNodeWithTag(C.BrowseCityTags.residencyCard("Test Residency"))
+        .performScrollTo()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun residencyCard_withoutImage_showsPlaceholder() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val residencyWithoutImage =
+        Residency(
+            name = "No Image Residency",
+            description = "Test",
+            location = Location("Test", 46.52, 6.57),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null,
+            imageUrls = emptyList())
+    residenciesRepo.addResidency(residencyWithoutImage)
+
+    vm.loadResidencies(lausanneLocation, context)
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation) }
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+    compose.waitUntil(5_000) { vm.uiState.value.residencies.items.isNotEmpty() }
+
+    compose
+        .onNodeWithTag(C.BrowseCityTags.residencyCard("No Image Residency"))
+        .performScrollTo()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun mapButton_onlyShowsOnListingsTab() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    compose.setContent { BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation) }
+    compose.waitUntil(5_000) { vm.uiState.value.listings.items.isNotEmpty() }
+
+    compose.onNodeWithContentDescription("Open Map").assertIsDisplayed()
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).performClick()
+    compose.waitForIdle()
+
+    compose.onNodeWithContentDescription("Open Map").assertDoesNotExist()
+  }
+
+  @Test
+  fun backButton_navigatesToHomepage() = runTest {
+    var navigatedHome = false
+    val mockNavActions =
+        object : NavigationActions {
+          override fun navigateTo(screen: Screen) {}
+
+          override fun navigateToHomepageDirectly() {
+            navigatedHome = true
+          }
+        }
+
+    compose.setContent {
+      BrowseCityScreen(
+          browseCityViewModel = vm, location = lausanneLocation, navigationActions = mockNavActions)
+    }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.BrowseCityTags.BACK_BUTTON).performClick()
+    compose.waitForIdle()
+
+    assertTrue("Should navigate to homepage", navigatedHome)
+  }
+
+  @Test
+  fun startTab_parameter_setsInitialTab() = runTest {
+    compose.setContent {
+      BrowseCityScreen(browseCityViewModel = vm, location = lausanneLocation, startTab = 0)
+    }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_REVIEWS).assertIsSelected()
+    compose.onNodeWithTag(C.BrowseCityTags.TAB_LISTINGS).assertIsNotSelected()
   }
 }

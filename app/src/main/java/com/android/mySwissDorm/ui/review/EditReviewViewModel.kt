@@ -21,9 +21,11 @@ import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -244,8 +246,6 @@ class EditReviewViewModel(
         // Preserve existing residencies to avoid clearing them
         val currentResidencies = _uiState.value.residencies
 
-        photoManager.initialize(review.imageUrls)
-
         _uiState.value =
             _uiState.value.copy(
                 postedAt = review.postedAt,
@@ -257,9 +257,12 @@ class EditReviewViewModel(
                 roomType = review.roomType,
                 pricePerMonth = review.pricePerMonth.toString(),
                 areaInM2 = review.areaInM2.toString(),
-                images = photoManager.photoLoaded,
                 isAnonymous = review.isAnonymous,
                 ownerName = review.ownerName)
+        launch(Dispatchers.IO) {
+          photoManager.initialize(review.imageUrls)
+          _uiState.update { it.copy(images = photoManager.photoLoaded) }
+        }
         // If residencies haven't been loaded yet, load them now
         if (currentResidencies.isEmpty()) {
           loadResidencies()

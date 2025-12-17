@@ -164,6 +164,7 @@
 
     <!-- ChatScreen -->
     <string name="chat_screen_connecting">Connecting to chat…</string>
+    <string name="chat_about_listing">About: %1$s</string>
 
     <!-- HomePageScreen -->
     <string name="browse_cities">Browse</string>

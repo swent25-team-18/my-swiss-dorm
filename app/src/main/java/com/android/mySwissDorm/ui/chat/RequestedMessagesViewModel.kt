@@ -207,8 +207,20 @@ class RequestedMessagesViewModel(
                   channelType = "messaging",
                   channelId = null,
                   memberIds = listOf(senderId, message.toUserId),
-                  extraData = mapOf("name" to "Chat"),
-                  initialMessageText = message.message)
+                  extraData =
+                      mapOf(
+                          "name" to message.listingTitle,
+                          "listingTitle" to message.listingTitle,
+                          "listingId" to message.listingId),
+                  listingTitle = message.listingTitle,
+                  initialMessageText =
+                      buildString {
+                        if (message.listingTitle.isNotBlank()) {
+                          append("About: ${message.listingTitle}")
+                          append("\n\n")
+                        }
+                        append(message.message)
+                      })
             } finally {
               runCatching { StreamChatProvider.disconnectUser(flushPersistence = false) }
               runCatching {

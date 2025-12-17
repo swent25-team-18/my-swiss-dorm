@@ -222,7 +222,6 @@ class Epic2Test : FirestoreTest() {
     compose.waitForIdle()
 
     // 5. Add Review
-    compose.onNodeWithTag(C.ViewListingTags.BACK_BTN).performClick()
 
     compose.waitUntil("FabScrim not displayed (for add review)", 5000) {
       compose.onNodeWithTag(C.BrowseCityTags.FABSCRIM).isDisplayed()

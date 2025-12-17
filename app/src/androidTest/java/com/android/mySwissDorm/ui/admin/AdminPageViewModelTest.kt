@@ -949,13 +949,21 @@ class AdminPageViewModelTest : FirestoreTest() {
     viewModel.onResidencySelected("Residency To Edit")
     advanceUntilIdle()
 
-    // Wait for data to load
+    // Wait for data to load and isEditingExisting to be set
     attempts = 0
-    while (viewModel.uiState.name.isEmpty() && attempts < 50) {
+    while ((viewModel.uiState.name.isEmpty() || !viewModel.uiState.isEditingExisting) &&
+        attempts < 50) {
       delay(100)
       advanceUntilIdle()
       attempts++
     }
+
+    // Verify state is set correctly for editing before proceeding
+    assertTrue("Should be in editing mode", viewModel.uiState.isEditingExisting)
+    assertEquals(
+        "Selected residency name should be set",
+        "Residency To Edit",
+        viewModel.uiState.selectedResidencyName)
 
     // Update fields
     viewModel.onDescription("Updated Description")
@@ -963,8 +971,8 @@ class AdminPageViewModelTest : FirestoreTest() {
     val newLocation = Location(name = "Zurich", latitude = 47.3769, longitude = 8.5417)
     viewModel.onLocationConfirm(newLocation)
 
-    // Verify state is set correctly for editing
-    assertTrue("Should be in editing mode", viewModel.uiState.isEditingExisting)
+    // Verify state is still set correctly for editing after updates
+    assertTrue("Should still be in editing mode", viewModel.uiState.isEditingExisting)
     assertEquals(
         "Selected residency name should be set",
         "Residency To Edit",

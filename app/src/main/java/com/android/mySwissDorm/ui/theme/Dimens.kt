@@ -52,6 +52,7 @@ object Dimens {
   val ImageSizeMedium = 140.dp
   val ImageSizeLarge = 180.dp
   val ImageSizeXLarge = 200.dp
+  val ImageSizeXXLarge = 250.dp
   val ImageSizeAvatar = 56.dp
   val ImageSizeAvatarLarge = 180.dp
 

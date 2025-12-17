@@ -26,7 +26,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
@@ -73,7 +72,7 @@ fun SignInScreen(
           Image(
               painter = painterResource(id = R.drawable.logo),
               contentDescription = null,
-              modifier = Modifier.size(250.dp).testTag(C.Tag.SIGN_IN_APP_LOGO))
+              modifier = Modifier.size(Dimens.ImageSizeXXLarge).testTag(C.Tag.SIGN_IN_APP_LOGO))
           Spacer(modifier = Modifier.height(Dimens.SpacingXLarge))
           Button(
               onClick = {

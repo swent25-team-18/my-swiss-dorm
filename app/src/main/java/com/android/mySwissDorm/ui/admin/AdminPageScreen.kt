@@ -340,8 +340,7 @@ fun AdminPageScreen(
                       imeAction = ImeAction.Next)
                   // Photo section for RESIDENCY
                   Column(
-                      verticalArrangement =
-                          Arrangement.spacedBy(AdminPageScreenSizes.VERTICAL_SPACE_EL),
+                      verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXXLarge),
                       horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             stringResource(R.string.photos),

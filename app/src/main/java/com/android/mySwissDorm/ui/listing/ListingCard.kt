@@ -57,13 +57,15 @@ fun ListingCard(
           Row(
               modifier =
                   Modifier.fillMaxWidth()
+                      // Fix the content height so all cards have the same height
+                      .height(Dimens.CardImageHeight)
                       .padding(end = if (!isGuest) Dimens.IconSizeButton else 0.dp),
               verticalAlignment = Alignment.CenterVertically) {
-                // Image (left) - height matches card height as suggested in PR review
+                // Image (left) - fills the left side vertically within the fixed card height
                 Box(
                     modifier =
-                        Modifier.height(Dimens.CardImageHeight)
-                            .fillMaxWidth(0.35F)
+                        Modifier.fillMaxHeight()
+                            .weight(0.35f)
                             .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                             .background(ListingCardColor)) {
                       AsyncImage(
@@ -95,7 +97,7 @@ fun ListingCard(
 
                 Spacer(Modifier.width(Dimens.SpacingLarge))
 
-                Column(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(0.65f).fillMaxHeight()) {
                   Text(
                       text = data.title,
                       style = MaterialTheme.typography.titleMedium,

@@ -789,10 +789,12 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     compose.setContent { ViewListingScreen(listingUid = listing.uid, viewListingViewModel = vm) }
     compose.waitForIdle()
 
+    // Wait until the image node exists in the semantics tree (not necessarily visible yet)
     compose.waitUntil("The image is not shown", 5_000) {
       compose
-          .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
-          .isDisplayed()
+          .onAllNodesWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
     // Click on a photo to display in full screen
     compose

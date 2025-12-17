@@ -13,12 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.overview.ListingCardUI
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
@@ -76,13 +76,15 @@ fun BookmarkedListingsScreen(
                       text = stringResource(R.string.bookmarked_listings_no_bookmarks_yet),
                       style = MaterialTheme.typography.bodyLarge,
                       color = TextColor,
-                      modifier = Modifier.align(Alignment.Center).padding(16.dp))
+                      modifier = Modifier.align(Alignment.Center).padding(Dimens.PaddingDefault))
                 }
                 else -> {
                   LazyColumn(
                       modifier = Modifier.fillMaxSize(),
-                      contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                      verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                      contentPadding =
+                          PaddingValues(
+                              horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingSmall),
+                      verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
                         items(uiState.listings, key = { it.listingUid }) { listing ->
                           ListingCard(
                               data = listing,

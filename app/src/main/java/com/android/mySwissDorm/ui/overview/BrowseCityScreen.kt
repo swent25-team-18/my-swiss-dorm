@@ -50,6 +50,7 @@ import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.qr.MyQrCaptureActivity
 import com.android.mySwissDorm.ui.review.DisplayGrade
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.ListingCardColor
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -279,7 +280,7 @@ private fun BrowseCityScreenUI(
                         imageVector = Icons.Default.Place,
                         contentDescription = "Location",
                         tint = MainColor)
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(Dimens.SpacingXSmall))
                     Text(
                         text = location.name,
                         maxLines = 1,
@@ -382,10 +383,10 @@ private fun BrowseCityScreenUI(
                   LazyColumn(
                       modifier =
                           Modifier.fillMaxSize()
-                              .padding(horizontal = 16.dp)
+                              .padding(horizontal = Dimens.PaddingDefault)
                               .testTag(C.BrowseCityTags.RESIDENCY_LIST),
-                      contentPadding = PaddingValues(vertical = 12.dp),
-                      verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                      contentPadding = PaddingValues(vertical = Dimens.PaddingMedium),
+                      verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
                         items(residenciesState.items) { item ->
                           ResidencyCard(item, onSelectResidency)
                         }
@@ -403,7 +404,9 @@ private fun BrowseCityScreenUI(
                       onClearFilter()
                       onApplyFilter()
                     },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    modifier =
+                        Modifier.padding(
+                            horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingSmall))
                 when {
                   listingsState.loading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -423,7 +426,7 @@ private fun BrowseCityScreenUI(
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                       Column(
                           horizontalAlignment = Alignment.CenterHorizontally,
-                          verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                          verticalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
                             val message =
                                 if (hasAnyFilterActive(filterState)) {
                                   stringResource(R.string.browse_city_no_listings_match_filter)
@@ -456,10 +459,10 @@ private fun BrowseCityScreenUI(
                     LazyColumn(
                         modifier =
                             Modifier.fillMaxSize()
-                                .padding(horizontal = 16.dp)
+                                .padding(horizontal = Dimens.PaddingDefault)
                                 .testTag(C.BrowseCityTags.LISTING_LIST),
-                        contentPadding = PaddingValues(vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        contentPadding = PaddingValues(vertical = Dimens.PaddingMedium),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
                           items(listingsState.items) { item ->
                             ListingCard(
                                 item,
@@ -518,15 +521,15 @@ private fun FilterChipBar(
   Row(
       modifier = modifier,
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
         Icon(
             imageVector = Icons.Default.FilterList,
             contentDescription = "Filters",
             tint = TextColor,
-            modifier = Modifier.size(20.dp))
+            modifier = Modifier.size(Dimens.IconSizeDefault))
         LazyRow(
             modifier = Modifier.weight(1f).testTag(C.BrowseCityTags.FILTER_CHIP_ROW),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
               item {
                 FilterChip(
                     label = stringResource(R.string.room_type),
@@ -599,7 +602,8 @@ private fun FilterChip(
           } else null,
       colors =
           AssistChipDefaults.assistChipColors(
-              containerColor = if (isActive) MainColor.copy(alpha = 0.2f) else BackGroundColor,
+              containerColor =
+                  if (isActive) MainColor.copy(alpha = Dimens.AlphaLow) else BackGroundColor,
               labelColor = TextColor),
       modifier = modifier)
 }
@@ -631,7 +635,8 @@ private fun FilterBottomSheet(
       containerColor = BackGroundColor,
       modifier = Modifier.testTag(C.BrowseCityTags.FILTER_BOTTOM_SHEET)) {
         Column(
-            modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            modifier = Modifier.padding(Dimens.PaddingLarge),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
               Text(
                   text =
                       when (filterType) {
@@ -681,7 +686,7 @@ private fun FilterBottomSheet(
 
               Row(
                   modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
                     OutlinedButton(
                         onClick = {
                           // Clear the specific filter type immediately and apply
@@ -741,7 +746,7 @@ private fun RoomTypeFilterContent(
     onSelectionChange: (Set<RoomType>) -> Unit
 ) {
   val context = LocalContext.current
-  Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+  Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
     RoomType.entries.forEach { roomType ->
       Row(
           modifier = Modifier.fillMaxWidth(),
@@ -777,12 +782,12 @@ private fun StartDateFilterContent(
   var showMinDatePicker by remember { mutableStateOf(false) }
   var showMaxDatePicker by remember { mutableStateOf(false) }
 
-  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+  Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
     // Min Start Date Button
     OutlinedButton(
         onClick = { showMinDatePicker = true },
-        modifier = Modifier.fillMaxWidth().height(56.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().height(Dimens.ButtonHeightLarge),
+        shape = RoundedCornerShape(Dimens.CardCornerRadius),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
           Row(
               modifier = Modifier.fillMaxWidth(),
@@ -799,8 +804,8 @@ private fun StartDateFilterContent(
     // Max Start Date Button
     OutlinedButton(
         onClick = { showMaxDatePicker = true },
-        modifier = Modifier.fillMaxWidth().height(56.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().height(Dimens.ButtonHeightLarge),
+        shape = RoundedCornerShape(Dimens.CardCornerRadius),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = TextColor)) {
           Row(
               modifier = Modifier.fillMaxWidth(),
@@ -884,7 +889,7 @@ private fun ResidencyCardImage(imageUrls: List<String>, modifier: Modifier = Mod
 @Composable
 private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> Unit) {
   OutlinedCard(
-      shape = RoundedCornerShape(16.dp),
+      shape = RoundedCornerShape(Dimens.CardCornerRadius),
       modifier =
           Modifier.fillMaxWidth().padding(0.dp).testTag(C.BrowseCityTags.residencyCard(data.title)),
       onClick = { onClick(data) }) {
@@ -895,15 +900,18 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
               ResidencyCardImage(
                   imageUrls = data.imageUrls,
                   modifier =
-                      Modifier.height(160.dp)
+                      Modifier.height(Dimens.SpacerHeightSmall)
                           .fillMaxWidth(0.4F)
-                          .clip(RoundedCornerShape(12.dp))
+                          .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                           .background(ListingCardColor))
 
-              Spacer(Modifier.width(12.dp))
+              Spacer(Modifier.width(Dimens.SpacingLarge))
 
               Column(
-                  modifier = Modifier.weight(1f).height(160.dp).padding(4.dp),
+                  modifier =
+                      Modifier.weight(1f)
+                          .height(Dimens.SpacerHeightSmall)
+                          .padding(Dimens.PaddingXSmall),
                   verticalArrangement = Arrangement.SpaceBetween) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -912,7 +920,9 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                       Box(modifier = Modifier.fillMaxWidth()) {
                         // Stars positioned at top-right
                         Box(modifier = Modifier.align(Alignment.TopEnd)) {
-                          DisplayGrade(data.meanGrade, 16.dp) // Display the mean grade with stars
+                          DisplayGrade(
+                              data.meanGrade,
+                              Dimens.IconSizeMedium) // Display the mean grade with stars
                         }
                         // Title positioned lower, taking available width but leaving space for
                         // stars
@@ -924,7 +934,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                             color = TextColor,
                             modifier =
                                 Modifier.fillMaxWidth(0.7f)
-                                    .padding(top = 20.dp) // Push title below stars
+                                    .padding(top = Dimens.PaddingLarge) // Push title below stars
                                     .align(Alignment.TopStart),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -934,7 +944,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                         Icon(
                             Icons.Outlined.Place,
                             contentDescription = null,
-                            modifier = Modifier.size(12.dp),
+                            modifier = Modifier.size(Dimens.IconSizeSmall),
                             tint = MainColor)
                         Spacer(Modifier.width(2.dp))
                         Text(
@@ -962,7 +972,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                       Column(
                           modifier = Modifier.fillMaxSize(),
                           verticalArrangement = Arrangement.SpaceBetween) {
-                            Column(modifier = Modifier.padding(top = 4.dp)) {
+                            Column(modifier = Modifier.padding(top = Dimens.PaddingXSmall)) {
                               Row(
                                   modifier = Modifier.fillMaxWidth(),
                                   horizontalArrangement = Arrangement.SpaceBetween,
@@ -1009,7 +1019,7 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                           }
                     }
                   }
-              Spacer(Modifier.width(12.dp))
+              Spacer(Modifier.width(Dimens.SpacingLarge))
             }
       }
 }

@@ -10,8 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.Transparent
 import com.google.android.gms.maps.model.CameraPosition
@@ -42,7 +42,8 @@ fun MapPreview(
     position = CameraPosition.fromLatLngZoom(latLng, 13f)
   }
   Box(
-      modifier = modifier.clip(RoundedCornerShape(16.dp)).background(TextBoxColor),
+      modifier =
+          modifier.clip(RoundedCornerShape(Dimens.CardCornerRadius)).background(TextBoxColor),
       contentAlignment = Alignment.Center) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),

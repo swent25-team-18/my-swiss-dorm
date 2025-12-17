@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -54,6 +53,7 @@ import com.android.mySwissDorm.ui.navigation.BottomNavigationMenu
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
@@ -74,7 +74,7 @@ object HomePageScreenTestTags {
 }
 
 object HomePageScreenSizes {
-  val CITY_IMAGE_HEIGHT = 180.dp
+  val CITY_IMAGE_HEIGHT = Dimens.ImageSizeLarge
 }
 
 /**
@@ -119,8 +119,13 @@ fun HomePageScreen(
                     modifier =
                         Modifier.testTag(HomePageScreenTestTags.SEARCH_BAR_TEXT_FIELD)
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp, horizontal = 32.dp)
-                            .border(2.dp, TextColor, RoundedCornerShape(20.dp)),
+                            .padding(
+                                vertical = Dimens.PaddingSmall,
+                                horizontal = Dimens.PaddingHorizontalLarge)
+                            .border(
+                                Dimens.BorderWidthXSmall,
+                                TextColor,
+                                RoundedCornerShape(Dimens.CornerRadiusLarge)),
                     value = inputText,
                     onValueChange = { inputText = it },
                     placeholder = {
@@ -129,7 +134,7 @@ fun HomePageScreen(
                     leadingIcon = {
                       Icon(
                           Icons.Default.Search,
-                          modifier = Modifier.size(30.dp),
+                          modifier = Modifier.size(Dimens.IconSizeXXLarge),
                           contentDescription = "Search",
                           tint = MainColor)
                     },
@@ -151,7 +156,7 @@ fun HomePageScreen(
                     imageVector = Icons.Default.Place,
                     contentDescription = "Custom Location",
                     tint = MainColor)
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(Dimens.SpacingXSmall))
                 Text(text = stringResource(R.string.custom_location), color = MainColor)
               }
 
@@ -159,8 +164,8 @@ fun HomePageScreen(
               modifier =
                   Modifier.testTag(HomePageScreenTestTags.CITIES_LIST)
                       .fillMaxWidth()
-                      .padding(horizontal = 32.dp)
-                      .padding(top = 10.dp),
+                      .padding(horizontal = Dimens.PaddingHorizontalLarge)
+                      .padding(top = Dimens.PaddingTopSmall),
               state = lazyState) {
                 items(uiState.cities.size) { index ->
                   val city = uiState.cities[index]
@@ -174,7 +179,7 @@ fun HomePageScreen(
                           onSelectLocation(cityLocation)
                         },
                         uri = uiState.cityImageMap[city])
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.SpacingXLarge))
                   }
                 }
               }
@@ -224,8 +229,11 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
       modifier =
           Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCard(city.name))
               .fillMaxWidth()
-              .padding(vertical = 12.dp)
-              .border(2.dp, TextColor, RoundedCornerShape(10.dp))
+              .padding(vertical = Dimens.PaddingMedium)
+              .border(
+                  Dimens.BorderWidthXSmall,
+                  TextColor,
+                  RoundedCornerShape(Dimens.CornerRadiusDefault))
               .clickable { onClick() },
   ) {
     Box {
@@ -234,23 +242,25 @@ fun CityCard(city: City, onClick: () -> Unit, uri: Uri? = null) {
           contentDescription = city.name,
           contentScale = ContentScale.Crop,
           modifier = Modifier.fillMaxWidth().height(HomePageScreenSizes.CITY_IMAGE_HEIGHT))
-      Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(16.dp)) {
-        Text(
-            modifier =
-                Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardTitle(city.name)),
-            text = city.name,
-            color = TextColor,
-            fontWeight = FontWeight.Black,
-            fontSize = 20.sp)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            modifier =
-                Modifier.testTag(
-                    HomePageScreenTestTags.getTestTagForCityCardDescription(city.name)),
-            text = city.description,
-            color = TextColor,
-            fontSize = 12.sp)
-      }
+      Column(
+          modifier =
+              Modifier.fillMaxWidth().align(Alignment.TopStart).padding(Dimens.PaddingSmall)) {
+            Text(
+                modifier =
+                    Modifier.testTag(HomePageScreenTestTags.getTestTagForCityCardTitle(city.name)),
+                text = city.name,
+                color = TextColor,
+                fontWeight = FontWeight.Black,
+                fontSize = 20.sp)
+            Spacer(modifier = Modifier.height(Dimens.SpacingDefault))
+            Text(
+                modifier =
+                    Modifier.testTag(
+                        HomePageScreenTestTags.getTestTagForCityCardDescription(city.name)),
+                text = city.description,
+                color = TextColor,
+                fontSize = 12.sp)
+          }
     }
   }
 }

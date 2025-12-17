@@ -54,13 +54,17 @@ fun ListingCard(
       onClick = { onClick(data) }) {
         Box(modifier = Modifier.fillMaxWidth()) {
           Row(
-              modifier = Modifier.fillMaxWidth().padding(end = if (!isGuest) 48.dp else 0.dp),
+              modifier =
+                  Modifier.fillMaxWidth()
+                      // Fix the content height so all cards have the same height
+                      .height(140.dp)
+                      .padding(end = if (!isGuest) 48.dp else 0.dp),
               verticalAlignment = Alignment.CenterVertically) {
-                // Image (left) - height matches card height as suggested in PR review
+                // Image (left) - fills the left side vertically within the fixed card height
                 Box(
                     modifier =
-                        Modifier.height(140.dp)
-                            .fillMaxWidth(0.35F)
+                        Modifier.fillMaxHeight()
+                            .weight(0.35f)
                             .clip(RoundedCornerShape(12.dp))
                             .background(ListingCardColor)) {
                       AsyncImage(
@@ -87,7 +91,7 @@ fun ListingCard(
 
                 Spacer(Modifier.width(12.dp))
 
-                Column(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(0.65f).fillMaxHeight()) {
                   Text(
                       text = data.title,
                       style = MaterialTheme.typography.titleMedium,

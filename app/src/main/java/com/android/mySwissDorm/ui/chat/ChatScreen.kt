@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,6 +48,7 @@ import com.android.mySwissDorm.model.photo.getPhotoDownloadUrl
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.resources.C.ChatScreenTestTags.CHAT_BLOCKED_BANNER
 import com.android.mySwissDorm.ui.theme.ThemePreferenceState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -185,9 +187,8 @@ fun MyChatScreen(
     chatClientProvider: () -> ChatClient = { StreamChatProvider.getClient() },
     currentUserProvider: () -> FirebaseUser? = { FirebaseAuth.getInstance().currentUser },
     userStateProvider: (ChatClient) -> User? = { it.clientState.user.value },
-    connectUser: suspend (FirebaseUser, ChatClient) -> Unit = { firebaseUser, _ ->
-      connectUserById(firebaseUser.uid)
-    },
+    currentUserId: String? = FirebaseAuth.getInstance().currentUser?.uid,
+    connectUser: suspend (String, ChatClient) -> Unit = { uid, _ -> connectUserById(uid) },
     chatTheme: @Composable (@Composable () -> Unit) -> Unit = { content ->
       val userPreference by ThemePreferenceState.darkModePreference
       val isDarkTheme =
@@ -203,7 +204,7 @@ fun MyChatScreen(
         { viewModelFactory, onBack ->
           MessagesScreenWithAppAvatarHeader(
               channelCid = channelId,
-              firebaseCurrentUserId = currentUserProvider()?.uid,
+              firebaseCurrentUserId = currentUserId,
               onBackPressed = onBack,
               messagesContent = {
                 MessagesScreen(
@@ -220,6 +221,14 @@ fun MyChatScreen(
               context = ctx, chatClient = chatClient, channelId = cid, messageLimit = limit)
         },
     messageLimit: Int = 30,
+    channelFetcher: suspend (ChatClient, String) -> Channel? = { client, cid ->
+      try {
+        client.channel(cid).watch().await().getOrNull()
+      } catch (e: Exception) {
+        null
+      }
+    },
+    blockedMessagesContent: (@Composable (MessagesViewModelFactory, Channel?) -> Unit)? = null
 ) {
   val isPreview = LocalInspectionMode.current
 
@@ -234,7 +243,7 @@ fun MyChatScreen(
   } else {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-
+    var lifecycleRefreshCount by remember { mutableStateOf(0) }
     // Chat-only keyboard fix:
     // Force ADJUST_RESIZE while ChatScreen is RESUMED, and restore on PAUSE/STOP.
     // This prevents "leaking" adjustResize into other screens.
@@ -260,7 +269,10 @@ fun MyChatScreen(
 
       val observer = LifecycleEventObserver { _, event ->
         when (event) {
-          Lifecycle.Event.ON_RESUME -> applyResize()
+          Lifecycle.Event.ON_RESUME -> {
+            applyResize()
+            lifecycleRefreshCount++
+          }
           Lifecycle.Event.ON_PAUSE,
           Lifecycle.Event.ON_STOP -> restore()
           else -> Unit
@@ -286,21 +298,23 @@ fun MyChatScreen(
       mutableStateOf(isConnectedOverride ?: (userStateProvider(chatClient) != null))
     }
     var isConnecting by remember { mutableStateOf(false) }
-    LaunchedEffect(channelId, currentUser) {
-      if (currentUser == null) return@LaunchedEffect
-      val channelClient = chatClient.channel(channelId)
-      val fetchedChannel = channelClient.watch().await().getOrNull()
+    LaunchedEffect(channelId, currentUserId, lifecycleRefreshCount) {
+      if (currentUserId == null) return@LaunchedEffect
+
+      val fetchedChannel = channelFetcher(chatClient, channelId)
       channel = fetchedChannel
-      val otherMember = channel?.members?.find { it.user.id != currentUser.uid }
+
+      val otherMember = fetchedChannel?.members?.find { it.user.id != currentUserId }
       val otherUserId =
-          otherMember?.user?.id ?: channelId.split("-").firstOrNull { it != currentUser.uid }
+          otherMember?.user?.id ?: channelId.split("-").firstOrNull { it != currentUserId }
+
       if (otherUserId != null) {
         try {
           val repo = ProfileRepositoryProvider.repository
-          val myBlockedList = repo.getBlockedUserIds(currentUser.uid)
+          val myBlockedList = repo.getBlockedUserIds(currentUserId)
           val iBlockedThem = myBlockedList.contains(otherUserId)
           val theirProfile = repo.getProfile(otherUserId)
-          val theyBlockedMe = theirProfile.userInfo.blockedUserIds.contains(currentUser.uid)
+          val theyBlockedMe = theirProfile.userInfo.blockedUserIds.contains(currentUserId)
           isConversationBlocked = iBlockedThem || theyBlockedMe
         } catch (e: Exception) {}
       }
@@ -316,8 +330,8 @@ fun MyChatScreen(
           setIsConnected = { isConnected = it },
           setIsConnecting = { isConnecting = it },
           connectUser = {
-            if (currentUser != null) {
-              connectUser(currentUser, chatClient)
+            if (currentUserId != null) {
+              connectUser(currentUserId, chatClient)
             }
           },
           logError = { e ->
@@ -345,25 +359,31 @@ fun MyChatScreen(
         Box(modifier = modifier.fillMaxSize()) {
           if (isConversationBlocked) {
             Column(modifier = Modifier.fillMaxSize()) {
-              val ch = channel
-              if (ch != null) {
-                MessageListHeader(
-                    channel = ch,
-                    currentUser = userStateProvider(chatClient),
-                    connectionState = ConnectionState.Connected,
-                    onBackPressed = onBackClick,
-                    trailingContent = {
-                      AppProfileAvatarTrailingContent(
-                          channel = ch, currentUserId = currentUser?.uid)
-                    })
-              }
-              val listViewModel: MessageListViewModel = viewModel(factory = viewModelFactory)
-              MessageList(viewModel = listViewModel, modifier = Modifier.weight(1f))
+              val actualBlockedContent =
+                  blockedMessagesContent
+                      ?: { factory, ch ->
+                        if (ch != null) {
+                          MessageListHeader(
+                              channel = ch,
+                              currentUser = userStateProvider(chatClient),
+                              connectionState = ConnectionState.Connected,
+                              onBackPressed = onBackClick,
+                              trailingContent = {
+                                AppProfileAvatarTrailingContent(
+                                    channel = ch, currentUserId = currentUserId)
+                              })
+                        }
+                        val listViewModel: MessageListViewModel = viewModel(factory = factory)
+                        MessageList(viewModel = listViewModel, modifier = Modifier.weight(1f))
+                      }
+
+              actualBlockedContent(viewModelFactory, channel)
               Box(
                   modifier =
                       Modifier.fillMaxWidth()
                           .background(MaterialTheme.colorScheme.errorContainer)
-                          .padding(16.dp),
+                          .padding(16.dp)
+                          .testTag(CHAT_BLOCKED_BANNER),
                   contentAlignment = Alignment.Center) {
                     Text(
                         text = stringResource(R.string.blocked_msg),

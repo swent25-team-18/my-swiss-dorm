@@ -1,10 +1,12 @@
 package com.android.mySwissDorm.ui.adminPage
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.navigation.compose.rememberNavController
+import androidx.test.core.app.ApplicationProvider
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
@@ -28,6 +31,7 @@ import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -646,7 +650,7 @@ class AdminPageScreenTest : FirestoreTest() {
     composeTestRule.waitForIdle()
 
     // Start submission (this will set isSubmitting to true)
-    val context = androidx.test.core.app.ApplicationProvider.getApplicationContext()
+    val context = ApplicationProvider.getApplicationContext<Context>()
     viewModel.submit(context)
     composeTestRule.waitForIdle()
 

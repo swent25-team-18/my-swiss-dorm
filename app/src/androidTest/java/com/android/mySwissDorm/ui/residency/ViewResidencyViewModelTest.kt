@@ -7,6 +7,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.photo.PhotoRepositoryStorage
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
@@ -652,12 +653,14 @@ class ViewResidencyViewModelTest : FirestoreTest() {
   @Test
   fun loadResidency_imageLoadFailure_handlesGracefully() = runTest {
     val mockPhotoRepository =
-        object : PhotoRepositoryCloud {
+        object : PhotoRepositoryCloud(PhotoRepositoryProvider.local_repository) {
           override suspend fun retrievePhoto(fileName: String): Photo {
             throw Exception("Photo load error")
           }
 
-          override suspend fun uploadPhoto(photo: Photo): String = error("unused")
+          override suspend fun uploadPhoto(photo: Photo) {
+            // Do nothing
+          }
         }
 
     val residencyWithImages =

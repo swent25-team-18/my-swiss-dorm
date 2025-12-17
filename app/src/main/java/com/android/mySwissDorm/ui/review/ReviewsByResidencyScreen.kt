@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.review
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,8 +35,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -47,11 +43,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.review.VoteType
 import com.android.mySwissDorm.resources.C
-import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 
@@ -165,117 +159,90 @@ private fun ReviewCard(
       shape = RoundedCornerShape(16.dp),
       modifier =
           Modifier.fillMaxWidth().testTag(C.ReviewsByResidencyTag.reviewCard(data.reviewUid))) {
-        Row(
-            modifier = Modifier.fillMaxWidth().clickable { onClick(data) },
-            verticalAlignment = Alignment.CenterVertically) {
-              // Image placeholder (left)
-              Box(
-                  modifier =
-                      Modifier.height(140.dp)
-                          .fillMaxWidth(0.35F)
-                          .clip(RoundedCornerShape(12.dp))
-                          .background(LightGray)
-                          .testTag(
-                              C.ReviewsByResidencyTag.reviewImagePlaceholder(data.reviewUid))) {
-                    AsyncImage(
-                        model = data.image,
-                        contentDescription = null,
-                        modifier =
-                            Modifier.fillMaxSize()
-                                .testTag(C.ReviewsByResidencyTag.reviewPhoto(data.reviewUid)),
-                        contentScale = ContentScale.Crop)
-                  }
+        Column(modifier = Modifier.fillMaxWidth().clickable { onClick(data) }.padding(12.dp)) {
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = data.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Start,
+                    color = TextColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier =
+                        Modifier.fillMaxWidth(0.7f)
+                            .testTag(C.ReviewsByResidencyTag.reviewTitle(data.reviewUid)))
+                DisplayGrade(data.grade, 16.dp, C.ReviewsByResidencyTag.reviewGrade(data.reviewUid))
+              }
 
-              Spacer(Modifier.width(4.dp))
+          Spacer(Modifier.height(8.dp))
 
-              Column(modifier = Modifier.weight(1f).height(140.dp).padding(8.dp)) {
+          Column(
+              modifier = Modifier.fillMaxWidth(),
+              verticalArrangement =
+                  Arrangement.SpaceBetween) { // Review: posted at, review text, posted by
+                Column(modifier = Modifier.fillMaxWidth()) {
+                  Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      horizontalArrangement = Arrangement.SpaceBetween,
+                      verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = stringResource(R.string.reviews_by_residency_review),
+                            color = TextColor,
+                        )
+                        Text(
+                            text = data.postDate,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Light,
+                            color = TextColor,
+                            modifier =
+                                Modifier.testTag(
+                                    C.ReviewsByResidencyTag.reviewPostDate(data.reviewUid)))
+                      }
+                  Text( // Review Text
+                      text = data.reviewText,
+                      style = MaterialTheme.typography.bodyMedium,
+                      textAlign = TextAlign.Start,
+                      color = TextColor,
+                      maxLines = 2,
+                      overflow = TextOverflow.Ellipsis,
+                      modifier =
+                          Modifier.testTag(
+                              C.ReviewsByResidencyTag.reviewDescription(data.reviewUid)))
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically) {
-                      val truncatedTitle = truncateText(data.title, 20)
                       Text(
-                          text = truncatedTitle,
-                          style = MaterialTheme.typography.titleMedium,
-                          fontWeight = FontWeight.SemiBold,
-                          textAlign = TextAlign.Start,
+                          text =
+                              "${stringResource(R.string.reviews_by_residency_posted_by)} ${data.fullNameOfPoster}",
+                          style = MaterialTheme.typography.bodySmall,
+                          fontWeight = FontWeight.Light,
                           color = TextColor,
                           maxLines = 1,
                           overflow = TextOverflow.Ellipsis,
                           modifier =
-                              Modifier.fillMaxWidth(0.6f)
-                                  .testTag(C.ReviewsByResidencyTag.reviewTitle(data.reviewUid)))
-                      DisplayGrade(
-                          data.grade, 16.dp, C.ReviewsByResidencyTag.reviewGrade(data.reviewUid))
-                    }
+                              Modifier.weight(1f, fill = false)
+                                  .testTag(
+                                      C.ReviewsByResidencyTag.reviewPosterName(data.reviewUid)))
 
-                Spacer(Modifier.height(8.dp))
-
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement =
-                        Arrangement.SpaceBetween) { // Review: posted at, review text, posted by
-                      Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically) {
-                              Text(
-                                  text = stringResource(R.string.reviews_by_residency_review),
-                                  color = TextColor,
-                              )
-                              Text(
-                                  text = data.postDate,
-                                  style = MaterialTheme.typography.bodySmall,
-                                  fontWeight = FontWeight.Light,
-                                  color = TextColor,
-                                  modifier =
-                                      Modifier.testTag(
-                                          C.ReviewsByResidencyTag.reviewPostDate(data.reviewUid)))
-                            }
-                        val truncatedReview = truncateText(data.reviewText, 60)
-                        Text( // Review Text
-                            text = truncatedReview,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Start,
-                            color = TextColor,
-                            maxLines = 2,
-                            modifier =
-                                Modifier.testTag(
-                                    C.ReviewsByResidencyTag.reviewDescription(data.reviewUid)))
-                      }
-                      Row(
-                          modifier = Modifier.fillMaxWidth(),
-                          horizontalArrangement = Arrangement.SpaceBetween,
-                          verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text =
-                                    "${stringResource(R.string.reviews_by_residency_posted_by)} ${data.fullNameOfPoster}",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Light,
-                                color = TextColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier =
-                                    Modifier.weight(1f, fill = false)
-                                        .testTag(
-                                            C.ReviewsByResidencyTag.reviewPosterName(
-                                                data.reviewUid)))
-
-                            // Vote buttons (always shown, but disabled for owner)
-                            CompactVoteButtons(
-                                netScore = data.netScore,
-                                userVote = data.userVote,
-                                isOwner = data.isOwner,
-                                onUpvote = onUpvote,
-                                onDownvote = onDownvote,
-                                modifier =
-                                    Modifier.testTag(
-                                        C.ReviewsByResidencyTag.reviewVoteButtons(data.reviewUid)))
-                          }
+                      // Vote buttons (always shown, but disabled for owner)
+                      CompactVoteButtons(
+                          netScore = data.netScore,
+                          userVote = data.userVote,
+                          isOwner = data.isOwner,
+                          onUpvote = onUpvote,
+                          onDownvote = onDownvote,
+                          modifier =
+                              Modifier.testTag(
+                                  C.ReviewsByResidencyTag.reviewVoteButtons(data.reviewUid)))
                     }
               }
-            }
+        }
       }
 }
 
@@ -341,18 +308,5 @@ private fun CompactVoteButtons(
       }
 }
 
-fun truncateText(text: String, maxLength: Int): String {
-  return text.let {
-    if (it.length <= maxLength) {
-      it
-    } else {
-      val truncated = it.take(maxLength)
-      val lastSpace = truncated.lastIndexOf(' ')
-      if (lastSpace != -1) {
-        "${truncated.substring(0, lastSpace)}..."
-      } else {
-        "$truncated..." // No space, probably unreadable text
-      }
-    }
-  }
-}
+// Manual text truncation is no longer needed; Text composables rely on
+// maxLines + overflow = TextOverflow.Ellipsis to handle truncation responsively.

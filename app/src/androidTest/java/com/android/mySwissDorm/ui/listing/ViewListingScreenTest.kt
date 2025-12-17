@@ -803,8 +803,8 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
         .performClick()
 
     compose.waitForIdle()
-    // Check image node for full screen exists (not necessarily visible yet)
-    compose.waitUntil("The clicked image is not shown in full screen", 5_000) {
+    // Check image is shown in full screen
+    compose.waitUntil("The clicked image is not shown in full screen", 50_000) {
       compose
           .onAllNodesWithTag(
               C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)

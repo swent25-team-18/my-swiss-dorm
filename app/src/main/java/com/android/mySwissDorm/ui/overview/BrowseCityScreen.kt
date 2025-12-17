@@ -45,7 +45,6 @@ import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.qr.MyQrCaptureActivity
 import com.android.mySwissDorm.ui.review.DisplayGrade
-import com.android.mySwissDorm.ui.review.truncateText
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.ListingCardColor
@@ -946,16 +945,13 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
                                         color = TextColor,
                                     )
                                   }
-                              val truncatedReview =
-                                  truncateText(
-                                      data.latestReview.reviewText,
-                                      90) // truncate the review if it is too large
                               Text( // Review
-                                  text = truncatedReview,
+                                  text = data.latestReview.reviewText,
                                   style = MaterialTheme.typography.bodySmall,
                                   textAlign = TextAlign.Justify,
                                   color = TextColor,
-                                  maxLines = 3,
+                                  maxLines = 2,
+                                  overflow = TextOverflow.Ellipsis,
                                   modifier =
                                       Modifier.testTag(
                                           C.BrowseCityTags.reviewText(data.latestReview.uid)))

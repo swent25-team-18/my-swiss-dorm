@@ -921,6 +921,7 @@ class AdminPageViewModelTest : FirestoreTest() {
   fun submit_residencyType_editingExisting_updatesResidency() = runTest {
     switchToUser(FakeUser.FakeUser1)
     viewModel.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
+    advanceUntilIdle()
 
     // Create initial residency
     val initialResidency =
@@ -937,29 +938,49 @@ class AdminPageViewModelTest : FirestoreTest() {
     ResidenciesRepositoryProvider.repository.addResidency(initialResidency)
     advanceUntilIdle()
 
-    // Wait for residencies to load
+    // Wait for residencies to load (from onTypeChange coroutine)
     var attempts = 0
-    while (viewModel.uiState.residencies.isEmpty() && attempts < 50) {
+    while (viewModel.uiState.residencies.isEmpty() && attempts < 100) {
       delay(100)
       advanceUntilIdle()
       attempts++
     }
+
+    // Verify residency is in the list before selecting
+    assertTrue(
+        "Residency should be in list. Found: ${viewModel.uiState.residencies.map { it.name }}",
+        viewModel.uiState.residencies.any { it.name == "Residency To Edit" })
 
     // Select and edit
     viewModel.onResidencySelected("Residency To Edit")
     advanceUntilIdle()
 
     // Wait for data to load and isEditingExisting to be set
+    // Check all three conditions: name loaded, selectedResidencyName set, and isEditingExisting
+    // true
     attempts = 0
-    while ((viewModel.uiState.name.isEmpty() || !viewModel.uiState.isEditingExisting) &&
-        attempts < 50) {
+    val maxAttempts = 100
+    while (attempts < maxAttempts) {
+      val state = viewModel.uiState
+      if (state.name.isNotEmpty() &&
+          state.selectedResidencyName == "Residency To Edit" &&
+          state.isEditingExisting) {
+        break
+      }
       delay(100)
       advanceUntilIdle()
       attempts++
     }
 
+    // Check for errors first
+    if (viewModel.uiState.message != null) {
+      fail("Error loading residency: ${viewModel.uiState.message}")
+    }
+
     // Verify state is set correctly for editing before proceeding
-    assertTrue("Should be in editing mode", viewModel.uiState.isEditingExisting)
+    assertTrue(
+        "Should be in editing mode after $attempts attempts. Name: '${viewModel.uiState.name}', SelectedResidencyName: '${viewModel.uiState.selectedResidencyName}', isEditingExisting: ${viewModel.uiState.isEditingExisting}",
+        viewModel.uiState.isEditingExisting)
     assertEquals(
         "Selected residency name should be set",
         "Residency To Edit",

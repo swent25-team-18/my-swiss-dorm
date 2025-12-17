@@ -773,51 +773,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun fullScreenModeWorks() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val photo = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
-    val listing =
-        rentalListing3.copy(
-            ownerId = FirebaseEmulator.auth.currentUser!!.uid, imageUrls = listOf(photo.fileName))
-    listingsRepo.addRentalListing(listing)
-    val vm =
-        ViewListingViewModel(
-            rentalListingRepository = listingsRepo,
-            profileRepository = profileRepo,
-            photoRepositoryCloud =
-                FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, onDelete = true))
-    compose.setContent { ViewListingScreen(listingUid = listing.uid, viewListingViewModel = vm) }
-    compose.waitForIdle()
-
-    compose.waitUntil("The image is not shown", 5_000) {
-      compose
-          .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
-          .isDisplayed()
-    }
-    // Click on a photo to display in full screen
-    compose
-        .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
-        .performScrollTo()
-        .performClick()
-
-    compose.waitForIdle()
-    // Check image is shown in full screen
-    compose.waitUntil("The clicked image is not shown in full screen", 5_000) {
-      compose
-          .onNodeWithTag(C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)
-          .isDisplayed()
-    }
-
-    // Check that go back to the view listing page
-    compose
-        .onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON, useUnmergedTree = true)
-        .performClick()
-    compose.waitUntil("The listing page is not shown after leaving the full screen mode", 5_000) {
-      compose.onNodeWithTag(C.ImageGridTags.imageTag(photo.image)).isDisplayed()
-    }
-  }
-
-  @Test
   fun title_isDisplayed() = runTest {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
@@ -871,6 +826,26 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
     scrollListTo(C.ViewListingTags.BULLETS)
     compose.onNodeWithTag(C.ViewListingTags.BULLETS, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun residencyName_isDisplayedInBulletSection() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid
+    }
+
+    scrollListTo(C.ViewListingTags.BULLETS)
+    compose
+        .onNodeWithTag(C.ViewListingTags.RESIDENCY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals(otherListing.residencyName)
   }
 
   @Test

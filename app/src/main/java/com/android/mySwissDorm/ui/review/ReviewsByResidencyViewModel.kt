@@ -94,9 +94,11 @@ class ReviewsByResidencyViewModel(
       try {
         // Fetch all and filter by city
         val all = reviewsRepository.getAllReviewsByResidency(residencyName)
+        // Sort by net score (most votes first) in descending order
+        val sorted = all.sortedByDescending { it.getNetScore() }
         val currentUserId = auth.currentUser?.uid
         val mapped =
-            all.map {
+            sorted.map {
               val fullName =
                   if (it.isAnonymous) {
                     context.getString(R.string.anonymous)

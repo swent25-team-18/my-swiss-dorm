@@ -235,8 +235,14 @@ class ProfileRepositoryLocal(private val profileDao: ProfileDao, private val aut
     }
 
     val profile = entity.toProfile()
-    val updatedUserInfo =
-        profile.userInfo.copy(blockedUserIds = profile.userInfo.blockedUserIds + targetUid)
+    // Only add if not already blocked to prevent duplicates
+    val updatedBlockedUsers =
+        if (profile.userInfo.blockedUserIds.contains(targetUid)) {
+          profile.userInfo.blockedUserIds // Already blocked, return as-is
+        } else {
+          profile.userInfo.blockedUserIds + targetUid
+        }
+    val updatedUserInfo = profile.userInfo.copy(blockedUserIds = updatedBlockedUsers)
     val updatedProfile = profile.copy(userInfo = updatedUserInfo)
 
     // Update the entity with the new blocked user and optionally store the display name

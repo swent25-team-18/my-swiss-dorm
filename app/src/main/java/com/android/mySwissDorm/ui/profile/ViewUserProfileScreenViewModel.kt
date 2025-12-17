@@ -11,9 +11,11 @@ import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -57,14 +59,19 @@ class ViewProfileScreenViewModel(
   private val _ui = MutableStateFlow(ViewProfileUiState())
   val uiState: StateFlow<ViewProfileUiState> = _ui.asStateFlow()
 
+  // Toggle control: cancel in-flight work + ignore late results.
+  private var toggleJob: Job? = null
+  private var photoJob: Job? = null
+  private var toggleToken: Long = 0L
+
   /** Clears the error message in the UI state. */
   fun clearErrorMsg() {
-    _ui.value = uiState.value.copy(error = null)
+    _ui.update { it.copy(error = null) }
   }
 
   /** Sets an error message in the UI state. */
   private fun setErrorMsg(errorMsg: String) {
-    _ui.value = uiState.value.copy(error = errorMsg)
+    _ui.update { it.copy(error = errorMsg) }
   }
 
   /**
@@ -84,7 +91,13 @@ class ViewProfileScreenViewModel(
     viewModelScope.launch {
       try {
         // Repository call; throws on failure.
-        val profile = repo.getProfile(ownerId)
+        val profile =
+            runCatching { repo.getProfile(ownerId) }
+                .getOrElse {
+                  setErrorMsg(
+                      "${context.getString(R.string.view_user_profile_failed_to_load_profile)} ${it.message}")
+                  return@launch
+                }
 
         // Check if current user has blocked this user
         val currentUid = auth.currentUser?.uid
@@ -101,32 +114,32 @@ class ViewProfileScreenViewModel(
             }
 
         // Handle null residency name
-        var temp = ""
-        if (profile.userInfo.residencyName == null) {
-          temp = context.getString(R.string.view_user_profile_no_residency)
-        } else {
-          temp = profile.userInfo.residencyName
-        }
+        val residenceText =
+            profile.userInfo.residencyName
+                ?: context.getString(R.string.view_user_profile_no_residency)
+
         val photo =
             if (!isBlocked) {
               profile.userInfo.profilePicture?.let { fileName ->
-                try {
-                  Log.d("ViewUserProfileViewModel", "Try to retrieve $fileName")
-                  photoRepositoryCloud.retrievePhoto(fileName)
-                } catch (_: NoSuchElementException) {
-                  Log.d("ViewUserProfileViewModel", "Failed to retrieve the image $fileName")
-                  null
-                }
+                runCatching {
+                      Log.d("ViewUserProfileViewModel", "Try to retrieve $fileName")
+                      photoRepositoryCloud.retrievePhoto(fileName)
+                    }
+                    .getOrElse {
+                      Log.d(
+                          "ViewUserProfileViewModel", "Failed to retrieve the image $fileName", it)
+                      null
+                    }
               }
             } else {
               null
             }
 
-        // Map domain model to UI state (kept simple & synchronous here).
+        // Map domain model to UI state
         _ui.value =
             ViewProfileUiState(
                 name = profile.userInfo.name + " " + profile.userInfo.lastName,
-                residence = temp,
+                residence = residenceText,
                 image = null,
                 error = null,
                 profilePicture = photo,
@@ -143,8 +156,14 @@ class ViewProfileScreenViewModel(
    * Blocks a user by adding their UID to the current user's blocked list in Firestore. Updates the
    * UI state to reflect the blocked status.
    *
-   * @param targetUid The UID of the user to block
-   * @param onError Callback invoked when blocking fails, receives error message
+   * Fixes rapid/repeated block<->unblock toggles by:
+   * - canceling any in-flight toggle/photo work on each click
+   * - optimistic UI update
+   * - ignoring late results using a token (so old unblock photo loads can't overwrite a new block)
+   *
+   * @param targetUid The UID of the user to block.
+   * @param onError Callback invoked when blocking fails, receives error message.
+   * @param context Android context for accessing string resources.
    */
   fun blockUser(targetUid: String, onError: (String) -> Unit = {}, context: Context) {
     val uid = auth.currentUser?.uid
@@ -153,26 +172,44 @@ class ViewProfileScreenViewModel(
       return
     }
 
-    viewModelScope.launch {
-      try {
-        // Ensure ownerId is set, then add to blocked list
-        repo.addBlockedUser(ownerId = uid, targetUid = targetUid)
-        // Update UI state to show blocked status
-        _ui.value = _ui.value.copy(isBlocked = true)
-      } catch (e: Exception) {
-        Log.e("ViewProfileScreenViewModel", "Error blocking user", e)
-        onError(
-            "${context.getString(R.string.view_user_profile_failed_to_block_user)}: ${e.message}")
-      }
-    }
+    val myToken = ++toggleToken
+
+    // Allow unlimited toggles: cancel ongoing work and apply latest intent.
+    toggleJob?.cancel()
+    photoJob?.cancel()
+
+    // Optimistic update: block immediately and hide picture.
+    _ui.update { it.copy(isBlocked = true, profilePicture = null) }
+
+    toggleJob =
+        viewModelScope.launch {
+          try {
+            repo.addBlockedUser(ownerId = uid, targetUid = targetUid)
+          } catch (e: Exception) {
+            Log.e("ViewProfileScreenViewModel", "Error blocking user", e)
+            // Revert only if this is still the latest intent.
+            if (toggleToken == myToken) {
+              _ui.update { it.copy(isBlocked = false) }
+            }
+            onError(
+                "${context.getString(R.string.view_user_profile_failed_to_block_user)}: ${e.message}")
+          }
+        }
   }
 
   /**
    * Unblocks a user by removing their UID from the current user's blocked list in Firestore.
    * Updates the UI state accordingly.
    *
+   * Fixes rapid/repeated block<->unblock toggles by:
+   * - canceling any in-flight toggle/photo work on each click
+   * - optimistic UI update
+   * - loading photo in a separate cancellable job
+   * - ignoring late results using a token
+   *
    * @param targetUid The UID of the user to unblock.
    * @param onError Callback invoked when unblocking fails, receives an error message.
+   * @param context Android context for accessing string resources.
    */
   fun unblockUser(targetUid: String, onError: (String) -> Unit = {}, context: Context) {
     val uid = auth.currentUser?.uid
@@ -181,15 +218,59 @@ class ViewProfileScreenViewModel(
       return
     }
 
-    viewModelScope.launch {
-      try {
-        repo.removeBlockedUser(ownerId = uid, targetUid = targetUid)
-        _ui.value = _ui.value.copy(isBlocked = false)
-      } catch (e: Exception) {
-        Log.e("ViewProfileScreenViewModel", "Error unblocking user", e)
-        onError(
-            "${context.getString(R.string.view_user_profile_failed_to_unblock_user)}: ${e.message}")
-      }
-    }
+    val myToken = ++toggleToken
+
+    // Allow unlimited toggles: cancel ongoing work and apply latest intent.
+    toggleJob?.cancel()
+    photoJob?.cancel()
+
+    // Optimistic update: unblock immediately.
+    _ui.update { it.copy(isBlocked = false) }
+
+    toggleJob =
+        viewModelScope.launch {
+          try {
+            repo.removeBlockedUser(ownerId = uid, targetUid = targetUid)
+
+            // Load picture in its own cancellable job.
+            photoJob =
+                viewModelScope.launch {
+                  val photo =
+                      runCatching { repo.getProfile(targetUid) }
+                          .getOrNull()
+                          ?.userInfo
+                          ?.profilePicture
+                          ?.let { fileName ->
+                            runCatching {
+                                  Log.d("ViewUserProfileViewModel", "Try to retrieve $fileName")
+                                  photoRepositoryCloud.retrievePhoto(fileName)
+                                }
+                                .getOrElse {
+                                  Log.d(
+                                      "ViewUserProfileViewModel",
+                                      "Failed to retrieve the image $fileName",
+                                      it)
+                                  null
+                                }
+                          }
+
+                  // Apply only if this is still the latest intent.
+                  if (toggleToken == myToken) {
+                    _ui.update { state ->
+                      if (state.isBlocked) state.copy(profilePicture = null)
+                      else state.copy(profilePicture = photo)
+                    }
+                  }
+                }
+          } catch (e: Exception) {
+            Log.e("ViewProfileScreenViewModel", "Error unblocking user", e)
+            // Revert only if this is still the latest intent.
+            if (toggleToken == myToken) {
+              _ui.update { it.copy(isBlocked = true) }
+            }
+            onError(
+                "${context.getString(R.string.view_user_profile_failed_to_unblock_user)}: ${e.message}")
+          }
+        }
   }
 }

@@ -11,8 +11,6 @@ import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
-import com.android.mySwissDorm.model.profile.ProfileRepository
-import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -66,12 +64,11 @@ data class ViewReviewUIState(
 
 class ViewReviewViewModel(
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
-    private val profilesRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val residencyRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
-    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloudRepository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewReviewUIState())
   val uiState: StateFlow<ViewReviewUIState> = _uiState.asStateFlow()

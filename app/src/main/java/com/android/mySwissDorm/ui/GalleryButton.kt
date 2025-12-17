@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -33,14 +32,12 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import java.util.UUID
@@ -282,10 +279,4 @@ private fun getFileNameFromUri(context: Context, uri: Uri): String {
     }
   } ?: throw IllegalArgumentException()
   return UUID.randomUUID().toString() + "." + fileName.substringAfterLast('.')
-}
-
-@Preview
-@Composable
-private fun Preview() {
-  MySwissDormAppTheme { DefaultGalleryButton({ Log.d("GalleryButton", "Selected : ${it.image}") }) }
 }

@@ -114,7 +114,7 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
         "Initially not bookmarked", vm.uiState.value.bookmarkedListingIds.contains(listing1.uid))
 
     // Toggle bookmark
-    vm.toggleBookmark(listing1.uid, context)
+    vm.toggleBookmark(listing1.uid)
 
     // Wait for bookmark to be added
     attempts = 0
@@ -153,7 +153,7 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
     assertTrue("Initially bookmarked", vm.uiState.value.bookmarkedListingIds.contains(listing1.uid))
 
     // Toggle bookmark
-    vm.toggleBookmark(listing1.uid, context)
+    vm.toggleBookmark(listing1.uid)
 
     // Wait for bookmark to be removed
     attempts = 0
@@ -190,7 +190,7 @@ class BrowseCityViewModelBookmarkTest : FirestoreTest() {
     val initialState = vm.uiState.value.bookmarkedListingIds.size
 
     // Try to toggle bookmark
-    vm.toggleBookmark(listing1.uid, context)
+    vm.toggleBookmark(listing1.uid)
     kotlinx.coroutines.delay(500)
 
     // State should remain unchanged

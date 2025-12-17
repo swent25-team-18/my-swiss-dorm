@@ -20,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -126,7 +127,7 @@ fun CustomLocationDialog(
                                     unfocusedLabelColor =
                                         TextColor.copy(alpha = Dimens.AlphaSecondary)),
                             modifier =
-                                Modifier.menuAnchor()
+                                Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true)
                                     .fillMaxWidth()
                                     .testTag(C.CustomLocationDialogTags.LOCATION_TEXT_FIELD),
                             singleLine = true)
@@ -134,9 +135,7 @@ fun CustomLocationDialog(
                         ExposedDropdownMenu(
                             expanded = showDropdown && locationSuggestions.isNotEmpty(),
                             onDismissRequest = { showDropdown = false }) {
-                              locationSuggestions.filterNotNull().take(3).forEachIndexed {
-                                  index,
-                                  location ->
+                              locationSuggestions.take(3).forEachIndexed { index, location ->
                                 DropdownMenuItem(
                                     text = {
                                       Text(

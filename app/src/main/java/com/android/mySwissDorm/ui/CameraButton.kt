@@ -3,7 +3,6 @@ package com.android.mySwissDorm.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContract
@@ -33,7 +32,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
@@ -42,7 +40,6 @@ import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import java.util.UUID
 
 /**
@@ -154,10 +151,4 @@ fun DefaultCameraButton(
         Spacer(Modifier.width(Dimens.SpacingDefault))
         Text(text = stringResource(R.string.camera_button_default_text))
       }
-}
-
-@Preview
-@Composable
-private fun Preview() {
-  MySwissDormAppTheme { DefaultCameraButton(onSave = { Log.d("CameraButton", "Photo taken") }) }
 }

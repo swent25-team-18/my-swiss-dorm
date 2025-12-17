@@ -130,7 +130,7 @@ class RequestedMessageRepositoryFirestore(private val db: FirebaseFirestore) :
           status =
               try {
                 MessageStatus.valueOf(data["status"] as? String ?: MessageStatus.PENDING.name)
-              } catch (e: Exception) {
+              } catch (_: Exception) {
                 MessageStatus.PENDING
               })
     } catch (e: Exception) {

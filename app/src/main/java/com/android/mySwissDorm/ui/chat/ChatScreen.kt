@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -242,15 +241,11 @@ fun MyChatScreen(
       val resizeSoftInputMode = computeResizeSoftInputMode(originalSoftInputMode)
 
       fun applyResize() {
-        if (window != null) {
-          window.setSoftInputMode(resizeSoftInputMode)
-        }
+        window?.setSoftInputMode(resizeSoftInputMode)
       }
 
       fun restore() {
-        if (window != null) {
-          window.setSoftInputMode(restoreSoftInputMode)
-        }
+        window?.setSoftInputMode(restoreSoftInputMode)
       }
 
       val observer = LifecycleEventObserver { _, event ->
@@ -473,23 +468,11 @@ internal suspend fun loadAppProfileAvatarModel(
       ProfileRepositoryProvider.repository.getProfile(id)
     },
     photoModelLoader: suspend (String) -> Any? = { fileName ->
-      PhotoRepositoryProvider.cloud_repository.retrievePhoto(fileName).image
+      PhotoRepositoryProvider.cloudRepository.retrievePhoto(fileName).image
     },
 ): Any? {
   val profile = profileLoader(userId)
   val fileName = profile.userInfo.profilePicture
   if (fileName.isNullOrBlank()) return null
   return runCatching { photoModelLoader(fileName) }.getOrNull()
-}
-
-/**
- * Preview composable for [MyChatScreen] used in Android Studio's design preview.
- *
- * This preview uses a fake channel ID and does not require actual Stream Chat connection, allowing
- * designers to see the chat screen layout without running the full app.
- */
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun MyChatScreenPreview() {
-  ChatTheme { MyChatScreen(channelId = "messaging:preview", onBackClick = {}) }
 }

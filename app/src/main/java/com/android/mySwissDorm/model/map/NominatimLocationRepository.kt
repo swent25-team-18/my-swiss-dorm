@@ -1,8 +1,5 @@
 package com.android.mySwissDorm.model.map
 
-import CachedLocations
-import GeoCache
-import InMemoryGeoCache
 import android.util.Log
 import java.io.IOException
 import java.util.Locale
@@ -22,13 +19,13 @@ class NominatimLocationRepository(
     private val cache: GeoCache = InMemoryGeoCache()
 ) : LocationRepository {
   private var lastCall = 0L
-  private val MIN_INTERVAL_MS = 1100L
+  private val minIntervalMs = 1100L
   private val gate = Mutex()
 
   private suspend fun respectRateLimit() =
       gate.withLock {
         val now = System.currentTimeMillis()
-        val wait = (lastCall + MIN_INTERVAL_MS) - now
+        val wait = (lastCall + minIntervalMs) - now
         if (wait > 0) delay(wait)
         lastCall = System.currentTimeMillis()
       }

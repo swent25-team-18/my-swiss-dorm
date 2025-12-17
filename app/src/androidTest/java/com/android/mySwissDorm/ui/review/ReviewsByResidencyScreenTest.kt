@@ -83,7 +83,7 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
       switchToUser(FakeUser.FakeUser1)
       userId = FirebaseEmulator.auth.currentUser!!.uid
       profileRepo.createProfile(profile1.copy(ownerId = userId))
-      PhotoRepositoryProvider.cloud_repository.uploadPhoto(photo)
+      PhotoRepositoryProvider.cloudRepository.uploadPhoto(photo)
     }
 
     review1 = reviewVortex1.copy(uid = reviewUid1, ownerId = userId)
@@ -106,7 +106,7 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
   @After
   override fun tearDown() {
-    runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
+    runBlocking { PhotoRepositoryProvider.cloudRepository.deletePhoto(photo.fileName) }
     super.tearDown()
   }
 

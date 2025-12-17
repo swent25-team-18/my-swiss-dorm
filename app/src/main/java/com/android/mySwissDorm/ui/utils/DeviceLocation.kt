@@ -115,25 +115,24 @@ fun onUserLocationClickFunc(context: Context, vm: BaseLocationSearchViewModel): 
             }
           })
 
-  val onUseCurrentLocationClick =
-      remember<() -> Unit> {
-        {
-          if (hasLocationPermission) {
-            fetchDeviceLocation(
-                context = context,
-                fusedLocationClient = fusedLocationClient,
-                onLocationFetched = onFetchLocationName,
-                onPermissionDenied = {
-                  Toast.makeText(
-                          context,
-                          context.getString(R.string.device_location_could_not_get_location),
-                          Toast.LENGTH_SHORT)
-                      .show()
-                })
-          } else {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-          }
-        }
+  val onUseCurrentLocationClick = remember {
+    {
+      if (hasLocationPermission) {
+        fetchDeviceLocation(
+            context = context,
+            fusedLocationClient = fusedLocationClient,
+            onLocationFetched = onFetchLocationName,
+            onPermissionDenied = {
+              Toast.makeText(
+                      context,
+                      context.getString(R.string.device_location_could_not_get_location),
+                      Toast.LENGTH_SHORT)
+                  .show()
+            })
+      } else {
+        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
       }
+    }
+  }
   return onUseCurrentLocationClick
 }

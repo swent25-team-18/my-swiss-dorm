@@ -157,7 +157,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   @After
   override fun tearDown() {
     unmockkAll()
-    runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
+    runBlocking { PhotoRepositoryProvider.cloudRepository.deletePhoto(photo.fileName) }
     super.tearDown()
   }
 
@@ -202,7 +202,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun everythingIsDisplayed() {
     runTest {
       // Photo upload
-      PhotoRepositoryProvider.cloud_repository.uploadPhoto(photo)
+      PhotoRepositoryProvider.cloudRepository.uploadPhoto(photo)
       setOwnerReview()
       waitForScreenRoot()
       compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }

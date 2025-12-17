@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.listing
 
-import AddListingScreen
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled

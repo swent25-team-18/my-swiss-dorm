@@ -26,3 +26,4 @@ val AlmostWhite = Color(0xFFF0F0F0)
 val PinkyWhite = Color(0xFFEBD0CE)
 val Black = Color.Black
 val AlmostBlack = Color(0xFF2A2A2A)
+val Green = Color(0xFF00FF00)

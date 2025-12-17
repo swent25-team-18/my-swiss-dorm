@@ -53,6 +53,12 @@ class ProfileContributionsViewModelTest {
 
           override suspend fun deleteRentalListing(rentalPostId: String) =
               throw UnsupportedOperationException()
+
+          override suspend fun getAllRentalListingsForUser(userId: String?) =
+              emptyList<RentalListing>()
+
+          override suspend fun getRentalListingForUser(rentalPostId: String, userId: String?) =
+              throw UnsupportedOperationException()
         }
 
     val mockReviewsRepo =
@@ -82,6 +88,14 @@ class ProfileContributionsViewModelTest {
               throw UnsupportedOperationException()
 
           override suspend fun removeVote(reviewId: String, userId: String) =
+              throw UnsupportedOperationException()
+
+          override suspend fun getAllReviewsByResidencyForUser(
+              residencyName: String,
+              userId: String?
+          ) = emptyList<Review>()
+
+          override suspend fun getReviewForUser(reviewId: String, userId: String?) =
               throw UnsupportedOperationException()
         }
 
@@ -172,6 +186,14 @@ class ProfileContributionsViewModelTest {
 
                   override suspend fun deleteRentalListing(rentalPostId: String) =
                       throw UnsupportedOperationException()
+
+                  override suspend fun getAllRentalListingsForUser(userId: String?) =
+                      getAllRentalListingsByUser(userId ?: "")
+
+                  override suspend fun getRentalListingForUser(
+                      rentalPostId: String,
+                      userId: String?
+                  ) = getRentalListing(rentalPostId)
                 },
             reviewsRepo =
                 object : ReviewsRepository {
@@ -218,6 +240,14 @@ class ProfileContributionsViewModelTest {
 
                   override suspend fun removeVote(reviewId: String, userId: String) =
                       throw UnsupportedOperationException()
+
+                  override suspend fun getAllReviewsByResidencyForUser(
+                      residencyName: String,
+                      userId: String?
+                  ) = getAllReviewsByResidency(residencyName)
+
+                  override suspend fun getReviewForUser(reviewId: String, userId: String?) =
+                      getReview(reviewId)
                 })
 
     vm.load(force = true, context = context)

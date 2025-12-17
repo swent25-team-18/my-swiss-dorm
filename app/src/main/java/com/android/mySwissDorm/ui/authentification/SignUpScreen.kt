@@ -43,9 +43,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -78,13 +78,14 @@ fun SignUpScreen(
         Column(
             modifier =
                 Modifier.padding(innerPadding)
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingTopSmall)
                     .fillMaxSize()
                     .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
               val outlinedTextModifier =
-                  Modifier.background(TextBoxColor, RoundedCornerShape(10.dp)).fillMaxWidth()
+                  Modifier.background(TextBoxColor, RoundedCornerShape(Dimens.CornerRadiusDefault))
+                      .fillMaxWidth()
               val textFieldColors =
                   OutlinedTextFieldDefaults.colors(
                       focusedBorderColor = MainColor,
@@ -93,7 +94,7 @@ fun SignUpScreen(
                       cursorColor = TextColor,
                       unfocusedLabelColor = Color.Gray)
 
-              Spacer(modifier = Modifier.size(16.dp))
+              Spacer(modifier = Modifier.size(Dimens.SpacingXLarge))
               OutlinedTextField(
                   value = uiState.name,
                   onValueChange = { signUpViewModel.updateName(it) },
@@ -263,11 +264,14 @@ fun SignUpScreen(
                   onClick = { onContinue() },
                   enabled = signUpViewModel.isFormValid,
                   colors = ButtonDefaults.buttonColors(containerColor = MainColor),
-                  modifier = Modifier.fillMaxWidth().height(52.dp).testTag(C.Tag.SIGN_UP_BUTTON),
-                  shape = RoundedCornerShape(16.dp)) {
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .height(Dimens.ButtonHeight)
+                          .testTag(C.Tag.SIGN_UP_BUTTON),
+                  shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
                     Text(text = stringResource(R.string.continue_with_preferences), color = White)
                   }
-              Spacer(Modifier.height(8.dp))
+              Spacer(Modifier.height(Dimens.SpacingDefault))
               if (!signUpViewModel.isFormValid) {
                 Text(
                     stringResource(R.string.sign_up_button_help_text),

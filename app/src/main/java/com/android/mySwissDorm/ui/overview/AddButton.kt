@@ -38,9 +38,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.White
@@ -68,15 +68,17 @@ fun AddFabMenu(
     }
 
     Column(
-        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier =
+            Modifier.align(Alignment.BottomEnd)
+                .padding(end = Dimens.PaddingDefault, bottom = Dimens.PaddingDefault),
+        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge),
         horizontalAlignment = Alignment.End) {
           AnimatedVisibility(
               visible = expanded,
               enter = fadeIn() + expandVertically(),
               exit = fadeOut() + shrinkVertically()) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault),
                     horizontalAlignment = Alignment.End) {
                       FabMiniAction(
                           textId = R.string.add_button_add_listing,
@@ -103,10 +105,11 @@ fun AddFabMenu(
 
           FloatingActionButton(
               onClick = { if (!isGuest) expanded = !expanded },
-              elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+              elevation =
+                  FloatingActionButtonDefaults.elevation(defaultElevation = Dimens.SpacingMedium),
               shape = CircleShape,
               containerColor = if (isGuest) Gray else MainColor,
-              modifier = Modifier.size(64.dp).testTag(C.BrowseCityTags.FABMENU)) {
+              modifier = Modifier.size(Dimens.FABSize).testTag(C.BrowseCityTags.FABMENU)) {
                 Icon(
                     imageVector = Icons.Filled.Add,
                     tint = White,
@@ -126,16 +129,17 @@ private fun FabMiniAction(
 
   Surface(
       shape = MaterialTheme.shapes.large,
-      tonalElevation = 6.dp,
-      shadowElevation = 8.dp,
+      tonalElevation = Dimens.SpacingMedium,
+      shadowElevation = Dimens.PaddingSmall,
       color = MainColor,
       contentColor = White,
-      modifier = Modifier.shadow(8.dp, MaterialTheme.shapes.large).testTag(tag)) {
+      modifier = Modifier.shadow(Dimens.PaddingSmall, MaterialTheme.shapes.large).testTag(tag)) {
         TextButton(
             onClick = onClick,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
+            contentPadding =
+                PaddingValues(horizontal = Dimens.PaddingMedium, vertical = Dimens.PaddingSmall)) {
               icon()
-              Spacer(modifier = Modifier.size(8.dp))
+              Spacer(modifier = Modifier.size(Dimens.SpacingDefault))
               Text(stringResource(textId), color = White, fontWeight = FontWeight.Medium)
             }
       }

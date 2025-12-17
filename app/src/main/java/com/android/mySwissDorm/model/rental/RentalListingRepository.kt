@@ -43,6 +43,27 @@ interface RentalListingRepository {
   suspend fun getRentalListing(rentalPostId: String): RentalListing
 
   /**
+   * Retrieves all Rental posts from the repository, filtered based on bidirectional blocking. Only
+   * returns listings where neither the current user nor the listing owner has blocked the other.
+   *
+   * @param userId The unique identifier of the current user. If null, returns all listings.
+   * @return A list of Rental posts visible to the user.
+   */
+  suspend fun getAllRentalListingsForUser(userId: String?): List<RentalListing>
+
+  /**
+   * Retrieves a specific rental post by its unique identifier, if visible to the user. Returns the
+   * listing only if neither the current user nor the listing owner has blocked the other.
+   *
+   * @param rentalPostId The unique identifier of the rental post item to retrieve.
+   * @param userId The unique identifier of the current user. If null, returns the listing if it
+   *   exists.
+   * @return The rental post item with the specified identifier.
+   * @throws Exception if the rental post item is not found or if blocked.
+   */
+  suspend fun getRentalListingForUser(rentalPostId: String, userId: String?): RentalListing
+
+  /**
    * Adds a new rental post item to the repository.
    *
    * @param rentalPost The rental post item to add.

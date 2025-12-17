@@ -119,6 +119,57 @@ class ReviewsRepositoryHybrid(
             }
           })
 
+  override suspend fun getAllReviewsByResidencyForUser(
+      residencyName: String,
+      userId: String?
+  ): List<Review> {
+    val allReviews = getAllReviewsByResidency(residencyName)
+    if (userId == null) return allReviews
+
+    return filterReviewsByBlocking(allReviews, userId)
+  }
+
+  override suspend fun getReviewForUser(reviewId: String, userId: String?): Review {
+    val review = getReview(reviewId)
+    if (userId == null || userId == review.ownerId) return review
+
+    // Always allow anonymous reviews to preserve anonymity (security/privacy requirement)
+    if (review.isAnonymous) return review
+
+    // Check bidirectional blocking for non-anonymous reviews
+    val isBlocked = isBlockedBidirectionally(review.ownerId, userId)
+    if (isBlocked) {
+      throw NoSuchElementException(
+          "ReviewsRepositoryHybrid: Review $reviewId is not available due to blocking restrictions")
+    }
+    return review
+  }
+
+  /**
+   * Filters reviews based on bidirectional blocking.
+   *
+   * @param reviews The reviews to filter.
+   * @param userId The current user's ID.
+   * @return Filtered list of reviews visible to the user.
+   */
+  private suspend fun filterReviewsByBlocking(reviews: List<Review>, userId: String): List<Review> {
+    // Load current user's blocked list once for efficiency
+    val currentUserBlockedList =
+        runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(userId) }
+            .onFailure { Log.w(TAG, "Failed to fetch current user's blocked list", it) }
+            .getOrDefault(emptyList())
+
+    val blockedCache = mutableMapOf<String, Boolean>()
+    return reviews.filter { review ->
+      // Always show own reviews
+      if (review.ownerId == userId) return@filter true
+      // Always show anonymous reviews to preserve anonymity (security/privacy requirement)
+      if (review.isAnonymous) return@filter true
+      // For non-anonymous reviews, apply blocking filter
+      !isBlockedBidirectionally(review.ownerId, userId, currentUserBlockedList, blockedCache)
+    }
+  }
+
   /**
    * Syncs reviews to the local database for offline access.
    *

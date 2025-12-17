@@ -299,6 +299,14 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
       override suspend fun removeVote(reviewId: String, userId: String) =
           throw UnsupportedOperationException()
+
+      override suspend fun getAllReviewsByResidencyForUser(
+          residencyName: String,
+          userId: String?
+      ): List<Review> = throw Exception("error")
+
+      override suspend fun getReviewForUser(reviewId: String, userId: String?): Review =
+          throw Exception("error")
     }
 
     val failingVm = ReviewsByResidencyViewModel(ThrowingRepo(), profileRepo)

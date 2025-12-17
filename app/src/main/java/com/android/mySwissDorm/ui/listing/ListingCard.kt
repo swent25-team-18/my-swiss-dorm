@@ -23,6 +23,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.BrowseCityTags.RECOMMENDED
 import com.android.mySwissDorm.ui.overview.ListingCardUI
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.ListingCardColor
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -49,7 +50,7 @@ fun ListingCard(
     isGuest: Boolean = false
 ) {
   OutlinedCard(
-      shape = RoundedCornerShape(16.dp),
+      shape = RoundedCornerShape(Dimens.CardCornerRadius),
       modifier = Modifier.fillMaxWidth().testTag(C.BrowseCityTags.listingCard(data.listingUid)),
       onClick = { onClick(data) }) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -57,15 +58,15 @@ fun ListingCard(
               modifier =
                   Modifier.fillMaxWidth()
                       // Fix the content height so all cards have the same height
-                      .height(140.dp)
-                      .padding(end = if (!isGuest) 48.dp else 0.dp),
+                      .height(Dimens.CardImageHeight)
+                      .padding(end = if (!isGuest) Dimens.IconSizeButton else 0.dp),
               verticalAlignment = Alignment.CenterVertically) {
                 // Image (left) - fills the left side vertically within the fixed card height
                 Box(
                     modifier =
                         Modifier.fillMaxHeight()
                             .weight(0.35f)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                             .background(ListingCardColor)) {
                       AsyncImage(
                           model = data.image.firstOrNull(),
@@ -75,21 +76,26 @@ fun ListingCard(
                       if (data.isRecommended) {
                         Surface(
                             color = MainColor,
-                            shape = RoundedCornerShape(topStart = 12.dp, bottomEnd = 8.dp),
+                            shape =
+                                RoundedCornerShape(
+                                    topStart = Dimens.CornerRadiusDefault,
+                                    bottomEnd = Dimens.CornerRadiusMedium),
                             modifier = Modifier.align(Alignment.TopStart)) {
                               Text(
                                   text = stringResource(R.string.recommended),
                                   color = White,
                                   style = MaterialTheme.typography.labelSmall,
                                   modifier =
-                                      Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                      Modifier.padding(
+                                              horizontal = Dimens.PaddingMedium,
+                                              vertical = Dimens.PaddingXSmall)
                                           .testTag(RECOMMENDED),
                                   fontSize = 10.sp)
                             }
                       }
                     }
 
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(Dimens.SpacingLarge))
 
                 Column(modifier = Modifier.weight(0.65f).fillMaxHeight()) {
                   Text(
@@ -100,11 +106,11 @@ fun ListingCard(
                       color = TextColor,
                       modifier = Modifier.fillMaxWidth())
 
-                  Spacer(Modifier.height(8.dp))
+                  Spacer(Modifier.height(Dimens.SpacingDefault))
 
                   Row(modifier = Modifier.fillMaxWidth()) {
                     BulletColumn(data.leftBullets, modifier = Modifier.weight(1f))
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(Dimens.SpacingDefault))
                     BulletColumn(data.rightBullets, modifier = Modifier.weight(1f))
                   }
                 }
@@ -114,7 +120,9 @@ fun ListingCard(
           if (!isGuest) {
             IconButton(
                 onClick = { onToggleBookmark() },
-                modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp)) {
+                modifier =
+                    Modifier.align(Alignment.TopEnd)
+                        .padding(top = Dimens.PaddingXSmall, end = Dimens.PaddingXSmall)) {
                   Icon(
                       imageVector =
                           if (isBookmarked) Icons.Filled.Bookmark
@@ -140,7 +148,7 @@ private fun BulletColumn(items: List<String>, modifier: Modifier = Modifier) {
   Column(modifier) {
     items.forEach {
       Text("• $it", style = MaterialTheme.typography.bodyMedium, color = TextColor)
-      Spacer(Modifier.height(6.dp))
+      Spacer(Modifier.height(Dimens.SpacingMedium))
     }
   }
 }

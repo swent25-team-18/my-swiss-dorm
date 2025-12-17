@@ -165,4 +165,19 @@ class ReviewsRepositoryLocal(private val reviewDao: ReviewDao) : ReviewsReposito
     throw UnsupportedOperationException(
         "ReviewsRepositoryLocal: Cannot vote on reviews offline. Please connect to the internet.")
   }
+
+  override suspend fun getAllReviewsByResidencyForUser(
+      residencyName: String,
+      userId: String?
+  ): List<Review> {
+    // Local repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getAllReviewsByResidency(residencyName)
+  }
+
+  override suspend fun getReviewForUser(reviewId: String, userId: String?): Review {
+    // Local repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getReview(reviewId)
+  }
 }

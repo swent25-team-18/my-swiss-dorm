@@ -45,7 +45,6 @@ import com.android.mySwissDorm.ui.authentification.SignUpViewModel
 import com.android.mySwissDorm.ui.chat.ChannelsScreen
 import com.android.mySwissDorm.ui.chat.MyChatScreen
 import com.android.mySwissDorm.ui.chat.RequestedMessagesScreen
-import com.android.mySwissDorm.ui.chat.SelectUserToChatScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
 import com.android.mySwissDorm.ui.listing.BookmarkedListingsScreen
 import com.android.mySwissDorm.ui.listing.EditListingScreen
@@ -757,12 +756,6 @@ fun AppNavHost(
             // URL decode the channelId in case it contains special characters
             val decodedChannelId = java.net.URLDecoder.decode(channelId, "UTF-8")
             MyChatScreen(channelId = decodedChannelId, onBackClick = navActions::goBack)
-          }
-
-          composable(Screen.SelectUserToChat.route) {
-            SelectUserToChatScreen(
-                onBackClick = { navActions.goBack() },
-                onUserSelected = { channelCid -> openChatChannel(channelCid, navActions) })
           }
 
           composable(Screen.RequestedMessages.route) {

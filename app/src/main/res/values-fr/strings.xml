@@ -269,7 +269,6 @@
     <string name="screen_view_user_profile">Voir le profil</string>
     <string name="screen_profile">Profil</string>
     <string name="screen_chat">Chat</string>
-    <string name="screen_select_user_to_chat">Sélectionner un utilisateur</string>
     <string name="screen_requested_messages">Messages demandés</string>
     <string name="screen_bookmarked_listings">Annonces enregistrées</string>
 

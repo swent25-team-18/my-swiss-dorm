@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,20 +47,21 @@ import com.google.firebase.auth.FirebaseAuth
  * Displays a read-only view of another user's profile.
  *
  * This composable supports two modes:
- * 1) **Runtime mode** (default): provide a [ViewProfileScreenViewModel] (or let it be created) and
- *    a non-null [ownerId]. The VM will be used and data loaded.
+ * 1) **Runtime mode** (default): provide a [ViewProfileScreenViewModel] (or let it be created via
+ *    [viewModel]) and a non-null [ownerId]. The VM will be used and data loaded.
  * 2) **Preview / Static mode**: pass a non-null [previewUi]. When [previewUi] is provided, the VM
  *    is never touched and no data is loaded (useful for @Preview).
  *
  * Test tags are provided via [T] for stable UI tests.
  *
- * @param viewModel Optional VM. If null (and not in preview), one will be created via [viewModel].
- * @param ownerId The user id of the profile owner. Required in runtime mode. Null for preview.
- * @param onBack Callback invoked when the top bar back icon is tapped.
- * @param onSendMessage Callback invoked when "Send a message" row is tapped. It is gated on a
- *   non-null [ownerId].
- * @param previewUi If non-null, the screen renders from this state only (VM and loading are
- *   skipped).
+ * @param viewModel Optional ViewModel instance. If null, a new instance will be created via
+ *   [viewModel].
+ * @param ownerId The UID of the user whose profile to display. Required in runtime mode, ignored in
+ *   preview mode.
+ * @param onBack Callback invoked when the back button is clicked.
+ * @param onSendMessage Callback invoked when the send message button is clicked.
+ * @param previewUi Optional preview UI state. When provided, the composable operates in preview
+ *   mode and displays this static data without loading from the repository.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,23 +73,20 @@ fun ViewUserProfileScreen(
     previewUi: ViewProfileUiState? = null
 ) {
   val context = LocalContext.current
+
   // Obtain a real VM only when NOT in preview
   val realVm: ViewProfileScreenViewModel? =
       if (previewUi == null) (viewModel ?: viewModel()) else null
 
   // Trigger data load only when we have a VM and a real ownerId
   if (realVm != null && ownerId != null) {
-    LaunchedEffect(ownerId) {
-      // Idempotent load tied to ownerId changes
-      realVm.loadProfile(ownerId, context)
-    }
+    LaunchedEffect(ownerId) { realVm.loadProfile(ownerId, context) }
   }
 
-  // Decide the UI source (previewUi takes precedence when provided)
+  // Observe UI state
   val ui: ViewProfileUiState =
       previewUi
           ?: run {
-            // In runtime mode, observe the VM's state
             val vmUi by realVm!!.uiState.collectAsState()
             vmUi
           }
@@ -95,12 +94,16 @@ fun ViewUserProfileScreen(
   val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
   val isCurrentUser = ownerId == currentUserId
 
+  // ✅ IMPORTANT: ensure click handler always sees latest values
+  val latestIsBlocked by rememberUpdatedState(ui.isBlocked)
+  val latestOwnerId by rememberUpdatedState(ownerId)
+
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
             title = {
               Text(
-                  text = ui.name, // no loading placeholder
+                  text = ui.name,
                   modifier = Modifier.testTag(T.TITLE),
                   style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp),
                   textAlign = TextAlign.Center)
@@ -115,7 +118,6 @@ fun ViewUserProfileScreen(
             })
       }) { padding ->
         if (ui.error != null) {
-          // Error state + Retry (no composable calls inside onClick)
           Box(
               modifier = Modifier.fillMaxSize().padding(padding),
               contentAlignment = Alignment.Center) {
@@ -132,15 +134,12 @@ fun ViewUserProfileScreen(
                 }
               }
         } else {
-          // Normal content
           LazyColumn(
               modifier = Modifier.fillMaxSize().padding(padding).testTag(T.ROOT),
               contentPadding =
                   PaddingValues(horizontal = Dimens.PaddingLarge, vertical = Dimens.PaddingLarge)) {
                 item {
-                  // Center avatar horizontally with a full-width wrapper
                   Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    // Avatar with red ring + person icon
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier =
@@ -178,7 +177,6 @@ fun ViewUserProfileScreen(
                   Spacer(Modifier.height(Dimens.SpacingXXLarge))
                 }
 
-                // Residence chip (only when non-blank)
                 if (ui.residence.isNotBlank()) {
                   item {
                     Surface(
@@ -203,7 +201,6 @@ fun ViewUserProfileScreen(
                   }
                 }
 
-                // Send a message row (enabled only when ownerId is non-null and not current user)
                 if (!isCurrentUser && ownerId != null) {
                   item {
                     Surface(
@@ -233,36 +230,35 @@ fun ViewUserProfileScreen(
                   }
                 }
 
-                // Block user row (enabled only when ownerId is non-null and not current user)
                 if (!isCurrentUser && ownerId != null && realVm != null) {
                   item {
                     Spacer(Modifier.height(Dimens.SpacingLarge))
-                    val isBlocked = ui.isBlocked
-                    val buttonColor = if (isBlocked) MainColor else Red
-                    val textColor = if (isBlocked) BackGroundColor else White
+
+                    // UI appearance can use ui.isBlocked directly (recomposes fine)
+                    val buttonColor = if (ui.isBlocked) MainColor else Red
+                    val textColor = if (ui.isBlocked) BackGroundColor else White
                     val iconColor = textColor
                     val buttonText =
-                        if (isBlocked) stringResource(R.string.view_user_profile_unblock_user)
+                        if (ui.isBlocked) stringResource(R.string.view_user_profile_unblock_user)
                         else stringResource(R.string.view_user_profile_block_user)
 
                     Surface(
                         onClick = {
-                          ownerId?.let { targetUid ->
-                            if (isBlocked) {
-                              realVm.unblockUser(
-                                  targetUid,
-                                  onError = { errorMsg ->
-                                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
-                                  },
-                                  context = context)
-                            } else {
-                              realVm.blockUser(
-                                  targetUid,
-                                  onError = { errorMsg ->
-                                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
-                                  },
-                                  context = context)
-                            }
+                          val targetUid = latestOwnerId ?: return@Surface
+                          if (latestIsBlocked) {
+                            realVm.unblockUser(
+                                targetUid,
+                                onError = { errorMsg ->
+                                  Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                },
+                                context = context)
+                          } else {
+                            realVm.blockUser(
+                                targetUid,
+                                onError = { errorMsg ->
+                                  Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                },
+                                context = context)
                           }
                         },
                         shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
@@ -294,16 +290,12 @@ fun ViewUserProfileScreen(
       }
 }
 
-/**
- * Preview that never touches the ViewModel. We provide a static previewUI so the composable renders
- * without creating or using a VM.
- */
 @Preview(showBackground = true, name = "ViewUserProfile – Preview")
 @Composable
 private fun Preview_ViewUserProfile() {
   MySwissDormAppTheme {
     ViewUserProfileScreen(
-        viewModel = null, // do NOT create a VM in preview
+        viewModel = null,
         ownerId = null,
         onBack = {},
         onSendMessage = {},

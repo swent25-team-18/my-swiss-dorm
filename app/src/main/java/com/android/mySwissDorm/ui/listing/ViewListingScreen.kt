@@ -226,7 +226,6 @@ fun ViewListingScreen(
                     lineHeight = 32.sp,
                     modifier = Modifier.testTag(C.ViewListingTags.TITLE),
                     color = TextColor)
-
                 val context = LocalContext.current
                 val baseTextStyle =
                     MaterialTheme.typography.bodyMedium.copy(
@@ -383,8 +382,16 @@ fun ViewListingScreen(
                 }
                 Spacer(Modifier.height(Dimens.SpacingDefault))
 
-                // Bullet section
+                // Bullet section (residency + key facts)
                 SectionCard(modifier = Modifier.testTag(C.ViewListingTags.BULLETS)) {
+                  if (listing.residencyName.isNotBlank()) {
+                    Text(
+                        text = listing.residencyName,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold, color = TextColor),
+                        modifier = Modifier.testTag(C.ViewListingTags.RESIDENCY_NAME))
+                  }
                   BulletRow(listing.roomType.getName(context))
                   BulletRow(
                       "${listing.pricePerMonth}${stringResource(R.string.view_listing_price_per_month)}")

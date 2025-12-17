@@ -99,7 +99,8 @@ fun ReviewsByResidencyScreen(
               Row(
                   modifier =
                       Modifier.fillMaxWidth()
-                          .padding(horizontal = 16.dp, vertical = 8.dp)
+                          .padding(
+                              horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingSmall)
                           .testTag(C.ReviewsByResidencyTag.VIEW_RESIDENCY_DETAILS_BUTTON),
                   horizontalArrangement = Arrangement.Center) {
                     TextButton(onClick = { onViewResidencyDetails() }) {

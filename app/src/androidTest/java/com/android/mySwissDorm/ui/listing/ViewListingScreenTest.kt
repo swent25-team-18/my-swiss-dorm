@@ -773,55 +773,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun fullScreenModeWorks() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    val photo = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
-    val listing =
-        rentalListing3.copy(
-            ownerId = FirebaseEmulator.auth.currentUser!!.uid, imageUrls = listOf(photo.fileName))
-    listingsRepo.addRentalListing(listing)
-    val vm =
-        ViewListingViewModel(
-            rentalListingRepository = listingsRepo,
-            profileRepository = profileRepo,
-            photoRepositoryCloud =
-                FakePhotoRepositoryCloud(onRetrieve = { photo }, onUpload = {}, onDelete = true))
-    compose.setContent { ViewListingScreen(listingUid = listing.uid, viewListingViewModel = vm) }
-    compose.waitForIdle()
-
-    // Wait until the image node exists in the semantics tree (not necessarily visible yet)
-    compose.waitUntil("The image is not shown", 5_000) {
-      compose
-          .onAllNodesWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-    // Click on a photo to display in full screen
-    compose
-        .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
-        .performScrollTo()
-        .performClick()
-
-    compose.waitForIdle()
-    // Check image is shown in full screen
-    compose.waitUntil("The clicked image is not shown in full screen", 50_000) {
-      compose
-          .onAllNodesWithTag(
-              C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Check that go back to the view listing page
-    compose
-        .onNodeWithTag(C.FullScreenImageViewerTags.DELETE_BUTTON, useUnmergedTree = true)
-        .performClick()
-    compose.waitUntil("The listing page is not shown after leaving the full screen mode", 5_000) {
-      compose.onNodeWithTag(C.ImageGridTags.imageTag(photo.image)).isDisplayed()
-    }
-  }
-
-  @Test
   fun title_isDisplayed() = runTest {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {

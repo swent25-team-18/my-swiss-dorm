@@ -7,6 +7,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.core.net.toUri
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -30,6 +32,7 @@ import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.BrowseCityTags.RECOMMENDED
 import com.android.mySwissDorm.ui.listing.ListingCard
 import com.android.mySwissDorm.ui.navigation.NavigationActions
+import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.utils.FakePhotoRepository
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_FILE_NAME
 import com.android.mySwissDorm.utils.FakePhotoRepository.Companion.FAKE_NAME
@@ -1254,7 +1257,13 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     compose.waitUntil(5_000) {
       compose.onAllNodesWithTag(C.BrowseCityTags.ERROR).fetchSemanticsNodes().isNotEmpty()
     }
-    compose.onNodeWithTag(C.BrowseCityTags.ERROR).assertIsDisplayed().assertTextContains("error")
+    // The error message from the exception is "Residencies error"
+    // Note: The displayed text may include brackets from exception formatting, so we check for the
+    // substring
+    compose
+        .onNodeWithTag(C.BrowseCityTags.ERROR)
+        .assertIsDisplayed()
+        .assertTextContains("Residencies error", substring = true)
   }
 
   @Test
@@ -1411,6 +1420,16 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     compose.setContent {
       val navController = rememberNavController()
       val navActions = NavigationActions(navController)
+
+      // Set up a minimal navigation graph so navigateToHomepageDirectly can access
+      // graph.startDestinationId
+      NavHost(navController = navController, startDestination = Screen.Homepage.route) {
+        composable(Screen.Homepage.route) {
+          // Empty composable for Homepage - we're testing BrowseCityScreen separately
+        }
+      }
+
+      // Render BrowseCityScreen outside NavHost but with access to the initialized NavController
       BrowseCityScreen(
           browseCityViewModel = vm, location = lausanneLocation, navigationActions = navActions)
     }

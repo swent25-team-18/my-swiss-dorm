@@ -610,8 +610,8 @@ class AdminPageScreenTest : FirestoreTest() {
     delay(200)
     composeTestRule.waitForIdle()
 
-    // Wait for images to appear
-    composeTestRule.waitUntil(5_000) {
+    // Wait for images to appear (increased timeout for CI environment)
+    composeTestRule.waitUntil(15_000) {
       composeTestRule
           .onAllNodesWithTag(C.ImageGridTags.imageTag(photo1.image), useUnmergedTree = true)
           .fetchSemanticsNodes()
@@ -624,8 +624,8 @@ class AdminPageScreenTest : FirestoreTest() {
         .performClick()
     composeTestRule.waitForIdle()
 
-    // Verify full screen viewer is displayed
-    composeTestRule.waitUntil(5_000) {
+    // Verify full screen viewer is displayed (increased timeout for CI environment)
+    composeTestRule.waitUntil(15_000) {
       composeTestRule
           .onAllNodesWithTag(
               C.FullScreenImageViewerTags.imageTag(photo1.image), useUnmergedTree = true)

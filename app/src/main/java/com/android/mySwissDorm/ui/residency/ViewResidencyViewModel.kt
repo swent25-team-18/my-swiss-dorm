@@ -123,6 +123,13 @@ open class ViewResidencyViewModel(
   }
 
   fun onClickImage(index: Int) {
-    _uiState.update { it.copy(showFullScreenImages = true, fullScreenImagesIndex = index) }
+    _uiState.update { currentState ->
+      // Only show full screen if we have images and index is valid
+      if (currentState.images.isNotEmpty() && index >= 0 && index < currentState.images.size) {
+        currentState.copy(showFullScreenImages = true, fullScreenImagesIndex = index)
+      } else {
+        currentState // Return unchanged state if invalid
+      }
+    }
   }
 }

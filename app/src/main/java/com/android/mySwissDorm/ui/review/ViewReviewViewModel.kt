@@ -109,14 +109,12 @@ class ViewReviewViewModel(
     translateTextField(
         text = review.title,
         context = context,
-        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedTitle = msg) } },
         onUpdateTranslated = { translated ->
           _uiState.update { it.copy(translatedTitle = translated) }
         })
     translateTextField(
         text = review.reviewText,
         context = context,
-        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedDescription = msg) } },
         onUpdateTranslated = { translated ->
           _uiState.update { it.copy(translatedDescription = translated) }
         })

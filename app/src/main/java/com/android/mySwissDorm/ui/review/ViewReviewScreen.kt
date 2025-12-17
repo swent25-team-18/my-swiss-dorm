@@ -111,11 +111,8 @@ fun ViewReviewScreen(
 
   LaunchedEffect(uiState.translatedDescription) {
     showTranslateButton =
-        if (uiState.translatedDescription == "") {
-          false
-        } else {
-          review.reviewText != uiState.translatedDescription
-        }
+        review.reviewText != uiState.translatedDescription ||
+            review.title != uiState.translatedTitle
   }
 
   if (uiState.showFullScreenImages) {

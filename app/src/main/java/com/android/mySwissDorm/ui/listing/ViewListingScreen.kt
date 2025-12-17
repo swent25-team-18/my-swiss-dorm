@@ -116,11 +116,8 @@ fun ViewListingScreen(
 
   LaunchedEffect(listingUIState.translatedDescription) {
     showTranslateButton =
-        if (listingUIState.translatedDescription == "") {
-          false
-        } else {
-          listing.description != listingUIState.translatedDescription
-        }
+        listing.description != listingUIState.translatedDescription ||
+            listing.title != listingUIState.translatedTitle
   }
 
   if (listingUIState.showFullScreenImages) {

@@ -111,14 +111,12 @@ class ViewListingViewModel(
     translateTextField(
         text = listing.title,
         context = context,
-        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedTitle = msg) } },
         onUpdateTranslated = { translated ->
           _uiState.update { it.copy(translatedTitle = translated) }
         })
     translateTextField(
         text = listing.description,
         context = context,
-        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedDescription = msg) } },
         onUpdateTranslated = { translated ->
           _uiState.update { it.copy(translatedDescription = translated) }
         })

@@ -852,6 +852,73 @@ class RentalListingRepositoryHybridTest {
       }
 
   @Test
+  fun getAllRentalListingsForUser_offline_filtersBlockedListingsFromLocal() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing1 = createTestListing("listing-1", ownerId = user1Id)
+    val listing2 = createTestListing("listing-2", ownerId = user2Id)
+    val listing3 = createTestListing("listing-3", ownerId = "user-3")
+
+    // Add all listings to local (simulating previous sync that included blocked content)
+    localRepository.addRentalListing(listing1)
+    localRepository.addRentalListing(listing2)
+    localRepository.addRentalListing(listing3)
+
+    // User1 has blocked user2
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllRentalListingsForUser(user1Id)
+
+    // Should filter out listing2 (user2's listing) even when offline
+    assertEquals(2, result.size)
+    assertTrue(result.contains(listing1))
+    assertTrue(result.contains(listing3))
+    assertFalse(result.contains(listing2))
+
+    // Verify remote was never called (offline fast-fail)
+    coVerify(exactly = 0) { remoteRepository.getAllRentalListings() }
+  }
+
+  @Test
+  fun getAllRentalListingsForUser_offline_filtersListingsWhenOwnerBlockedCurrentUser() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing1 = createTestListing("listing-1", ownerId = user1Id)
+    val listing2 = createTestListing("listing-2", ownerId = user2Id)
+    val listing3 = createTestListing("listing-3", ownerId = "user-3")
+
+    // Add all listings to local
+    localRepository.addRentalListing(listing1)
+    localRepository.addRentalListing(listing2)
+    localRepository.addRentalListing(listing3)
+
+    // User1 has not blocked anyone
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    // User2 has blocked user1
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllRentalListingsForUser(user1Id)
+
+    // Should filter out listing2 (user2's listing) even when offline
+    assertEquals(2, result.size)
+    assertTrue(result.contains(listing1))
+    assertTrue(result.contains(listing3))
+    assertFalse(result.contains(listing2))
+
+    // Verify remote was never called (offline fast-fail)
+    coVerify(exactly = 0) { remoteRepository.getAllRentalListings() }
+  }
+
+  @Test
   fun getAllRentalListings_online_deletesStaleListingsDuringFullSync() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true

@@ -1113,6 +1113,107 @@ class ReviewsRepositoryHybridTest {
   }
 
   @Test
+  fun getAllReviewsByResidencyForUser_offline_filtersBlockedReviewsFromLocal() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val review1 = createTestReview("review-1", ownerId = user1Id)
+    val review2 = createTestReview("review-2", ownerId = user2Id)
+    val review3 = createTestReview("review-3", ownerId = "user-3")
+
+    // Add all reviews to local (simulating previous sync that included blocked content)
+    localRepository.addReview(review1)
+    localRepository.addReview(review2)
+    localRepository.addReview(review3)
+
+    // User1 has blocked user2
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+    // Should filter out review2 (user2's review) even when offline
+    assertEquals(2, result.size)
+    assertTrue(result.contains(review1))
+    assertTrue(result.contains(review3))
+    assertFalse(result.contains(review2))
+
+    // Verify remote was never called (offline fast-fail)
+    coVerify(exactly = 0) { remoteRepository.getAllReviewsByResidency(any()) }
+  }
+
+  @Test
+  fun getAllReviewsByResidencyForUser_offline_filtersReviewsWhenOwnerBlockedCurrentUser() =
+      runTest {
+        mockkObject(NetworkUtils)
+        every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+        val user1Id = "user-1"
+        val user2Id = "user-2"
+        val review1 = createTestReview("review-1", ownerId = user1Id)
+        val review2 = createTestReview("review-2", ownerId = user2Id)
+        val review3 = createTestReview("review-3", ownerId = "user-3")
+
+        // Add all reviews to local
+        localRepository.addReview(review1)
+        localRepository.addReview(review2)
+        localRepository.addReview(review3)
+
+        // User1 has not blocked anyone
+        coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+        // User2 has blocked user1
+        coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+        coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+        val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+        // Should filter out review2 (user2's review) even when offline
+        assertEquals(2, result.size)
+        assertTrue(result.contains(review1))
+        assertTrue(result.contains(review3))
+        assertFalse(result.contains(review2))
+
+        // Verify remote was never called (offline fast-fail)
+        coVerify(exactly = 0) { remoteRepository.getAllReviewsByResidency(any()) }
+      }
+
+  @Test
+  fun getAllReviewsByResidencyForUser_offline_keepsAnonymousReviewsEvenWhenBlocked() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns false
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val normalReview = createTestReview("review-1", ownerId = user2Id, isAnonymous = false)
+    val anonymousReview = createTestReview("review-2", ownerId = user2Id, isAnonymous = true)
+    val review3 = createTestReview("review-3", ownerId = "user-3")
+
+    // Add all reviews to local
+    localRepository.addReview(normalReview)
+    localRepository.addReview(anonymousReview)
+    localRepository.addReview(review3)
+
+    // User1 has blocked user2
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllReviewsByResidencyForUser("Vortex", user1Id)
+
+    // Should filter out normalReview but keep anonymousReview (privacy requirement)
+    assertEquals(2, result.size)
+    assertTrue(result.contains(anonymousReview))
+    assertTrue(result.contains(review3))
+    assertFalse(result.contains(normalReview))
+
+    // Verify remote was never called (offline fast-fail)
+    coVerify(exactly = 0) { remoteRepository.getAllReviewsByResidency(any()) }
+  }
+
+  @Test
   fun getAllReviews_online_deletesStaleReviewsDuringFullSync() = runTest {
     mockkObject(NetworkUtils)
     every { NetworkUtils.isNetworkAvailable(context) } returns true

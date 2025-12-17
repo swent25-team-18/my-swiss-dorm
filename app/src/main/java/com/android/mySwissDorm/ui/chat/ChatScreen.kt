@@ -4,17 +4,20 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.view.WindowManager
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -35,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
@@ -49,7 +53,9 @@ import com.google.firebase.auth.FirebaseUser
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.compose.ui.messages.MessagesScreen
 import io.getstream.chat.android.compose.ui.messages.header.MessageListHeader
+import io.getstream.chat.android.compose.ui.messages.list.MessageList
 import io.getstream.chat.android.compose.ui.theme.ChatTheme
+import io.getstream.chat.android.compose.viewmodel.messages.MessageListViewModel
 import io.getstream.chat.android.compose.viewmodel.messages.MessagesViewModelFactory
 import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.ConnectionState
@@ -273,11 +279,32 @@ fun MyChatScreen(
 
     val chatClient = chatClientProvider()
     val currentUser = currentUserProvider()
+    var isConversationBlocked by remember { mutableStateOf(false) }
+    var channel by remember { mutableStateOf<Channel?>(null) }
 
     var isConnected by remember {
       mutableStateOf(isConnectedOverride ?: (userStateProvider(chatClient) != null))
     }
     var isConnecting by remember { mutableStateOf(false) }
+    LaunchedEffect(channelId, currentUser) {
+      if (currentUser == null) return@LaunchedEffect
+      val channelClient = chatClient.channel(channelId)
+      val fetchedChannel = channelClient.watch().await().getOrNull()
+      channel = fetchedChannel
+      val otherMember = channel?.members?.find { it.user.id != currentUser.uid }
+      val otherUserId =
+          otherMember?.user?.id ?: channelId.split("-").firstOrNull { it != currentUser.uid }
+      if (otherUserId != null) {
+        try {
+          val repo = ProfileRepositoryProvider.repository
+          val myBlockedList = repo.getBlockedUserIds(currentUser.uid)
+          val iBlockedThem = myBlockedList.contains(otherUserId)
+          val theirProfile = repo.getProfile(otherUserId)
+          val theyBlockedMe = theirProfile.userInfo.blockedUserIds.contains(currentUser.uid)
+          isConversationBlocked = iBlockedThem || theyBlockedMe
+        } catch (e: Exception) {}
+      }
+    }
 
     // Check connection and connect if needed
     LaunchedEffect(channelId, isConnectedOverride) {
@@ -315,7 +342,38 @@ fun MyChatScreen(
           }
 
       chatTheme {
-        Box(modifier = modifier.fillMaxSize()) { messagesScreen(viewModelFactory, onBackClick) }
+        Box(modifier = modifier.fillMaxSize()) {
+          if (isConversationBlocked) {
+            Column(modifier = Modifier.fillMaxSize()) {
+              val ch = channel
+              if (ch != null) {
+                MessageListHeader(
+                    channel = ch,
+                    currentUser = userStateProvider(chatClient),
+                    connectionState = ConnectionState.Connected,
+                    onBackPressed = onBackClick,
+                    trailingContent = {
+                      AppProfileAvatarTrailingContent(
+                          channel = ch, currentUserId = currentUser?.uid)
+                    })
+              }
+              val listViewModel: MessageListViewModel = viewModel(factory = viewModelFactory)
+              MessageList(viewModel = listViewModel, modifier = Modifier.weight(1f))
+              Box(
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .background(MaterialTheme.colorScheme.errorContainer)
+                          .padding(16.dp),
+                  contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(R.string.blocked_msg),
+                        color = MaterialTheme.colorScheme.onErrorContainer)
+                  }
+            }
+          } else {
+            messagesScreen(viewModelFactory, onBackClick)
+          }
+        }
       }
     }
   }

@@ -313,26 +313,35 @@ class BrowseCityViewModel(
         val mapped =
             sorted.map { listing ->
               val recommended = isRecommended(listing)
-              var listingCardUI = listing.toCardUI(context, recommended)
-              if (listing.imageUrls.isNotEmpty()) {
-                val loadedImages =
-                    listing.imageUrls.mapNotNull { fileName ->
-                      try {
-                        photoRepositoryCloud.retrievePhoto(fileName).image
-                      } catch (_: NoSuchElementException) {
-                        Log.e("BrowseCityViewModel", "Failed to retrieve the photo $fileName")
-                        null
-                      }
-                    }
-                listingCardUI = listingCardUI.copy(image = loadedImages)
-              }
-              listingCardUI
+              listing.toCardUI(context, recommended)
             }
 
         _uiState.update {
           it.copy(
               listings = it.listings.copy(loading = false, items = mapped, error = null),
               bookmarkedListingIds = bookmarkedIds)
+        }
+        launch {
+          val listingsUI =
+              sorted.map { listing ->
+                var listingUI = listing.toCardUI(context, isRecommended(listing))
+                if (listing.imageUrls.isNotEmpty()) {
+                  val loadedImage =
+                      listing.imageUrls.first().let { fileName ->
+                        try {
+                          photoRepositoryCloud.retrievePhoto(fileName).image
+                        } catch (_: NoSuchElementException) {
+                          Log.e("BrowseCityViewModel", "Failed to retrieve the photo $fileName")
+                          null
+                        }
+                      }
+                  if (loadedImage != null) {
+                    listingUI = listingUI.copy(image = listOf(loadedImage))
+                  }
+                }
+                listingUI
+              }
+          _uiState.update { it.copy(listings = it.listings.copy(items = listingsUI)) }
         }
       } catch (e: Exception) {
         _uiState.update {

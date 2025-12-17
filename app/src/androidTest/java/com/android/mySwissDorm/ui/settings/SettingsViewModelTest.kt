@@ -204,20 +204,8 @@ class SettingsViewModelTest : FirestoreTest() {
         val db = FirebaseEmulator.firestore
         val uid = auth.currentUser!!.uid
 
-        val seeded =
-            Profile(
-                userInfo =
-                    UserInfo(
-                        name = "ToDelete",
-                        lastName = "User",
-                        email = FakeUser.FakeUser1.email,
-                        phoneNumber = "",
-                        universityName = "",
-                        location = Location("Seed", 0.0, 0.0),
-                        residencyName = ""),
-                userSettings = UserSettings(),
-                ownerId = uid)
-        db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+        createProfileForUser(
+            uid, name = "ToDelete", lastName = "User", email = FakeUser.FakeUser1.email)
 
         val vm = vm()
         var cbOk: Boolean? = null
@@ -262,20 +250,8 @@ class SettingsViewModelTest : FirestoreTest() {
     val uid = auth.currentUser!!.uid
 
     // Create profile
-    val seeded =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "ToDelete",
-                    lastName = "User",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = Location("Seed", 0.0, 0.0),
-                    residencyName = ""),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+    createProfileForUser(
+        uid, name = "ToDelete", lastName = "User", email = FakeUser.FakeUser1.email)
 
     // Verify user is logged in before deletion
     assertNotNull("User should be logged in before deletion", auth.currentUser)
@@ -314,20 +290,8 @@ class SettingsViewModelTest : FirestoreTest() {
     val uid = auth.currentUser!!.uid
 
     // Create profile
-    val seeded =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "ToDelete",
-                    lastName = "User",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = Location("Seed", 0.0, 0.0),
-                    residencyName = ""),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+    createProfileForUser(
+        uid, name = "ToDelete", lastName = "User", email = FakeUser.FakeUser1.email)
 
     // Create a mock auth that throws exception on signOut to test exception handling
     val mockAuth = mock<FirebaseAuth>()
@@ -411,20 +375,8 @@ class SettingsViewModelTest : FirestoreTest() {
     val uid = auth.currentUser!!.uid
 
     // Create profile
-    val seeded =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "ToDelete",
-                    lastName = "User",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = Location("Seed", 0.0, 0.0),
-                    residencyName = ""),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+    createProfileForUser(
+        uid, name = "ToDelete", lastName = "User", email = FakeUser.FakeUser1.email)
 
     // Create rental listings
     val rentalRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
@@ -523,20 +475,8 @@ class SettingsViewModelTest : FirestoreTest() {
     val uid = auth.currentUser!!.uid
 
     // Create profile
-    val seeded =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "ToDelete",
-                    lastName = "User",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = Location("Seed", 0.0, 0.0),
-                    residencyName = ""),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+    createProfileForUser(
+        uid, name = "ToDelete", lastName = "User", email = FakeUser.FakeUser1.email)
 
     // Create a mock repository that throws when fetching listings
     val mockRentalRepo =
@@ -681,20 +621,8 @@ class SettingsViewModelTest : FirestoreTest() {
     val uid = auth.currentUser!!.uid
 
     // Create profile
-    val seeded =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "ToDelete",
-                    lastName = "User",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = Location("Seed", 0.0, 0.0),
-                    residencyName = ""),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+    createProfileForUser(
+        uid, name = "ToDelete", lastName = "User", email = FakeUser.FakeUser1.email)
 
     val rentalRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
     val listing1 =
@@ -748,20 +676,8 @@ class SettingsViewModelTest : FirestoreTest() {
     val uid = auth.currentUser!!.uid
 
     // Create profile
-    val seeded =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "ToDelete",
-                    lastName = "User",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = Location("Seed", 0.0, 0.0),
-                    residencyName = ""),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+    createProfileForUser(
+        uid, name = "ToDelete", lastName = "User", email = FakeUser.FakeUser1.email)
 
     val reviewsRepo = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
     val review1 =
@@ -817,20 +733,8 @@ class SettingsViewModelTest : FirestoreTest() {
     val uid = auth.currentUser!!.uid
 
     // Create profile
-    val seeded =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "ToDelete",
-                    lastName = "User",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = Location("Seed", 0.0, 0.0),
-                    residencyName = ""),
-            userSettings = UserSettings(),
-            ownerId = uid)
-    db.collection(PROFILE_COLLECTION_PATH).document(uid).set(seeded).await()
+    createProfileForUser(
+        uid, name = "ToDelete", lastName = "User", email = FakeUser.FakeUser1.email)
 
     // Create a mock auth that throws non-recent-login exception when delete() is awaited
     val mockAuth = mock<FirebaseAuth>()
@@ -935,20 +839,8 @@ class SettingsViewModelTest : FirestoreTest() {
     // Create another user and block them
     switchToUser(FakeUser.FakeUser2)
     val blockedUid = FirebaseEmulator.auth.currentUser!!.uid
-    val blockedProfile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "Blocked",
-                    lastName = "User",
-                    email = FakeUser.FakeUser2.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = null,
-                    residencyName = null),
-            userSettings = UserSettings(),
-            ownerId = blockedUid)
-    db.collection(PROFILE_COLLECTION_PATH).document(blockedUid).set(blockedProfile).await()
+    createProfileForUser(
+        blockedUid, name = "Blocked", lastName = "User", email = FakeUser.FakeUser2.email)
 
     switchToUser(FakeUser.FakeUser1)
     val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
@@ -1098,19 +990,8 @@ class SettingsViewModelTest : FirestoreTest() {
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
     // Create a profile for the current user so refresh() can succeed
-    val userProfile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "Test",
-                    lastName = "User",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = null,
-                    residencyName = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
+    createProfileForUser(uid, name = "Test", lastName = "User", email = FakeUser.FakeUser1.email)
+    val userProfile = ProfileRepositoryFirestore(FirebaseEmulator.firestore).getProfile(uid)
 
     // Create a mock repository that throws exception for addBlockedUser but returns profile for
     // getProfile
@@ -1191,19 +1072,8 @@ class SettingsViewModelTest : FirestoreTest() {
     val uid = FirebaseEmulator.auth.currentUser!!.uid
 
     // Create a profile for the current user so refresh() can succeed
-    val userProfile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "Test",
-                    lastName = "User",
-                    email = FakeUser.FakeUser1.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = null,
-                    residencyName = null),
-            userSettings = UserSettings(),
-            ownerId = uid)
+    createProfileForUser(uid, name = "Test", lastName = "User", email = FakeUser.FakeUser1.email)
+    val userProfile = ProfileRepositoryFirestore(FirebaseEmulator.firestore).getProfile(uid)
 
     // Create a mock repository that throws exception for removeBlockedUser but returns profile for
     // getProfile
@@ -1397,24 +1267,8 @@ class SettingsViewModelTest : FirestoreTest() {
     // Create another user and block them
     switchToUser(FakeUser.FakeUser2)
     val blockedUid = FirebaseEmulator.auth.currentUser!!.uid
-    val blockedProfile =
-        Profile(
-            userInfo =
-                UserInfo(
-                    name = "Blocked",
-                    lastName = "User",
-                    email = FakeUser.FakeUser2.email,
-                    phoneNumber = "",
-                    universityName = "",
-                    location = null,
-                    residencyName = null),
-            userSettings = UserSettings(),
-            ownerId = blockedUid)
-    FirebaseEmulator.firestore
-        .collection(PROFILE_COLLECTION_PATH)
-        .document(blockedUid)
-        .set(blockedProfile)
-        .await()
+    createProfileForUser(
+        blockedUid, name = "Blocked", lastName = "User", email = FakeUser.FakeUser2.email)
 
     switchToUser(FakeUser.FakeUser1)
     val repo = ProfileRepositoryFirestore(FirebaseEmulator.firestore)

@@ -160,6 +160,10 @@ class ViewProfileScreenViewModel(
    * - canceling any in-flight toggle/photo work on each click
    * - optimistic UI update
    * - ignoring late results using a token (so old unblock photo loads can't overwrite a new block)
+   *
+   * @param targetUid The UID of the user to block.
+   * @param onError Callback invoked when blocking fails, receives error message.
+   * @param context Android context for accessing string resources.
    */
   fun blockUser(targetUid: String, onError: (String) -> Unit = {}, context: Context) {
     val uid = auth.currentUser?.uid
@@ -202,6 +206,10 @@ class ViewProfileScreenViewModel(
    * - optimistic UI update
    * - loading photo in a separate cancellable job
    * - ignoring late results using a token
+   *
+   * @param targetUid The UID of the user to unblock.
+   * @param onError Callback invoked when unblocking fails, receives an error message.
+   * @param context Android context for accessing string resources.
    */
   fun unblockUser(targetUid: String, onError: (String) -> Unit = {}, context: Context) {
     val uid = auth.currentUser?.uid

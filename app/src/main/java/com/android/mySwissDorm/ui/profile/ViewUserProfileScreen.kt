@@ -43,6 +43,26 @@ import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.google.firebase.auth.FirebaseAuth
 
+/**
+ * Displays a read-only view of another user's profile.
+ *
+ * This composable supports two modes:
+ * 1) **Runtime mode** (default): provide a [ViewProfileScreenViewModel] (or let it be created via
+ *    [viewModel]) and a non-null [ownerId]. The VM will be used and data loaded.
+ * 2) **Preview / Static mode**: pass a non-null [previewUi]. When [previewUi] is provided, the VM
+ *    is never touched and no data is loaded (useful for @Preview).
+ *
+ * Test tags are provided via [T] for stable UI tests.
+ *
+ * @param viewModel Optional ViewModel instance. If null, a new instance will be created via
+ *   [viewModel].
+ * @param ownerId The UID of the user whose profile to display. Required in runtime mode, ignored in
+ *   preview mode.
+ * @param onBack Callback invoked when the back button is clicked.
+ * @param onSendMessage Callback invoked when the send message button is clicked.
+ * @param previewUi Optional preview UI state. When provided, the composable operates in preview
+ *   mode and displays this static data without loading from the repository.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewUserProfileScreen(

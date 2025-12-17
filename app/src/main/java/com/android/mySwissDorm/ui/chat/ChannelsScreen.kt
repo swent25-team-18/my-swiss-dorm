@@ -580,19 +580,23 @@ internal fun ChannelItem(
   // Note: Stream Chat SDK doesn't expose unreadCount directly, so we calculate it
   val currentUserRead = channel.read.find { it.user.id == currentUserId }
   val unreadCount =
-      if (currentUserRead != null && channel.messages.isNotEmpty()) {
-        val lastReadDate = currentUserRead.lastRead
-        if (lastReadDate != null) {
-          channel.messages.count { message ->
+      if (channel.messages.isEmpty()) {
+        0
+      } else {
+        // Unread should never include messages authored by the current user.
+        val lastReadDate = currentUserRead?.lastRead
+        channel.messages.count { message ->
+          val isNotMine = message.user.id != currentUserId
+          if (!isNotMine) return@count false
+
+          if (lastReadDate == null) {
+            // If we don't know lastRead, treat messages from others as unread.
+            true
+          } else {
             val createdAt = message.createdAt ?: message.createdLocallyAt
             createdAt?.after(lastReadDate) == true
           }
-        } else {
-          // If no last read date, all messages are unread
-          channel.messages.size
         }
-      } else {
-        0
       }
 
   Row(

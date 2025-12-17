@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import org.junit.Assume
@@ -44,7 +45,10 @@ class ChatScreenTest {
   @Test
   fun chatScreen_composesWithoutCrashing() {
     compose.setContent {
-      MySwissDormAppTheme { MyChatScreen(channelId = "messaging:test-channel", onBackClick = {}) }
+      MySwissDormAppTheme {
+        MyChatScreen(
+            channelId = "messaging:test-channel", onBackClick = {}, isConnectedOverride = false)
+      }
     }
 
     // Screen should compose without throwing exceptions
@@ -60,7 +64,9 @@ class ChatScreenTest {
     val testChannelId = "messaging:test-channel-123"
 
     compose.setContent {
-      MySwissDormAppTheme { MyChatScreen(channelId = testChannelId, onBackClick = {}) }
+      MySwissDormAppTheme {
+        MyChatScreen(channelId = testChannelId, onBackClick = {}, isConnectedOverride = false)
+      }
     }
 
     // Screen should compose with the provided channel ID
@@ -73,14 +79,22 @@ class ChatScreenTest {
    */
   @Test
   fun chatScreen_displaysLoadingState() {
+    val connectingText =
+        InstrumentationRegistry.getInstrumentation()
+            .targetContext
+            .getString(R.string.chat_screen_connecting)
+
     compose.setContent {
-      MySwissDormAppTheme { MyChatScreen(channelId = "messaging:test-channel", onBackClick = {}) }
+      MySwissDormAppTheme {
+        MyChatScreen(
+            channelId = "messaging:test-channel", onBackClick = {}, isConnectedOverride = false)
+      }
     }
 
     // Wait for loading state to appear
     compose.waitUntil(timeoutMillis = 3_000) {
       try {
-        compose.onNodeWithText("Connecting to chat…", substring = true).assertIsDisplayed()
+        compose.onNodeWithText(connectingText, substring = true).assertIsDisplayed()
         true
       } catch (e: Exception) {
         false
@@ -88,7 +102,7 @@ class ChatScreenTest {
     }
 
     // Verify loading message is displayed
-    compose.onNodeWithText("Connecting to chat...", substring = true).assertIsDisplayed()
+    compose.onNodeWithText(connectingText, substring = true).assertIsDisplayed()
   }
 
   /**
@@ -97,14 +111,22 @@ class ChatScreenTest {
    */
   @Test
   fun chatScreen_showsConnectingMessage() {
+    val connectingText =
+        InstrumentationRegistry.getInstrumentation()
+            .targetContext
+            .getString(R.string.chat_screen_connecting)
+
     compose.setContent {
-      MySwissDormAppTheme { MyChatScreen(channelId = "messaging:test-channel", onBackClick = {}) }
+      MySwissDormAppTheme {
+        MyChatScreen(
+            channelId = "messaging:test-channel", onBackClick = {}, isConnectedOverride = false)
+      }
     }
 
     // Wait a bit for the screen to initialize
     compose.waitUntil(timeoutMillis = 2_000) {
       try {
-        compose.onNodeWithText("Connecting to chat…", substring = true).assertIsDisplayed()
+        compose.onNodeWithText(connectingText, substring = true).assertIsDisplayed()
         true
       } catch (e: Exception) {
         false
@@ -112,6 +134,6 @@ class ChatScreenTest {
     }
 
     // Verify the connecting message text
-    compose.onNodeWithText("Connecting to chat...", substring = true).assertIsDisplayed()
+    compose.onNodeWithText(connectingText, substring = true).assertIsDisplayed()
   }
 }

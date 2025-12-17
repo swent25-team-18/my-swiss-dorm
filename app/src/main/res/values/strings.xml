@@ -274,7 +274,6 @@
     <string name="screen_view_user_profile">View Profile</string>
     <string name="screen_profile">Profile</string>
     <string name="screen_chat">Chat</string>
-    <string name="screen_select_user_to_chat">Select User</string>
     <string name="screen_requested_messages">Requested Messages</string>
     <string name="screen_bookmarked_listings">Bookmarked Listings</string>
 

@@ -26,6 +26,7 @@ import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.translateTextField
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -148,9 +149,10 @@ class ViewReviewViewModel(
   fun loadReview(reviewId: String, context: Context) {
     viewModelScope.launch {
       try {
-        val review = reviewsRepository.getReview(reviewId)
-        photoManager.initialize(review.imageUrls)
         val currentUserId = auth.currentUser?.uid
+        // Repository handles bidirectional blocking check
+        val review = reviewsRepository.getReviewForUser(reviewId, currentUserId)
+
         val fullNameOfPoster =
             if (review.isAnonymous) {
               context.getString(R.string.anonymous)
@@ -167,8 +169,20 @@ class ViewReviewViewModel(
               isOwner = isOwner,
               netScore = review.getNetScore(),
               userVote = review.getUserVote(currentUserId),
-              images = photoManager.photoLoaded,
               errorMsg = it.errorMsg) // Preserve error message if it was set
+        }
+        launch(Dispatchers.IO) {
+          photoManager.initialize(review.imageUrls)
+          _uiState.update { it.copy(images = photoManager.photoLoaded) }
+        }
+      } catch (e: NoSuchElementException) {
+        // Handle blocked review or not found
+        if (e.message?.contains("blocking restrictions") == true) {
+          setErrorMsg(context.getString(R.string.view_review_blocked_user))
+        } else {
+          Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)
+          setErrorMsg(
+              "${context.getString(R.string.view_review_failed_to_load_review)}: ${e.message}")
         }
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)

@@ -193,9 +193,6 @@ class BrowseCityViewModel(
     viewModelScope.launch {
       try {
         val state = _uiState.value
-        // Fetch all and filter by distance
-        val all = listingsRepository.getAllRentalListings()
-
         val currentUid = auth.currentUser?.uid
         val userInfo =
             if (currentUid != null && !auth.currentUser!!.isAnonymous) {
@@ -206,10 +203,11 @@ class BrowseCityViewModel(
                 null
               }
             } else null
-        val blockedCache = mutableMapOf<String, Boolean>()
+        // Get listings filtered by blocking (repository handles bidirectional blocking)
+        val allFiltered = listingsRepository.getAllRentalListingsForUser(currentUid)
 
         var filtered =
-            all.filter { listing ->
+            allFiltered.filter { listing ->
               // Use location directly from the listing (now stored in the model)
               // This works for both regular residencies and Private Accommodation
               val matchesLocation =
@@ -223,25 +221,7 @@ class BrowseCityViewModel(
                     false
                   }
 
-              if (!matchesLocation) return@filter false
-
-              if (currentUid == null || currentUid == listing.ownerId) return@filter true
-
-              val ownerId = listing.ownerId
-              val hasBlocked =
-                  blockedCache.getOrPut(ownerId) {
-                    runCatching { profileRepository.getBlockedUserIds(ownerId) }
-                        .onFailure {
-                          Log.w(
-                              "BrowseCityViewModel",
-                              "Failed to fetch blocked list for owner $ownerId",
-                              it)
-                        }
-                        .getOrDefault(emptyList())
-                        .contains(currentUid)
-                  }
-
-              !hasBlocked
+              matchesLocation
             }
 
         // Apply room type filter
@@ -312,26 +292,35 @@ class BrowseCityViewModel(
         val mapped =
             sorted.map { listing ->
               val recommended = isRecommended(listing)
-              var listingCardUI = listing.toCardUI(context, recommended)
-              if (listing.imageUrls.isNotEmpty()) {
-                val loadedImages =
-                    listing.imageUrls.mapNotNull { fileName ->
-                      try {
-                        photoRepositoryCloud.retrievePhoto(fileName).image
-                      } catch (_: NoSuchElementException) {
-                        Log.e("BrowseCityViewModel", "Failed to retrieve the photo $fileName")
-                        null
-                      }
-                    }
-                listingCardUI = listingCardUI.copy(image = loadedImages)
-              }
-              listingCardUI
+              listing.toCardUI(context, recommended)
             }
 
         _uiState.update {
           it.copy(
               listings = it.listings.copy(loading = false, items = mapped, error = null),
               bookmarkedListingIds = bookmarkedIds)
+        }
+        launch {
+          val listingsUI =
+              sorted.map { listing ->
+                var listingUI = listing.toCardUI(context, isRecommended(listing))
+                if (listing.imageUrls.isNotEmpty()) {
+                  val loadedImage =
+                      listing.imageUrls.first().let { fileName ->
+                        try {
+                          photoRepositoryCloud.retrievePhoto(fileName).image
+                        } catch (_: NoSuchElementException) {
+                          Log.e("BrowseCityViewModel", "Failed to retrieve the photo $fileName")
+                          null
+                        }
+                      }
+                  if (loadedImage != null) {
+                    listingUI = listingUI.copy(image = listOf(loadedImage))
+                  }
+                }
+                listingUI
+              }
+          _uiState.update { it.copy(listings = it.listings.copy(items = listingsUI)) }
         }
       } catch (e: Exception) {
         _uiState.update {
@@ -358,32 +347,10 @@ class BrowseCityViewModel(
         val filtered = all.filter { location.distanceTo(it.location) <= maxDistanceToDisplay }
         val mapped =
             filtered.map {
-              val allReviews = reviewsRepository.getAllReviewsByResidency(it.name)
               val currentUid = auth.currentUser?.uid
-
+              // Get reviews filtered by blocking (repository handles bidirectional blocking)
               val reviewsFiltered =
-                  if (currentUid == null) {
-                    allReviews
-                  } else {
-                    val blockedCache = mutableMapOf<String, Boolean>()
-                    allReviews.filter { review ->
-                      val ownerId = review.ownerId
-                      if (ownerId == currentUid) return@filter true
-                      val hasBlocked =
-                          blockedCache.getOrPut(ownerId) {
-                            runCatching { profileRepository.getBlockedUserIds(ownerId) }
-                                .onFailure {
-                                  Log.w(
-                                      "BrowseCityViewModel",
-                                      "Failed to fetch blocked list for reviewer $ownerId",
-                                      it)
-                                }
-                                .getOrDefault(emptyList())
-                                .contains(currentUid)
-                          }
-                      !hasBlocked
-                    }
-                  }
+                  reviewsRepository.getAllReviewsByResidencyForUser(it.name, currentUid)
 
               val meanGrade =
                   if (reviewsFiltered.isNotEmpty()) {

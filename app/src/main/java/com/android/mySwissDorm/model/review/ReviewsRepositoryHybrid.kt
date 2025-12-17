@@ -35,34 +35,34 @@ class ReviewsRepositoryHybrid(
           operationName = "getAllReviews",
           remoteCall = { remoteRepository.getAllReviews() },
           localFallback = { localRepository.getAllReviews() },
-          syncToLocal = { reviews -> syncReviewsToLocal(reviews) })
+          syncToLocal = { reviews -> syncReviewsToLocal(reviews, isFullSync = true) })
 
   override suspend fun getAllReviewsByUser(userId: String): List<Review> =
       performRead(
           operationName = "getAllReviewsByUser",
           remoteCall = { remoteRepository.getAllReviewsByUser(userId) },
           localFallback = { localRepository.getAllReviewsByUser(userId) },
-          syncToLocal = { reviews -> syncReviewsToLocal(reviews) })
+          syncToLocal = { reviews -> syncReviewsToLocal(reviews, isFullSync = false) })
 
   override suspend fun getAllReviewsByResidency(residencyName: String): List<Review> =
       performRead(
           operationName = "getAllReviewsByResidency",
           remoteCall = { remoteRepository.getAllReviewsByResidency(residencyName) },
           localFallback = { localRepository.getAllReviewsByResidency(residencyName) },
-          syncToLocal = { reviews -> syncReviewsToLocal(reviews) })
+          syncToLocal = { reviews -> syncReviewsToLocal(reviews, isFullSync = false) })
 
   override suspend fun getReview(reviewId: String): Review =
       performRead(
           operationName = "getReview",
           remoteCall = { remoteRepository.getReview(reviewId) },
           localFallback = { localRepository.getReview(reviewId) },
-          syncToLocal = { review -> syncReviewsToLocal(listOf(review)) })
+          syncToLocal = { review -> syncReviewsToLocal(listOf(review), isFullSync = false) })
 
   override suspend fun addReview(review: Review) =
       performWrite(
           operationName = "addReview",
           remoteCall = { remoteRepository.addReview(review) },
-          localSync = { syncReviewsToLocal(listOf(review)) })
+          localSync = { syncReviewsToLocal(listOf(review), isFullSync = false) })
 
   override suspend fun editReview(reviewId: String, newValue: Review) =
       performWrite(
@@ -84,7 +84,7 @@ class ReviewsRepositoryHybrid(
             // Fetch updated review to sync the new vote count
             try {
               val updatedReview = withTimeout(TIMEOUT_MS) { remoteRepository.getReview(reviewId) }
-              syncReviewsToLocal(listOf(updatedReview))
+              syncReviewsToLocal(listOf(updatedReview), isFullSync = false)
             } catch (e: Exception) {
               Log.w(TAG, "Error fetching updated review after upvote for local sync", e)
               // Continue - main operation succeeded
@@ -98,7 +98,7 @@ class ReviewsRepositoryHybrid(
           localSync = {
             try {
               val updatedReview = withTimeout(TIMEOUT_MS) { remoteRepository.getReview(reviewId) }
-              syncReviewsToLocal(listOf(updatedReview))
+              syncReviewsToLocal(listOf(updatedReview), isFullSync = false)
             } catch (e: Exception) {
               Log.w(TAG, "Error fetching updated review after downvote for local sync", e)
               // Continue - main operation succeeded
@@ -112,12 +112,63 @@ class ReviewsRepositoryHybrid(
           localSync = {
             try {
               val updatedReview = withTimeout(TIMEOUT_MS) { remoteRepository.getReview(reviewId) }
-              syncReviewsToLocal(listOf(updatedReview))
+              syncReviewsToLocal(listOf(updatedReview), isFullSync = false)
             } catch (e: Exception) {
               Log.w(TAG, "Error fetching updated review after removeVote for local sync", e)
               // Continue - main operation succeeded
             }
           })
+
+  override suspend fun getAllReviewsByResidencyForUser(
+      residencyName: String,
+      userId: String?
+  ): List<Review> {
+    val allReviews = getAllReviewsByResidency(residencyName)
+    if (userId == null) return allReviews
+
+    return filterReviewsByBlocking(allReviews, userId)
+  }
+
+  override suspend fun getReviewForUser(reviewId: String, userId: String?): Review {
+    val review = getReview(reviewId)
+    if (userId == null || userId == review.ownerId) return review
+
+    // Always allow anonymous reviews to preserve anonymity (security/privacy requirement)
+    if (review.isAnonymous) return review
+
+    // Check bidirectional blocking for non-anonymous reviews
+    val isBlocked = isBlockedBidirectionally(review.ownerId, userId)
+    if (isBlocked) {
+      throw NoSuchElementException(
+          "ReviewsRepositoryHybrid: Review $reviewId is not available due to blocking restrictions")
+    }
+    return review
+  }
+
+  /**
+   * Filters reviews based on bidirectional blocking.
+   *
+   * @param reviews The reviews to filter.
+   * @param userId The current user's ID.
+   * @return Filtered list of reviews visible to the user.
+   */
+  private suspend fun filterReviewsByBlocking(reviews: List<Review>, userId: String): List<Review> {
+    // Load current user's blocked list once for efficiency
+    val currentUserBlockedList =
+        runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(userId) }
+            .onFailure { Log.w(TAG, "Failed to fetch current user's blocked list", it) }
+            .getOrDefault(emptyList())
+
+    val blockedCache = mutableMapOf<String, Boolean>()
+    return reviews.filter { review ->
+      // Always show own reviews
+      if (review.ownerId == userId) return@filter true
+      // Always show anonymous reviews to preserve anonymity (security/privacy requirement)
+      if (review.isAnonymous) return@filter true
+      // For non-anonymous reviews, apply blocking filter
+      !isBlockedBidirectionally(review.ownerId, userId, currentUserBlockedList, blockedCache)
+    }
+  }
 
   /**
    * Syncs reviews to the local database for offline access.
@@ -127,12 +178,41 @@ class ReviewsRepositoryHybrid(
    * [ReviewsRepositoryLocal.addReview] method which handles syncing. Also records the sync
    * timestamp for the offline banner.
    *
+   * When [isFullSync] is true (e.g., from [getAllReviews]), this method will also delete any local
+   * reviews that are not in the remote list, ensuring the local database stays in sync with
+   * Firestore deletions.
+   *
    * @param reviews The reviews to sync to local storage.
+   * @param isFullSync Whether this represents a complete sync of all reviews. If true, local
+   *   reviews not in this list will be deleted.
    */
-  private suspend fun syncReviewsToLocal(reviews: List<Review>) {
-    if (reviews.isEmpty()) return
-
+  private suspend fun syncReviewsToLocal(reviews: List<Review>, isFullSync: Boolean) {
     try {
+      // If this is a full sync, delete local reviews that are no longer in Firestore
+      if (isFullSync) {
+        try {
+          val remoteIds = reviews.map { it.uid }.toSet()
+          val localReviewsBefore = localRepository.getAllReviews()
+          val localIdsBefore = localReviewsBefore.map { it.uid }.toSet()
+          localRepository.deleteReviewsNotIn(remoteIds.toList())
+          val deletedIds = localIdsBefore - remoteIds
+          if (deletedIds.isNotEmpty()) {
+            Log.d(
+                TAG,
+                "[syncReviewsToLocal] Deleted ${deletedIds.size} stale reviews during full sync")
+          }
+        } catch (e: Exception) {
+          Log.w(TAG, "[syncReviewsToLocal] Error deleting stale reviews during full sync", e)
+          // Continue with sync even if deletion fails
+        }
+      }
+
+      if (reviews.isEmpty()) {
+        // Record sync even if no reviews to sync (might have just deleted stale data)
+        LastSyncTracker.recordSync(context)
+        return
+      }
+
       reviews.forEach { review ->
         try {
           // Fetch owner name if missing (only when online)

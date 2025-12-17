@@ -39,7 +39,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RoomType
@@ -50,6 +49,7 @@ import com.android.mySwissDorm.resources.C.FilterTestTags.PREFERRED_SIZE
 import com.android.mySwissDorm.resources.C.FilterTestTags.SIGN_UP_WITH_PREFERENCES
 import com.android.mySwissDorm.resources.C.Tag.SKIP
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
@@ -129,45 +129,51 @@ fun ListingPreferencesContent(
       },
       bottomBar = {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(Dimens.PaddingDefault),
             horizontalAlignment = Alignment.CenterHorizontally) {
               if (errorMsg != null) {
                 Text(
                     text = errorMsg,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(bottom = 8.dp))
+                    modifier = Modifier.padding(bottom = Dimens.PaddingSmall))
               }
 
               Button(
                   onClick = onBottomButtonClick,
                   enabled = isButtonEnabled,
                   modifier =
-                      Modifier.fillMaxWidth().height(52.dp).testTag(SIGN_UP_WITH_PREFERENCES),
-                  shape = RoundedCornerShape(16.dp),
+                      Modifier.fillMaxWidth()
+                          .height(Dimens.ButtonHeight)
+                          .testTag(SIGN_UP_WITH_PREFERENCES),
+                  shape = RoundedCornerShape(Dimens.CardCornerRadius),
                   colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
                     if (isLoading) {
-                      CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                      CircularProgressIndicator(
+                          color = White, modifier = Modifier.size(Dimens.IconSizeLarge))
                     } else {
                       Text(text = bottomButtonText, color = White)
                     }
                   }
               if (onSkipClick != null && skipButtonText != null) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.SpacingXLarge))
                 Text(
                     text = skipButtonText,
                     color = MainColor,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { onSkipClick() }.padding(8.dp).testTag(SKIP))
+                    modifier =
+                        Modifier.clickable { onSkipClick() }
+                            .padding(Dimens.PaddingSmall)
+                            .testTag(SKIP))
               }
             }
       }) { innerPadding ->
         Column(
             modifier =
                 Modifier.padding(innerPadding)
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = Dimens.PaddingDefault)
                     .fillMaxSize()
                     .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXXLarge)) {
               Text(
                   text = stringResource(R.string.edit_preferences),
                   style = MaterialTheme.typography.titleMedium,
@@ -192,7 +198,7 @@ fun ListingPreferencesContent(
                           disabledTextColor = TextColor,
                           disabledPlaceholderColor = BackGroundColor,
                           disabledContainerColor = BackGroundColor),
-                  shape = RoundedCornerShape(5.dp),
+                  shape = RoundedCornerShape(Dimens.CornerRadiusSmall),
                   trailingIcon = {
                     Icon(Icons.Default.Place, contentDescription = null, tint = MainColor)
                   })
@@ -231,7 +237,7 @@ fun ListingPreferencesContent(
               roomTypes.chunked(2).forEach { rowTypes ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
                       rowTypes.forEach { type ->
                         val isSelected = selectedRoomTypes.contains(type)
                         FilterChip(
@@ -245,14 +251,15 @@ fun ListingPreferencesContent(
                             modifier = Modifier.weight(1f),
                             colors =
                                 FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MainColor.copy(alpha = 0.2f),
+                                    selectedContainerColor =
+                                        MainColor.copy(alpha = Dimens.AlphaLow),
                                     selectedLabelColor = TextColor))
                       }
                       if (rowTypes.size < 2) Spacer(modifier = Modifier.weight(1f))
                     }
               }
 
-              Spacer(modifier = Modifier.height(20.dp))
+              Spacer(modifier = Modifier.height(Dimens.SpacingXXLarge))
             }
       }
 }

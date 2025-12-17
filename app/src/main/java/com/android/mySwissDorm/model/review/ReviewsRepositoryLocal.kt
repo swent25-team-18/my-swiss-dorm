@@ -109,6 +109,22 @@ class ReviewsRepositoryLocal(private val reviewDao: ReviewDao) : ReviewsReposito
   }
 
   /**
+   * Deletes all reviews whose UIDs are not in the provided list.
+   *
+   * This is used during full sync operations to remove items that have been deleted from Firestore.
+   *
+   * @param keepIds The set of UIDs to keep. All other reviews will be deleted.
+   */
+  suspend fun deleteReviewsNotIn(keepIds: List<String>) {
+    if (keepIds.isEmpty()) {
+      // If no IDs to keep, delete all reviews
+      reviewDao.getAllReviews().forEach { reviewDao.deleteReview(it.uid) }
+    } else {
+      reviewDao.deleteReviewsNotIn(keepIds)
+    }
+  }
+
+  /**
    * Applies an upvote to the review by the given user.
    *
    * This method is not supported in the local repository. Voting operations are only allowed when
@@ -148,5 +164,20 @@ class ReviewsRepositoryLocal(private val reviewDao: ReviewDao) : ReviewsReposito
   override suspend fun removeVote(reviewId: String, userId: String) {
     throw UnsupportedOperationException(
         "ReviewsRepositoryLocal: Cannot vote on reviews offline. Please connect to the internet.")
+  }
+
+  override suspend fun getAllReviewsByResidencyForUser(
+      residencyName: String,
+      userId: String?
+  ): List<Review> {
+    // Local repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getAllReviewsByResidency(residencyName)
+  }
+
+  override suspend fun getReviewForUser(reviewId: String, userId: String?): Review {
+    // Local repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getReview(reviewId)
   }
 }

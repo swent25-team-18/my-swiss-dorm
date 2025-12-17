@@ -62,6 +62,7 @@ import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.share.ShareLinkDialog
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
@@ -148,11 +149,11 @@ fun ViewReviewScreen(
             modifier =
                 Modifier.fillMaxWidth()
                     .padding(paddingValues)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingSmall)
                     .verticalScroll(rememberScrollState())
                     .imePadding()
                     .testTag(C.ViewReviewTags.ROOT),
-            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
               if (showTranslateButton) {
                 val clickableText =
                     if (isTranslated) {
@@ -217,13 +218,13 @@ fun ViewReviewScreen(
                 BulletRow(
                     "${review.pricePerMonth}${stringResource(R.string.view_review_price_per_month)}")
                 BulletRow("${review.areaInM2}m²")
-                DisplayGrade(review.grade, 24.dp)
+                DisplayGrade(review.grade, Dimens.IconSizeLarge)
               }
 
               // Actual review
               SectionCard(modifier = Modifier.testTag(C.ViewReviewTags.REVIEW_TEXT)) {
                 Text("${stringResource(R.string.review)}:", fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(3.dp))
+                Spacer(Modifier.height(Dimens.SpacingXSmall))
                 val descriptionToDisplay =
                     if (isTranslated) uiState.translatedDescription else review.reviewText
                 Text(
@@ -247,7 +248,9 @@ fun ViewReviewScreen(
                     location = location,
                     title = review.title,
                     modifier =
-                        Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewReviewTags.LOCATION),
+                        Modifier.fillMaxWidth()
+                            .height(Dimens.ImageSizeLarge)
+                            .testTag(C.ViewReviewTags.LOCATION),
                     onMapClick = {
                       onViewMap(
                           location.latitude, location.longitude, review.title, R.string.review)
@@ -256,7 +259,7 @@ fun ViewReviewScreen(
                 PlaceholderBlock(
                     text =
                         "${stringResource(R.string.location)} (${stringResource(R.string.not_available)})",
-                    height = 180.dp,
+                    height = Dimens.ImageSizeLarge,
                     modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
               }
 
@@ -268,7 +271,7 @@ fun ViewReviewScreen(
                         text = stringResource(R.string.view_review_was_this_useful),
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextColor,
-                        modifier = Modifier.padding(bottom = 8.dp))
+                        modifier = Modifier.padding(bottom = Dimens.PaddingSmall))
                     VoteButtons(
                         netScore = uiState.netScore,
                         userVote = uiState.userVote,
@@ -284,9 +287,9 @@ fun ViewReviewScreen(
                       onClick = onEdit,
                       modifier =
                           Modifier.fillMaxWidth(0.55f)
-                              .height(52.dp)
+                              .height(Dimens.ButtonHeight)
                               .testTag(C.ViewReviewTags.EDIT_BTN),
-                      shape = RoundedCornerShape(16.dp),
+                      shape = RoundedCornerShape(Dimens.CardCornerRadius),
                       colors =
                           ButtonColors(
                               containerColor = MainColor,
@@ -317,11 +320,11 @@ private fun SectionCard(
   Surface(
       modifier = modifier.fillMaxWidth(),
       color = TextBoxColor,
-      shape = RoundedCornerShape(16.dp),
+      shape = RoundedCornerShape(Dimens.CardCornerRadius),
       tonalElevation = 0.dp) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(Dimens.PaddingDefault),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingTiny),
             content = content)
       }
 }
@@ -329,7 +332,10 @@ private fun SectionCard(
 @Composable
 private fun BulletRow(text: String) {
   Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-    Text("•", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(end = 8.dp))
+    Text(
+        "•",
+        style = MaterialTheme.typography.bodyLarge,
+        modifier = Modifier.padding(end = Dimens.PaddingSmall))
     Text(text, style = MaterialTheme.typography.bodyLarge, color = TextColor)
   }
 }
@@ -379,7 +385,7 @@ private fun PlaceholderBlock(text: String, height: Dp, modifier: Modifier) {
           modifier
               .fillMaxWidth()
               .height(height)
-              .clip(RoundedCornerShape(16.dp))
+              .clip(RoundedCornerShape(Dimens.CardCornerRadius))
               .background(TextBoxColor),
       contentAlignment = Alignment.Center) {
         Text(text, style = MaterialTheme.typography.titleMedium, color = TextColor)
@@ -412,12 +418,12 @@ private fun VoteButtons(
                       if (userVote == VoteType.UPVOTE) {
                         MainColor
                       } else {
-                        TextColor.copy(alpha = 0.6f)
+                        TextColor.copy(alpha = Dimens.AlphaSecondary)
                       },
-                  modifier = Modifier.size(32.dp))
+                  modifier = Modifier.size(Dimens.IconSizeXXXLarge))
             }
 
-        Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.width(Dimens.SpacingXLarge))
 
         // Net score display
         Text(
@@ -428,7 +434,7 @@ private fun VoteButtons(
             modifier = Modifier.testTag(C.ViewReviewTags.VOTE_SCORE),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 
-        Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.width(Dimens.SpacingXLarge))
 
         // Downvote button
         IconButton(
@@ -442,9 +448,9 @@ private fun VoteButtons(
                       if (userVote == VoteType.DOWNVOTE) {
                         MainColor
                       } else {
-                        TextColor.copy(alpha = 0.6f)
+                        TextColor.copy(alpha = Dimens.AlphaSecondary)
                       },
-                  modifier = Modifier.size(32.dp))
+                  modifier = Modifier.size(Dimens.IconSizeXXXLarge))
             }
       }
 }

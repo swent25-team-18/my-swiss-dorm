@@ -327,4 +327,53 @@ class ViewUserProfileScreenTest : FirestoreTest() {
         "Incorrect photo displayed instead of the profile picture",
         vm.uiState.value.profilePicture!!.fileName == photo.fileName)
   }
+
+  @Test
+  fun blockButton_displayed_and_clickable() = runTest {
+    // Create a second user to view (not current user)
+    switchToUser(FakeUser.FakeUser2)
+    val otherUserUid = FirebaseEmulator.auth.currentUser!!.uid
+    val profileWithResidence =
+        profile2.copy(
+            ownerId = otherUserUid,
+            userInfo = profile2.userInfo.copy(residencyName = "Vortex, Coloc"))
+    profileRepo.createProfile(profileWithResidence)
+
+    // Switch back to FakeUser1 to view FakeUser2's profile
+    switchToUser(FakeUser.FakeUser1)
+
+    val vm = ViewProfileScreenViewModel(repo = profileRepo, auth = FirebaseEmulator.auth)
+
+    compose.setContent {
+      ViewUserProfileScreen(
+          viewModel = vm,
+          ownerId = otherUserUid, // View FakeUser2's profile (not current user)
+          onBack = {},
+          onSendMessage = {})
+    }
+
+    // Wait for profile to load
+    compose.waitUntil(timeoutMillis = 10_000) {
+      vm.uiState.value.name.isNotEmpty() && vm.uiState.value.name.contains("Alice")
+    }
+
+    // Wait for block button to appear
+    compose.waitUntil(10_000) {
+      compose
+          .onAllNodesWithTag(T.BLOCK_BUTTON, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    compose.onNodeWithTag(T.ROOT).performScrollToNode(hasTestTag(T.BLOCK_BUTTON))
+    compose.onNodeWithTag(T.BLOCK_BUTTON).assertIsDisplayed()
+
+    // Click block button
+    compose.onNodeWithTag(T.BLOCK_BUTTON).performClick()
+
+    // Wait for state to update (user should be blocked)
+    compose.waitUntil(5_000) { vm.uiState.value.isBlocked }
+
+    // Button should still be displayed (now showing unblock)
+    compose.onNodeWithTag(T.BLOCK_BUTTON).assertIsDisplayed()
+  }
 }

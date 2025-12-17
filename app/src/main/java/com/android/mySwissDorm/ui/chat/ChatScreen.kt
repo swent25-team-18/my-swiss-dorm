@@ -1,7 +1,10 @@
-// MyChatScreen.kt
 package com.android.mySwissDorm.ui.chat
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.view.WindowManager
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,33 +12,116 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
+import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
+import com.android.mySwissDorm.model.photo.getPhotoDownloadUrl
+import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.ui.theme.Dimens
+import com.android.mySwissDorm.ui.theme.ThemePreferenceState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.compose.ui.messages.MessagesScreen
+import io.getstream.chat.android.compose.ui.messages.header.MessageListHeader
 import io.getstream.chat.android.compose.ui.theme.ChatTheme
 import io.getstream.chat.android.compose.viewmodel.messages.MessagesViewModelFactory
+import io.getstream.chat.android.models.Channel
+import io.getstream.chat.android.models.ConnectionState
 import io.getstream.chat.android.models.User
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
+
+/** Calculates the soft input mode that should be restored when leaving ChatScreen. */
+internal fun computeRestoreSoftInputMode(originalSoftInputMode: Int): Int {
+  val originalStateBits = originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_STATE
+  val originalAdjustBits =
+      originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_ADJUST
+  val restoreAdjustBits =
+      if (originalAdjustBits == WindowManager.LayoutParams.SOFT_INPUT_ADJUST_UNSPECIFIED) {
+        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
+      } else {
+        originalAdjustBits
+      }
+  return originalStateBits or restoreAdjustBits
+}
+
+/** Calculates the soft input mode to apply while ChatScreen is visible (RESUMED). */
+@Suppress("DEPRECATION")
+internal fun computeResizeSoftInputMode(originalSoftInputMode: Int): Int {
+  val originalStateBits = originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_STATE
+  return originalStateBits or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+}
+
+/**
+ * Extracted connection flow so we can unit test all branches without needing Compose runtime.
+ *
+ * This preserves the original behavior of updating [setIsConnecting] before/after the network call,
+ * and uses [delayFn] for the post-connect and post-failure waits.
+ */
+internal suspend fun ensureConnectedToStream(
+    isConnectedOverride: Boolean?,
+    currentUserPresent: Boolean,
+    userStateProvider: () -> Any?,
+    isConnecting: Boolean,
+    setIsConnected: (Boolean) -> Unit,
+    setIsConnecting: (Boolean) -> Unit,
+    connectUser: suspend () -> Unit,
+    delayFn: suspend (Long) -> Unit = { delay(it) },
+    logError: (Throwable) -> Unit = {},
+) {
+  // Skip connection logic when overridden (tests)
+  if (isConnectedOverride != null) return
+
+  val user = userStateProvider()
+  if (user != null) {
+    setIsConnected(true)
+    return
+  }
+
+  if (currentUserPresent && !isConnecting) {
+    setIsConnecting(true)
+    try {
+      connectUser()
+      // Wait for connection to establish
+      delayFn(1500)
+      setIsConnected(true)
+    } catch (e: Exception) {
+      logError(e)
+      // Still try to proceed, might work if connection was already in progress
+      delayFn(1000)
+      setIsConnected(userStateProvider() != null)
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+}
 
 /**
  * Chat screen displaying the full messaging interface for a specific channel.
@@ -98,11 +184,30 @@ fun MyChatScreen(
       connectUserById(firebaseUser.uid)
     },
     chatTheme: @Composable (@Composable () -> Unit) -> Unit = { content ->
-      ChatTheme(content = content)
+      val userPreference by ThemePreferenceState.darkModePreference
+      val isDarkTheme =
+          when (userPreference) {
+            true -> true
+            false -> false
+            null -> isSystemInDarkTheme()
+          }
+
+      ChatTheme(isInDarkMode = isDarkTheme, content = content)
     },
     messagesScreen: @Composable (MessagesViewModelFactory, () -> Unit) -> Unit =
         { viewModelFactory, onBack ->
-          MessagesScreen(viewModelFactory = viewModelFactory, onBackPressed = onBack)
+          MessagesScreenWithAppAvatarHeader(
+              channelCid = channelId,
+              firebaseCurrentUserId = currentUserProvider()?.uid,
+              onBackPressed = onBack,
+              messagesContent = {
+                MessagesScreen(
+                    viewModelFactory = viewModelFactory,
+                    onBackPressed = onBack,
+                    showHeader = false,
+                )
+              },
+          )
         },
     viewModelFactoryProvider: (Context, ChatClient, String, Int) -> MessagesViewModelFactory =
         { ctx, chatClient, cid, limit ->
@@ -116,13 +221,57 @@ fun MyChatScreen(
   if (isPreview) {
     // Fake chat UI for preview only
     Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        modifier = modifier.fillMaxSize().padding(Dimens.PaddingDefault),
+        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
           Text("Chat with: $channelId (preview)")
           repeat(4) { Text("Message $it: Hello") }
         }
   } else {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Chat-only keyboard fix:
+    // Force ADJUST_RESIZE while ChatScreen is RESUMED, and restore on PAUSE/STOP.
+    // This prevents "leaking" adjustResize into other screens.
+    // made with the help of AI
+    DisposableEffect(lifecycleOwner, context) {
+      val activity = context.findActivity()
+      val window = activity?.window
+      val originalSoftInputMode = window?.attributes?.softInputMode ?: 0
+      val restoreSoftInputMode = computeRestoreSoftInputMode(originalSoftInputMode)
+      val resizeSoftInputMode = computeResizeSoftInputMode(originalSoftInputMode)
+
+      fun applyResize() {
+        if (window != null) {
+          window.setSoftInputMode(resizeSoftInputMode)
+        }
+      }
+
+      fun restore() {
+        if (window != null) {
+          window.setSoftInputMode(restoreSoftInputMode)
+        }
+      }
+
+      val observer = LifecycleEventObserver { _, event ->
+        when (event) {
+          Lifecycle.Event.ON_RESUME -> applyResize()
+          Lifecycle.Event.ON_PAUSE,
+          Lifecycle.Event.ON_STOP -> restore()
+          else -> Unit
+        }
+      }
+
+      lifecycleOwner.lifecycle.addObserver(observer)
+      // Apply immediately for first composition
+      applyResize()
+
+      onDispose {
+        lifecycleOwner.lifecycle.removeObserver(observer)
+        restore()
+      }
+    }
+
     val chatClient = chatClientProvider()
     val currentUser = currentUserProvider()
 
@@ -133,29 +282,22 @@ fun MyChatScreen(
 
     // Check connection and connect if needed
     LaunchedEffect(channelId, isConnectedOverride) {
-      // Skip connection logic when overridden (tests)
-      if (isConnectedOverride != null) return@LaunchedEffect
-
-      val user = userStateProvider(chatClient)
-      if (user != null) {
-        isConnected = true
-      } else if (currentUser != null && !isConnecting) {
-        // User not connected, try to connect
-        isConnecting = true
-        try {
-          connectUser(currentUser, chatClient)
-          // Wait for connection to establish
-          delay(1500)
-          isConnected = true
-        } catch (e: Exception) {
-          android.util.Log.e("MyChatScreen", "Failed to connect to Stream Chat", e)
-          // Still try to proceed, might work if connection was already in progress
-          delay(1000)
-          isConnected = userStateProvider(chatClient) != null
-        } finally {
-          isConnecting = false
-        }
-      }
+      ensureConnectedToStream(
+          isConnectedOverride = isConnectedOverride,
+          currentUserPresent = currentUser != null,
+          userStateProvider = { userStateProvider(chatClient) },
+          isConnecting = isConnecting,
+          setIsConnected = { isConnected = it },
+          setIsConnecting = { isConnecting = it },
+          connectUser = {
+            if (currentUser != null) {
+              connectUser(currentUser, chatClient)
+            }
+          },
+          logError = { e ->
+            android.util.Log.e("MyChatScreen", "Failed to connect to Stream Chat", e)
+          },
+      )
     }
 
     if (!isConnected || isConnecting) {
@@ -163,7 +305,7 @@ fun MyChatScreen(
       Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
           CircularProgressIndicator()
-          Spacer(modifier = Modifier.height(16.dp))
+          Spacer(modifier = Modifier.height(Dimens.SpacingXLarge))
           Text(stringResource(R.string.chat_screen_connecting))
         }
       }
@@ -173,10 +315,19 @@ fun MyChatScreen(
             viewModelFactoryProvider(context, chatClient, channelId, messageLimit)
           }
 
-      chatTheme { messagesScreen(viewModelFactory, onBackClick) }
+      chatTheme {
+        Box(modifier = modifier.fillMaxSize()) { messagesScreen(viewModelFactory, onBackClick) }
+      }
     }
   }
 }
+
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+      is Activity -> this
+      is ContextWrapper -> baseContext.findActivity()
+      else -> null
+    }
 
 /**
  * Default connector reused in tests without needing a FirebaseUser mock. Allows injecting a fake
@@ -190,7 +341,145 @@ internal suspend fun connectUserById(
     }
 ) {
   val profile = repository.getProfile(firebaseUserId)
-  connector(firebaseUserId, "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(), "")
+  // Accessing properties on a mock can throw in unit tests; keep this safe.
+  val profilePictureFileName = runCatching { profile.userInfo.profilePicture }.getOrNull()
+  val imageUrl =
+      profilePictureFileName
+          ?.takeIf { it.isNotBlank() }
+          ?.let { runCatching { getPhotoDownloadUrl(it) }.getOrNull().orEmpty() }
+          .orEmpty()
+  connector(
+      firebaseUserId,
+      "${profile.userInfo.name} ${profile.userInfo.lastName}".trim(),
+      imageUrl,
+  )
+}
+
+@Composable
+internal fun MessagesScreenWithAppAvatarHeader(
+    channelCid: String,
+    firebaseCurrentUserId: String?,
+    onBackPressed: () -> Unit,
+    messagesContent: @Composable () -> Unit,
+    streamState: StreamState = DefaultStreamState(),
+    avatarModelLoader: suspend (String) -> Any? = { userId -> loadAppProfileAvatarModel(userId) },
+) {
+  val streamCurrentUser by streamState.currentUserFlow.collectAsState(initial = null)
+  val connectionState by
+      streamState.connectionStateFlow.collectAsState(initial = ConnectionState.Connected)
+
+  var channel by remember(channelCid) { mutableStateOf<Channel?>(null) }
+
+  LaunchedEffect(channelCid) {
+    val parts = channelCid.split(":", limit = 2)
+    val type = parts.getOrNull(0).orEmpty()
+    val id = parts.getOrNull(1).orEmpty()
+    if (type.isBlank() || id.isBlank()) return@LaunchedEffect
+    channel = streamState.watchChannel(type, id)
+  }
+
+  Column(modifier = Modifier.fillMaxSize()) {
+    val ch = channel
+    if (ch != null) {
+      MessageListHeader(
+          channel = ch,
+          currentUser = streamCurrentUser,
+          connectionState = connectionState,
+          onBackPressed = onBackPressed,
+          trailingContent = {
+            AppProfileAvatarTrailingContent(
+                channel = ch,
+                currentUserId = firebaseCurrentUserId ?: streamCurrentUser?.id,
+                avatarModelLoader = avatarModelLoader,
+            )
+          },
+      )
+    }
+
+    messagesContent()
+  }
+}
+
+internal interface StreamState {
+  val currentUserFlow: StateFlow<User?>
+  val connectionStateFlow: StateFlow<ConnectionState>
+
+  suspend fun watchChannel(type: String, id: String): Channel?
+}
+
+private class DefaultStreamState : StreamState {
+  private val client: ChatClient = StreamChatProvider.getClient()
+
+  override val currentUserFlow: StateFlow<User?> = client.clientState.user
+  override val connectionStateFlow: StateFlow<ConnectionState> = client.clientState.connectionState
+
+  override suspend fun watchChannel(type: String, id: String): Channel? {
+    return runCatching { client.channel(type, id).watch().await().getOrNull() }.getOrNull()
+  }
+}
+
+@Composable
+internal fun AppProfileAvatarTrailingContent(
+    channel: Channel,
+    currentUserId: String?,
+    avatarModelLoader: suspend (String) -> Any? = { userId -> loadAppProfileAvatarModel(userId) },
+) {
+  val otherMember = channel.members.firstOrNull { it.user.id != currentUserId }
+  val otherId = otherMember?.user?.id
+
+  var avatarModel by remember(otherId) { mutableStateOf<Any?>(null) }
+
+  LaunchedEffect(otherId) {
+    if (otherId.isNullOrBlank()) return@LaunchedEffect
+    val model = runCatching { avatarModelLoader(otherId) }.getOrNull()
+    avatarModel = model
+  }
+
+  if (avatarModel != null) {
+    AsyncImage(
+        model = avatarModel,
+        contentDescription = "chat_header_avatar",
+        modifier = Modifier.size(36.dp).clip(CircleShape),
+    )
+  } else {
+    // Simple fallback: initials in a circle (same behavior as Stream when no image).
+    val initials = computeFallbackInitials(otherMember?.user?.name, otherMember?.user?.id)
+
+    Box(
+        modifier = Modifier.size(36.dp).clip(CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+      Text(initials)
+    }
+  }
+}
+
+internal fun computeFallbackInitials(name: String?, id: String?): String {
+  val fromName =
+      name
+          ?.trim()
+          ?.split(" ")
+          ?.filter { it.isNotBlank() }
+          ?.take(2)
+          ?.joinToString("") { it.first().uppercaseChar().toString() }
+          .orEmpty()
+  if (fromName.isNotBlank()) return fromName
+  return id?.take(2)?.uppercase().orEmpty().ifBlank { "?" }
+}
+
+internal suspend fun loadAppProfileAvatarModel(
+    userId: String,
+    profileLoader: suspend (String) -> Profile = { id ->
+      ProfileRepositoryProvider.repository.getProfile(id)
+    },
+    photoModelLoader: suspend (String) -> Any? = { fileName ->
+      PhotoRepositoryProvider.cloud_repository.retrievePhoto(fileName).image
+    },
+): Any? {
+  val profile = profileLoader(userId)
+  val fileName = profile.userInfo.profilePicture
+  if (fileName.isNullOrBlank()) return null
+  return runCatching { photoModelLoader(fileName) }.getOrNull()
 }
 
 /**

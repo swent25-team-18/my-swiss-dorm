@@ -541,6 +541,399 @@ class RentalListingRepositoryHybridTest {
     ProfileRepositoryProvider.repository = profileRepository
   }
 
+  @Test
+  fun getAllRentalListingsForUser_nullUserId_returnsAllListings() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val listings = listOf(createTestListing("listing-1"), createTestListing("listing-2"))
+    coEvery { remoteRepository.getAllRentalListings() } returns listings
+
+    val result = hybridRepository.getAllRentalListingsForUser(null)
+
+    assertEquals(listings, result)
+    coVerify(exactly = 0) { profileRepository.getBlockedUserIds(any()) }
+  }
+
+  @Test
+  fun getAllRentalListingsForUser_filtersWhenCurrentUserBlockedOwner() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing1 = createTestListing("listing-1", ownerId = user1Id)
+    val listing2 = createTestListing("listing-2", ownerId = user2Id)
+    val listing3 = createTestListing("listing-3", ownerId = "user-3")
+
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listing1, listing2, listing3)
+    // User1 has blocked user2
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    // User2 and user3 have not blocked anyone
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllRentalListingsForUser(user1Id)
+
+    // Should filter out listing2 (user2's listing) because user1 blocked user2
+    assertEquals(2, result.size)
+    assertTrue(result.contains(listing1))
+    assertTrue(result.contains(listing3))
+    assertFalse(result.contains(listing2))
+  }
+
+  @Test
+  fun getAllRentalListingsForUser_filtersWhenOwnerBlockedCurrentUser() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing1 = createTestListing("listing-1", ownerId = user1Id)
+    val listing2 = createTestListing("listing-2", ownerId = user2Id)
+    val listing3 = createTestListing("listing-3", ownerId = "user-3")
+
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listing1, listing2, listing3)
+    // User1 has not blocked anyone
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    // User2 has blocked user1
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+    coEvery { profileRepository.getBlockedUserIds("user-3") } returns emptyList()
+
+    val result = hybridRepository.getAllRentalListingsForUser(user1Id)
+
+    // Should filter out listing2 (user2's listing) because user2 blocked user1
+    assertEquals(2, result.size)
+    assertTrue(result.contains(listing1))
+    assertTrue(result.contains(listing3))
+    assertFalse(result.contains(listing2))
+  }
+
+  @Test
+  fun getAllRentalListingsForUser_returnsOwnListings() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val listing1 = createTestListing("listing-1", ownerId = user1Id)
+    val listing2 = createTestListing("listing-2", ownerId = "user-2")
+
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listing1, listing2)
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds("user-2") } returns emptyList()
+
+    val result = hybridRepository.getAllRentalListingsForUser(user1Id)
+
+    // Should include own listing even if blocked
+    assertTrue(result.contains(listing1))
+  }
+
+  @Test
+  fun getRentalListingForUser_nullUserId_returnsListing() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val listing = createTestListing("listing-1")
+    coEvery { remoteRepository.getRentalListing("listing-1") } returns listing
+
+    val result = hybridRepository.getRentalListingForUser("listing-1", null)
+
+    assertEquals(listing, result)
+    coVerify(exactly = 0) { profileRepository.getBlockedUserIds(any()) }
+  }
+
+  @Test
+  fun getRentalListingForUser_ownerViewingOwnListing_returnsListing() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val listing = createTestListing("listing-1", ownerId = user1Id)
+    coEvery { remoteRepository.getRentalListing("listing-1") } returns listing
+
+    val result = hybridRepository.getRentalListingForUser("listing-1", user1Id)
+
+    assertEquals(listing, result)
+    coVerify(exactly = 0) { profileRepository.getBlockedUserIds(any()) }
+  }
+
+  @Test
+  fun getRentalListingForUser_throwsWhenCurrentUserBlockedOwner() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing = createTestListing("listing-1", ownerId = user2Id)
+
+    coEvery { remoteRepository.getRentalListing("listing-1") } returns listing
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns listOf(user2Id)
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+
+    val result = runCatching { hybridRepository.getRentalListingForUser("listing-1", user1Id) }
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is NoSuchElementException)
+    assertTrue(result.exceptionOrNull()?.message?.contains("blocking restrictions") == true)
+  }
+
+  @Test
+  fun getRentalListingForUser_throwsWhenOwnerBlockedCurrentUser() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing = createTestListing("listing-1", ownerId = user2Id)
+
+    coEvery { remoteRepository.getRentalListing("listing-1") } returns listing
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+
+    val result = runCatching { hybridRepository.getRentalListingForUser("listing-1", user1Id) }
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is NoSuchElementException)
+    assertTrue(result.exceptionOrNull()?.message?.contains("blocking restrictions") == true)
+  }
+
+  @Test
+  fun getRentalListingForUser_returnsWhenNotBlocked() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing = createTestListing("listing-1", ownerId = user2Id)
+
+    coEvery { remoteRepository.getRentalListing("listing-1") } returns listing
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns emptyList()
+
+    val result = hybridRepository.getRentalListingForUser("listing-1", user1Id)
+
+    assertEquals(listing, result)
+  }
+
+  @Test
+  fun getAllRentalListingsForUser_handlesBlockedListFetchFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val listing1 = createTestListing("listing-1", ownerId = user1Id)
+    val listing2 = createTestListing("listing-2", ownerId = "user-2")
+
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listing1, listing2)
+    // Simulate failure when fetching blocked list - should default to empty list
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } throws IOException("Network error")
+
+    val result = hybridRepository.getAllRentalListingsForUser(user1Id)
+
+    // Should return all listings when blocked list fetch fails (defaults to empty)
+    assertEquals(2, result.size)
+  }
+
+  @Test
+  fun getRentalListingForUser_handlesBlockedListFetchFailure() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing = createTestListing("listing-1", ownerId = user2Id)
+
+    coEvery { remoteRepository.getRentalListing("listing-1") } returns listing
+    // Simulate failure when fetching blocked lists - should default to empty (not blocked)
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } throws IOException("Network error")
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } throws IOException("Network error")
+
+    val result = hybridRepository.getRentalListingForUser("listing-1", user1Id)
+
+    // Should return listing when blocked list fetch fails (defaults to not blocked)
+    assertEquals(listing, result)
+  }
+
+  @Test
+  fun getAllRentalListingsForUser_usesCacheForMultipleListingsFromSameOwner() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val user1Id = "user-1"
+    val user2Id = "user-2"
+    val listing1 = createTestListing("listing-1", ownerId = user1Id)
+    val listing2 = createTestListing("listing-2", ownerId = user2Id)
+    val listing3 = createTestListing("listing-3", ownerId = user2Id) // Same owner as listing2
+
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(listing1, listing2, listing3)
+    coEvery { profileRepository.getBlockedUserIds(user1Id) } returns emptyList()
+    // Should only be called once for user2, even though there are 2 listings
+    coEvery { profileRepository.getBlockedUserIds(user2Id) } returns listOf(user1Id)
+
+    val result = hybridRepository.getAllRentalListingsForUser(user1Id)
+
+    // Should filter out both listings from user2
+    assertEquals(1, result.size)
+    assertTrue(result.contains(listing1))
+    // Verify getBlockedUserIds was called only once for user2 (cache used)
+    coVerify(exactly = 1) { profileRepository.getBlockedUserIds(user2Id) }
+  }
+
+  @Test
+  fun getAllRentalListings_online_deletesStaleListingsDuringFullSync() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add some stale listings to local database
+    val staleListing1 = createTestListing("stale-1")
+    val staleListing2 = createTestListing("stale-2")
+    val currentListing = createTestListing("current-1")
+    localRepository.addRentalListing(staleListing1)
+    localRepository.addRentalListing(staleListing2)
+    localRepository.addRentalListing(currentListing)
+
+    // Remote only has current listing (stale ones were deleted from Firestore)
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(currentListing)
+
+    val result = hybridRepository.getAllRentalListings()
+
+    assertEquals(listOf(currentListing), result)
+    // Verify stale listings were deleted
+    val localListings = localRepository.getAllRentalListings()
+    assertEquals(1, localListings.size)
+    assertEquals("current-1", localListings[0].uid)
+    // Verify stale listings are gone
+    val result1 = runCatching { localRepository.getRentalListing("stale-1") }
+    assertTrue(result1.isFailure)
+    assertTrue(result1.exceptionOrNull() is NoSuchElementException)
+    val result2 = runCatching { localRepository.getRentalListing("stale-2") }
+    assertTrue(result2.isFailure)
+    assertTrue(result2.exceptionOrNull() is NoSuchElementException)
+  }
+
+  @Test
+  fun getAllRentalListings_online_deletesAllListingsWhenRemoteIsEmpty() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add some listings to local database
+    val listing1 = createTestListing("listing-1")
+    val listing2 = createTestListing("listing-2")
+    localRepository.addRentalListing(listing1)
+    localRepository.addRentalListing(listing2)
+
+    // Remote is empty (all listings deleted from Firestore)
+    coEvery { remoteRepository.getAllRentalListings() } returns emptyList()
+
+    val result = hybridRepository.getAllRentalListings()
+
+    assertEquals(emptyList<RentalListing>(), result)
+    // Verify all local listings were deleted
+    assertEquals(0, localRepository.getAllRentalListings().size)
+  }
+
+  @Test
+  fun getAllRentalListingsByLocation_online_doesNotDeleteStaleListings() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add a stale listing that's outside the location radius
+    val staleListing = createTestListing("stale-1")
+    localRepository.addRentalListing(staleListing)
+
+    val location = Location("Test Location", 46.5, 6.5)
+    val nearbyListing = createTestListing("nearby-1")
+    coEvery { remoteRepository.getAllRentalListingsByLocation(location, 1000.0) } returns
+        listOf(nearbyListing)
+
+    val result = hybridRepository.getAllRentalListingsByLocation(location, 1000.0)
+
+    assertEquals(listOf(nearbyListing), result)
+    // Verify stale listing is still in local database (not deleted because it's a partial sync)
+    val localListings = localRepository.getAllRentalListings()
+    assertEquals(2, localListings.size)
+    assertTrue(localListings.any { it.uid == "stale-1" })
+    assertTrue(localListings.any { it.uid == "nearby-1" })
+  }
+
+  @Test
+  fun getAllRentalListingsByUser_online_doesNotDeleteStaleListings() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add a listing from a different user
+    val otherUserListing = createTestListing("other-1", ownerId = "user-2")
+    localRepository.addRentalListing(otherUserListing)
+
+    val userListing = createTestListing("user-1", ownerId = "user-1")
+    coEvery { remoteRepository.getAllRentalListingsByUser("user-1") } returns listOf(userListing)
+
+    val result = hybridRepository.getAllRentalListingsByUser("user-1")
+
+    assertEquals(listOf(userListing), result)
+    // Verify other user's listing is still in local database (not deleted because it's a partial
+    // sync)
+    val localListings = localRepository.getAllRentalListings()
+    assertEquals(2, localListings.size)
+    assertTrue(localListings.any { it.uid == "other-1" })
+    assertTrue(localListings.any { it.uid == "user-1" })
+  }
+
+  @Test
+  fun getAllRentalListings_online_handlesDeletionFailureGracefully() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    val currentListing = createTestListing("current-1")
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(currentListing)
+
+    // Close database to simulate deletion failure
+    database.close()
+    val newDatabase =
+        Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+    localRepository = RentalListingRepositoryLocal(newDatabase.rentalListingDao())
+    hybridRepository = RentalListingRepositoryHybrid(context, remoteRepository, localRepository)
+
+    // Should not throw even if deletion fails
+    val result = hybridRepository.getAllRentalListings()
+
+    assertEquals(listOf(currentListing), result)
+    // Verify listing was still synced despite deletion failure
+    assertEquals(1, localRepository.getAllRentalListings().size)
+    newDatabase.close()
+  }
+
+  @Test
+  fun getAllRentalListings_online_updatesExistingAndDeletesStale() = runTest {
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(context) } returns true
+
+    // Add existing listing with old data
+    val oldListing = createTestListing("listing-1", title = "Old Title")
+    val staleListing = createTestListing("stale-1")
+    localRepository.addRentalListing(oldListing)
+    localRepository.addRentalListing(staleListing)
+
+    // Remote has updated listing-1 and a new listing-2, but no stale-1
+    val updatedListing = createTestListing("listing-1", title = "Updated Title")
+    val newListing = createTestListing("listing-2")
+    coEvery { remoteRepository.getAllRentalListings() } returns listOf(updatedListing, newListing)
+
+    val result = hybridRepository.getAllRentalListings()
+
+    assertEquals(2, result.size)
+    val localListings = localRepository.getAllRentalListings()
+    assertEquals(2, localListings.size)
+    // Verify listing-1 was updated
+    assertEquals("Updated Title", localListings.find { it.uid == "listing-1" }?.title)
+    // Verify listing-2 was added
+    assertTrue(localListings.any { it.uid == "listing-2" })
+    // Verify stale-1 was deleted
+    assertFalse(localListings.any { it.uid == "stale-1" })
+  }
+
   private fun createTestListing(
       uid: String,
       ownerId: String = "user-1",

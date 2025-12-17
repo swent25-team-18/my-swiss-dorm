@@ -33,12 +33,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.google.zxing.BarcodeFormat
@@ -81,11 +81,13 @@ fun ShareLinkDialog(link: String, onDismiss: () -> Unit) {
   Dialog(onDismissRequest = onDismiss) {
     Box(contentAlignment = Alignment.Center, modifier = Modifier.wrapContentWidth()) {
       Surface(
-          shape = RoundedCornerShape(24.dp),
-          tonalElevation = 4.dp,
+          shape = RoundedCornerShape(Dimens.IconSizeLarge),
+          tonalElevation = Dimens.PaddingXSmall,
           color = MaterialTheme.colorScheme.surface) {
             Column(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                modifier =
+                    Modifier.padding(
+                        horizontal = Dimens.IconSizeDefault, vertical = Dimens.SpacingXLarge),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
                       text = stringResource(R.string.share_dialog_title),
@@ -94,13 +96,15 @@ fun ShareLinkDialog(link: String, onDismiss: () -> Unit) {
                               color = TextColor, fontWeight = FontWeight.SemiBold),
                       modifier = Modifier.testTag(C.ShareLinkDialogTags.DIALOG_TITLE))
 
-                  Spacer(modifier = Modifier.height(4.dp))
+                  Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
 
                   if (qrBitmap != null) {
                     Image(
                         bitmap = qrBitmap.asImageBitmap(),
                         contentDescription = stringResource(R.string.share_dialog_qr_content_desc),
-                        modifier = Modifier.size(280.dp).testTag(C.ShareLinkDialogTags.QR_CODE))
+                        modifier =
+                            Modifier.size(Dimens.DialogQRCodeSize)
+                                .testTag(C.ShareLinkDialogTags.QR_CODE))
                   } else {
                     Text(
                         text = stringResource(R.string.share_dialog_qr_error),
@@ -109,7 +113,7 @@ fun ShareLinkDialog(link: String, onDismiss: () -> Unit) {
                         modifier = Modifier.testTag(C.ShareLinkDialogTags.QR_ERROR))
                   }
 
-                  Spacer(modifier = Modifier.height(4.dp))
+                  Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
 
                   Button(
                       onClick = {
@@ -123,7 +127,7 @@ fun ShareLinkDialog(link: String, onDismiss: () -> Unit) {
                       },
                       modifier =
                           Modifier.fillMaxWidth().testTag(C.ShareLinkDialogTags.COPY_LINK_BUTTON),
-                      shape = RoundedCornerShape(24.dp),
+                      shape = RoundedCornerShape(Dimens.IconSizeLarge),
                       colors =
                           ButtonDefaults.buttonColors(
                               containerColor = MainColor,
@@ -131,14 +135,14 @@ fun ShareLinkDialog(link: String, onDismiss: () -> Unit) {
                         Icon(
                             imageVector = Icons.Outlined.ContentCopy,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.size(8.dp))
+                            modifier = Modifier.size(Dimens.IconSizeSmall))
+                        Spacer(modifier = Modifier.size(Dimens.SpacingDefault))
                         Text(
                             text = stringResource(R.string.share_dialog_copy_link),
                             style = MaterialTheme.typography.labelLarge)
                       }
 
-                  Spacer(modifier = Modifier.height(8.dp))
+                  Spacer(modifier = Modifier.height(Dimens.SpacingDefault))
 
                   Text(
                       text = stringResource(R.string.cancel),

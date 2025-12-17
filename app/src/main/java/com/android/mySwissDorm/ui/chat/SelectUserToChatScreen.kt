@@ -20,12 +20,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.LightGray1
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.OutlineColor
@@ -163,7 +163,9 @@ fun SelectUserToChatScreen(
               onValueChange = { searchQuery = it },
               placeholder = { stringResource(R.string.search_users) },
               leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-              modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+              modifier =
+                  Modifier.fillMaxWidth()
+                      .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingSmall),
               singleLine = true,
               colors =
                   OutlinedTextFieldDefaults.colors(
@@ -244,16 +246,16 @@ private fun UserListItem(user: UserItem, onClick: () -> Unit, modifier: Modifier
           modifier
               .fillMaxWidth()
               .clickable(onClick = onClick)
-              .padding(horizontal = 16.dp, vertical = 12.dp),
+              .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingMedium),
       verticalAlignment = Alignment.CenterVertically) {
         // Avatar
         AsyncImage(
             model = user.imageUrl ?: "https://bit.ly/2TIt8NR",
             contentDescription = user.name,
-            modifier = Modifier.size(56.dp).clip(CircleShape),
+            modifier = Modifier.size(Dimens.ImageSizeAvatar).clip(CircleShape),
             contentScale = ContentScale.Crop)
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(Dimens.SpacingLarge))
 
         // Name
         Text(

@@ -34,11 +34,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MainColor
@@ -122,7 +122,7 @@ fun DefaultCameraButton(
     onSave: (Photo) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = RoundedCornerShape(Dimens.IconSizeSmall),
     colors: ButtonColors =
         ButtonColors(
             containerColor = LightGray,
@@ -151,7 +151,7 @@ fun DefaultCameraButton(
       contentPadding = contentPadding,
       interactionSource = interactionSource) {
         Icon(Icons.Default.AddAPhoto, null, tint = MainColor)
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(Dimens.SpacingDefault))
         Text(text = stringResource(R.string.camera_button_default_text))
       }
 }

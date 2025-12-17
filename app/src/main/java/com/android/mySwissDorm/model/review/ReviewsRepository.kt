@@ -28,6 +28,16 @@ interface ReviewsRepository {
   suspend fun getAllReviewsByResidency(residencyName: String): List<Review>
 
   /**
+   * Retrieves all Review related to a specific residency, filtered based on bidirectional blocking.
+   * Only returns reviews where neither the current user nor the review owner has blocked the other.
+   *
+   * @param residencyName The name of the residency whose reviews to retrieve.
+   * @param userId The unique identifier of the current user. If null, returns all reviews.
+   * @return A list of Reviews visible to the user.
+   */
+  suspend fun getAllReviewsByResidencyForUser(residencyName: String, userId: String?): List<Review>
+
+  /**
    * Retrieves a specific Review by its unique identifier.
    *
    * @param reviewId The unique identifier of the review item to retrieve.
@@ -35,6 +45,18 @@ interface ReviewsRepository {
    * @throws Exception if the review item is not found.
    */
   suspend fun getReview(reviewId: String): Review
+
+  /**
+   * Retrieves a specific Review by its unique identifier, if visible to the user. Returns the
+   * review only if neither the current user nor the review owner has blocked the other.
+   *
+   * @param reviewId The unique identifier of the review item to retrieve.
+   * @param userId The unique identifier of the current user. If null, returns the review if it
+   *   exists.
+   * @return The review item with the specified identifier.
+   * @throws Exception if the review item is not found or if blocked.
+   */
+  suspend fun getReviewForUser(reviewId: String, userId: String?): Review
 
   /**
    * Adds a new review item to the repository.

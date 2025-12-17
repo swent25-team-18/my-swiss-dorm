@@ -2,6 +2,7 @@ package com.android.mySwissDorm.model
 
 import android.content.Context
 import android.util.Log
+import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.utils.NetworkUtils
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
@@ -126,5 +127,46 @@ abstract class HybridRepositoryBase<T>(
   private fun isNetworkOrTimeout(e: Throwable): Boolean {
     val exception = e as? Exception ?: Exception(e.message)
     return NetworkUtils.isNetworkException(exception) || e is TimeoutCancellationException
+  }
+
+  /**
+   * Checks if two users have blocked each other bidirectionally.
+   *
+   * @param ownerId The owner of the content.
+   * @param userId The current user's ID.
+   * @param currentUserBlockedList Pre-loaded list of users blocked by current user (optional).
+   * @param blockedCache Cache for owner's blocked lists (optional).
+   * @return true if either user has blocked the other.
+   */
+  protected suspend fun isBlockedBidirectionally(
+      ownerId: String,
+      userId: String,
+      currentUserBlockedList: List<String>? = null,
+      blockedCache: MutableMap<String, Boolean>? = null
+  ): Boolean {
+    // Check if current user has blocked owner
+    val currentUserBlockedOwner =
+        currentUserBlockedList?.contains(ownerId)
+            ?: runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(userId) }
+                .getOrDefault(emptyList())
+                .contains(ownerId)
+
+    // Check if owner has blocked current user
+    // Use cache if available, otherwise fetch directly
+    val ownerBlockedCurrentUser =
+        if (blockedCache != null) {
+          blockedCache.getOrPut(ownerId) {
+            runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(ownerId) }
+                .onFailure { Log.w(TAG, "Failed to fetch blocked list for owner $ownerId", it) }
+                .getOrDefault(emptyList())
+                .contains(userId)
+          }
+        } else {
+          runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(ownerId) }
+              .getOrDefault(emptyList())
+              .contains(userId)
+        }
+
+    return currentUserBlockedOwner || ownerBlockedCurrentUser
   }
 }

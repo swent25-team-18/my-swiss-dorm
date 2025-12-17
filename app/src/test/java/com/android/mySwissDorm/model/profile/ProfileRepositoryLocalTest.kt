@@ -242,6 +242,19 @@ class ProfileRepositoryLocalTest {
   }
 
   @Test
+  fun addBlockedUser_whenAlreadyBlocked_doesNotDuplicate() = runTest {
+    val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2"))
+    repository.createProfile(profile)
+
+    // Try to add user-2 again (already blocked)
+    repository.addBlockedUser("user-1", "user-2")
+
+    val blocked = repository.getBlockedUserIds("user-1")
+    assertEquals(1, blocked.size)
+    assertTrue(blocked.contains("user-2"))
+  }
+
+  @Test
   fun removeBlockedUser_removesBlockedUser() = runTest {
     val profile = createTestProfile("user-1", blockedUserIds = listOf("user-2", "user-3"))
     repository.createProfile(profile)

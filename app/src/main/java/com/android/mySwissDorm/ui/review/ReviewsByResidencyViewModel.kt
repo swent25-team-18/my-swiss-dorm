@@ -96,9 +96,10 @@ class ReviewsByResidencyViewModel(
         // Get reviews filtered by blocking (repository handles bidirectional blocking)
         val filteredReviews =
             reviewsRepository.getAllReviewsByResidencyForUser(residencyName, currentUserId)
+        val sorted = filteredReviews.sortedByDescending { it.getNetScore() }
 
         val mapped =
-            filteredReviews.map {
+            sorted.map {
               val fullName =
                   if (it.isAnonymous) {
                     context.getString(R.string.anonymous)

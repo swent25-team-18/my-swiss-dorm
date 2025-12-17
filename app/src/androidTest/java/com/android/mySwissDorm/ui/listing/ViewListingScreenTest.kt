@@ -807,6 +807,75 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun residencyName_isDisplayedInBulletSection() = runTest {
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == otherListing.uid
+    }
+
+    scrollListTo(C.ViewListingTags.BULLETS)
+    compose
+        .onNodeWithTag(C.ViewListingTags.RESIDENCY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertTextEquals(otherListing.residencyName)
+  }
+
+  @Test
+  fun applyButton_disabledWhenBlocked() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    // Block the other user
+    profileRepo.addBlockedUser(ownerUid, otherUid)
+
+    switchToUser(FakeUser.FakeUser2)
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == ownerListing.uid && s.isBlockedByOwner
+    }
+
+    // Blocked users should see blocked notice, not apply button
+    compose
+        .onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertDoesNotExist()
+  }
+
+  @Test
+  fun blockedUser_appliesButtonColorChanges() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    // Block the other user
+    profileRepo.addBlockedUser(ownerUid, otherUid)
+
+    switchToUser(FakeUser.FakeUser2)
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = ownerListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == ownerListing.uid && s.isBlockedByOwner
+    }
+
+    // When blocked, should show blocked notice instead of apply button
+    compose
+        .onNodeWithTag(C.ViewListingTags.BLOCKED_NOTICE, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
   fun postedBySection_displaysCorrectly() = runTest {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {

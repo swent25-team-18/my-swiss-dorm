@@ -30,13 +30,13 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.InputSanitizers.FieldType
 import com.android.mySwissDorm.ui.theme.*
+import com.android.mySwissDorm.ui.theme.Dimens
 
 /**
  * Uniform, sanitized text fields for MySwissDorm.
@@ -122,7 +122,7 @@ fun SanitizedOutlinedTextField(
       keyboardOptions = keyboardOptions,
       keyboardActions = keyboardActions,
       visualTransformation = visualTransformation,
-      shape = RoundedCornerShape(16.dp),
+      shape = RoundedCornerShape(Dimens.CardCornerRadius),
       colors = textFieldColors,
       leadingIcon = leadingIcon,
       trailingIcon = trailingIcon
@@ -241,7 +241,7 @@ fun SearchField(
         leadingIcon = {
           Icon(
               Icons.Default.Search,
-              modifier = Modifier.size(30.dp),
+              modifier = Modifier.size(Dimens.IconSizeXXLarge),
               contentDescription = "Search",
               tint = PalePink)
         },
@@ -319,7 +319,7 @@ fun DescriptionField(
         value,
         onValueChange,
         FieldType.Description,
-        modifier = modifier.fillMaxWidth().heightIn(min = 140.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = Dimens.CardImageHeight),
         label = label,
         placeholder = stringResource(R.string.sanitized_text_fields_description_placeholder),
         externalErrorKey = externalErrorKey,

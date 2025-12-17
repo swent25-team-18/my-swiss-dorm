@@ -48,6 +48,7 @@ import com.android.mySwissDorm.ui.AddPhotoDialog
 import com.android.mySwissDorm.ui.navigation.BottomBarFromNav
 import com.android.mySwissDorm.ui.navigation.NavigationActions
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
@@ -244,7 +245,7 @@ private fun ProfileScreenContent(
             modifier =
                 Modifier.fillMaxSize()
                     .padding(innerPadding)
-                    .padding(16.dp)
+                    .padding(Dimens.PaddingDefault)
                     .verticalScroll(rememberScrollState())
                     .testTag("profile_list"),
             horizontalAlignment = Alignment.CenterHorizontally) {
@@ -284,7 +285,8 @@ private fun ProfileScreenContent(
                             imageVector = Icons.Default.Person,
                             contentDescription = null,
                             modifier =
-                                Modifier.size(40.dp).testTag(C.ProfileTags.profilePictureTag(null)),
+                                Modifier.size(Dimens.IconSizeButton)
+                                    .testTag(C.ProfileTags.profilePictureTag(null)),
                             tint = MainColor)
                       }
                     }
@@ -292,15 +294,17 @@ private fun ProfileScreenContent(
                   FloatingActionButton(
                       onClick = { onChangeProfilePicture(null) },
                       modifier =
-                          Modifier.size(32.dp)
+                          Modifier.size(Dimens.IconSizeXXXLarge)
                               .align(Alignment.TopEnd)
-                              .offset(x = 6.dp, y = (-6).dp),
+                              .offset(x = Dimens.SpacingMedium, y = -Dimens.SpacingMedium),
                       containerColor = MaterialTheme.colorScheme.primary,
                       contentColor = Red0) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = null,
-                            modifier = Modifier.size(20.dp).testTag(C.ProfileTags.DELETE_PP_BUTTON),
+                            modifier =
+                                Modifier.size(Dimens.IconSizeDefault)
+                                    .testTag(C.ProfileTags.DELETE_PP_BUTTON),
                             tint = Red0)
                       }
                 }
@@ -309,7 +313,7 @@ private fun ProfileScreenContent(
               // Name row: First name | Last name (equal widths via weight)
               Row(
                   modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
                     EditableTextField(
                         label = stringResource(R.string.first_name),
                         value = if (state.isEditing) firstLocal else state.firstName,
@@ -375,9 +379,9 @@ private fun ProfileScreenContent(
                     },
                     modifier =
                         Modifier.fillMaxWidth()
-                            .padding(top = 16.dp)
-                            .height(52.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .padding(top = Dimens.PaddingDefault)
+                            .height(Dimens.ButtonHeight)
+                            .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                             .testTag(C.ProfileTags.SAVE_BUTTON),
                     colors =
                         ButtonDefaults.buttonColors(
@@ -459,9 +463,9 @@ private fun ProfileScreenContent(
                     onClick = onLogout,
                     modifier =
                         Modifier.fillMaxWidth()
-                            .padding(top = 16.dp)
-                            .height(52.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .padding(top = Dimens.PaddingDefault)
+                            .height(Dimens.ButtonHeight)
+                            .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
                             .testTag("profile_logout_button"),
                     colors =
                         ButtonDefaults.buttonColors(
@@ -502,9 +506,9 @@ fun EditableTextField(
       enabled = enabled,
       singleLine = true,
       label = { Text(text = label, color = Gray) },
-      modifier = modifier.height(64.dp).testTag(tag),
+      modifier = modifier.height(Dimens.ImageSizeSmall).testTag(tag),
       placeholder = { Text(text = label) },
-      shape = RoundedCornerShape(12.dp),
+      shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
       colors =
           TextFieldDefaults.colors(
               unfocusedIndicatorColor = Gray,
@@ -563,8 +567,9 @@ private fun DropdownField(
                 } else {
                   null
                 },
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.menuAnchor().fillMaxWidth().height(64.dp).testTag(tag),
+            shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
+            modifier =
+                Modifier.menuAnchor().fillMaxWidth().height(Dimens.ImageSizeSmall).testTag(tag),
             colors =
                 TextFieldDefaults.colors(
                     unfocusedIndicatorColor = Gray,
@@ -580,7 +585,7 @@ private fun DropdownField(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            shape = RoundedCornerShape(12.dp)) {
+            shape = RoundedCornerShape(Dimens.CornerRadiusDefault)) {
               options.forEach { item ->
                 DropdownMenuItem(
                     text = { Text(item.toString()) },
@@ -600,14 +605,14 @@ private fun RestartDialog(onDismissRequest: () -> Unit, onRestart: () -> Unit) {
         modifier =
             Modifier.testTag(C.ProfileScreenTags.RESTART_DIALOG)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(Dimens.CardCornerRadius))
                 .background(BackGroundColor),
-        elevation = CardDefaults.cardElevation(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = Dimens.PaddingSmall),
     ) {
       Column(
-          modifier = Modifier.fillMaxWidth().padding(8.dp),
+          modifier = Modifier.fillMaxWidth().padding(Dimens.PaddingSmall),
           horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          verticalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
             Text(stringResource(R.string.profile_must_restart_pop_up), textAlign = TextAlign.Center)
             Row(
                 modifier = Modifier.fillMaxWidth(1f),
@@ -631,16 +636,18 @@ private fun RestartDialog(onDismissRequest: () -> Unit, onRestart: () -> Unit) {
 
 @Composable
 private fun RestartPopUpButton(@StringRes textId: Int, onClick: () -> Unit, modifier: Modifier) {
-  Row(modifier = modifier.padding(horizontal = 8.dp), horizontalArrangement = Arrangement.Center) {
-    Button(
-        onClick = { onClick() },
-        modifier = Modifier.fillMaxWidth(),
-        colors =
-            ButtonDefaults.filledTonalButtonColors(
-                containerColor = MainColor, contentColor = White)) {
-          Text(text = stringResource(textId))
-        }
-  }
+  Row(
+      modifier = modifier.padding(horizontal = Dimens.PaddingSmall),
+      horizontalArrangement = Arrangement.Center) {
+        Button(
+            onClick = { onClick() },
+            modifier = Modifier.fillMaxWidth(),
+            colors =
+                ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MainColor, contentColor = White)) {
+              Text(text = stringResource(textId))
+            }
+      }
 }
 
 @Composable

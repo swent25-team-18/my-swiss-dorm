@@ -30,6 +30,7 @@ import com.android.mySwissDorm.ui.TitleField
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.DarkGray
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -69,8 +70,8 @@ fun AddReviewScreen(
             })
       },
       bottomBar = {
-        Surface(shadowElevation = 8.dp) {
-          Column(Modifier.padding(16.dp)) {
+        Surface(shadowElevation = Dimens.PaddingSmall) {
+          Column(Modifier.padding(Dimens.PaddingDefault)) {
             val ui = reviewUIState
             val isButtonEnabled =
                 ui.isFormValid &&
@@ -81,16 +82,20 @@ fun AddReviewScreen(
                 enabled = isButtonEnabled,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
-                    Modifier.fillMaxWidth().height(52.dp).testTag(C.AddReviewTags.SUBMIT_BUTTON),
-                shape = RoundedCornerShape(16.dp)) {
+                    Modifier.fillMaxWidth()
+                        .height(Dimens.ButtonHeight)
+                        .testTag(C.AddReviewTags.SUBMIT_BUTTON),
+                shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp), color = White, strokeWidth = 2.dp)
+                        modifier = Modifier.size(Dimens.IconSizeDefault),
+                        color = White,
+                        strokeWidth = 2.dp)
                   } else {
                     Text(stringResource(R.string.add_review_submit), color = White)
                   }
                 }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Dimens.SpacingDefault))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {
               Text(
                   stringResource(R.string.add_review_invalid_form_text),
@@ -113,9 +118,9 @@ fun AddReviewScreen(
             modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingTopSmall)
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
               TitleField(
                   value = ui.title,
                   onValueChange = { addReviewViewModel.setTitle(it) },
@@ -179,7 +184,7 @@ fun AddReviewScreen(
               Row(
                   modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
                     Text(
                         text = stringResource(R.string.add_review_rating),
                         color = TextColor,
@@ -208,12 +213,13 @@ fun AddReviewScreen(
                                 checkedThumbColor = White,
                                 checkedTrackColor = MainColor,
                                 uncheckedThumbColor = White,
-                                uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
+                                uncheckedTrackColor =
+                                    TextBoxColor.copy(alpha = Dimens.AlphaSecondary)))
                   }
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingTiny)) {
                     DefaultAddPhotoButton(onSelectPhoto = { addReviewViewModel.addPhoto(it) })
                     ImageGrid(
                         imageUris = ui.images.map { it.image }.toSet(),

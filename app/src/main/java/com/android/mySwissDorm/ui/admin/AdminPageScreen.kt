@@ -56,6 +56,7 @@ import com.android.mySwissDorm.ui.SanitizedOutlinedTextField
 import com.android.mySwissDorm.ui.homepage.HomePageScreenSizes
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -64,8 +65,7 @@ import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
 
 object AdminPageScreenSizes {
-  val CITY_IMAGE_HEIGHT = 120.dp
-  val VERTICAL_SPACE_EL = 14.dp
+  val AdminImageHeight = Dimens.IconSizeButton * 3
 }
 
 // Documentation was made with the help of AI
@@ -138,18 +138,22 @@ fun AdminPageScreen(
             })
       },
       bottomBar = {
-        Surface(shadowElevation = 8.dp) {
-          Column(Modifier.padding(16.dp)) {
+        Surface(shadowElevation = Dimens.PaddingDefault) {
+          Column(Modifier.padding(Dimens.PaddingDefault)) {
             Button(
                 onClick = { vm.submit(context) },
                 enabled = !ui.isSubmitting,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor),
                 modifier =
-                    Modifier.fillMaxWidth().height(52.dp).testTag(C.AdminPageTags.SAVE_BUTTON),
-                shape = RoundedCornerShape(24.dp)) {
+                    Modifier.fillMaxWidth()
+                        .height(Dimens.ButtonHeight)
+                        .testTag(C.AdminPageTags.SAVE_BUTTON),
+                shape = RoundedCornerShape(Dimens.CornerRadiusDefault)) {
                   if (ui.isSubmitting) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp), color = White, strokeWidth = 2.dp)
+                        modifier = Modifier.size(Dimens.CircularProgressIndicatorSize),
+                        color = White,
+                        strokeWidth = Dimens.CircularProgressIndicatorStrokeWidth)
                   } else {
                     Text(stringResource(R.string.save), color = White)
                   }
@@ -159,14 +163,14 @@ fun AdminPageScreen(
       }) { pad ->
         Column(
             Modifier.padding(pad)
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingTopSmall)
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(AdminPageScreenSizes.VERTICAL_SPACE_EL)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
               // First row: City, Residency, University
               Row(
                   modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault),
                   verticalAlignment = Alignment.CenterVertically) {
                     EntityChip(
                         text = stringResource(R.string.city),
@@ -190,7 +194,7 @@ fun AdminPageScreen(
               // Second row: Admin
               Row(
                   modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault),
                   verticalAlignment = Alignment.CenterVertically) {
                     EntityChip(
                         text = stringResource(R.string.admin),
@@ -235,8 +239,7 @@ fun AdminPageScreen(
                       placeholder = stringResource(R.string.description),
                       imeAction = ImeAction.Next)
                   Column(
-                      verticalArrangement =
-                          Arrangement.spacedBy(AdminPageScreenSizes.VERTICAL_SPACE_EL),
+                      verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
                       horizontalAlignment = Alignment.CenterHorizontally) {
                         DefaultAddPhotoButton(onSelectPhoto = vm::onImage)
                         if (ui.image != null) {
@@ -244,10 +247,10 @@ fun AdminPageScreen(
                           val cityNormalRate =
                               HomePageScreenSizes.CITY_IMAGE_HEIGHT.value / cityHomePageWidth
                           val cityNormalWidth =
-                              (AdminPageScreenSizes.CITY_IMAGE_HEIGHT.value / cityNormalRate).dp
+                              (AdminPageScreenSizes.AdminImageHeight.value / cityNormalRate).dp
                           ImageGrid(
                               imageUris = setOf(ui.image.image),
-                              imageHeight = AdminPageScreenSizes.CITY_IMAGE_HEIGHT,
+                              imageHeight = AdminPageScreenSizes.AdminImageHeight,
                               imageWidth = cityNormalWidth,
                               isEditingMode = true,
                               onRemove = { vm.onImage(null) },
@@ -375,12 +378,12 @@ fun AdminPageScreen(
                 TextButton(
                     onClick = { vm.onCustomLocationClick() },
                     modifier = Modifier.fillMaxWidth().testTag(C.AdminPageTags.LOCATION_BUTTON),
-                    shape = RoundedCornerShape(16.dp)) {
+                    shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
                       Icon(
                           imageVector = Icons.Default.Place,
                           contentDescription = stringResource(R.string.location),
                           tint = MainColor)
-                      Spacer(Modifier.width(8.dp))
+                      Spacer(Modifier.width(Dimens.SpacingDefault))
                       Text(
                           text =
                               ui.location?.name
@@ -389,7 +392,7 @@ fun AdminPageScreen(
                     }
               }
 
-              Spacer(Modifier.height(16.dp))
+              Spacer(Modifier.height(Dimens.SpacingLarge))
             }
 
         // Custom Location Dialog

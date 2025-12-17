@@ -213,6 +213,7 @@
 
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Failed to load listing:</string>
+    <string name="view_listing_blocked_user">This listing is not available due to blocking restrictions.</string>
     <string name="view_listing_failed_to_toggle_bookmark">Failed to toggle bookmark:</string>
     <string name="view_listing_nearby_points_of_interest">Nearby Points of Interest</string>
     <string name="view_listing_distance_away_from">at %1$.1f km of %2$s</string>
@@ -385,6 +386,7 @@
 
     <!-- ViewReviewViewModel -->
     <string name="view_review_failed_to_load_review">Failed to load Review</string>
+    <string name="view_review_blocked_user">This review is not available due to blocking restrictions.</string>
 
     <!-- Share Dialog -->
     <string name="share">Share</string>
@@ -536,7 +538,7 @@
     <string name="profile_offline_message">You need to be online to view other user\'s profile</string>
 
     <!-- Other -->
-    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_main">MySwissDorm</string>
     <string name="title_activity_second">SecondActivity</string>
     <string name="default_web_client_id">587708119125-oqlivs13orms6lmp32pujt11ft3fat3h.apps.googleusercontent.com</string>
     <string name="of">of</string>

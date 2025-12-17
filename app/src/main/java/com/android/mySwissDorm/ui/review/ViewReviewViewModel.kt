@@ -151,8 +151,10 @@ class ViewReviewViewModel(
   fun loadReview(reviewId: String, context: Context) {
     viewModelScope.launch {
       try {
-        val review = reviewsRepository.getReview(reviewId)
         val currentUserId = auth.currentUser?.uid
+        // Repository handles bidirectional blocking check
+        val review = reviewsRepository.getReviewForUser(reviewId, currentUserId)
+
         val fullNameOfPoster =
             if (review.isAnonymous) {
               context.getString(R.string.anonymous)
@@ -174,6 +176,15 @@ class ViewReviewViewModel(
         launch(Dispatchers.IO) {
           photoManager.initialize(review.imageUrls)
           _uiState.update { it.copy(images = photoManager.photoLoaded) }
+        }
+      } catch (e: NoSuchElementException) {
+        // Handle blocked review or not found
+        if (e.message?.contains("blocking restrictions") == true) {
+          setErrorMsg(context.getString(R.string.view_review_blocked_user))
+        } else {
+          Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)
+          setErrorMsg(
+              "${context.getString(R.string.view_review_failed_to_load_review)}: ${e.message}")
         }
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)

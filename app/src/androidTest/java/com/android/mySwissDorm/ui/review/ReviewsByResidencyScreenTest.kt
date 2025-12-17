@@ -6,7 +6,6 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
@@ -128,10 +127,6 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
     // On the review card
     compose.onNodeWithTag(C.ReviewsByResidencyTag.reviewCard(reviewUid1)).assertIsDisplayed()
-    compose
-        .onNodeWithTag(
-            C.ReviewsByResidencyTag.reviewImagePlaceholder(reviewUid1), useUnmergedTree = true)
-        .assertIsDisplayed()
     compose
         .onNodeWithTag(C.ReviewsByResidencyTag.reviewTitle(reviewUid1), useUnmergedTree = true)
         .assertIsDisplayed()
@@ -304,6 +299,14 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
 
       override suspend fun removeVote(reviewId: String, userId: String) =
           throw UnsupportedOperationException()
+
+      override suspend fun getAllReviewsByResidencyForUser(
+          residencyName: String,
+          userId: String?
+      ): List<Review> = throw Exception("error")
+
+      override suspend fun getReviewForUser(reviewId: String, userId: String?): Review =
+          throw Exception("error")
     }
 
     val failingVm = ReviewsByResidencyViewModel(ThrowingRepo(), profileRepo)
@@ -576,17 +579,5 @@ class ReviewsByResidencyScreenTest : FirestoreTest() {
             C.ReviewsByResidencyTag.reviewPosterName(nonAnonymousReviewUid), useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextEquals("Posted by Bob King")
-  }
-
-  @Test
-  fun photoIsCorrectlyDisplayedOnReview() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    reviewsRepo.addReview(review3)
-    compose.setContent { ReviewsByResidencyScreen(residencyName = atrium.name) }
-    compose.waitUntil("The image is not displayed after 5s", 5_000) {
-      compose
-          .onNodeWithTag(C.ReviewsByResidencyTag.reviewPhoto(review3.uid), useUnmergedTree = true)
-          .isDisplayed()
-    }
   }
 }

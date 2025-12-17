@@ -24,9 +24,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.DateTimeUi
@@ -90,7 +90,7 @@ fun OfflineBannerContent(isOffline: Boolean, modifier: Modifier = Modifier) {
           modifier
               .fillMaxWidth()
               .background(MainColor)
-              .padding(horizontal = 16.dp, vertical = 12.dp)
+              .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingMedium)
               .testTag(C.OfflineBannerTags.BANNER_ROOT),
       contentAlignment = Alignment.Center) {
         val lastUpdatedText =
@@ -106,7 +106,7 @@ fun OfflineBannerContent(isOffline: Boolean, modifier: Modifier = Modifier) {
               imageVector = Icons.Filled.CloudOff,
               contentDescription = stringResource(R.string.offline_banner_icon_description),
               tint = White,
-              modifier = Modifier.padding(end = 8.dp))
+              modifier = Modifier.padding(end = Dimens.PaddingSmall))
           Text(
               text = stringResource(R.string.offline_banner_you_are_offline),
               style = MaterialTheme.typography.bodyMedium,
@@ -115,7 +115,7 @@ fun OfflineBannerContent(isOffline: Boolean, modifier: Modifier = Modifier) {
           Text(
               text = lastUpdatedText,
               style = MaterialTheme.typography.bodySmall,
-              color = White.copy(alpha = 0.9f),
+              color = White.copy(alpha = Dimens.AlphaHigh),
               textAlign = TextAlign.End,
               modifier =
                   Modifier.testTag(

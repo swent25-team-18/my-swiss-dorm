@@ -16,10 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.LightGray0
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -144,7 +144,7 @@ fun RequestedMessagesScreen(
                       viewModel.rejectMessage(enrichedMessage.message.id, context)
                     },
                     onViewProfile = { onViewProfile(enrichedMessage.message.fromUserId) })
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = Dimens.PaddingDefault))
               }
             }
           }
@@ -184,10 +184,13 @@ fun RequestedMessageItem(
     modifier: Modifier = Modifier
 ) {
   Card(
-      modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingXSmall),
       colors = CardDefaults.cardColors(containerColor = BackGroundColor)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(Dimens.PaddingDefault),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
               // Left side: Name (clickable) and listing title
@@ -202,7 +205,7 @@ fun RequestedMessageItem(
                     text = "About: ${message.listingTitle}",
                     style = MaterialTheme.typography.bodySmall,
                     color = LightGray0)
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
                 Text(
                     text = message.message.ifBlank { stringResource(R.string.no_message_provided) },
                     style = MaterialTheme.typography.bodyMedium,
@@ -211,10 +214,10 @@ fun RequestedMessageItem(
 
               // Right side: Action buttons aligned with name
               Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onApprove, modifier = Modifier.size(40.dp)) {
+                IconButton(onClick = onApprove, modifier = Modifier.size(Dimens.IconSizeButton)) {
                   Icon(Icons.Default.Check, contentDescription = "Approve", tint = Color.Green)
                 }
-                IconButton(onClick = onReject, modifier = Modifier.size(40.dp)) {
+                IconButton(onClick = onReject, modifier = Modifier.size(Dimens.IconSizeButton)) {
                   Icon(Icons.Default.Close, contentDescription = "Reject", tint = MainColor)
                 }
               }

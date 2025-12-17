@@ -101,6 +101,9 @@ fun CameraButton(
 
   LaunchedEffect(isLauncherActive) {
     if (isLauncherActive) {
+      val photo = Photo.createCapturablePhoto(context, UUID.randomUUID().toString() + ".jpg")
+      uriCaptured = photo.image
+      photoCaptured = photo
       if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
           PackageManager.PERMISSION_GRANTED) {
         permissionLauncher.launch(Manifest.permission.CAMERA)
@@ -111,12 +114,7 @@ fun CameraButton(
   }
 
   Button(
-      onClick = {
-        val photo = Photo.createCapturablePhoto(context, UUID.randomUUID().toString() + ".jpg")
-        uriCaptured = photo.image
-        photoCaptured = photo
-        isLauncherActive = true
-      },
+      onClick = { isLauncherActive = true },
       modifier = modifier.testTag(tag = C.CameraButtonTag.TAG),
       enabled = enabled && !isLauncherActive,
       shape = shape,

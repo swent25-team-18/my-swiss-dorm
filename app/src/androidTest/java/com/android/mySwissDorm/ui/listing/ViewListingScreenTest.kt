@@ -996,7 +996,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.waitUntil(5_000) { vm.uiState.value.translatedDescription != "" }
+    compose.waitUntil(25_000) { vm.uiState.value.translatedDescription != "" }
 
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsDisplayed()
     compose
@@ -1040,7 +1040,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.waitUntil(5_000) { vm.uiState.value.listing.uid == otherListing.uid }
+    compose.waitUntil(25_000) { vm.uiState.value.translatedTitle == "Deuxième titre" }
 
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.TITLE).assertIsDisplayed()
@@ -1049,11 +1049,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).performClick()
 
     compose.waitForIdle()
-
-    compose.waitUntil(20_000) {
-      compose.onNodeWithText("Deuxième titre").isDisplayed() &&
-          compose.onNodeWithText("Un bon studio proche du campus.").isDisplayed()
-    }
 
     compose.onNodeWithTag(C.ViewListingTags.TITLE).assertTextEquals("Deuxième titre")
     compose

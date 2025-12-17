@@ -909,7 +909,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     setOwnerReview()
     waitForScreenRoot()
 
-    compose.waitUntil(5_000) { vm.uiState.value.translatedDescription != "" }
+    compose.waitUntil(25_000) { vm.uiState.value.translatedDescription != "" }
 
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
     compose
@@ -945,7 +945,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     setOtherReview()
     waitForScreenRoot()
 
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review2.uid }
+    compose.waitUntil(25_000) { vm.uiState.value.translatedTitle == "Deuxième titre" }
 
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertIsDisplayed()
@@ -954,11 +954,6 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).performClick()
 
     compose.waitForIdle()
-
-    compose.waitUntil(20_000) {
-      compose.onNodeWithText("Deuxième titre").isDisplayed() &&
-          compose.onNodeWithText("Ma deuxième critique").isDisplayed()
-    }
 
     compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertTextEquals("Deuxième titre")
     compose

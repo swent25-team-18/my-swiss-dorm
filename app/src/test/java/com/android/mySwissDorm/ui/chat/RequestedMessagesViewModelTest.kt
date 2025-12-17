@@ -59,6 +59,7 @@ class RequestedMessagesViewModelTest {
     mockkObject(StreamChatProvider)
     every { StreamChatProvider.isInitialized() } returns true
     coEvery { StreamChatProvider.connectUser(any(), any(), any()) } returns Unit
+    coEvery { StreamChatProvider.disconnectUser(any()) } returns Unit
     coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } returns Unit
     coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } returns
         "channel:id"
@@ -126,8 +127,8 @@ class RequestedMessagesViewModelTest {
         coVerify {
           requestedMessageRepository.updateMessageStatus(messageId, MessageStatus.APPROVED)
         }
-        coVerify { StreamChatProvider.connectUser("currentUserId", "My Self", "") }
-        coVerify { StreamChatProvider.upsertUser("senderId", "Sender Name", "") }
+        // We switch to sender to create channel + send first message, then reconnect receiver.
+        coVerify { StreamChatProvider.connectUser("senderId", "Sender Name", "") }
         coVerify {
           StreamChatProvider.createChannel(
               channelType = "messaging",
@@ -362,7 +363,8 @@ class RequestedMessagesViewModelTest {
         coEvery { profileRepository.getProfile("currentUserId") } returns myProfile
 
         every { StreamChatProvider.isInitialized() } returns true
-        coEvery { StreamChatProvider.connectUser(any(), any(), any()) } throws
+        // Only fail reconnecting the receiver; allow sender connect so channel creation can proceed.
+        coEvery { StreamChatProvider.connectUser("currentUserId", any(), any()) } throws
             RuntimeException("connect fail")
         // Upsert succeeds
         coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } returns Unit
@@ -372,8 +374,7 @@ class RequestedMessagesViewModelTest {
         viewModel.approveMessage(messageId, context)
         advanceUntilIdle()
 
-        // Even though connect failed, channel creation should still be attempted
-        coVerify { StreamChatProvider.upsertUser("senderId", "Sender Name", "") }
+        // Even though reconnects might fail, channel creation should still be attempted
         coVerify {
           StreamChatProvider.createChannel(
               channelType = "messaging",
@@ -421,7 +422,7 @@ class RequestedMessagesViewModelTest {
         viewModel.approveMessage(messageId, context)
         advanceUntilIdle()
 
-        // Create channel still called even if upsert failed
+        // Create channel still called even if upsert/reconnect flows fail
         coVerify {
           StreamChatProvider.createChannel(
               channelType = "messaging",

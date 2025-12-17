@@ -97,7 +97,7 @@ fun ListingCard(
 
                 Spacer(Modifier.width(Dimens.SpacingLarge))
 
-                Column(modifier = Modifier.weight(0.65f).fillMaxHeight()) {
+                Column(modifier = Modifier.weight(0.65f)) {
                   Text(
                       text = data.title,
                       style = MaterialTheme.typography.titleMedium,

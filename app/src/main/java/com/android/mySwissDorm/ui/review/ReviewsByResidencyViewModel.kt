@@ -92,11 +92,12 @@ class ReviewsByResidencyViewModel(
 
     viewModelScope.launch {
       try {
-        // Fetch all and filter by city
-        val all = reviewsRepository.getAllReviewsByResidency(residencyName)
-        // Sort by net score (most votes first) in descending order
-        val sorted = all.sortedByDescending { it.getNetScore() }
         val currentUserId = auth.currentUser?.uid
+        // Get reviews filtered by blocking (repository handles bidirectional blocking)
+        val filteredReviews =
+            reviewsRepository.getAllReviewsByResidencyForUser(residencyName, currentUserId)
+        val sorted = filteredReviews.sortedByDescending { it.getNetScore() }
+
         val mapped =
             sorted.map {
               val fullName =

@@ -126,6 +126,21 @@ class RentalListingRepositoryFirestore(
     rentalListingDb.collection(RENTAL_LISTINGS_COLLECTION).document(rentalPostId).delete().await()
   }
 
+  override suspend fun getAllRentalListingsForUser(userId: String?): List<RentalListing> {
+    // Firestore repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getAllRentalListings()
+  }
+
+  override suspend fun getRentalListingForUser(
+      rentalPostId: String,
+      userId: String?
+  ): RentalListing {
+    // Firestore repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getRentalListing(rentalPostId)
+  }
+
   /**
    * Converts a Firestore document to a RentalListing object.
    *

@@ -216,6 +216,7 @@
 
     <!-- ViewListingViewModel -->
     <string name="view_listing_failed_to_load_listings">Impossible de charger l\'annonce :</string>
+    <string name="view_listing_blocked_user">Cette annonce n\'est pas disponible en raison de restrictions de blocage.</string>
     <string name="view_listing_failed_to_toggle_bookmark">Échec du basculement du signet :</string>
     <string name="view_listing_nearby_points_of_interest">Points d\'intérêt à proximité</string>
     <string name="view_listing_distance_away_from">à %1$.1f km de %2$s</string>
@@ -380,6 +381,7 @@
 
     <!-- ViewReviewViewModel -->
     <string name="view_review_failed_to_load_review">Impossible de charger l\'avis</string>
+    <string name="view_review_blocked_user">Cet avis n\'est pas disponible en raison de restrictions de blocage.</string>
 
     <!-- ViewResidency -->
     <string name="view_residency_failed_to_load">Échec du chargement de la résidence :</string>

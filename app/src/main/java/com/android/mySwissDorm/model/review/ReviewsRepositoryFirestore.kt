@@ -132,6 +132,21 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
     db.collection(REVIEWS_COLLECTION_PATH).document(reviewId).delete().await()
   }
 
+  override suspend fun getAllReviewsByResidencyForUser(
+      residencyName: String,
+      userId: String?
+  ): List<Review> {
+    // Firestore repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getAllReviewsByResidency(residencyName)
+  }
+
+  override suspend fun getReviewForUser(reviewId: String, userId: String?): Review {
+    // Firestore repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getReview(reviewId)
+  }
+
   /**
    * Applies an upvote to the review by the given user.
    *

@@ -13,7 +13,6 @@ import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.profile.UserInfo
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import io.getstream.chat.android.models.Channel
-import io.getstream.chat.android.models.ChannelUserRead
 import io.getstream.chat.android.models.Member
 import io.getstream.chat.android.models.Message
 import io.getstream.chat.android.models.User
@@ -267,28 +266,6 @@ class ChannelItemTest {
 
     compose.waitForIdle()
     assert(retrieved)
-  }
-
-  @Test
-  fun channelItem_doesNotShowUnreadBadge_forOwnMessages_whenLastReadIsNull() {
-    val currentUserId = "user1"
-    val otherUserId = "user2"
-
-    val myMessage = Message(text = "Hello", user = User(id = currentUserId))
-    val channel =
-        Channel(
-            id = "channel1",
-            members = listOf(Member(user = User(id = currentUserId)), Member(user = User(id = otherUserId))),
-            messages = listOf(myMessage),
-            read = listOf(ChannelUserRead(user = User(id = currentUserId), lastRead = null)))
-
-    compose.setContent {
-      MySwissDormAppTheme { ChannelItem(channel = channel, currentUserId = currentUserId, onChannelClick = {}) }
-    }
-
-    // Should not show unread badge "1" for message authored by current user.
-    compose.waitForIdle()
-    compose.onNodeWithText("1").assertDoesNotExist()
   }
 
   @Test

@@ -58,6 +58,7 @@ import com.google.firebase.storage.storage
 import io.getstream.chat.android.client.api.models.QueryChannelsRequest
 import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.Filters
+import io.getstream.chat.android.models.Message
 import io.getstream.chat.android.models.User
 import io.getstream.result.Result
 import java.text.SimpleDateFormat
@@ -579,25 +580,7 @@ internal fun ChannelItem(
   // Unread count - calculate manually from last read position
   // Note: Stream Chat SDK doesn't expose unreadCount directly, so we calculate it
   val currentUserRead = channel.read.find { it.user.id == currentUserId }
-  val unreadCount =
-      if (channel.messages.isEmpty()) {
-        0
-      } else {
-        // Unread should never include messages authored by the current user.
-        val lastReadDate = currentUserRead?.lastRead
-        channel.messages.count { message ->
-          val isNotMine = message.user.id != currentUserId
-          if (!isNotMine) return@count false
-
-          if (lastReadDate == null) {
-            // If we don't know lastRead, treat messages from others as unread.
-            true
-          } else {
-            val createdAt = message.createdAt ?: message.createdLocallyAt
-            createdAt?.after(lastReadDate) == true
-          }
-        }
-      }
+  val unreadCount = computeUnreadCount(channel.messages, currentUserId, currentUserRead?.lastRead)
 
   Row(
       modifier =
@@ -714,6 +697,34 @@ internal fun formatMessageTime(timestamp: Date, context: Context): String {
     days == 1L -> context.getString(R.string.channels_screen_yesterday)
     days < 7 -> context.getString(R.string.channels_screen_days_ago, days)
     else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(timestamp)
+  }
+}
+
+/**
+ * Computes an "unread" count for a channel.
+ *
+ * Rules:
+ * - Never count messages authored by [currentUserId] as unread (prevents bogus badges like "1" for
+ *   your own sent messages).
+ * - If [lastRead] is null, count all messages from other users as unread.
+ * - Otherwise, count only messages from other users whose timestamp is after [lastRead].
+ */
+internal fun computeUnreadCount(
+    messages: List<Message>,
+    currentUserId: String,
+    lastRead: Date?,
+): Int {
+  if (messages.isEmpty()) return 0
+
+  return messages.count { message ->
+    if (message.user.id == currentUserId) return@count false
+
+    if (lastRead == null) {
+      true
+    } else {
+      val createdAt = message.createdAt ?: message.createdLocallyAt
+      createdAt?.after(lastRead) == true
+    }
   }
 }
 

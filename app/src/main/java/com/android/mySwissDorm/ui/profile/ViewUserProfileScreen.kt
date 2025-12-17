@@ -9,7 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Forum
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material3.*
@@ -33,10 +33,14 @@ import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
+import com.android.mySwissDorm.ui.theme.AlmostWhite
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Black
 import com.android.mySwissDorm.ui.theme.Dimens
+import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
+import com.android.mySwissDorm.ui.theme.OutlineColor
 import com.android.mySwissDorm.ui.theme.Red
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -94,7 +98,6 @@ fun ViewUserProfileScreen(
   val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
   val isCurrentUser = ownerId == currentUserId
 
-  // ✅ IMPORTANT: ensure click handler always sees latest values
   val latestIsBlocked by rememberUpdatedState(ui.isBlocked)
   val latestOwnerId by rememberUpdatedState(ownerId)
 
@@ -203,30 +206,64 @@ fun ViewUserProfileScreen(
 
                 if (!isCurrentUser && ownerId != null) {
                   item {
-                    Surface(
-                        onClick = { onSendMessage() },
-                        shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
-                        color = TextBoxColor,
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .heightIn(min = Dimens.IconSizeXXLarge)
-                                .testTag(T.SEND_MESSAGE)) {
-                          Row(
-                              verticalAlignment = Alignment.CenterVertically,
-                              modifier =
-                                  Modifier.fillMaxWidth()
-                                      .padding(horizontal = Dimens.PaddingDefault)) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Forum,
-                                    contentDescription = null,
-                                    tint = TextColor)
-                                Spacer(Modifier.width(Dimens.SpacingLarge))
-                                Text(
-                                    text = stringResource(R.string.view_user_profile_send_message),
-                                    style = MaterialTheme.typography.bodyLarge.copy(),
-                                    color = TextColor)
-                              }
-                        }
+                    if (ui.hasExistingMessage) {
+                      Surface(
+                          shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
+                          color = TextBoxColor,
+                          modifier = Modifier.fillMaxWidth().testTag(T.SEND_MESSAGE)) {
+                            Column(
+                                modifier = Modifier.padding(Dimens.PaddingDefault),
+                                horizontalAlignment = Alignment.CenterHorizontally) {
+                                  Text(
+                                      text = stringResource(R.string.view_profile_has_msg),
+                                      style = MaterialTheme.typography.bodyLarge,
+                                      color = MainColor,
+                                      textAlign = TextAlign.Center)
+                                  Text(
+                                      text =
+                                          stringResource(R.string.view_profile_has_msg_secondary),
+                                      style = MaterialTheme.typography.bodyMedium,
+                                      color = Gray,
+                                      textAlign = TextAlign.Center)
+                                }
+                          }
+                    } else if (!ui.isBlocked) {
+                      Column(
+                          verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
+                          modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = ui.messageText,
+                                onValueChange = { realVm?.updateMessageText(it) },
+                                placeholder = { Text("Write a message...", color = Gray) },
+                                modifier = Modifier.fillMaxWidth().testTag(T.SEND_MESSAGE),
+                                shape = RoundedCornerShape(Dimens.CardCornerRadius),
+                                minLines = 2,
+                                maxLines = 4,
+                                colors =
+                                    OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = AlmostWhite,
+                                        unfocusedContainerColor = AlmostWhite,
+                                        disabledContainerColor = AlmostWhite,
+                                        focusedBorderColor = OutlineColor,
+                                        unfocusedBorderColor = OutlineColor,
+                                        cursorColor = Black,
+                                        focusedTextColor = Black))
+
+                            Button(
+                                onClick = { realVm?.sendDirectMessage(context, ownerId) },
+                                enabled = ui.messageText.isNotBlank(),
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                                shape = RoundedCornerShape(Dimens.CardCornerRadius),
+                                colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
+                                  Icon(
+                                      imageVector = Icons.AutoMirrored.Outlined.Send,
+                                      contentDescription = null,
+                                      modifier = Modifier.size(Dimens.PaddingDefault))
+                                  Spacer(Modifier.width(Dimens.SpacingSmall))
+                                  Text(stringResource(R.string.view_user_profile_send_message))
+                                }
+                          }
+                    }
                   }
                 }
 

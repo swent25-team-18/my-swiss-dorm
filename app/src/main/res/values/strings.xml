@@ -66,6 +66,7 @@
     <string name="user">User</string>
     <string name="website">Website</string>
 
+
     <!-- RoomType -->
     <string name="studio">Studio</string>
     <string name="apartment">Apartment</string>
@@ -528,7 +529,9 @@
     <string name="settings_qr_scan_cancelled">Scan cancelled</string>
     <string name="settings_qr_invalid_domain">This is not a MySwissDorm link.</string>
 
-
+    <!-- ViewProfileScreen -->
+    <string name="view_profile_has_msg">You have already contacted this user.</string>
+    <string name="view_profile_has_msg_secondary">Please wait for an answer or go to your inbox to send another message.</string>
     <!-- Offline -->
     <string name="offline_banner_you_are_offline">You\'re offline</string>
     <string name="offline_banner_last_updated">Last updated %1$s</string>

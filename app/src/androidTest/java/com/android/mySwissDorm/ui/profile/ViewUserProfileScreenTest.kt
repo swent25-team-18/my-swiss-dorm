@@ -6,6 +6,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -28,7 +29,12 @@ import org.junit.runner.RunWith
 class ViewUserProfileScreenTest : FirestoreTest() {
 
   @get:Rule val compose = createComposeRule()
-
+  private val fakeUiState =
+      ViewProfileUiState(
+          name = "Test User",
+          residence = "Test Residence",
+          isBlocked = false,
+          hasExistingMessage = false)
   private lateinit var profileRepo: ProfileRepository
   private lateinit var ownerUid: String
 
@@ -48,6 +54,40 @@ class ViewUserProfileScreenTest : FirestoreTest() {
               ownerId = ownerUid,
               userInfo = profile1.userInfo.copy(profilePicture = photo.fileName)))
     }
+  }
+
+  @Test
+  fun displayMessageInput_whenNoMessageSent() {
+    compose.setContent {
+      ViewUserProfileScreen(
+          ownerId = "owner123",
+          onBack = {},
+          onSendMessage = {},
+          previewUi = fakeUiState.copy(hasExistingMessage = false))
+    }
+    compose.onNodeWithTag(T.SEND_MESSAGE).assertIsDisplayed()
+    compose.onNodeWithText("Send a message").assertIsDisplayed()
+  }
+
+  @Test
+  fun displayMessageSentBanner_whenMessageAlreadySent() {
+    compose.setContent {
+      ViewUserProfileScreen(
+          ownerId = "owner123",
+          onBack = {},
+          onSendMessage = {},
+          previewUi = fakeUiState.copy(hasExistingMessage = true))
+    }
+    compose.onNodeWithText("You have already contacted this user.").assertIsDisplayed()
+  }
+
+  @Test
+  fun inputFieldUpdates_whenTyping() {
+    compose.setContent {
+      ViewUserProfileScreen(
+          ownerId = "owner123", onBack = {}, onSendMessage = {}, previewUi = fakeUiState)
+    }
+    compose.onNodeWithTag(T.SEND_MESSAGE).assertIsDisplayed().performClick()
   }
 
   @Test

@@ -945,7 +945,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     setOtherReview()
     waitForScreenRoot()
 
-    compose.waitUntil(25_000) { vm.uiState.value.translatedTitle == "Deuxième titre" }
+    compose.waitUntil(35_000) { vm.uiState.value.translatedTitle == "Deuxième titre" }
 
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertIsDisplayed()

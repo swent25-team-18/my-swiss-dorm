@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
@@ -31,6 +30,7 @@ import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.DarkGray
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -112,43 +112,48 @@ fun EditReviewScreen(
             })
       },
       bottomBar = {
-        Surface(shadowElevation = 8.dp) {
-          Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            val ui = editReviewUIState
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                  Button(
-                      onClick = onBack,
-                      colors =
-                          ButtonDefaults.buttonColors(
-                              containerColor = TextBoxColor, contentColor = MainColor),
-                      modifier = Modifier.weight(1f).height(52.dp),
-                      shape = RoundedCornerShape(16.dp)) {
-                        Text(stringResource(R.string.cancel))
-                      }
+        Surface(shadowElevation = Dimens.PaddingSmall) {
+          Column(
+              Modifier.padding(Dimens.PaddingDefault),
+              horizontalAlignment = Alignment.CenterHorizontally) {
+                val ui = editReviewUIState
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
+                      Button(
+                          onClick = onBack,
+                          colors =
+                              ButtonDefaults.buttonColors(
+                                  containerColor = TextBoxColor, contentColor = MainColor),
+                          modifier = Modifier.weight(1f).height(Dimens.ButtonHeight),
+                          shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
+                            Text(stringResource(R.string.cancel))
+                          }
 
-                  Button(
-                      onClick = { if (editReviewViewModel.editReview(reviewID)) onConfirm() },
-                      enabled = ui.isFormValid,
-                      colors =
-                          ButtonDefaults.buttonColors(
-                              containerColor = MainColor,
-                              disabledContainerColor = MainColor.copy(alpha = 0.3f)),
-                      modifier =
-                          Modifier.weight(1f).height(52.dp).testTag("saveButton"), // ← add this
-                      shape = RoundedCornerShape(16.dp)) {
-                        Text(stringResource(R.string.save), color = BackGroundColor)
-                      }
+                      Button(
+                          onClick = { if (editReviewViewModel.editReview(reviewID)) onConfirm() },
+                          enabled = ui.isFormValid,
+                          colors =
+                              ButtonDefaults.buttonColors(
+                                  containerColor = MainColor,
+                                  disabledContainerColor =
+                                      MainColor.copy(alpha = Dimens.AlphaDisabled)),
+                          modifier =
+                              Modifier.weight(1f)
+                                  .height(Dimens.ButtonHeight)
+                                  .testTag("saveButton"), // ← add this
+                          shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
+                            Text(stringResource(R.string.save), color = BackGroundColor)
+                          }
+                    }
+                Spacer(Modifier.height(Dimens.SpacingDefault))
+                if (!ui.isFormValid) {
+                  Text(
+                      stringResource(R.string.edit_review_invalid_form_text),
+                      style = MaterialTheme.typography.bodySmall,
+                      color = DarkGray)
                 }
-            Spacer(Modifier.height(8.dp))
-            if (!ui.isFormValid) {
-              Text(
-                  stringResource(R.string.edit_review_invalid_form_text),
-                  style = MaterialTheme.typography.bodySmall,
-                  color = DarkGray)
-            }
-          }
+              }
         }
       }) { padding ->
         val ui = editReviewUIState
@@ -164,9 +169,9 @@ fun EditReviewScreen(
             modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .padding(horizontal = Dimens.PaddingDefault, vertical = Dimens.PaddingTopSmall)
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLarge)) {
               TitleField(
                   value = ui.title,
                   onValueChange = { editReviewViewModel.setTitle(it) },
@@ -230,7 +235,7 @@ fun EditReviewScreen(
               Row(
                   modifier = Modifier.fillMaxWidth(),
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
                     Text(
                         text = stringResource(R.string.edit_review_rating),
                         color = TextColor,
@@ -258,13 +263,14 @@ fun EditReviewScreen(
                                 checkedThumbColor = White,
                                 checkedTrackColor = MainColor,
                                 uncheckedThumbColor = White,
-                                uncheckedTrackColor = TextBoxColor.copy(alpha = 0.6f)))
+                                uncheckedTrackColor =
+                                    TextBoxColor.copy(alpha = Dimens.AlphaSecondary)))
                   }
 
               Text(stringResource(R.string.photos), style = MaterialTheme.typography.titleMedium)
               Row(
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                  horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingTiny)) {
                     DefaultAddPhotoButton(onSelectPhoto = { editReviewViewModel.addPhoto(it) })
                     ImageGrid(
                         imageUris = ui.images.map { it.image }.toSet(),

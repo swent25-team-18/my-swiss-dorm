@@ -43,6 +43,7 @@ import com.android.mySwissDorm.model.photo.getPhotoDownloadUrl
 import com.android.mySwissDorm.model.profile.Profile
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.ThemePreferenceState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -220,8 +221,8 @@ fun MyChatScreen(
   if (isPreview) {
     // Fake chat UI for preview only
     Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        modifier = modifier.fillMaxSize().padding(Dimens.PaddingDefault),
+        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingDefault)) {
           Text("Chat with: $channelId (preview)")
           repeat(4) { Text("Message $it: Hello") }
         }
@@ -304,7 +305,7 @@ fun MyChatScreen(
       Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
           CircularProgressIndicator()
-          Spacer(modifier = Modifier.height(16.dp))
+          Spacer(modifier = Modifier.height(Dimens.SpacingXLarge))
           Text(stringResource(R.string.chat_screen_connecting))
         }
       }

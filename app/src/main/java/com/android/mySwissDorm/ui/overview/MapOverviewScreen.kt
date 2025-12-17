@@ -12,13 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.map.MapScreenScaffold
 import com.android.mySwissDorm.ui.map.MultiListingCarouselCard
 import com.android.mySwissDorm.ui.map.SmallListingPreviewCard
 import com.android.mySwissDorm.ui.map.launchGoogleMaps
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.White
 import com.google.android.gms.maps.model.CameraPosition
@@ -104,10 +104,10 @@ fun MapOverviewScreen(
                 }) {
                   Box(
                       modifier =
-                          Modifier.size(24.dp)
+                          Modifier.size(Dimens.IconSizeLarge)
                               .clip(CircleShape)
                               .background(White)
-                              .padding(4.dp)
+                              .padding(Dimens.PaddingXSmall)
                               .clip(CircleShape)
                               .background(MainColor))
                 }
@@ -117,19 +117,23 @@ fun MapOverviewScreen(
       overlayContent = {
         if (selectedListingsGroup != null) {
           val group = selectedListingsGroup!!
-          Box(modifier = Modifier.align(Alignment.CenterEnd).padding(16.dp).width(260.dp)) {
-            if (group.size == 1) {
-              SmallListingPreviewCard(
-                  listing = group.first(),
-                  onClick = { onListingClick(group.first().listingUid) },
-                  onClose = { selectedListingsGroup = null })
-            } else {
-              MultiListingCarouselCard(
-                  listings = group,
-                  onListingClick = onListingClick,
-                  onClose = { selectedListingsGroup = null })
-            }
-          }
+          Box(
+              modifier =
+                  Modifier.align(Alignment.CenterEnd)
+                      .padding(Dimens.PaddingDefault)
+                      .width(Dimens.DialogWidth)) {
+                if (group.size == 1) {
+                  SmallListingPreviewCard(
+                      listing = group.first(),
+                      onClick = { onListingClick(group.first().listingUid) },
+                      onClose = { selectedListingsGroup = null })
+                } else {
+                  MultiListingCarouselCard(
+                      listings = group,
+                      onListingClick = onListingClick,
+                      onClose = { selectedListingsGroup = null })
+                }
+              }
         }
       })
 }

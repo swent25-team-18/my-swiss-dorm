@@ -34,13 +34,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.BackGroundColor
+import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -73,14 +73,18 @@ fun CustomLocationDialog(
 
   Dialog(onDismissRequest = onDismiss) {
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(Dimens.CardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = BackGroundColor)) {
           Box {
             Column(
                 modifier =
-                    Modifier.padding(top = 48.dp, bottom = 24.dp, start = 24.dp, end = 24.dp),
+                    Modifier.padding(
+                        top = Dimens.IconSizeXXLarge,
+                        bottom = Dimens.PaddingLarge,
+                        start = Dimens.PaddingLarge,
+                        end = Dimens.PaddingLarge),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
                   Text(
                       stringResource(R.string.custom_location_dialog_enter_input),
                       color = TextColor,
@@ -97,7 +101,7 @@ fun CustomLocationDialog(
                             imageVector = Icons.Default.MyLocation,
                             contentDescription = "My Location",
                             tint = MainColor)
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(Dimens.SpacingXSmall))
                         Text(
                             text = stringResource(R.string.custom_location_dialog_current_location),
                             color = MainColor)
@@ -119,7 +123,8 @@ fun CustomLocationDialog(
                                     unfocusedBorderColor = TextBoxColor,
                                     focusedLabelColor = MainColor,
                                     cursorColor = TextColor,
-                                    unfocusedLabelColor = TextColor.copy(alpha = 0.6f)),
+                                    unfocusedLabelColor =
+                                        TextColor.copy(alpha = Dimens.AlphaSecondary)),
                             modifier =
                                 Modifier.menuAnchor()
                                     .fillMaxWidth()

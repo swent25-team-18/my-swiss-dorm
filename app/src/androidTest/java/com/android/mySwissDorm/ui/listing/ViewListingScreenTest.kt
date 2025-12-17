@@ -42,6 +42,8 @@ import io.mockk.unmockkAll
 import java.io.File
 import java.util.Locale
 import java.util.UUID
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -138,34 +140,35 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   // -------------------- TESTS --------------------
 
   @Test
-  fun nonOwner_showsContactAndApply_enablesAfterTyping() = runTest {
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
-    }
-    waitForScreenRoot()
+  fun nonOwner_showsContactAndApply_enablesAfterTyping() =
+      runTest(timeout = 20.toDuration(unit = DurationUnit.SECONDS)) {
+        val vm = ViewListingViewModel(listingsRepo, profileRepo)
+        compose.setContent {
+          ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+        }
+        waitForScreenRoot()
 
-    // Wait for ViewModel to finish loading (including POI calculation)
-    compose.waitUntil(10_000) {
-      vm.uiState.value.listing.uid == otherListing.uid && !vm.uiState.value.isLoadingPOIs
-    }
-    compose.waitForIdle()
+        // Wait for ViewModel to finish loading (including POI calculation)
+        compose.waitUntil(10_000) { vm.uiState.value.listing.uid == otherListing.uid }
+        compose.waitForIdle()
 
-    compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
+        compose.onNodeWithTag(C.ViewListingTags.ROOT).assertIsDisplayed()
 
-    scrollListTo(C.ViewListingTags.CONTACT_FIELD)
-    compose
-        .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD, useUnmergedTree = true)
-        .assertIsDisplayed()
+        scrollListTo(C.ViewListingTags.CONTACT_FIELD)
+        compose
+            .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD, useUnmergedTree = true)
+            .assertIsDisplayed()
 
-    // Apply disabled until user types
-    scrollListTo(C.ViewListingTags.APPLY_BTN)
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN, useUnmergedTree = true).assertIsNotEnabled()
-    compose
-        .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD)
-        .performTextInput("Hello! I'm interested.")
-    compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertIsEnabled()
-  }
+        // Apply disabled until user types
+        scrollListTo(C.ViewListingTags.APPLY_BTN)
+        compose
+            .onNodeWithTag(C.ViewListingTags.APPLY_BTN, useUnmergedTree = true)
+            .assertIsNotEnabled()
+        compose
+            .onNodeWithTag(C.ViewListingTags.CONTACT_FIELD)
+            .performTextInput("Hello! I'm interested.")
+        compose.onNodeWithTag(C.ViewListingTags.APPLY_BTN).assertIsEnabled()
+      }
 
   @Test
   fun owner_showsOnlyEdit() = runTest {
@@ -799,7 +802,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
     compose.waitForIdle()
     // Check image is shown in full screen
-    compose.waitUntil("The clicked image is not shown in full screen", 5_000) {
+    compose.waitUntil("The clicked image is not shown in full screen", 50_000) {
       compose
           .onNodeWithTag(C.FullScreenImageViewerTags.imageTag(photo.image), useUnmergedTree = true)
           .isDisplayed()

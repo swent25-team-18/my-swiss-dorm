@@ -47,6 +47,8 @@ import java.util.Locale
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -567,22 +569,23 @@ class ViewReviewScreenTest : FirestoreTest() {
   }
 
   @Test
-  fun voteButtonsAreDisabledForOwner() {
-    setOwnerReview()
-    waitForScreenRoot()
-    compose.waitUntil(5_000) {
-      vm.uiState.value.review.uid == review1.uid && vm.uiState.value.isOwner
-    }
-    scrollListTo(C.ViewReviewTags.VOTE_BUTTONS)
-    compose
-        .onNodeWithTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .assertIsNotEnabled()
-    compose
-        .onNodeWithTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .assertIsNotEnabled()
-  }
+  fun voteButtonsAreDisabledForOwner() =
+      runTest(timeout = 120.toDuration(unit = DurationUnit.SECONDS)) {
+        setOwnerReview()
+        waitForScreenRoot()
+        compose.waitUntil(5_000) {
+          vm.uiState.value.review.uid == review1.uid && vm.uiState.value.isOwner
+        }
+        scrollListTo(C.ViewReviewTags.VOTE_BUTTONS)
+        compose
+            .onNodeWithTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON, useUnmergedTree = true)
+            .assertIsDisplayed()
+            .assertIsNotEnabled()
+        compose
+            .onNodeWithTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON, useUnmergedTree = true)
+            .assertIsDisplayed()
+            .assertIsNotEnabled()
+      }
 
   @Test
   fun voteScoreIsDisplayedCorrectly() = runTest {

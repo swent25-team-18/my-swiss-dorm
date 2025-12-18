@@ -641,7 +641,7 @@ class ViewResidencyViewModelTest : FirestoreTest() {
   fun dismissFullScreenImages_hidesFullScreenViewer() = runTest {
     // Create a mock photo repository that returns photos synchronously
     val mockPhotoRepository =
-        object : PhotoRepositoryCloud(PhotoRepositoryProvider.local_repository) {
+        object : PhotoRepositoryCloud(PhotoRepositoryProvider.localRepository) {
           override suspend fun retrievePhoto(fileName: String): Photo {
             return Photo.createNewTempPhoto(fileName)
           }
@@ -690,7 +690,7 @@ class ViewResidencyViewModelTest : FirestoreTest() {
   @Test
   fun loadResidency_imageLoadFailure_handlesGracefully() = runTest {
     val mockPhotoRepository =
-        object : PhotoRepositoryCloud(PhotoRepositoryProvider.local_repository) {
+        object : PhotoRepositoryCloud(PhotoRepositoryProvider.localRepository) {
           override suspend fun retrievePhoto(fileName: String): Photo {
             throw Exception("Photo load error")
           }

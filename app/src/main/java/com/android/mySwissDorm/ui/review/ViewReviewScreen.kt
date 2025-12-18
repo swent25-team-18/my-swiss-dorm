@@ -261,7 +261,7 @@ fun ViewReviewScreen(
                     modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
               }
 
-              // Vote section (always shown, but disabled for owner) - at the bottom of the review
+              // Vote section (always shown, but disabled for owner or offline) - at the bottom of the review
               Column(
                   modifier = Modifier.fillMaxWidth().testTag(C.ViewReviewTags.VOTE_BUTTONS),
                   horizontalAlignment = Alignment.CenterHorizontally) {
@@ -274,8 +274,21 @@ fun ViewReviewScreen(
                         netScore = uiState.netScore,
                         userVote = uiState.userVote,
                         isOwner = isOwner,
-                        onUpvote = { viewReviewViewModel.upvoteReview(context) },
-                        onDownvote = { viewReviewViewModel.downvoteReview(context) })
+                        isOffline = isOffline,
+                        onUpvote = {
+                          if (isOffline) {
+                            showOfflineToast(context)
+                          } else {
+                            viewReviewViewModel.upvoteReview(context)
+                          }
+                        },
+                        onDownvote = {
+                          if (isOffline) {
+                            showOfflineToast(context)
+                          } else {
+                            viewReviewViewModel.downvoteReview(context)
+                          }
+                        })
                   }
 
               if (isOwner) {
@@ -410,6 +423,7 @@ private fun VoteButtons(
     netScore: Int,
     userVote: VoteType,
     isOwner: Boolean,
+    isOffline: Boolean,
     onUpvote: () -> Unit,
     onDownvote: () -> Unit,
     modifier: Modifier = Modifier
@@ -421,7 +435,7 @@ private fun VoteButtons(
         // Upvote button
         IconButton(
             onClick = onUpvote,
-            enabled = !isOwner,
+            enabled = !isOwner && !isOffline,
             modifier = Modifier.testTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON)) {
               Icon(
                   imageVector = Icons.Filled.ArrowUpward,
@@ -451,7 +465,7 @@ private fun VoteButtons(
         // Downvote button
         IconButton(
             onClick = onDownvote,
-            enabled = !isOwner,
+            enabled = !isOwner && !isOffline,
             modifier = Modifier.testTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON)) {
               Icon(
                   imageVector = Icons.Filled.ArrowDownward,

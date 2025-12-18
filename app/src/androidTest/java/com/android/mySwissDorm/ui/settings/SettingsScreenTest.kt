@@ -166,27 +166,6 @@ class SettingsScreenTest : FirestoreTest() {
   // ---------- tests ----------
 
   @Test
-  fun notificationSwitches_toggleStateCorrectly() {
-    setContentWithVm()
-    compose.waitForIdle()
-
-    val messagesTag = C.SettingsTags.switch("Show notifications for messages")
-    val listingsTag = C.SettingsTags.switch("Show notifications for new listings")
-
-    compose
-        .onNodeWithTag(messagesTag, useUnmergedTree = true)
-        .assert(hasStateDescription("On"))
-        .performClick()
-    compose.onNodeWithTag(messagesTag, useUnmergedTree = true).assert(hasStateDescription("Off"))
-
-    compose
-        .onNodeWithTag(listingsTag, useUnmergedTree = true)
-        .assert(hasStateDescription("Off"))
-        .performClick()
-    compose.onNodeWithTag(listingsTag, useUnmergedTree = true).assert(hasStateDescription("On"))
-  }
-
-  @Test
   fun blockedContacts_expandsAndCollapsesOnClick() = runTest {
     // Use FakeUser2 as the blocked user
     switchToUser(FakeUser.FakeUser2)

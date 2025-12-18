@@ -36,6 +36,8 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
+import com.android.mySwissDorm.ui.utils.showOfflineToast
+import com.android.mySwissDorm.utils.NetworkUtils
 
 /**
  * Edit screen for an existing review.
@@ -82,6 +84,11 @@ fun EditReviewScreen(
   val editReviewUIState by editReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
   var showDeleteConfirm by remember { mutableStateOf(false) }
   if (editReviewUIState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -104,10 +111,21 @@ fun EditReviewScreen(
             },
             actions = {
               IconButton(
-                  onClick = { showDeleteConfirm = true },
-                  modifier = Modifier.testTag("deleteButton") // ← add this
-                  ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MainColor)
+                  onClick = {
+                    if (isOffline) {
+                      showOfflineToast(context)
+                    } else {
+                      showDeleteConfirm = true
+                    }
+                  },
+                  enabled = !isOffline,
+                  modifier = Modifier.testTag("deleteButton")) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint =
+                            if (isOffline) MainColor.copy(alpha = Dimens.AlphaDisabled)
+                            else MainColor)
                   }
             })
       },
@@ -131,17 +149,21 @@ fun EditReviewScreen(
                           }
 
                       Button(
-                          onClick = { if (editReviewViewModel.editReview(reviewID)) onConfirm() },
-                          enabled = ui.isFormValid,
+                          onClick = {
+                            if (isOffline) {
+                              showOfflineToast(context)
+                            } else if (editReviewViewModel.editReview(reviewID)) {
+                              onConfirm()
+                            }
+                          },
+                          enabled = ui.isFormValid && !isOffline,
                           colors =
                               ButtonDefaults.buttonColors(
                                   containerColor = MainColor,
                                   disabledContainerColor =
                                       MainColor.copy(alpha = Dimens.AlphaDisabled)),
                           modifier =
-                              Modifier.weight(1f)
-                                  .height(Dimens.ButtonHeight)
-                                  .testTag("saveButton"), // ← add this
+                              Modifier.weight(1f).height(Dimens.ButtonHeight).testTag("saveButton"),
                           shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
                             Text(stringResource(R.string.save), color = BackGroundColor)
                           }

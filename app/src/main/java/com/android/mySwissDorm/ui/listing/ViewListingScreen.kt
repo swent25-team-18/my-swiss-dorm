@@ -16,6 +16,8 @@ import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +40,7 @@ import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.share.ShareLinkDialog
 import com.android.mySwissDorm.ui.theme.AlmostWhite
+import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Black
 import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.Dimens
@@ -51,6 +54,7 @@ import com.android.mySwissDorm.ui.theme.Violet
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
+import com.android.mySwissDorm.ui.utils.showOfflineToast
 import com.android.mySwissDorm.utils.NetworkUtils
 
 /**
@@ -83,6 +87,12 @@ fun ViewListingScreen(
         }
 ) {
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
+
   LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid, context) }
 
   val listingUIState by viewListingViewModel.uiState.collectAsState()
@@ -98,8 +108,9 @@ fun ViewListingScreen(
   var isTranslated by remember { mutableStateOf(false) }
   var showTranslateButton by remember { mutableStateOf(false) }
 
-  // Button is enabled only if there's a message, user is not blocked, and no existing message
-  val canApply = hasMessage && !isBlockedByOwner && !hasExistingMessage
+  // Button is enabled only if there's a message, user is not blocked, no existing message, and
+  // online
+  val canApply = hasMessage && !isBlockedByOwner && !hasExistingMessage && isNetworkAvailable
   // Button color: violet if blocked, red (MainColor) if normal
   val buttonColor = if (isBlockedByOwner && hasMessage) Violet else MainColor
 
@@ -114,7 +125,12 @@ fun ViewListingScreen(
     }
   }
 
-  LaunchedEffect(listing) { viewListingViewModel.translateListing(context) }
+  // Only translate if network is available
+  LaunchedEffect(listing, isNetworkAvailable) {
+    if (isNetworkAvailable) {
+      viewListingViewModel.translateListing(context)
+    }
+  }
 
   LaunchedEffect(listingUIState.translatedDescription) {
     showTranslateButton =
@@ -211,7 +227,7 @@ fun ViewListingScreen(
                       .imePadding()
                       .testTag(C.ViewListingTags.ROOT),
               verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
-                if (showTranslateButton) {
+                if (showTranslateButton && !isOffline) {
                   val clickableText =
                       if (isTranslated) {
                         context.getString(R.string.see_original)
@@ -283,7 +299,16 @@ fun ViewListingScreen(
                             fontWeight = FontWeight.SemiBold),
                     modifier = Modifier.testTag(C.ViewListingTags.POI_DISTANCES))
 
-                if (listingUIState.isLoadingPOIs) {
+                if (isOffline) {
+                  Text(
+                      stringResource(R.string.poi_not_available_offline),
+                      style =
+                          MaterialTheme.typography.bodyMedium.copy(
+                              color =
+                                  MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                      alpha = Dimens.AlphaSecondary)),
+                      modifier = Modifier.padding(start = Dimens.PaddingDefault, top = 2.dp))
+                } else if (listingUIState.isLoadingPOIs) {
                   Row(
                       modifier = Modifier.padding(start = Dimens.PaddingDefault, top = 2.dp),
                       verticalAlignment = Alignment.CenterVertically,
@@ -407,18 +432,20 @@ fun ViewListingScreen(
                   BulletRow("${stringResource(R.string.starting)} ${formatDate(listing.startDate)}")
                 }
 
-                // Description
-                SectionCard(modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION)) {
-                  Text(
-                      "${stringResource(R.string.description)} :", fontWeight = FontWeight.SemiBold)
-                  Spacer(Modifier.height(Dimens.SpacingXSmall))
-                  val descriptionToDisplay =
-                      if (isTranslated) listingUIState.translatedDescription
-                      else listing.description
-                  Text(
-                      descriptionToDisplay,
-                      style = MaterialTheme.typography.bodyLarge,
-                      modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION_TEXT))
+                // Description (only show if description is not blank)
+                val descriptionToDisplay =
+                    if (isTranslated) listingUIState.translatedDescription else listing.description
+                if (descriptionToDisplay.isNotBlank()) {
+                  SectionCard(modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION)) {
+                    Text(
+                        "${stringResource(R.string.description)} :",
+                        fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(Dimens.SpacingXSmall))
+                    Text(
+                        descriptionToDisplay,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION_TEXT))
+                  }
                 }
 
                 ImageGrid(
@@ -430,7 +457,13 @@ fun ViewListingScreen(
                 // Location placeholder
                 viewListingViewModel.setLocationOfListing(listingUid)
                 val location = listingUIState.locationOfListing
-                if (location.latitude != 0.0 && location.longitude != 0.0) {
+                if (isOffline) {
+                  // Show offline message instead of map
+                  PlaceholderBlock(
+                      text = stringResource(R.string.maps_not_available_offline),
+                      height = Dimens.ImageSizeLarge,
+                      modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
+                } else if (location.latitude != 0.0 && location.longitude != 0.0) {
                   MapPreview(
                       location = location,
                       title = listing.title,
@@ -468,16 +501,36 @@ fun ViewListingScreen(
                   // Owner sees an Edit button centered, same size as Apply
                   Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Button(
-                        onClick = onEdit,
+                        onClick = {
+                          if (isOffline) {
+                            showOfflineToast(context)
+                          } else {
+                            onEdit()
+                          }
+                        },
                         modifier =
                             Modifier.fillMaxWidth(0.55f)
                                 .height(Dimens.ButtonHeight)
                                 .testTag(C.ViewListingTags.EDIT_BTN),
-                        shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
+                        shape = RoundedCornerShape(Dimens.CardCornerRadius),
+                        colors =
+                            if (isOffline) {
+                              ButtonColors(
+                                  containerColor = BackGroundColor,
+                                  contentColor = BackGroundColor,
+                                  disabledContainerColor = BackGroundColor,
+                                  disabledContentColor = BackGroundColor)
+                            } else {
+                              ButtonColors(
+                                  containerColor = MainColor,
+                                  contentColor = TextBoxColor,
+                                  disabledContainerColor = BackGroundColor,
+                                  disabledContentColor = BackGroundColor)
+                            }) {
                           Text(
                               stringResource(R.string.edit),
                               style = MaterialTheme.typography.titleMedium,
-                              color = MainColor)
+                              color = White)
                         }
                   }
                 } else {
@@ -508,6 +561,7 @@ fun ViewListingScreen(
                     OutlinedTextField(
                         value = listingUIState.contactMessage,
                         onValueChange = { viewListingViewModel.setContactMessage(it) },
+                        enabled = isNetworkAvailable,
                         placeholder = {
                           Text(
                               stringResource(R.string.view_listing_contact_announcer), color = Gray)
@@ -527,26 +581,39 @@ fun ViewListingScreen(
                                 focusedTextColor = Black))
 
                     // Apply now button (centered, half width, rounded, red or violet)
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                      Button(
-                          onClick = onApply,
-                          enabled = canApply,
-                          modifier =
-                              Modifier.fillMaxWidth(0.55f)
-                                  .height(Dimens.ButtonHeight)
-                                  .testTag(C.ViewListingTags.APPLY_BTN),
-                          shape = RoundedCornerShape(Dimens.CardCornerRadius),
-                          colors =
-                              ButtonDefaults.buttonColors(
-                                  containerColor = buttonColor,
-                                  disabledContainerColor = PinkyWhite,
-                                  disabledContentColor = White)) {
-                            Text(
-                                stringResource(R.string.view_listing_apply_now),
-                                color = White,
-                                style = MaterialTheme.typography.titleMedium)
-                          }
-                    }
+                    Box(
+                        modifier =
+                            if (isOffline && !canApply) {
+                              Modifier.fillMaxWidth().clickable { showOfflineToast(context) }
+                            } else {
+                              Modifier.fillMaxWidth()
+                            },
+                        contentAlignment = Alignment.Center) {
+                          Button(
+                              onClick = {
+                                if (isOffline) {
+                                  showOfflineToast(context)
+                                } else {
+                                  onApply()
+                                }
+                              },
+                              enabled = canApply,
+                              modifier =
+                                  Modifier.fillMaxWidth(0.55f)
+                                      .height(Dimens.ButtonHeight)
+                                      .testTag(C.ViewListingTags.APPLY_BTN),
+                              shape = RoundedCornerShape(Dimens.CardCornerRadius),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = buttonColor,
+                                      disabledContainerColor = PinkyWhite,
+                                      disabledContentColor = White)) {
+                                Text(
+                                    stringResource(R.string.view_listing_apply_now),
+                                    color = White,
+                                    style = MaterialTheme.typography.titleMedium)
+                              }
+                        }
                   }
                 }
               }

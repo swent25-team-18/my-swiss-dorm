@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.listing
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +39,8 @@ import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
+import com.android.mySwissDorm.ui.utils.showOfflineToast
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,6 +55,10 @@ fun AddListingScreen(
   val scrollState = rememberScrollState()
   var showDatePicker by remember { mutableStateOf(false) }
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, addListingViewModel)
   if (listingUIState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -80,24 +87,40 @@ fun AddListingScreen(
             val isButtonEnabled =
                 ui.isFormValid &&
                     !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) &&
-                    !ui.isSubmitting
-            Button(
-                onClick = { addListingViewModel.submitForm(onConfirm, context) },
-                enabled = isButtonEnabled,
-                colors = ButtonDefaults.buttonColors(containerColor = MainColor),
+                    !ui.isSubmitting &&
+                    isNetworkAvailable
+            val isOffline = !isNetworkAvailable
+            Box(
                 modifier =
-                    Modifier.fillMaxWidth()
-                        .height(Dimens.ButtonHeight)
-                        .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
-                shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
-                  if (ui.isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(Dimens.IconSizeDefault),
-                        color = White,
-                        strokeWidth = Dimens.CircularProgressIndicatorStrokeWidth)
-                  } else {
-                    Text(stringResource(R.string.confirm_listing), color = White)
-                  }
+                    if (isOffline) {
+                      Modifier.clickable { showOfflineToast(context) }
+                    } else {
+                      Modifier
+                    }) {
+                  Button(
+                      onClick = {
+                        if (isOffline) {
+                          showOfflineToast(context)
+                        } else if (isButtonEnabled) {
+                          addListingViewModel.submitForm(onConfirm, context)
+                        }
+                      },
+                      enabled = isButtonEnabled,
+                      colors = ButtonDefaults.buttonColors(containerColor = MainColor),
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .height(Dimens.ButtonHeight)
+                              .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
+                      shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
+                        if (ui.isSubmitting) {
+                          CircularProgressIndicator(
+                              modifier = Modifier.size(Dimens.IconSizeDefault),
+                              color = White,
+                              strokeWidth = Dimens.CircularProgressIndicatorStrokeWidth)
+                        } else {
+                          Text(stringResource(R.string.confirm_listing), color = White)
+                        }
+                      }
                 }
             Spacer(Modifier.height(Dimens.SpacingDefault))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {

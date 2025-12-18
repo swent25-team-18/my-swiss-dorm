@@ -8,12 +8,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -24,6 +27,7 @@ import com.android.mySwissDorm.ui.map.MapPreview
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.*
+import com.android.mySwissDorm.utils.NetworkUtils
 
 /**
  * Screen that displays detailed information about a residency, including its description, contact
@@ -56,6 +60,12 @@ fun ViewResidencyScreen(
         }
 ) {
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
+
   LaunchedEffect(residencyName) { viewResidencyViewModel.loadResidency(residencyName, context) }
 
   val uiState by viewResidencyViewModel.uiState.collectAsState()
@@ -97,6 +107,7 @@ fun ViewResidencyScreen(
             residency = residency,
             errorMsg = errorMsg,
             paddingValues = paddingValues,
+            isOffline = isOffline,
             onImageClick = { index -> viewResidencyViewModel.onClickImage(index) },
             onViewMap = onViewMap)
       })
@@ -111,6 +122,7 @@ fun ViewResidencyScreen(
  * @param residency The residency data to display, or null if not loaded.
  * @param errorMsg Error message to display if loading failed.
  * @param paddingValues Padding values from the Scaffold.
+ * @param isOffline Whether the device is currently offline.
  * @param onViewMap Callback invoked when the map preview is tapped.
  */
 @Composable
@@ -119,6 +131,7 @@ private fun ViewResidencyContent(
     residency: com.android.mySwissDorm.model.residency.Residency?,
     errorMsg: String?,
     paddingValues: PaddingValues,
+    isOffline: Boolean,
     onImageClick: (Int) -> Unit,
     onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit
 ) {
@@ -134,6 +147,7 @@ private fun ViewResidencyContent(
           residency = residency,
           poiDistances = uiState.poiDistances,
           isLoadingPOIs = uiState.isLoadingPOIs,
+          isOffline = isOffline,
           paddingValues = paddingValues,
           images = uiState.images,
           onImageClick = onImageClick,
@@ -186,6 +200,7 @@ private fun ResidencyDetailsContent(
     residency: com.android.mySwissDorm.model.residency.Residency,
     poiDistances: List<POIDistance>,
     isLoadingPOIs: Boolean,
+    isOffline: Boolean,
     paddingValues: PaddingValues,
     images: List<com.android.mySwissDorm.model.photo.Photo>,
     onImageClick: (Int) -> Unit,
@@ -204,10 +219,10 @@ private fun ResidencyDetailsContent(
           ImagesSection(images, onImageClick)
         }
         DescriptionSection(residency.description)
-        POIDistancesSection(poiDistances, isLoadingPOIs)
+        POIDistancesSection(poiDistances, isLoadingPOIs, isOffline)
         Spacer(Modifier.height(8.dp))
         ContactInformationSection(residency)
-        LocationSection(residency, onViewMap)
+        LocationSection(residency, isOffline, onViewMap)
       }
 }
 
@@ -274,15 +289,25 @@ private fun DescriptionSection(description: String) {
  *
  * @param poiDistances List of nearby points of interest with their walking distances.
  * @param isLoadingPOIs Whether POI distances are currently being calculated.
+ * @param isOffline Whether the device is currently offline.
  */
 @Composable
-private fun POIDistancesSection(poiDistances: List<POIDistance>, isLoadingPOIs: Boolean) {
+private fun POIDistancesSection(
+    poiDistances: List<POIDistance>,
+    isLoadingPOIs: Boolean,
+    isOffline: Boolean
+) {
   Text(
       stringResource(R.string.view_listing_nearby_points_of_interest),
       style =
           MaterialTheme.typography.bodyMedium.copy(color = Gray, fontWeight = FontWeight.SemiBold),
       modifier = Modifier.testTag(C.ViewResidencyTags.POI_DISTANCES))
-  if (isLoadingPOIs) {
+  if (isOffline) {
+    Text(
+        stringResource(R.string.poi_not_available_offline),
+        style = MaterialTheme.typography.bodyMedium.copy(color = Gray.copy(alpha = 0.6f)),
+        modifier = Modifier.padding(start = 16.dp, top = 2.dp))
+  } else if (isLoadingPOIs) {
     Row(
         modifier = Modifier.padding(start = 16.dp, top = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -477,24 +502,39 @@ private fun ContactInfoItem(label: String, value: String) {
  * Displays an interactive map preview showing the residency location.
  *
  * @param residency The residency data containing location information.
+ * @param isOffline Whether the device is currently offline.
  * @param onViewMap Callback invoked when the map preview is tapped.
  */
 @Composable
 private fun LocationSection(
     residency: com.android.mySwissDorm.model.residency.Residency,
+    isOffline: Boolean,
     onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit
 ) {
-  MapPreview(
-      location = residency.location,
-      title = residency.name,
-      modifier = Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewResidencyTags.LOCATION),
-      onMapClick = {
-        onViewMap(
-            residency.location.latitude,
-            residency.location.longitude,
-            residency.name,
-            R.string.view_residency_location)
-      })
+  if (isOffline) {
+    // Show offline message instead of map
+    SectionCard(modifier = Modifier.testTag(C.ViewResidencyTags.LOCATION)) {
+      Box(modifier = Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+        Text(
+            text = stringResource(R.string.maps_not_available_offline),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Gray.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center)
+      }
+    }
+  } else {
+    MapPreview(
+        location = residency.location,
+        title = residency.name,
+        modifier = Modifier.fillMaxWidth().height(180.dp).testTag(C.ViewResidencyTags.LOCATION),
+        onMapClick = {
+          onViewMap(
+              residency.location.latitude,
+              residency.location.longitude,
+              residency.name,
+              R.string.view_residency_location)
+        })
+  }
 }
 
 /**

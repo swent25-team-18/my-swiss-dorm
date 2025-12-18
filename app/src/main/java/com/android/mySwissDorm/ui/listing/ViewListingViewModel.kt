@@ -26,6 +26,7 @@ import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.android.mySwissDorm.ui.utils.calculatePOIDistances
 import com.android.mySwissDorm.ui.utils.translateTextField
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -215,18 +216,24 @@ class ViewListingViewModel(
                 isBookmarked = isBookmarked,
                 poiDistances = emptyList(),
                 hasExistingMessage = hasExistingMessage)
-        updateUIState(listing, uiData, isLoadingPOIs = true)
+        // Update UI state immediately so listing appears fast
+        updateUIState(listing, uiData, isLoadingPOIs = false)
 
+        // Check network state asynchronously and start POI calculation if available
         launch {
-          try {
-            val userUniversityName = getUserUniversityName(currentUserId, isGuest)
-            val poiDistances =
-                calculatePOIDistances(listing.location, userUniversityName, listing.uid)
-            _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIs = false) }
-          } catch (e: Exception) {
-            Log.e("ViewListingViewModel", "Error calculating POI distances asynchronously", e)
-            _uiState.update { it.copy(isLoadingPOIs = false) }
+          if (NetworkUtils.isNetworkAvailable(context)) {
+            _uiState.update { it.copy(isLoadingPOIs = true) }
+            try {
+              val userUniversityName = getUserUniversityName(currentUserId, isGuest)
+              val poiDistances =
+                  calculatePOIDistances(listing.location, userUniversityName, listing.uid)
+              _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIs = false) }
+            } catch (e: Exception) {
+              Log.e("ViewListingViewModel", "Error calculating POI distances asynchronously", e)
+              _uiState.update { it.copy(isLoadingPOIs = false) }
+            }
           }
+          // If offline, POIs remain empty (already set in uiData)
         }
         launch(Dispatchers.IO) {
           photoManager.initialize(listing.imageUrls)

@@ -1,5 +1,6 @@
 package com.android.mySwissDorm.ui.review
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +37,8 @@ import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.StarRatingBar
+import com.android.mySwissDorm.ui.utils.showOfflineToast
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +52,10 @@ fun AddReviewScreen(
   val reviewUIState by addReviewViewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
   if (reviewUIState.showFullScreenImages) {
     FullScreenImageViewer(
         imageUris = reviewUIState.images.map { it.image },
@@ -76,24 +83,40 @@ fun AddReviewScreen(
             val isButtonEnabled =
                 ui.isFormValid &&
                     !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) &&
-                    !ui.isSubmitting
-            Button(
-                onClick = { addReviewViewModel.submitReviewForm(onConfirm) },
-                enabled = isButtonEnabled,
-                colors = ButtonDefaults.buttonColors(containerColor = MainColor),
+                    !ui.isSubmitting &&
+                    isNetworkAvailable
+            val isOffline = !isNetworkAvailable
+            Box(
                 modifier =
-                    Modifier.fillMaxWidth()
-                        .height(Dimens.ButtonHeight)
-                        .testTag(C.AddReviewTags.SUBMIT_BUTTON),
-                shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
-                  if (ui.isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(Dimens.IconSizeDefault),
-                        color = White,
-                        strokeWidth = 2.dp)
-                  } else {
-                    Text(stringResource(R.string.add_review_submit), color = White)
-                  }
+                    if (isOffline && !isButtonEnabled) {
+                      Modifier.clickable { showOfflineToast(context) }
+                    } else {
+                      Modifier
+                    }) {
+                  Button(
+                      onClick = {
+                        if (isOffline) {
+                          showOfflineToast(context)
+                        } else if (isButtonEnabled) {
+                          addReviewViewModel.submitReviewForm(onConfirm)
+                        }
+                      },
+                      enabled = isButtonEnabled,
+                      colors = ButtonDefaults.buttonColors(containerColor = MainColor),
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .height(Dimens.ButtonHeight)
+                              .testTag(C.AddReviewTags.SUBMIT_BUTTON),
+                      shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
+                        if (ui.isSubmitting) {
+                          CircularProgressIndicator(
+                              modifier = Modifier.size(Dimens.IconSizeDefault),
+                              color = White,
+                              strokeWidth = 2.dp)
+                        } else {
+                          Text(stringResource(R.string.add_review_submit), color = White)
+                        }
+                      }
                 }
             Spacer(Modifier.height(Dimens.SpacingDefault))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {

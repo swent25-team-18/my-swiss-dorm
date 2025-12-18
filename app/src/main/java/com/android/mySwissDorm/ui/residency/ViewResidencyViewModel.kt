@@ -15,6 +15,7 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.ui.utils.calculatePOIDistances
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -72,6 +73,7 @@ open class ViewResidencyViewModel(
           Log.w("ViewResidencyViewModel", "No imageUrls found for residency: ${residency.name}")
         }
 
+        // Update UI state immediately so residency appears fast
         _uiState.update {
           it.copy(
               residency = residency,
@@ -81,19 +83,23 @@ open class ViewResidencyViewModel(
               isLoadingPOIs = true)
         }
 
-        // Load POI distances in background (non-blocking)
+        // Check network state asynchronously and start POI calculation if available
         launch {
-          try {
-            val currentUser = FirebaseAuth.getInstance().currentUser
-            val userUniversityName =
-                getUserUniversityName(currentUser?.uid, currentUser?.isAnonymous ?: true)
-            val poiDistances =
-                calculatePOIDistances(residency.location, userUniversityName, residency.name)
-            _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIs = false) }
-          } catch (e: Exception) {
-            Log.e("ViewResidencyViewModel", "Error calculating POI distances asynchronously", e)
-            _uiState.update { it.copy(isLoadingPOIs = false) }
+          if (NetworkUtils.isNetworkAvailable(context)) {
+            _uiState.update { it.copy(isLoadingPOIs = true) }
+            try {
+              val currentUser = FirebaseAuth.getInstance().currentUser
+              val userUniversityName =
+                  getUserUniversityName(currentUser?.uid, currentUser?.isAnonymous ?: true)
+              val poiDistances =
+                  calculatePOIDistances(residency.location, userUniversityName, residency.name)
+              _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIs = false) }
+            } catch (e: Exception) {
+              Log.e("ViewResidencyViewModel", "Error calculating POI distances asynchronously", e)
+              _uiState.update { it.copy(isLoadingPOIs = false) }
+            }
           }
+          // If offline, POIs remain empty (already set in initial state)
         }
       } catch (e: Exception) {
         Log.e("ViewResidencyViewModel", "Error loading residency: $residencyName", e)

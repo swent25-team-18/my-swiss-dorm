@@ -154,6 +154,7 @@
 
     <!-- ChannelsScreen -->
     <string name="channels_screen_please_sign_in">Veuillez vous connecter pour voir les discussions</string>
+    <string name="channels_screen_offline_message">Vous devez être en ligne pour utiliser le chat</string>
     <string name="channels_screen_chats">Discussions</string>
     <string name="channels_screen_search_chats">Rechercher…</string>
     <string name="channels_screen_no_chats_yet">Aucune discussion pour le moment</string>
@@ -232,6 +233,8 @@
     <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes de %2$s %3$s</string>
     <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes de %2$s</string>
     <string name="view_listing_no_points_of_interest">Aucun point d\'intérêt à proximité disponible</string>
+    <string name="poi_not_available_offline">Points d\'intérêt non disponibles hors ligne</string>
+    <string name="maps_not_available_offline">Cartes non disponibles hors ligne</string>
     <string name="view_listing_message_already_sent">Vous avez déjà envoyé un message pour cette annonce.</string>
     <string name="view_listing_please_wait_for_response">Veuillez attendre une réponse du propriétaire.</string>
     <string name="view_listing_failed_to_submit_message">Échec de l\'envoi du message :</string>
@@ -545,6 +548,7 @@
     <string name="offline_banner_icon_description">Icône hors ligne</string>
     <string name="unknown_owner_name">Propriétaire inconnu</string>
     <string name="profile_offline_message">Vous devez être en ligne pour voir le profil d\'un autre utilisateur</string>
+    <string name="offline_feature_unavailable">Vous devez vous connecter au Wi‑Fi pour utiliser cette fonctionnalité</string>
 
     <!-- Other -->
     <string name="title_activity_main">MySwissDorm</string>

@@ -151,6 +151,7 @@
 
     <!-- ChannelsScreen -->
     <string name="channels_screen_please_sign_in">Please sign in to view chats</string>
+    <string name="channels_screen_offline_message">You need to be online to use chat</string>
     <string name="channels_screen_chats">Chats</string>
     <string name="channels_screen_search_chats">Search chats…</string>
     <string name="channels_screen_no_chats_yet">No chats yet</string>
@@ -229,6 +230,8 @@
     <string name="view_listing_walking_time_minutes_of_multiple">%1$d minutes from %2$s %3$s</string>
     <string name="view_listing_walking_time_minutes_of_no_type">%1$d minutes from %2$s</string>
     <string name="view_listing_no_points_of_interest">No nearby points of interest available</string>
+    <string name="poi_not_available_offline">Points of interest not available offline</string>
+    <string name="maps_not_available_offline">Maps not available offline</string>
     <string name="view_listing_message_already_sent">You have already sent a message for this listing.</string>
     <string name="view_listing_please_wait_for_response">Please wait for a response from the owner.</string>
     <string name="view_listing_failed_to_submit_message">Failed to submit message:</string>
@@ -542,6 +545,7 @@
     <string name="offline_banner_icon_description">Offline icon</string>
     <string name="unknown_owner_name">Unknown Owner</string>
     <string name="profile_offline_message">You need to be online to view other user\'s profile</string>
+    <string name="offline_feature_unavailable">You need to connect to Wi‑Fi to use this feature</string>
 
     <!-- Other -->
     <string name="title_activity_main">MySwissDorm</string>

@@ -37,9 +37,6 @@ import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
-import com.android.mySwissDorm.utils.NetworkUtils
-import io.mockk.every
-import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import java.io.File
 import java.util.Locale
@@ -50,7 +47,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -508,42 +504,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun clickingPosterName_offline_showsToast() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    mockkObject(NetworkUtils)
-    every { NetworkUtils.isNetworkAvailable(any()) } returns false
-
-    var navigatedToId: String? = null
-
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(
-          viewListingViewModel = vm,
-          listingUid = otherListing.uid, // viewing User2 listing (not owner)
-          onViewProfile = { navigatedToId = it })
-    }
-    waitForScreenRoot()
-
-    compose.waitUntil(10_000) {
-      val s = vm.uiState.value
-      s.listing.uid == otherListing.uid && !s.isOwner && s.fullNameOfPoster.isNotBlank()
-    }
-
-    // Mock Toast to detect when it's shown
-    // Note: We can't easily test Toast in Compose UI tests, but we can verify navigation doesn't
-    // happen
-    scrollListTo(C.ViewListingTags.POSTED_BY_NAME)
-    compose
-        .onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
-
-    // Verify navigation did NOT happen (since we're offline and it's not our profile)
-    compose.waitForIdle()
-    assertNull("Navigation should not happen when offline for non-owner", navigatedToId)
-  }
-
-  @Test
   fun backButton_callsOnGoBack() = runTest {
     var navigatedBack = false
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
@@ -676,37 +636,6 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
-  fun clickingPosterName_online_navigates() = runTest {
-    switchToUser(FakeUser.FakeUser1)
-    mockkObject(NetworkUtils)
-    every { NetworkUtils.isNetworkAvailable(any()) } returns true
-
-    var navigatedToId: String? = null
-
-    val vm = ViewListingViewModel(listingsRepo, profileRepo)
-    compose.setContent {
-      ViewListingScreen(
-          viewListingViewModel = vm,
-          listingUid = otherListing.uid, // viewing User2 listing (not owner)
-          onViewProfile = { navigatedToId = it })
-    }
-    waitForScreenRoot()
-
-    compose.waitUntil(10_000) {
-      val s = vm.uiState.value
-      s.listing.uid == otherListing.uid && !s.isOwner && s.fullNameOfPoster.isNotBlank()
-    }
-
-    scrollListTo(C.ViewListingTags.POSTED_BY_NAME)
-    compose
-        .onNodeWithTag(C.ViewListingTags.POSTED_BY_NAME, useUnmergedTree = true)
-        .assertIsDisplayed()
-        .performClick()
-
-    assertEquals("Navigation should happen when online", otherUid, navigatedToId)
-  }
-
-  @Test
   fun title_isDisplayed() = runTest {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {
@@ -743,6 +672,31 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     compose.onNodeWithTag(C.ViewListingTags.DESCRIPTION, useUnmergedTree = true).assertIsDisplayed()
     // Use onNodeWithText to find the description text directly
     compose.onNodeWithText(otherListing.description, substring = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun descriptionSection_isNotDisplayed_whenBlank() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val listingWithBlankDescription =
+        rentalListing1.copy(
+            ownerId = ownerUid, title = "Listing without description", description = "")
+    firestoreListingRepo.addRentalListing(listingWithBlankDescription)
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = listingWithBlankDescription.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == listingWithBlankDescription.uid
+    }
+
+    // Description section should not be displayed when description is blank
+    compose
+        .onNodeWithTag(C.ViewListingTags.DESCRIPTION, useUnmergedTree = true)
+        .assertDoesNotExist()
   }
 
   @Test

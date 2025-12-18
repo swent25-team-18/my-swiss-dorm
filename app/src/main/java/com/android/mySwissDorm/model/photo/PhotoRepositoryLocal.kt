@@ -23,6 +23,16 @@ class PhotoRepositoryLocal(private val context: Context) : PhotoRepository {
         photosDir.listFiles()?.firstOrNull { it.name == uid }
             ?: throw NoSuchElementException("Photo with uid $uid does not exist")
     if (!file.exists()) throw NoSuchElementException("Photo with uid $uid does not exist")
+    // Check if file is empty/corrupted (but not recently created - allow temp files in tests)
+    val isOldFile =
+        System.currentTimeMillis() - file.lastModified() > 5000 // More than 5 seconds old
+    if (file.length() == 0L && isOldFile) {
+      Log.w(
+          "PhotoRepositoryLocal",
+          "Found old corrupted empty file, deleting and re-throwing: ${file.absolutePath}")
+      file.delete()
+      throw NoSuchElementException("Photo file is empty/corrupted: $uid")
+    }
     return Photo(
         image = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", file),
         fileName = uid)

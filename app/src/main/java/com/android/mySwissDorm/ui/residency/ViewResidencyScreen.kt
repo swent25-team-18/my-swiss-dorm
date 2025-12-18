@@ -24,6 +24,8 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.map.MapPreview
+import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
+import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.*
 import com.android.mySwissDorm.utils.NetworkUtils
 
@@ -70,6 +72,15 @@ fun ViewResidencyScreen(
   val residency = uiState.residency
   val errorMsg = uiState.errorMsg
 
+  // Handle full screen images
+  if (uiState.showFullScreenImages && uiState.images.isNotEmpty()) {
+    FullScreenImageViewer(
+        imageUris = uiState.images.map { it.image },
+        onDismiss = { viewResidencyViewModel.dismissFullScreenImages() },
+        initialIndex = uiState.fullScreenImagesIndex)
+    return
+  }
+
   Scaffold(
       topBar = {
         CenterAlignedTopAppBar(
@@ -97,6 +108,7 @@ fun ViewResidencyScreen(
             errorMsg = errorMsg,
             paddingValues = paddingValues,
             isOffline = isOffline,
+            onImageClick = { index -> viewResidencyViewModel.onClickImage(index) },
             onViewMap = onViewMap)
       })
 }
@@ -120,6 +132,7 @@ private fun ViewResidencyContent(
     errorMsg: String?,
     paddingValues: PaddingValues,
     isOffline: Boolean,
+    onImageClick: (Int) -> Unit,
     onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit
 ) {
   when {
@@ -136,6 +149,8 @@ private fun ViewResidencyContent(
           isLoadingPOIs = uiState.isLoadingPOIs,
           isOffline = isOffline,
           paddingValues = paddingValues,
+          images = uiState.images,
+          onImageClick = onImageClick,
           onViewMap = onViewMap)
     }
   }
@@ -187,6 +202,8 @@ private fun ResidencyDetailsContent(
     isLoadingPOIs: Boolean,
     isOffline: Boolean,
     paddingValues: PaddingValues,
+    images: List<com.android.mySwissDorm.model.photo.Photo>,
+    onImageClick: (Int) -> Unit,
     onViewMap: (latitude: Double, longitude: Double, title: String, nameId: Int) -> Unit
 ) {
   Column(
@@ -198,12 +215,39 @@ private fun ResidencyDetailsContent(
               .testTag(C.ViewResidencyTags.ROOT),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ResidencyNameHeader(residency.name)
+        if (images.isNotEmpty()) {
+          ImagesSection(images, onImageClick)
+        }
         DescriptionSection(residency.description)
         POIDistancesSection(poiDistances, isLoadingPOIs, isOffline)
         Spacer(Modifier.height(8.dp))
         ContactInformationSection(residency)
         LocationSection(residency, isOffline, onViewMap)
       }
+}
+
+/**
+ * Displays the residency images in a grid.
+ *
+ * @param images List of photos to display.
+ * @param onImageClick Callback invoked when an image is clicked.
+ */
+@Composable
+private fun ImagesSection(
+    images: List<com.android.mySwissDorm.model.photo.Photo>,
+    onImageClick: (Int) -> Unit
+) {
+  ImageGrid(
+      imageUris = images.map { it.image }.toSet(),
+      isEditingMode = false,
+      onRemove = {},
+      onImageClick = { uri ->
+        val index = images.map { it.image }.indexOf(uri)
+        if (index >= 0) {
+          onImageClick(index)
+        }
+      },
+      modifier = Modifier.fillMaxWidth().testTag(C.ViewResidencyTags.PHOTOS))
 }
 
 /**

@@ -64,7 +64,7 @@ class Translator(
 
               val translator = getClient(options)
 
-              // FIX 1: Use AtomicBoolean to safely track if we've closed the translator
+              // Use AtomicBoolean to safely track if we've closed the translator
               val isTranslatorClosed = AtomicBoolean(false)
 
               fun closeTranslatorSafely() {
@@ -86,13 +86,13 @@ class Translator(
               translator
                   .downloadModelIfNeeded()
                   .addOnSuccessListener {
-                    // FIX 2: Check if closed before attempting translation
+                    // Check if closed before attempting translation
                     if (!continuation.isActive || isTranslatorClosed.get()) {
                       closeTranslatorSafely()
                       return@addOnSuccessListener
                     }
 
-                    // FIX 3: Wrap translate in try-catch. This is the specific fix for your crash.
+                    // Wrap translate in try-catch. This is the specific fix for your crash.
                     try {
                       translator
                           .translate(text)

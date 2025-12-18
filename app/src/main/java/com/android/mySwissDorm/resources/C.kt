@@ -291,6 +291,8 @@ object C {
     const val CHIP_ADMIN = "adminPageChipAdmin"
     const val LOCATION_BUTTON = "adminPageLocationButton"
     const val SAVE_BUTTON = "adminPageSaveButton"
+    const val PHOTOS = "adminPagePhotos"
+    const val RESIDENCY_DROPDOWN = "adminPageResidencyDropdown"
   }
 
   object AddPhotoButtonTags {

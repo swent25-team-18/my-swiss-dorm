@@ -80,7 +80,8 @@ data class ResidencyCardUI(
     val meanGrade: Double,
     val location: String,
     val latestReview: Review?,
-    val fullNameOfPoster: String
+    val fullNameOfPoster: String,
+    val imageUrls: List<String> = emptyList()
 )
 
 /**
@@ -369,13 +370,16 @@ class BrowseCityViewModel(
                       latestReview.ownerName ?: context.getString(R.string.unknown_owner_name)
                     }
                   } else context.getString(R.string.unknown_owner_name)
-              ResidencyCardUI(
-                  title = it.name,
-                  meanGrade = meanGrade,
-                  location = it.location.name,
-                  latestReview = latestReview,
-                  fullNameOfPoster = fullName,
-              )
+              val cardUI =
+                  ResidencyCardUI(
+                      title = it.name,
+                      meanGrade = meanGrade,
+                      location = it.location.name,
+                      latestReview = latestReview,
+                      fullNameOfPoster = fullName,
+                      imageUrls = it.imageUrls)
+              Log.d("BrowseCityViewModel", "Residency: ${it.name}, imageUrls: ${it.imageUrls}")
+              cardUI
             }
 
         _uiState.update {

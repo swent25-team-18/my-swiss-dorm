@@ -28,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -37,8 +38,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
+import com.android.mySwissDorm.model.photo.PhotoRepositoryStorage
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.listing.ListingCard
@@ -64,6 +68,7 @@ import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.Timestamp
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.launch
 
 /** Handles the result of a QR scan from the settings screen. */
 internal fun handleQrScanResult(
@@ -854,6 +859,88 @@ private fun StartDateFilterContent(
 // ListingCard has been moved to com.android.mySwissDorm.ui.listing.ListingCard for reuse
 
 @Composable
+private fun ResidencyCardImage(imageUrls: List<String>, modifier: Modifier = Modifier) {
+  val context = LocalContext.current
+  var imageFile by remember { mutableStateOf<java.io.File?>(null) }
+  var isLoading by remember { mutableStateOf(false) }
+
+  LaunchedEffect(imageUrls) {
+    android.util.Log.d("ResidencyCardImage", "LaunchedEffect triggered with imageUrls: $imageUrls")
+    if (imageUrls.isNotEmpty()) {
+      val photoRepositoryCloud: PhotoRepositoryCloud =
+          PhotoRepositoryStorage(photoSubDir = "residencies/")
+      isLoading = true
+      android.util.Log.d("ResidencyCardImage", "Starting to load first photo: ${imageUrls.first()}")
+      try {
+        // Check if file exists and is not empty
+        val file = java.io.File(context.filesDir, "photos/${imageUrls.first()}")
+        if (file.exists() && file.length() == 0L) {
+          android.util.Log.w(
+              "ResidencyCardImage", "Found corrupted empty file, deleting: ${file.absolutePath}")
+          file.delete()
+        }
+
+        val photo = photoRepositoryCloud.retrievePhoto(imageUrls.first())
+        // Convert content:// URI to File for better Coil compatibility
+        val reloadedFile = java.io.File(context.filesDir, "photos/${imageUrls.first()}")
+        if (reloadedFile.exists() && reloadedFile.length() > 0) {
+          imageFile = reloadedFile
+          android.util.Log.d(
+              "ResidencyCardImage",
+              "Successfully loaded photo: ${imageUrls.first()}, file: ${reloadedFile.absolutePath}, size: ${reloadedFile.length()}")
+        } else {
+          android.util.Log.e(
+              "ResidencyCardImage",
+              "File does not exist or is empty after download: ${reloadedFile.absolutePath}, size: ${reloadedFile.length()}")
+          imageFile = null
+        }
+      } catch (e: Exception) {
+        android.util.Log.e(
+            "ResidencyCardImage", "Error loading photo: ${imageUrls.first()} - ${e.message}", e)
+        e.printStackTrace()
+        imageFile = null
+      } finally {
+        isLoading = false
+      }
+    } else {
+      android.util.Log.d("ResidencyCardImage", "imageUrls is empty, skipping image load")
+      imageFile = null
+      isLoading = false
+    }
+  }
+
+  Box(modifier = modifier) {
+    if (isLoading) {
+      CircularProgressIndicator(
+          modifier = Modifier.align(Alignment.Center).size(24.dp), strokeWidth = 2.dp)
+    } else if (imageFile != null) {
+      AsyncImage(
+          model = imageFile,
+          contentDescription = null,
+          modifier = Modifier.fillMaxSize(),
+          contentScale = ContentScale.Crop,
+          onError = { error ->
+            android.util.Log.e(
+                "ResidencyCardImage",
+                "AsyncImage failed to load: ${error.result.throwable.message}")
+            error.result.throwable.printStackTrace()
+          },
+          onSuccess = {
+            android.util.Log.d(
+                "ResidencyCardImage",
+                "AsyncImage successfully displayed for file: ${imageFile?.absolutePath}")
+          })
+    } else {
+      Text(
+          stringResource(R.string.image),
+          modifier = Modifier.align(Alignment.Center),
+          style = MaterialTheme.typography.bodyMedium,
+          color = Gray)
+    }
+  }
+}
+
+@Composable
 private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> Unit) {
   OutlinedCard(
       shape = RoundedCornerShape(Dimens.CardCornerRadius),
@@ -863,19 +950,14 @@ private fun ResidencyCard(data: ResidencyCardUI, onClick: (ResidencyCardUI) -> U
         Row(
             modifier = Modifier.fillMaxWidth(1f).fillMaxHeight(1f),
             verticalAlignment = Alignment.CenterVertically) {
-              // Image placeholder (left)
-              Box(
+              // Image (left)
+              ResidencyCardImage(
+                  imageUrls = data.imageUrls,
                   modifier =
                       Modifier.height(Dimens.SpacerHeightSmall)
                           .fillMaxWidth(0.4F)
                           .clip(RoundedCornerShape(Dimens.CornerRadiusDefault))
-                          .background(ListingCardColor)) {
-                    Text(
-                        stringResource(R.string.image),
-                        modifier = Modifier.align(Alignment.Center),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Gray)
-                  }
+                          .background(ListingCardColor))
 
               Spacer(Modifier.width(Dimens.SpacingLarge))
 

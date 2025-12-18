@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.mySwissDorm.model.map.Location
+import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.poi.POIDistance
 import com.android.mySwissDorm.model.profile.ProfileRepository
 import com.android.mySwissDorm.model.profile.ProfileRepositoryFirestore
@@ -670,6 +671,325 @@ class ViewResidencyScreenTest : FirestoreTest() {
     }
     compose
         .onNodeWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun imagesSection_withMultipleImages_displaysImageGrid() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    val photo1 = Photo.createNewTempPhoto("photo1.jpg")
+    val photo2 = Photo.createNewTempPhoto("photo2.jpg")
+    val residencyWithImages =
+        Residency(
+            name = "TestResidencyWithImages",
+            description = "Test description",
+            location = Location(name = "Test", latitude = 46.0, longitude = 6.0),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null,
+            imageUrls = listOf("photo1.jpg", "photo2.jpg"))
+
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = residencyWithImages,
+            loading = false,
+            poiDistances = emptyList(),
+            images = listOf(photo1, photo2)))
+
+    compose.setContent {
+      ViewResidencyScreen(
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = residencyWithImages.name)
+    }
+
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.PHOTOS, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose.onNodeWithTag(C.ViewResidencyTags.PHOTOS, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun imagesSection_withNoImages_doesNotDisplayImageGrid() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    val residencyWithoutImages =
+        Residency(
+            name = "TestResidencyNoImages",
+            description = "Test description",
+            location = Location(name = "Test", latitude = 46.0, longitude = 6.0),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null,
+            imageUrls = emptyList())
+
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = residencyWithoutImages,
+            loading = false,
+            poiDistances = emptyList(),
+            images = emptyList()))
+
+    compose.setContent {
+      ViewResidencyScreen(
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = residencyWithoutImages.name)
+    }
+
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.ROOT, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    // Image grid should not be displayed when there are no images
+    compose.onNodeWithTag(C.ViewResidencyTags.PHOTOS, useUnmergedTree = true).assertDoesNotExist()
+  }
+
+  @Test
+  fun fullScreenImages_showsWhenImageClicked() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    val photo1 = Photo.createNewTempPhoto("photo1.jpg")
+    val photo2 = Photo.createNewTempPhoto("photo2.jpg")
+    val residencyWithImages =
+        Residency(
+            name = "TestResidencyFullScreen",
+            description = "Test description",
+            location = Location(name = "Test", latitude = 46.0, longitude = 6.0),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = null)
+
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = residencyWithImages,
+            loading = false,
+            poiDistances = emptyList(),
+            images = listOf(photo1, photo2),
+            showFullScreenImages = true,
+            fullScreenImagesIndex = 1))
+
+    compose.setContent {
+      ViewResidencyScreen(
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = residencyWithImages.name)
+    }
+
+    // When showFullScreenImages is true, FullScreenImageViewer should be displayed
+    compose.waitForIdle()
+    // The screen should show the full screen viewer instead of the main content
+    // We verify by checking that ROOT doesn't exist when full screen is shown
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.ROOT, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+  }
+
+  @Test
+  fun poiDistances_loadingState_displaysLoadingIndicator() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = resTest, loading = false, poiDistances = emptyList(), isLoadingPOIs = true))
+
+    compose.setContent {
+      ViewResidencyScreen(
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = resTest.name)
+    }
+
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    // POI section should be displayed even when loading
+    compose
+        .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun contactInfo_withOnlyPhone_displaysCorrectly() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    val residencyWithPhone =
+        Residency(
+            name = "TestResidencyPhone",
+            description = "Test description",
+            location = Location(name = "Test", latitude = 46.0, longitude = 6.0),
+            city = "Lausanne",
+            email = null,
+            phone = "+41234567890",
+            website = null)
+
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = residencyWithPhone, loading = false, poiDistances = emptyList()))
+
+    compose.setContent {
+      ViewResidencyScreen(
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = residencyWithPhone.name)
+    }
+
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose
+        .onNodeWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun contactInfo_withOnlyWebsite_displaysCorrectly() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    val residencyWithWebsite =
+        Residency(
+            name = "TestResidencyWebsite",
+            description = "Test description",
+            location = Location(name = "Test", latitude = 46.0, longitude = 6.0),
+            city = "Lausanne",
+            email = null,
+            phone = null,
+            website = URL("https://example.com"))
+
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = residencyWithWebsite, loading = false, poiDistances = emptyList()))
+
+    compose.setContent {
+      ViewResidencyScreen(
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = residencyWithWebsite.name)
+    }
+
+    compose.waitForIdle()
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose
+        .onNodeWithTag(C.ViewResidencyTags.CONTACT_INFO, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun poiDistances_supermarket_displaysCorrectly() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    val poiDistances = listOf(POIDistance("Coop", 2, POIDistance.TYPE_SUPERMARKET))
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = resTest,
+            poiDistances = poiDistances,
+            loading = false,
+            isLoadingPOIs = false))
+
+    compose.setContent {
+      ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
+    }
+
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose
+        .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun errorState_withNullErrorMsg_displaysDefaultMessage() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    testViewModel.setState(ViewResidencyUIState(loading = false, residency = null, errorMsg = null))
+
+    compose.setContent {
+      ViewResidencyScreen(
+          viewResidencyViewModel = testViewModel as ViewResidencyViewModel,
+          residencyName = "TestResidencyName")
+    }
+
+    compose.waitUntil(5_000) {
+      compose
+          .onAllNodesWithTag(C.ViewResidencyTags.ERROR, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    compose.onNodeWithTag(C.ViewResidencyTags.ERROR, useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun poiDistances_emptyList_displaysNoPoiMessage() = runTest {
+    val testViewModel = TestViewResidencyViewModel()
+    testViewModel.setState(
+        ViewResidencyUIState(
+            residency = resTest,
+            poiDistances = emptyList(),
+            loading = false,
+            isLoadingPOIs = false))
+
+    compose.setContent {
+      ViewResidencyScreen(viewResidencyViewModel = testViewModel, residencyName = resTest.name)
+    }
+
+    compose.waitUntil(timeoutMillis = 5_000) {
+      try {
+        compose
+            .onAllNodesWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+      } catch (e: Exception) {
+        false
+      }
+    }
+    compose
+        .onNodeWithTag(C.ViewResidencyTags.POI_DISTANCES, useUnmergedTree = true)
         .assertIsDisplayed()
   }
 }

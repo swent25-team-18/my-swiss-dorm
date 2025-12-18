@@ -52,6 +52,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
 import com.android.mySwissDorm.ui.InputSanitizers
+import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.SanitizedOutlinedTextField
 import com.android.mySwissDorm.ui.homepage.HomePageScreenSizes
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
@@ -108,6 +109,7 @@ fun AdminPageScreen(
     }
     return
   }
+  val ui = vm.uiState
   var isFullScreen by remember { mutableStateOf(false) }
   var fullScreenImage: Uri? by remember { mutableStateOf(null) }
 
@@ -119,7 +121,14 @@ fun AdminPageScreen(
     return
   }
 
-  val ui = vm.uiState
+  // Handle full screen images for RESIDENCY (multiple images)
+  if (ui.showFullScreenImages && ui.pickedImages.isNotEmpty()) {
+    FullScreenImageViewer(
+        imageUris = ui.pickedImages.map { it.image },
+        onDismiss = { vm.dismissFullScreenImages() },
+        initialIndex = ui.fullScreenImagesIndex)
+    return
+  }
   val scrollState = rememberScrollState()
   val context = LocalContext.current
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, vm)
@@ -263,6 +272,15 @@ fun AdminPageScreen(
                 }
                 // Residency fields
                 AdminPageViewModel.EntityType.RESIDENCY -> {
+                  // Residency dropdown for selecting existing residency
+                  ResidencyDropdownResID(
+                      selected = ui.selectedResidencyName,
+                      onSelected = { vm.onResidencySelected(it) },
+                      residencies = ui.residencies,
+                      isListing = false,
+                      accentColor = MainColor,
+                      modifier =
+                          Modifier.fillMaxWidth().testTag(C.AdminPageTags.RESIDENCY_DROPDOWN))
                   SanitizedOutlinedTextField(
                       value = ui.name,
                       onValueChange = vm::onName,
@@ -320,6 +338,27 @@ fun AdminPageScreen(
                       placeholder =
                           "${stringResource(R.string.website)} (${stringResource(R.string.optional)})",
                       imeAction = ImeAction.Next)
+                  // Photo section for RESIDENCY
+                  Column(
+                      verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXXLarge),
+                      horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            stringResource(R.string.photos),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.fillMaxWidth())
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                              DefaultAddPhotoButton(
+                                  onSelectPhoto = { vm.addPhoto(it) }, multiplePick = true)
+                              ImageGrid(
+                                  imageUris = ui.pickedImages.map { it.image }.toSet(),
+                                  isEditingMode = true,
+                                  onRemove = { vm.removePhoto(it, true) },
+                                  onImageClick = { vm.onClickImage(it) },
+                                  modifier = Modifier.testTag(C.AdminPageTags.PHOTOS))
+                            }
+                      }
                 }
                 // University fields
                 AdminPageViewModel.EntityType.UNIVERSITY -> {

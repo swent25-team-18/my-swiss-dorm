@@ -39,9 +39,17 @@ class PhotoRepositoryStorage(
       val photo = Photo.createNewTempPhoto(uid)
       try {
         val matchRef: StorageReference = findPhotoRef(uid = uid)
-        matchRef.getFile(photo.image).await().let {
-          Log.d("PhotoRepositoryStorage", "download ${it.bytesTransferred} bytes")
+        val taskSnapshot = matchRef.getFile(photo.image).await()
+        Log.d("PhotoRepositoryStorage", "download ${taskSnapshot.bytesTransferred} bytes")
+
+        // Validate that we actually downloaded something
+        val downloadedFile = photo.image.toFile()
+        if (downloadedFile.length() == 0L) {
+          Log.e("PhotoRepositoryStorage", "Downloaded file is empty (0 bytes): $uid")
+          downloadedFile.delete()
+          throw NoSuchElementException("Downloaded file is corrupted/empty: $uid")
         }
+
         // keep on local repository the downloaded photo
         super.uploadPhoto(photo)
         return photo
@@ -50,6 +58,7 @@ class PhotoRepositoryStorage(
         photo.image.toFile().delete()
         throw NoSuchElementException("Error during the cloud retrieving")
       } catch (e: Exception) {
+        Log.e("PhotoRepositoryStorage", "Error downloading photo: $uid - ${e.message}")
         photo.image.toFile().delete()
         throw e
       }

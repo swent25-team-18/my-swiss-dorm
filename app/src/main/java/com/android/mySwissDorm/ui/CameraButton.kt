@@ -24,6 +24,7 @@ import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,20 +73,24 @@ fun CameraButton(
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
+  var isLauncherActive by remember { mutableStateOf(false) }
   var uriCaptured by remember { mutableStateOf<Uri>(Uri.EMPTY) }
   var photoCaptured by remember { mutableStateOf<Photo?>(null) }
 
   val cameraLauncher =
       rememberLauncherForActivityResult(takePictureContract) {
+        isLauncherActive = false
         if (it && photoCaptured != null && uriCaptured.path?.isNotEmpty() ?: false) {
           onSave(photoCaptured!!)
         }
       }
+
   val permissionLauncher =
       rememberLauncherForActivityResult(permissionContract) { isGranted ->
         if (isGranted) {
           cameraLauncher.launch(photoCaptured?.image ?: return@rememberLauncherForActivityResult)
         } else {
+          isLauncherActive = false
           if (Uri.EMPTY != uriCaptured) {
             Photo.deleteCapturablePhoto(context, uriCaptured)
           }
@@ -93,20 +98,25 @@ fun CameraButton(
               .show()
         }
       }
+
+  LaunchedEffect(isLauncherActive) {
+    if (isLauncherActive) {
+      val photo = Photo.createCapturablePhoto(context, UUID.randomUUID().toString() + ".jpg")
+      uriCaptured = photo.image
+      photoCaptured = photo
+      if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
+          PackageManager.PERMISSION_GRANTED) {
+        permissionLauncher.launch(Manifest.permission.CAMERA)
+      } else {
+        cameraLauncher.launch(photoCaptured?.image ?: return@LaunchedEffect)
+      }
+    }
+  }
+
   Button(
-      onClick = {
-        val photo = Photo.createCapturablePhoto(context, UUID.randomUUID().toString() + ".jpg")
-        uriCaptured = photo.image
-        photoCaptured = photo
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
-            PackageManager.PERMISSION_GRANTED) {
-          permissionLauncher.launch(Manifest.permission.CAMERA)
-        } else {
-          cameraLauncher.launch(input = photo.image)
-        }
-      },
+      onClick = { isLauncherActive = true },
       modifier = modifier.testTag(tag = C.CameraButtonTag.TAG),
-      enabled = enabled,
+      enabled = enabled && !isLauncherActive,
       shape = shape,
       colors = colors,
       elevation = elevation,

@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import io.getstream.chat.android.client.ChatClient
+import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.User
 import io.mockk.clearAllMocks
 import io.mockk.mockk
@@ -36,6 +37,7 @@ class ChatScreenConnectionTest {
   @Test
   fun showsLoadingWhileConnecting_thenRendersMessages_whenUserNotConnected() {
     val fakeClient = mockk<ChatClient>(relaxed = true)
+    val fakeChannel = Channel(id = "messaging:test-connecting")
     val userStateFlow = MutableStateFlow<User?>(null)
     var messagesShown = false
     var connectCalled = false
@@ -46,6 +48,7 @@ class ChatScreenConnectionTest {
             channelId = "messaging:test-connecting",
             onBackClick = {},
             chatClientProvider = { fakeClient },
+            currentUserId = "test_user_id",
             currentUserProvider = { mockk(relaxed = true) },
             userStateProvider = { userStateFlow.value },
             connectUser = { _, _ ->
@@ -53,7 +56,8 @@ class ChatScreenConnectionTest {
               userStateFlow.value = mockk(relaxed = true)
             },
             viewModelFactoryProvider = { _, _, _, _ -> mockk(relaxed = true) },
-            messagesScreen = { _, _ -> messagesShown = true })
+            messagesScreen = { _, _ -> messagesShown = true },
+            channelFetcher = { _, _ -> fakeChannel })
       }
     }
 
@@ -75,12 +79,14 @@ class ChatScreenConnectionTest {
             channelId = "messaging:test-loading",
             onBackClick = {},
             isConnectedOverride = false,
+            currentUserId = null,
             chatClientProvider = { fakeClient },
             currentUserProvider = { null },
             userStateProvider = { null },
             connectUser = { _, _ -> },
             viewModelFactoryProvider = { _, _, _, _ -> mockk(relaxed = true) },
-            messagesScreen = { _, _ -> })
+            messagesScreen = { _, _ -> },
+            channelFetcher = { _, _ -> Channel() })
       }
     }
 
@@ -100,11 +106,13 @@ class ChatScreenConnectionTest {
             onBackClick = {},
             chatClientProvider = { fakeClient },
             currentUserProvider = { null },
+            currentUserId = null,
             userStateProvider = { mockk(relaxed = true) }, // already connected
             connectUser = { _, _ -> connectCalled = true },
             isConnectedOverride = true,
             viewModelFactoryProvider = { _, _, _, _ -> mockk(relaxed = true) },
-            messagesScreen = { _, _ -> messagesShown = true })
+            messagesScreen = { _, _ -> messagesShown = true },
+            channelFetcher = { _, _ -> Channel() })
       }
     }
 

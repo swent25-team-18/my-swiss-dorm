@@ -168,6 +168,7 @@
 
     <!-- ChatScreen -->
     <string name="chat_screen_connecting">Connexion au chat…</string>
+    <string name="blocked_msg">Vous ne pouvez pas répondre à cette conversation.</string>
     <string name="chat_about_listing">À propos : %1$s</string>
 
     <!-- HomePageScreen -->

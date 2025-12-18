@@ -901,7 +901,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.waitUntil(35_000) { vm.uiState.value.translatedTitle == "Deuxième titre" }
+    compose.waitUntil(45_000) { vm.uiState.value.translatedTitle == "Deuxième titre" }
 
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).performClick()

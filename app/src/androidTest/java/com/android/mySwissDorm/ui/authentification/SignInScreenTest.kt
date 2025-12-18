@@ -53,7 +53,10 @@ class SignInScreenTest : FirestoreTest() {
         assertIsDisplayed()
         appLogo { assertIsDisplayed() }
         logInButton { assertIsDisplayed() }
-        signUpButton { assertIsDisplayed() }
+        signUpButton {
+          performScrollTo()
+          assertIsDisplayed()
+        }
       }
     }
   }

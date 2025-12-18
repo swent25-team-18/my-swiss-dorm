@@ -81,12 +81,21 @@ class RentalListingRepositoryHybrid(
           remoteCall = { remoteRepository.deleteRentalListing(rentalPostId) },
           localSync = { localRepository.deleteRentalListing(rentalPostId) })
 
-  override suspend fun getAllRentalListingsForUser(userId: String?): List<RentalListing> {
-    val allListings = getAllRentalListings()
-    if (userId == null) return allListings
-
-    return filterListingsByBlocking(allListings, userId)
-  }
+  override suspend fun getAllRentalListingsForUser(userId: String?): List<RentalListing> =
+      performRead(
+          operationName = "getAllRentalListingsForUser",
+          remoteCall = {
+            val allListings = remoteRepository.getAllRentalListings()
+            if (userId == null) allListings else filterListingsByBlocking(allListings, userId)
+          },
+          localFallback = {
+            val allListings = localRepository.getAllRentalListings()
+            if (userId == null) allListings else filterListingsByBlocking(allListings, userId)
+          },
+          syncToLocal = { filteredListings ->
+            // Only sync the filtered listings that the user can see
+            syncListingsToLocal(filteredListings, isFullSync = false)
+          })
 
   override suspend fun getRentalListingForUser(
       rentalPostId: String,

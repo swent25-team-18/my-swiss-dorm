@@ -122,12 +122,21 @@ class ReviewsRepositoryHybrid(
   override suspend fun getAllReviewsByResidencyForUser(
       residencyName: String,
       userId: String?
-  ): List<Review> {
-    val allReviews = getAllReviewsByResidency(residencyName)
-    if (userId == null) return allReviews
-
-    return filterReviewsByBlocking(allReviews, userId)
-  }
+  ): List<Review> =
+      performRead(
+          operationName = "getAllReviewsByResidencyForUser",
+          remoteCall = {
+            val allReviews = remoteRepository.getAllReviewsByResidency(residencyName)
+            if (userId == null) allReviews else filterReviewsByBlocking(allReviews, userId)
+          },
+          localFallback = {
+            val allReviews = localRepository.getAllReviewsByResidency(residencyName)
+            if (userId == null) allReviews else filterReviewsByBlocking(allReviews, userId)
+          },
+          syncToLocal = { filteredReviews ->
+            // Only sync the filtered reviews that the user can see
+            syncReviewsToLocal(filteredReviews, isFullSync = false)
+          })
 
   override suspend fun getReviewForUser(reviewId: String, userId: String?): Review {
     val review = getReview(reviewId)

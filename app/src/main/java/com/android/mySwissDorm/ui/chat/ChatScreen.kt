@@ -453,7 +453,16 @@ internal fun MessagesScreenWithAppAvatarHeader(
 
   Column(modifier = Modifier.fillMaxSize()) {
     val ch = channel
+    val listingTitle = ch?.extraData?.get("listingTitle") as? String
     if (ch != null) {
+      if (!listingTitle.isNullOrBlank()) {
+        Text(
+            text = stringResource(R.string.chat_about_listing, listingTitle),
+            style = MaterialTheme.typography.labelLarge,
+            modifier =
+                Modifier.padding(
+                    horizontal = Dimens.PaddingDefault, vertical = Dimens.SpacingSmall))
+      }
       MessageListHeader(
           channel = ch,
           currentUser = streamCurrentUser,

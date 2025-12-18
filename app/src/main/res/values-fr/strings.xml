@@ -169,6 +169,7 @@
     <!-- ChatScreen -->
     <string name="chat_screen_connecting">Connexion au chat…</string>
     <string name="blocked_msg">Vous ne pouvez pas répondre à cette conversation.</string>
+    <string name="chat_about_listing">À propos : %1$s</string>
 
     <!-- HomePageScreen -->
     <string name="browse_cities">Parcourir</string>
@@ -514,8 +515,8 @@
     <string name="no_users_match_your_search">Aucun utilisateur ne correspond à votre recherche</string>
     <string name="chat_created">Conversation créée!</string>
     <string name="requested_messages">Messages Demandés</string>
-    <string name="no_requested_messages">Acun message demandé</string>
-    <string name="no_message_provided">Acun message fourni</string>
+    <string name="no_requested_messages">Aucun message demandé</string>
+    <string name="no_message_provided">Aucun message fourni</string>
     <string name="failed_to_create_chat">Échec de la création de la conversation</string>
     <string name="requested_messages_approved_channel_created">Message approuvé et canal de discussion créé.</string>
     <string name="requested_messages_approved_manual_chat">Message approuvé. Vous pouvez démarrer une discussion manuellement depuis la boîte de réception.</string>

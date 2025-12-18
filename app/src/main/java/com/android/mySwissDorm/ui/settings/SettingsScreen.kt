@@ -57,9 +57,8 @@ import com.android.mySwissDorm.ui.theme.rememberDarkModePreference
  * This screen provides a comprehensive interface for users to manage their app settings, account
  * information, and preferences. It includes:
  * - **Profile Section**: Displays user name and avatar with navigation to profile screen
- * - **Notifications**: Toggle switches for message and listing notifications
  * - **Account**: Email display and contributions button
- * - **Privacy**: Read receipts toggle and blocked contacts management
+ * - **Privacy**: Blocked contacts management
  * - **Accessibility**: Dark mode preference and anonymous mode toggle
  * - **Admin Section**: Admin page access (only visible to admins)
  * - **Delete Account**: Button to permanently delete the user account
@@ -154,10 +153,7 @@ fun SettingsScreenContent(
     isAdmin: Boolean = false,
     onAdminClick: () -> Unit = {},
 ) {
-  // Independent toggle states
-  var notificationsMessages by remember { mutableStateOf(true) }
-  var notificationsListings by remember { mutableStateOf(false) }
-  var readReceipts by remember { mutableStateOf(true) }
+
 
   // Dark mode preference - connected to theme
   val (darkModePreference, setDarkModePreference) = rememberDarkModePreference()
@@ -211,29 +207,10 @@ fun SettingsScreenContent(
                           bottom = Dimens.PaddingLarge)) {
                     item {
                       Column(modifier = Modifier.fillMaxWidth().widthIn(max = contentWidthCap)) {
-                        // ---- Notifications ---------------------------------------------------
-                        SectionLabel(stringResource(R.string.notifications))
-                        CardBlock {
-                          SettingSwitchRow(
-                              label = stringResource(R.string.settings_notifications_messages),
-                              checked = if (ui.isGuest) false else notificationsMessages,
-                              onCheckedChange = { notificationsMessages = it })
-                          SoftDivider()
-                          SettingSwitchRow(
-                              label = stringResource(R.string.settings_notifications_listings),
-                              checked = if (ui.isGuest) false else notificationsListings,
-                              onCheckedChange = { notificationsListings = it })
-                        }
 
                         // ---- Privacy ---------------------------------------------------------
                         SectionLabel(stringResource(R.string.privacy))
                         CardBlock {
-                          SettingSwitchRow(
-                              label = stringResource(R.string.settings_read_receipts),
-                              checked = if (ui.isGuest) true else readReceipts,
-                              onCheckedChange = { readReceipts = it })
-                          SoftDivider()
-
                           Row(
                               modifier =
                                   Modifier.fillMaxWidth()

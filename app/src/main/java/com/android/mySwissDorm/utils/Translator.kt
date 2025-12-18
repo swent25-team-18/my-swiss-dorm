@@ -10,6 +10,7 @@ import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
 import java.lang.AutoCloseable
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -32,8 +33,7 @@ class Translator(
   private val logTag = "Translator"
 
   /**
-   * Translates the given text to the specified language. This function was written with the help of
-   * AI.
+   * Translates the given text to the specified language.
    *
    * @param text The string to be translated
    * @param targetLanguageCode The target language code (e.g. TranslateLanguage.FRENCH).
@@ -47,12 +47,12 @@ class Translator(
             .addOnSuccessListener { languageCode ->
               if (languageCode == LanguageIdentifier.UNDETERMINED_LANGUAGE_TAG) {
                 Log.d(logTag, "Couldn't determine the language")
-                continuation.resume(text)
+                if (continuation.isActive) continuation.resume(text)
                 return@addOnSuccessListener
               }
 
               if (languageCode == targetLanguageCode) {
-                continuation.resume(text)
+                if (continuation.isActive) continuation.resume(text)
                 return@addOnSuccessListener
               }
 
@@ -64,36 +64,79 @@ class Translator(
 
               val translator = getClient(options)
 
+              // FIX 1: Use AtomicBoolean to safely track if we've closed the translator
+              val isTranslatorClosed = AtomicBoolean(false)
+
+              fun closeTranslatorSafely() {
+                // compareAndSet ensures we only try to close it once
+                if (isTranslatorClosed.compareAndSet(false, true)) {
+                  try {
+                    translator.close()
+                  } catch (e: Exception) {
+                    Log.w(logTag, "Error closing translator", e)
+                  }
+                }
+              }
+
               continuation.invokeOnCancellation {
                 Log.d(logTag, "Coroutine cancelled, closing translator.")
-                translator.close()
+                closeTranslatorSafely()
               }
 
               translator
                   .downloadModelIfNeeded()
                   .addOnSuccessListener {
-                    translator
-                        .translate(text)
-                        .addOnSuccessListener { translatedText ->
-                          continuation.resume(translatedText)
-                          translator.close()
-                        }
-                        .addOnFailureListener { exception ->
-                          Log.w(logTag, "Error translating the string: $text", exception)
-                          continuation.resume(
-                              context.getString(R.string.translator_error_translating))
-                          translator.close()
-                        }
+                    // FIX 2: Check if closed before attempting translation
+                    if (!continuation.isActive || isTranslatorClosed.get()) {
+                      closeTranslatorSafely()
+                      return@addOnSuccessListener
+                    }
+
+                    // FIX 3: Wrap translate in try-catch. This is the specific fix for your crash.
+                    try {
+                      translator
+                          .translate(text)
+                          .addOnSuccessListener { translatedText ->
+                            if (continuation.isActive && !isTranslatorClosed.get()) {
+                              continuation.resume(translatedText)
+                            }
+                            closeTranslatorSafely()
+                          }
+                          .addOnFailureListener { exception ->
+                            // Only report errors if we didn't intentionally close it
+                            if (exception !is IllegalStateException || !isTranslatorClosed.get()) {
+                              Log.w(logTag, "Error translating: $text", exception)
+                              if (continuation.isActive) {
+                                continuation.resume(
+                                    context.getString(R.string.translator_error_translating))
+                              }
+                            }
+                            closeTranslatorSafely()
+                          }
+                    } catch (e: Exception) {
+                      // Catches "IllegalStateException: Translator has been closed" if race
+                      // condition occurs
+                      Log.w(logTag, "Translator closed right before translation started", e)
+                      if (continuation.isActive) {
+                        continuation.resume(
+                            context.getString(R.string.translator_error_translating))
+                      }
+                      closeTranslatorSafely()
+                    }
                   }
                   .addOnFailureListener { exception ->
-                    Log.w(logTag, "Error downloading the model", exception)
-                    continuation.resume(context.getString(R.string.translator_error_translating))
-                    translator.close()
+                    Log.w(logTag, "Error downloading model", exception)
+                    if (continuation.isActive) {
+                      continuation.resume(context.getString(R.string.translator_error_translating))
+                    }
+                    closeTranslatorSafely()
                   }
             }
             .addOnFailureListener { exception ->
-              Log.w(logTag, "Error detecting the language of the string: $text", exception)
-              continuation.resume(context.getString(R.string.translator_error_translating))
+              Log.w(logTag, "Error detecting language: $text", exception)
+              if (continuation.isActive) {
+                continuation.resume(context.getString(R.string.translator_error_translating))
+              }
             }
       }
 

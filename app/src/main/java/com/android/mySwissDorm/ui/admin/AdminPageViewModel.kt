@@ -40,7 +40,7 @@ class AdminPageViewModel(
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     val photoRepositoryCloud: PhotoRepositoryCloud =
         PhotoRepositoryStorage(photoSubDir = "residencies/"),
-    val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository
+    val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository
 ) : BaseLocationSearchViewModel() {
   override val logTag = "AdminPageViewModel"
 

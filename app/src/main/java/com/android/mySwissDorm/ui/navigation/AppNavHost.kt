@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.navigation
 
-import AddListingScreen
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -46,6 +45,7 @@ import com.android.mySwissDorm.ui.chat.ChannelsScreen
 import com.android.mySwissDorm.ui.chat.MyChatScreen
 import com.android.mySwissDorm.ui.chat.RequestedMessagesScreen
 import com.android.mySwissDorm.ui.homepage.HomePageScreen
+import com.android.mySwissDorm.ui.listing.AddListingScreen
 import com.android.mySwissDorm.ui.listing.BookmarkedListingsScreen
 import com.android.mySwissDorm.ui.listing.EditListingScreen
 import com.android.mySwissDorm.ui.listing.ViewListingScreen
@@ -220,12 +220,11 @@ fun AppNavHost(
                 onSelectLocation = { location ->
                   navActions.navigateTo(Screen.BrowseOverview(location))
                 },
-                credentialManager = credentialManager,
                 navigationActions = navActions)
           }
 
           composable(Screen.Inbox.route) {
-            var requestedMessagesCount by remember { mutableStateOf(0) }
+            var requestedMessagesCount by remember { mutableIntStateOf(0) }
             val currentRoute = navController.currentDestination?.route
             // Track refresh key for channels - observe the shared state
             val channelsRefreshKey by ChannelsRefreshState.refreshKey
@@ -307,7 +306,7 @@ fun AppNavHost(
           }
 
           composable(
-              route = Screen.Map.route,
+              route = Screen.Map.ROUTE,
               arguments =
                   listOf(
                       navArgument("lat") { type = NavType.FloatType },
@@ -324,7 +323,7 @@ fun AppNavHost(
                     onGoBack = { navController.popBackStack() })
               }
 
-          composable(Screen.BrowseOverview.route) { navBackStackEntry ->
+          composable(Screen.BrowseOverview.ROUTE) { navBackStackEntry ->
             val name = navBackStackEntry.arguments?.getString("name")
             val latString = navBackStackEntry.arguments?.getString("lat")
             val lngString = navBackStackEntry.arguments?.getString("lng")
@@ -414,7 +413,7 @@ fun AppNavHost(
             }
           }
 
-          composable(Screen.ReviewsByResidencyOverview.route) { navBackStackEntry ->
+          composable(Screen.ReviewsByResidencyOverview.ROUTE) { navBackStackEntry ->
             val residencyName = navBackStackEntry.arguments?.getString("residencyName")
 
             residencyName?.let {
@@ -436,7 +435,7 @@ fun AppNavHost(
                 }
           }
 
-          composable(Screen.ResidencyDetails.route) { navBackStackEntry ->
+          composable(Screen.ResidencyDetails.ROUTE) { navBackStackEntry ->
             val residencyName = navBackStackEntry.arguments?.getString("residencyName")
 
             residencyName?.let {
@@ -458,14 +457,14 @@ fun AppNavHost(
                 }
           }
 
-          composable(Screen.ListingOverview.route) { navBackStackEntry ->
+          composable(Screen.ListingOverview.ROUTE) { navBackStackEntry ->
             val listingUid = navBackStackEntry.arguments?.getString("listingUid")
 
-            listingUid?.let {
+            listingUid?.let { listing ->
               val viewListingViewModel: ViewListingViewModel = viewModel()
               ViewListingScreen(
                   viewListingViewModel = viewListingViewModel,
-                  listingUid = it,
+                  listingUid = listing,
                   onGoBack = { navActions.goBack() },
                   onApply = {
                     coroutineScope.launch {
@@ -495,7 +494,7 @@ fun AppNavHost(
                       }
                     }
                   },
-                  onEdit = { navActions.navigateTo(Screen.EditListing(it)) },
+                  onEdit = { navActions.navigateTo(Screen.EditListing(listing)) },
                   onViewProfile = { ownerId ->
                     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
                     if (ownerId == currentUserId) {
@@ -519,7 +518,7 @@ fun AppNavHost(
                 }
           }
 
-          composable(Screen.ReviewOverview.route) { navBackStackEntry ->
+          composable(Screen.ReviewOverview.ROUTE) { navBackStackEntry ->
             val reviewUid = navBackStackEntry.arguments?.getString("reviewUid")
 
             reviewUid?.let {
@@ -552,7 +551,7 @@ fun AppNavHost(
                 }
           }
 
-          composable(Screen.EditReview.route) { entry ->
+          composable(Screen.EditReview.ROUTE) { entry ->
             val id = requireNotNull(entry.arguments?.getString("reviewUid"))
             val editReviewViewModel: EditReviewViewModel = viewModel {
               EditReviewViewModel(reviewId = id)
@@ -564,7 +563,7 @@ fun AppNavHost(
                 onBack = navActions::goBack,
                 onConfirm = {
                   navActions.navigateTo(Screen.ReviewOverview(id))
-                  navController.popBackStack(Screen.EditReview.route, inclusive = true)
+                  navController.popBackStack(Screen.EditReview.ROUTE, inclusive = true)
                   Toast.makeText(
                           context,
                           context.getString(R.string.app_nav_host_review_saved),
@@ -573,7 +572,7 @@ fun AppNavHost(
                 },
                 onDelete = { residencyName ->
                   // Pop EditReview from backstack
-                  navController.popBackStack(Screen.EditReview.route, inclusive = true)
+                  navController.popBackStack(Screen.EditReview.ROUTE, inclusive = true)
 
                   // Check if we're now on ReviewOverview and pop it too (since the review is
                   // deleted)
@@ -606,7 +605,7 @@ fun AppNavHost(
                 })
           }
 
-          composable(Screen.ViewUserProfile.route) { navBackStackEntry ->
+          composable(Screen.ViewUserProfile.ROUTE) { navBackStackEntry ->
             // Extract the userId argument from the route
             val userId = navBackStackEntry.arguments?.getString("userId")
 
@@ -653,7 +652,7 @@ fun AppNavHost(
                 }
           }
 
-          composable(Screen.EditListing.route) { entry ->
+          composable(Screen.EditListing.ROUTE) { entry ->
             val id = requireNotNull(entry.arguments?.getString("listingUid"))
 
             EditListingScreen(
@@ -661,7 +660,7 @@ fun AppNavHost(
                 onBack = navActions::goBack,
                 onConfirm = {
                   navActions.navigateTo(Screen.ListingOverview(id))
-                  navController.popBackStack(Screen.EditListing.route, inclusive = true)
+                  navController.popBackStack(Screen.EditListing.ROUTE, inclusive = true)
                   Toast.makeText(
                           context,
                           context.getString(R.string.app_nav_host_listing_saved),
@@ -670,7 +669,7 @@ fun AppNavHost(
                 },
                 onDelete = {
                   navActions.navigateTo(Screen.Homepage)
-                  navController.popBackStack(Screen.EditListing.route, inclusive = true)
+                  navController.popBackStack(Screen.EditListing.ROUTE, inclusive = true)
                   Toast.makeText(
                           context,
                           context.getString(R.string.app_nav_host_listing_deleted),
@@ -750,7 +749,7 @@ fun AppNavHost(
             EditPreferencesScreen(viewModel = viewModel, onBack = { navActions.goBack() })
           }
 
-          composable(Screen.ChatChannel.route) { entry ->
+          composable(Screen.ChatChannel.ROUTE) { entry ->
             val channelId = requireNotNull(entry.arguments?.getString("channelId"))
             // URL decode the channelId in case it contains special characters
             val decodedChannelId = java.net.URLDecoder.decode(channelId, "UTF-8")
@@ -761,7 +760,7 @@ fun AppNavHost(
             RequestedMessagesScreen(
                 onBackClick = {
                   // Increment refresh key to trigger channels refresh
-                  ChannelsRefreshState.refreshKey.value++
+                  ChannelsRefreshState.refreshKey.intValue++
                   navActions.goBack()
                 },
                 onViewProfile = { userId -> navActions.navigateTo(Screen.ViewUserProfile(userId)) })

@@ -49,7 +49,7 @@ class SettingsViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val profiles: ProfileRepository = ProfileRepositoryProvider.repository,
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository,
+        PhotoRepositoryProvider.cloudRepository,
     private val rentalListingRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository

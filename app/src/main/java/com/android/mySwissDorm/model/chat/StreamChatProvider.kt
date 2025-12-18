@@ -130,7 +130,7 @@ object StreamChatProvider {
           context.packageManager.getApplicationInfo(
               context.packageName, PackageManager.GET_META_DATA)
       appInfo.metaData.getString("STREAM_API_KEY") ?: ""
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       ""
     }
   }

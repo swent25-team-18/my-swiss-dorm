@@ -27,7 +27,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
@@ -110,10 +109,4 @@ fun SignInScreen(
               }
         }
   }
-}
-
-@Preview
-@Composable
-private fun SignInScreenPreview() {
-  SignInScreen()
 }

@@ -122,7 +122,7 @@ fun ListingCard(
           // Bookmark button (top-right corner, above title)
           if (!isGuest) {
             IconButton(
-                onClick = { onToggleBookmark() },
+                onClick = onToggleBookmark,
                 modifier =
                     Modifier.align(Alignment.TopEnd)
                         .padding(top = Dimens.PaddingXSmall, end = Dimens.PaddingXSmall)) {

@@ -43,7 +43,7 @@ sealed class Screen(
           nameId = R.string.screen_browse_overview) {
 
     companion object {
-      const val route = "browseOverview/{name}/{lat}/{lng}/{startTab}"
+      const val ROUTE = "browseOverview/{name}/{lat}/{lng}/{startTab}"
     }
   }
 
@@ -51,7 +51,7 @@ sealed class Screen(
       Screen(route = "editReview/${reviewUid}", nameId = R.string.screen_edit_review) {
 
     companion object {
-      const val route = "editReview/{reviewUid}"
+      const val ROUTE = "editReview/{reviewUid}"
     }
   }
 
@@ -61,35 +61,35 @@ sealed class Screen(
           nameId = R.string.screen_reviews_by_residency_overview) {
 
     companion object {
-      const val route = "reviewsByResidencyOverview/{residencyName}"
+      const val ROUTE = "reviewsByResidencyOverview/{residencyName}"
     }
   }
 
   data class ListingOverview(val listingUid: String) :
       Screen(route = "listingOverview/${listingUid}", nameId = R.string.screen_listing_overview) {
     companion object {
-      const val route = "listingOverview/{listingUid}"
+      const val ROUTE = "listingOverview/{listingUid}"
     }
   }
 
   data class EditListing(val listingUid: String) :
       Screen(route = "editListing/${listingUid}", nameId = R.string.screen_edit_listing) {
     companion object {
-      const val route = "editListing/{listingUid}"
+      const val ROUTE = "editListing/{listingUid}"
     }
   }
 
   data class ReviewOverview(val reviewUid: String) :
       Screen(route = "reviewOverview/${reviewUid}", nameId = R.string.screen_review_overview) {
     companion object {
-      const val route = "reviewOverview/{reviewUid}"
+      const val ROUTE = "reviewOverview/{reviewUid}"
     }
   }
 
   data class ViewUserProfile(val userId: String) :
       Screen(route = "viewProfile/${userId}", nameId = R.string.screen_view_user_profile) {
     companion object {
-      const val route = "viewProfile/{userId}"
+      const val ROUTE = "viewProfile/{userId}"
     }
   }
 
@@ -97,7 +97,7 @@ sealed class Screen(
       Screen(
           route = "residencyDetails/${residencyName}", nameId = R.string.screen_residency_details) {
     companion object {
-      const val route = "residencyDetails/{residencyName}"
+      const val ROUTE = "residencyDetails/{residencyName}"
     }
   }
 
@@ -105,7 +105,7 @@ sealed class Screen(
       Screen(route = "mapScreen/${lat}/${lng}/${title}/${name}", nameId = R.string.Map_Screen) {
 
     companion object {
-      const val route = "mapScreen/{lat}/{lng}/{title}/{name}"
+      const val ROUTE = "mapScreen/{lat}/{lng}/{title}/{name}"
     }
   }
 
@@ -115,7 +115,7 @@ sealed class Screen(
   data class ChatChannel(val channelId: String) :
       Screen(route = "chatChannel/${channelId}", nameId = R.string.screen_chat) {
     companion object {
-      const val route = "chatChannel/{channelId}"
+      const val ROUTE = "chatChannel/{channelId}"
     }
   }
 

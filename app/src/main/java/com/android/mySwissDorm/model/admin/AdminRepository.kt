@@ -11,7 +11,6 @@ class AdminRepository(
 ) {
 
   suspend fun isCurrentUserAdmin(): Boolean {
-    // I added logs for debugging i will remove them later
     val email = auth.currentUser?.email ?: return false
     Log.d("AdminRepository", "Checking admin for email: $email")
 

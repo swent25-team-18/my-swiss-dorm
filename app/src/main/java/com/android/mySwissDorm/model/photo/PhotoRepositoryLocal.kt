@@ -20,7 +20,7 @@ class PhotoRepositoryLocal(private val context: Context) : PhotoRepository {
 
   override suspend fun retrievePhoto(uid: String): Photo {
     val file: File =
-        photosDir.listFiles()?.firstOrNull() { it.name == uid }
+        photosDir.listFiles()?.firstOrNull { it.name == uid }
             ?: throw NoSuchElementException("Photo with uid $uid does not exist")
     if (!file.exists()) throw NoSuchElementException("Photo with uid $uid does not exist")
     return Photo(
@@ -37,7 +37,7 @@ class PhotoRepositoryLocal(private val context: Context) : PhotoRepository {
   }
 
   override suspend fun deletePhoto(uid: String): Boolean {
-    val file = photosDir.listFiles()?.firstOrNull() { it.name == uid } ?: return false
+    val file = photosDir.listFiles()?.firstOrNull { it.name == uid } ?: return false
     if (file.exists()) return file.delete()
     return false
   }

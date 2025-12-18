@@ -7,7 +7,7 @@ package com.android.mySwissDorm.model.photo
  * @param localRepository is the local [PhotoRepository]
  */
 abstract class PhotoRepositoryCloud(
-    private val localRepository: PhotoRepository = PhotoRepositoryProvider.local_repository
+    private val localRepository: PhotoRepository = PhotoRepositoryProvider.localRepository
 ) : PhotoRepository {
   override suspend fun uploadPhoto(photo: Photo) {
     localRepository.uploadPhoto(photo)

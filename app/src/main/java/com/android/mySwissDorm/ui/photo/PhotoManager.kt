@@ -8,9 +8,9 @@ import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 
 class PhotoManager(
-    private val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    private val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository,
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository,
+        PhotoRepositoryProvider.cloudRepository,
 ) {
   private var _photosLoaded: List<Photo> = emptyList()
 

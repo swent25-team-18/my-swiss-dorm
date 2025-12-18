@@ -515,7 +515,7 @@ internal fun ChannelItem(
     onChannelClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     retrievePhoto: suspend (String) -> Photo? = {
-      PhotoRepositoryProvider.cloud_repository.retrievePhoto(it)
+      PhotoRepositoryProvider.cloudRepository.retrievePhoto(it)
     }
 ) {
   // Get the other user (not current user)
@@ -767,7 +767,7 @@ internal fun channelMatchesSearchQuery(
             append(streamName).append(' ')
             append(resolvedName).append(' ')
             append(lastMessageText).append(' ')
-            append(channel.name.orEmpty()).append(' ')
+            append(channel.name).append(' ')
             append(channel.cid)
           }
           .lowercase()

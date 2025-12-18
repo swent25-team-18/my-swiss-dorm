@@ -50,11 +50,12 @@ class TranslatorTest {
   }
 
   @Test
-  fun translateText_WithUndeterminedLanguage_ReturnsErrorMessage() = runBlocking {
+  fun translateText_WithUndeterminedLanguage_ReturnsSameText() = runBlocking {
     val translator = Translator()
-    val result = translator.translateText("azbycxdwevfu", TranslateLanguage.ENGLISH, context)
+    val text = "azbycxdwevfu"
+    val result = translator.translateText(text, TranslateLanguage.ENGLISH, context)
 
-    assertEquals(context.getString(R.string.translator_could_not_determine_language), result)
+    assertEquals(text, result)
   }
 
   @Test

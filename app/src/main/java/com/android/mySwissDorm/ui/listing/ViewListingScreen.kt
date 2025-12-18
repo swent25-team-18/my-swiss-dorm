@@ -106,6 +106,7 @@ fun ViewListingScreen(
   val hasExistingMessage = listingUIState.hasExistingMessage
   var showShareDialog by remember { mutableStateOf(false) }
   var isTranslated by remember { mutableStateOf(false) }
+  var showTranslateButton by remember { mutableStateOf(false) }
 
   // Button is enabled only if there's a message, user is not blocked, no existing message, and
   // online
@@ -129,6 +130,12 @@ fun ViewListingScreen(
     if (isNetworkAvailable) {
       viewListingViewModel.translateListing(context)
     }
+  }
+
+  LaunchedEffect(listingUIState.translatedDescription) {
+    showTranslateButton =
+        listing.description != listingUIState.translatedDescription ||
+            listing.title != listingUIState.translatedTitle
   }
 
   if (listingUIState.showFullScreenImages) {
@@ -220,9 +227,7 @@ fun ViewListingScreen(
                       .imePadding()
                       .testTag(C.ViewListingTags.ROOT),
               verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
-                if (isOffline) {
-                  // Hide translate button when offline
-                } else {
+                if (showTranslateButton && !isOffline) {
                   val clickableText =
                       if (isTranslated) {
                         context.getString(R.string.see_original)

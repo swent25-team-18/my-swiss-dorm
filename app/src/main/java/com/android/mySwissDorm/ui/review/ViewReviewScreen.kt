@@ -102,6 +102,7 @@ fun ViewReviewScreen(
   val isOwner = uiState.isOwner
   var showShareDialog by remember { mutableStateOf(false) }
   var isTranslated by remember { mutableStateOf(false) }
+  var showTranslateButton by remember { mutableStateOf(false) }
 
   // Generate share link
   val shareLink = "https://my-swiss-dorm.web.app/review/$reviewUid"
@@ -119,6 +120,12 @@ fun ViewReviewScreen(
     if (isNetworkAvailable) {
       viewReviewViewModel.translateReview(context)
     }
+  }
+
+  LaunchedEffect(uiState.translatedDescription) {
+    showTranslateButton =
+        review.reviewText != uiState.translatedDescription ||
+            review.title != uiState.translatedTitle
   }
 
   if (uiState.showFullScreenImages) {
@@ -159,9 +166,7 @@ fun ViewReviewScreen(
                     .imePadding()
                     .testTag(C.ViewReviewTags.ROOT),
             verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
-              if (isOffline) {
-                // Hide translate button when offline
-              } else {
+              if (showTranslateButton && !isOffline) {
                 val clickableText =
                     if (isTranslated) {
                       context.getString(R.string.see_original)

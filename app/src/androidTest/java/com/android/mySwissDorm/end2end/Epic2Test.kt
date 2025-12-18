@@ -117,6 +117,7 @@ class Epic2Test : FirestoreTest() {
     // 1. Sign up
     ComposeScreen.onComposeScreen<SignInScreen>(compose) {
       signUpButton {
+        performScrollTo()
         assertIsDisplayed()
         performClick()
       }

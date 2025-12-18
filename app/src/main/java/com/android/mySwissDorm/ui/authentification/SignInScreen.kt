@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Scaffold
@@ -65,7 +67,7 @@ fun SignInScreen(
 
   Scaffold(modifier = Modifier.fillMaxSize().testTag(C.Tag.SIGN_IN_SCREEN)) { padding ->
     Column(
-        modifier = Modifier.padding(padding).fillMaxSize(),
+        modifier = Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center) {
           Spacer(modifier = Modifier.height(Dimens.SpacerHeightSmall))

@@ -730,7 +730,8 @@ class EditListingScreenTest : FirestoreTest() {
             photoRepositoryLocal = fakeLocalRepo, photoRepositoryCloud = fakeCloudRepo)
     // Assuming this call will work
     vm.getRentalListing(rentalListing3.uid, context)
-    composeRule.waitForIdle()
+    // Must wait for the async image loading to finish so removePhoto can find the image
+    composeRule.waitUntil(5_000) { vm.uiState.value.pickedImages.isNotEmpty() }
     vm.removePhoto(fakePhoto.image, false)
     vm.addPhoto(fakePhoto)
     assertEquals(0, vm.photoManager.newPhotos.size)

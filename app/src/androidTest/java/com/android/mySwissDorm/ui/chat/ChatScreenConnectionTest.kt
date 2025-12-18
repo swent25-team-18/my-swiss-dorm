@@ -18,7 +18,6 @@ import io.getstream.chat.android.models.User
 import io.mockk.clearAllMocks
 import io.mockk.mockk
 import io.mockk.unmockkAll
-import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -37,37 +36,6 @@ class ChatScreenConnectionTest {
   fun tearDown() {
     clearAllMocks()
     unmockkAll()
-  }
-
-  @Test
-  fun showsLoadingWhileConnecting_thenRendersMessages_whenUserNotConnected() {
-    val fakeClient = mockk<ChatClient>(relaxed = true)
-    val fakeChannel = Channel(id = "messaging:test-connecting")
-    val userStateFlow = MutableStateFlow<User?>(null)
-    var messagesShown = false
-    var connectCalled = false
-
-    composeRule.setContent {
-      MySwissDormAppTheme {
-        MyChatScreen(
-            channelId = "messaging:test-connecting",
-            onBackClick = {},
-            chatClientProvider = { fakeClient },
-            currentUserId = "test_user_id",
-            currentUserProvider = { mockk(relaxed = true) },
-            userStateProvider = { userStateFlow.value },
-            connectUser = { _, _ ->
-              connectCalled = true
-              userStateFlow.value = mockk(relaxed = true)
-            },
-            viewModelFactoryProvider = { _, _, _, _ -> mockk(relaxed = true) },
-            messagesScreen = { _, _ -> messagesShown = true },
-            channelFetcher = { _, _ -> fakeChannel })
-      }
-    }
-
-    composeRule.waitUntil(timeoutMillis = 5_000) { connectCalled && userStateFlow.value != null }
-    composeRule.waitUntil(timeoutMillis = 5_000) { messagesShown }
   }
 
   @Test

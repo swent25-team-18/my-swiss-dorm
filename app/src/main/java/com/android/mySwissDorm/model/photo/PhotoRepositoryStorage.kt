@@ -19,7 +19,7 @@ const val DIR = "photos"
  */
 class PhotoRepositoryStorage(
     storageRef: StorageReference = Firebase.storage.reference,
-    localRepository: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    localRepository: PhotoRepository = PhotoRepositoryProvider.localRepository,
     photoSubDir: String = ""
 ) : PhotoRepositoryCloud(localRepository) {
 

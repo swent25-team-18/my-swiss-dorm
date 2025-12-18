@@ -1,7 +1,7 @@
 package com.android.mySwissDorm.locationTest
 
-import CachedLocations
-import GeoCache
+import com.android.mySwissDorm.model.map.CachedLocations
+import com.android.mySwissDorm.model.map.GeoCache
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.NominatimLocationRepository
 import java.io.IOException

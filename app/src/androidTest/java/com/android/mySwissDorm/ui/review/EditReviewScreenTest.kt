@@ -175,7 +175,7 @@ class EditReviewScreenTest : FirestoreTest() {
       // Seed two reviews for two users in a deterministic way
       switchToUser(FakeUser.FakeUser1)
       ResidenciesRepositoryProvider.repository.addResidency(resTest)
-      PhotoRepositoryProvider.cloud_repository.uploadPhoto(photo = photo)
+      PhotoRepositoryProvider.cloudRepository.uploadPhoto(photo = photo)
       review1 =
           Review(
               uid = "review1",
@@ -221,7 +221,7 @@ class EditReviewScreenTest : FirestoreTest() {
 
   @After
   override fun tearDown() {
-    runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
+    runBlocking { PhotoRepositoryProvider.cloudRepository.deletePhoto(photo.fileName) }
     super.tearDown()
   }
 

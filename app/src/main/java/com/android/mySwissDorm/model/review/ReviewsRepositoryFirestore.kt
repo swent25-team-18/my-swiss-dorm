@@ -132,6 +132,21 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
     db.collection(REVIEWS_COLLECTION_PATH).document(reviewId).delete().await()
   }
 
+  override suspend fun getAllReviewsByResidencyForUser(
+      residencyName: String,
+      userId: String?
+  ): List<Review> {
+    // Firestore repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getAllReviewsByResidency(residencyName)
+  }
+
+  override suspend fun getReviewForUser(reviewId: String, userId: String?): Review {
+    // Firestore repository doesn't handle blocking - delegate to base method
+    // Hybrid repository will apply filtering
+    return getReview(reviewId)
+  }
+
   /**
    * Applies an upvote to the review by the given user.
    *
@@ -142,12 +157,12 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
    */
   override suspend fun upvoteReview(reviewId: String, userId: String) {
     updateVoteLists(reviewId, userId) { newUpvotedBy, newDownvotedBy ->
-      when {
-        userId in newUpvotedBy -> {
+      when (userId) {
+        in newUpvotedBy -> {
           // Already upvoted: remove upvote
           newUpvotedBy.remove(userId)
         }
-        userId in newDownvotedBy -> {
+        in newDownvotedBy -> {
           // Downvoted: remove downvote and add upvote
           newDownvotedBy.remove(userId)
           newUpvotedBy.add(userId)
@@ -171,12 +186,12 @@ class ReviewsRepositoryFirestore(private val db: FirebaseFirestore) : ReviewsRep
    */
   override suspend fun downvoteReview(reviewId: String, userId: String) {
     updateVoteLists(reviewId, userId) { newUpvotedBy, newDownvotedBy ->
-      when {
-        userId in newDownvotedBy -> {
+      when (userId) {
+        in newDownvotedBy -> {
           // Already downvoted: remove downvote
           newDownvotedBy.remove(userId)
         }
-        userId in newUpvotedBy -> {
+        in newUpvotedBy -> {
           // Upvoted: remove upvote and add downvote
           newUpvotedBy.remove(userId)
           newDownvotedBy.add(userId)

@@ -52,11 +52,12 @@ object Dimens {
   val ImageSizeMedium = 140.dp
   val ImageSizeLarge = 180.dp
   val ImageSizeXLarge = 200.dp
+  val ImageSizeXXLarge = 250.dp
   val ImageSizeAvatar = 56.dp
   val ImageSizeAvatarLarge = 180.dp
 
   // Card dimensions
-  val CardImageHeight = 140.dp
+  val CardImageHeight = 150.dp
   val CardCornerRadius = 12.dp
 
   // Corner radius (for RoundedCornerShape - separate from padding for modularity)

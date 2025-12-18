@@ -23,10 +23,10 @@ class WalkingRouteService(
             ?: ""
 ) {
   private val cache = mutableMapOf<String, Pair<Double, Long>>()
-  private val CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000L // 7 days
+  private val cacheDurationMs = 7 * 24 * 60 * 60 * 1000L // 7 days
   private val gate = Mutex()
   private var lastCall = 0L
-  private val MIN_INTERVAL_MS = 200L
+  private val minIntervalMs = 200L
 
   companion object {
     private const val TAG = "WalkingRouteService"
@@ -126,14 +126,14 @@ class WalkingRouteService(
         try {
           val cacheKey = "${from.latitude},${from.longitude}_${to.latitude},${to.longitude}"
           cache[cacheKey]?.let { (cachedDistance, timestamp) ->
-            if (System.currentTimeMillis() - timestamp < CACHE_DURATION_MS) {
+            if (System.currentTimeMillis() - timestamp < cacheDurationMs) {
               return@withContext (cachedDistance / WALKING_SPEED_MS / 60).toInt()
             }
           }
 
           gate.withLock {
             val now = System.currentTimeMillis()
-            val wait = (lastCall + MIN_INTERVAL_MS) - now
+            val wait = (lastCall + minIntervalMs) - now
             if (wait > 0) kotlinx.coroutines.delay(wait)
             lastCall = System.currentTimeMillis()
           }
@@ -174,7 +174,7 @@ class WalkingRouteService(
     try {
       val distKm = from.distanceTo(to) * 1.3
       return maxOf(1, (distKm / WALKING_SPEED_KMH * 60).toInt())
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       return null
     }
   }

@@ -16,7 +16,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.core.content.edit
 import androidx.credentials.CredentialManager
-import com.android.mySwissDorm.model.authentification.AuthRepository
 import com.android.mySwissDorm.model.chat.StreamChatProvider
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
 import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
@@ -28,14 +27,9 @@ import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.DarkModePreferenceHelper
 import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.ThemePreferenceState
-import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
-
-  private lateinit var auth: FirebaseAuth
-  private lateinit var authRepository: AuthRepository
-
   companion object {
     var enableStreamInitialization = true
   }

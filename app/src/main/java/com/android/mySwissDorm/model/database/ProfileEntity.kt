@@ -83,7 +83,7 @@ data class ProfileEntity(
           preferredRoomTypes.split(",").mapNotNull { typeName ->
             try {
               RoomType.valueOf(typeName.trim())
-            } catch (e: IllegalArgumentException) {
+            } catch (_: IllegalArgumentException) {
               null // Skip invalid enum values
             }
           }
@@ -93,7 +93,7 @@ data class ProfileEntity(
     val languageEnum =
         try {
           Language.valueOf(language)
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
           Language.ENGLISH // Default fallback
         }
 

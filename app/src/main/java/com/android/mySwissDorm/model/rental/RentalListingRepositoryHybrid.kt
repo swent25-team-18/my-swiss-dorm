@@ -81,6 +81,62 @@ class RentalListingRepositoryHybrid(
           remoteCall = { remoteRepository.deleteRentalListing(rentalPostId) },
           localSync = { localRepository.deleteRentalListing(rentalPostId) })
 
+  override suspend fun getAllRentalListingsForUser(userId: String?): List<RentalListing> =
+      performRead(
+          operationName = "getAllRentalListingsForUser",
+          remoteCall = {
+            val allListings = remoteRepository.getAllRentalListings()
+            if (userId == null) allListings else filterListingsByBlocking(allListings, userId)
+          },
+          localFallback = {
+            val allListings = localRepository.getAllRentalListings()
+            if (userId == null) allListings else filterListingsByBlocking(allListings, userId)
+          },
+          syncToLocal = { filteredListings ->
+            // Only sync the filtered listings that the user can see
+            syncListingsToLocal(filteredListings, isFullSync = false)
+          })
+
+  override suspend fun getRentalListingForUser(
+      rentalPostId: String,
+      userId: String?
+  ): RentalListing {
+    val listing = getRentalListing(rentalPostId)
+    if (userId == null || userId == listing.ownerId) return listing
+
+    // Check bidirectional blocking
+    val isBlocked = isBlockedBidirectionally(listing.ownerId, userId)
+    if (isBlocked) {
+      throw NoSuchElementException(
+          "RentalListingRepositoryHybrid: Listing $rentalPostId is not available due to blocking restrictions")
+    }
+    return listing
+  }
+
+  /**
+   * Filters listings based on bidirectional blocking.
+   *
+   * @param listings The listings to filter.
+   * @param userId The current user's ID.
+   * @return Filtered list of listings visible to the user.
+   */
+  private suspend fun filterListingsByBlocking(
+      listings: List<RentalListing>,
+      userId: String
+  ): List<RentalListing> {
+    // Load current user's blocked list once for efficiency
+    val currentUserBlockedList =
+        runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(userId) }
+            .onFailure { Log.w(tag, "Failed to fetch current user's blocked list", it) }
+            .getOrDefault(emptyList())
+
+    val blockedCache = mutableMapOf<String, Boolean>()
+    return listings.filter { listing ->
+      if (listing.ownerId == userId) return@filter true
+      !isBlockedBidirectionally(listing.ownerId, userId, currentUserBlockedList, blockedCache)
+    }
+  }
+
   /**
    * Syncs rental listings to the local database for offline access.
    *
@@ -109,11 +165,11 @@ class RentalListingRepositoryHybrid(
           val deletedIds = localIdsBefore - remoteIds
           if (deletedIds.isNotEmpty()) {
             Log.d(
-                TAG,
+                tag,
                 "[syncListingsToLocal] Deleted ${deletedIds.size} stale listings during full sync")
           }
         } catch (e: Exception) {
-          Log.w(TAG, "[syncListingsToLocal] Error deleting stale listings during full sync", e)
+          Log.w(tag, "[syncListingsToLocal] Error deleting stale listings during full sync", e)
           // Continue with sync even if deletion fails
         }
       }
@@ -134,7 +190,7 @@ class RentalListingRepositoryHybrid(
                   val ownerName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
                   listing.copy(ownerName = ownerName.takeIf { it.isNotEmpty() })
                 } catch (e: Exception) {
-                  Log.w(TAG, "Error fetching owner name for listing ${listing.uid}", e)
+                  Log.w(tag, "Error fetching owner name for listing ${listing.uid}", e)
                   listing // Store null if profile fetch fails - ViewModels will handle fallback
                 }
               } else {
@@ -143,14 +199,14 @@ class RentalListingRepositoryHybrid(
 
           localRepository.addRentalListing(listingWithOwnerName)
         } catch (e: Exception) {
-          Log.w(TAG, "Error syncing listing ${listing.uid} to local", e)
+          Log.w(tag, "Error syncing listing ${listing.uid} to local", e)
           // Continue with other listings even if one fails
         }
       }
       // Record successful sync timestamp
       LastSyncTracker.recordSync(context)
     } catch (e: Exception) {
-      Log.w(TAG, "Error syncing listings to local", e)
+      Log.w(tag, "Error syncing listings to local", e)
       // Don't throw - syncing is best effort
     }
   }

@@ -83,10 +83,10 @@ class ReviewsRepositoryHybrid(
           localSync = {
             // Fetch updated review to sync the new vote count
             try {
-              val updatedReview = withTimeout(TIMEOUT_MS) { remoteRepository.getReview(reviewId) }
+              val updatedReview = withTimeout(timeoutMs) { remoteRepository.getReview(reviewId) }
               syncReviewsToLocal(listOf(updatedReview), isFullSync = false)
             } catch (e: Exception) {
-              Log.w(TAG, "Error fetching updated review after upvote for local sync", e)
+              Log.w(tag, "Error fetching updated review after upvote for local sync", e)
               // Continue - main operation succeeded
             }
           })
@@ -97,10 +97,10 @@ class ReviewsRepositoryHybrid(
           remoteCall = { remoteRepository.downvoteReview(reviewId, userId) },
           localSync = {
             try {
-              val updatedReview = withTimeout(TIMEOUT_MS) { remoteRepository.getReview(reviewId) }
+              val updatedReview = withTimeout(timeoutMs) { remoteRepository.getReview(reviewId) }
               syncReviewsToLocal(listOf(updatedReview), isFullSync = false)
             } catch (e: Exception) {
-              Log.w(TAG, "Error fetching updated review after downvote for local sync", e)
+              Log.w(tag, "Error fetching updated review after downvote for local sync", e)
               // Continue - main operation succeeded
             }
           })
@@ -111,13 +111,73 @@ class ReviewsRepositoryHybrid(
           remoteCall = { remoteRepository.removeVote(reviewId, userId) },
           localSync = {
             try {
-              val updatedReview = withTimeout(TIMEOUT_MS) { remoteRepository.getReview(reviewId) }
+              val updatedReview = withTimeout(timeoutMs) { remoteRepository.getReview(reviewId) }
               syncReviewsToLocal(listOf(updatedReview), isFullSync = false)
             } catch (e: Exception) {
-              Log.w(TAG, "Error fetching updated review after removeVote for local sync", e)
+              Log.w(tag, "Error fetching updated review after removeVote for local sync", e)
               // Continue - main operation succeeded
             }
           })
+
+  override suspend fun getAllReviewsByResidencyForUser(
+      residencyName: String,
+      userId: String?
+  ): List<Review> =
+      performRead(
+          operationName = "getAllReviewsByResidencyForUser",
+          remoteCall = {
+            val allReviews = remoteRepository.getAllReviewsByResidency(residencyName)
+            if (userId == null) allReviews else filterReviewsByBlocking(allReviews, userId)
+          },
+          localFallback = {
+            val allReviews = localRepository.getAllReviewsByResidency(residencyName)
+            if (userId == null) allReviews else filterReviewsByBlocking(allReviews, userId)
+          },
+          syncToLocal = { filteredReviews ->
+            // Only sync the filtered reviews that the user can see
+            syncReviewsToLocal(filteredReviews, isFullSync = false)
+          })
+
+  override suspend fun getReviewForUser(reviewId: String, userId: String?): Review {
+    val review = getReview(reviewId)
+    if (userId == null || userId == review.ownerId) return review
+
+    // Always allow anonymous reviews to preserve anonymity (security/privacy requirement)
+    if (review.isAnonymous) return review
+
+    // Check bidirectional blocking for non-anonymous reviews
+    val isBlocked = isBlockedBidirectionally(review.ownerId, userId)
+    if (isBlocked) {
+      throw NoSuchElementException(
+          "ReviewsRepositoryHybrid: Review $reviewId is not available due to blocking restrictions")
+    }
+    return review
+  }
+
+  /**
+   * Filters reviews based on bidirectional blocking.
+   *
+   * @param reviews The reviews to filter.
+   * @param userId The current user's ID.
+   * @return Filtered list of reviews visible to the user.
+   */
+  private suspend fun filterReviewsByBlocking(reviews: List<Review>, userId: String): List<Review> {
+    // Load current user's blocked list once for efficiency
+    val currentUserBlockedList =
+        runCatching { ProfileRepositoryProvider.repository.getBlockedUserIds(userId) }
+            .onFailure { Log.w(tag, "Failed to fetch current user's blocked list", it) }
+            .getOrDefault(emptyList())
+
+    val blockedCache = mutableMapOf<String, Boolean>()
+    return reviews.filter { review ->
+      // Always show own reviews
+      if (review.ownerId == userId) return@filter true
+      // Always show anonymous reviews to preserve anonymity (security/privacy requirement)
+      if (review.isAnonymous) return@filter true
+      // For non-anonymous reviews, apply blocking filter
+      !isBlockedBidirectionally(review.ownerId, userId, currentUserBlockedList, blockedCache)
+    }
+  }
 
   /**
    * Syncs reviews to the local database for offline access.
@@ -147,11 +207,11 @@ class ReviewsRepositoryHybrid(
           val deletedIds = localIdsBefore - remoteIds
           if (deletedIds.isNotEmpty()) {
             Log.d(
-                TAG,
+                tag,
                 "[syncReviewsToLocal] Deleted ${deletedIds.size} stale reviews during full sync")
           }
         } catch (e: Exception) {
-          Log.w(TAG, "[syncReviewsToLocal] Error deleting stale reviews during full sync", e)
+          Log.w(tag, "[syncReviewsToLocal] Error deleting stale reviews during full sync", e)
           // Continue with sync even if deletion fails
         }
       }
@@ -172,7 +232,7 @@ class ReviewsRepositoryHybrid(
                   val ownerName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
                   review.copy(ownerName = ownerName.takeIf { it.isNotEmpty() })
                 } catch (e: Exception) {
-                  Log.w(TAG, "Error fetching owner name for review ${review.uid}", e)
+                  Log.w(tag, "Error fetching owner name for review ${review.uid}", e)
                   review // Store null if profile fetch fails - ViewModels will handle fallback
                 }
               } else {
@@ -181,14 +241,14 @@ class ReviewsRepositoryHybrid(
 
           localRepository.addReview(reviewWithOwnerName)
         } catch (e: Exception) {
-          Log.w(TAG, "Error syncing review ${review.uid} to local", e)
+          Log.w(tag, "Error syncing review ${review.uid} to local", e)
           // Continue with other reviews even if one fails
         }
       }
       // Record successful sync timestamp
       LastSyncTracker.recordSync(context)
     } catch (e: Exception) {
-      Log.w(TAG, "Error syncing reviews to local", e)
+      Log.w(tag, "Error syncing reviews to local", e)
       // Don't throw - syncing is best effort
     }
   }

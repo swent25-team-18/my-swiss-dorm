@@ -34,19 +34,12 @@ class BookmarkedListingsViewModel(
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val rentalListingRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
-    private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository
+    private val photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloudRepository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(BookmarkedListingsUIState())
   val uiState: StateFlow<BookmarkedListingsUIState> = _uiState.asStateFlow()
 
   private val bookmarkHandler = BookmarkHandler(profileRepository)
-
-  init {
-    // Load bookmarked listings in init block as suggested in PR review
-    // Note: We need context, so we'll call loadBookmarkedListings from the screen
-    // but the logic is ready to be called from init if context is available
-  }
 
   fun loadBookmarkedListings(context: Context) {
     viewModelScope.launch {

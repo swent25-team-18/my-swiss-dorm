@@ -37,7 +37,7 @@ class BottomNavigationMenuTest : FirestoreTest() {
 
       NavHost(navController = navController, startDestination = Screen.Homepage.route) {
         composable(Screen.Homepage.route) { BottomBarFromNav(navActions) }
-        composable(Screen.BrowseOverview.route) { BottomBarFromNav(navActions) }
+        composable(Screen.BrowseOverview.ROUTE) { BottomBarFromNav(navActions) }
         composable(Screen.Profile.route) { BottomBarFromNav(navActions) }
       }
     }
@@ -62,7 +62,7 @@ class BottomNavigationMenuTest : FirestoreTest() {
       NavHost(
           navController = navController, startDestination = Screen.BrowseOverview(location).route) {
             composable(Screen.Homepage.route) { BottomBarFromNav(navActions) }
-            composable(Screen.BrowseOverview.route) { BottomBarFromNav(navActions) }
+            composable(Screen.BrowseOverview.ROUTE) { BottomBarFromNav(navActions) }
             composable(Screen.Profile.route) { BottomBarFromNav(navActions) }
           }
     }

@@ -130,7 +130,7 @@ object StreamChatProvider {
           context.packageManager.getApplicationInfo(
               context.packageName, PackageManager.GET_META_DATA)
       appInfo.metaData.getString("STREAM_API_KEY") ?: ""
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       ""
     }
   }
@@ -149,14 +149,26 @@ object StreamChatProvider {
       channelId: String? = null,
       memberIds: List<String>,
       extraData: Map<String, Any> = emptyMap(),
+      listingTitle: String? = null,
       initialMessageText: String? = null
   ): String {
     val finalChannelId = channelId ?: memberIds.sorted().joinToString("-")
     val channelClient = getClient().channel(channelType, finalChannelId)
 
+    val mergedExtraData = buildMap {
+      putAll(extraData)
+      listingTitle?.let {
+        put("listingTitle", it)
+        if (!containsKey("name")) {
+          // Let the channel header surface the listing title by default.
+          put("name", it)
+        }
+      }
+    }
+
     // FIX 1: Use 'create' to set members correctly. 'watch' without members might not add them.
     // We will call watch() afterwards if needed, but create usually watches.
-    val result = channelClient.create(memberIds = memberIds, extraData = extraData).await()
+    val result = channelClient.create(memberIds = memberIds, extraData = mergedExtraData).await()
 
     if (result is Result.Failure) {
       throw IllegalStateException("Failed to create channel: ${result.value.message}")

@@ -47,15 +47,15 @@ class NavigationActionsTest : FirestoreTest() {
       // Create a simple NavHost for testing
       NavHost(navController = navController, startDestination = Screen.Homepage.route) {
         composable(Screen.Homepage.route) {}
-        composable(Screen.BrowseOverview.route) {}
+        composable(Screen.BrowseOverview.ROUTE) {}
         composable(Screen.Settings.route) {}
         composable(Screen.Inbox.route) {}
-        composable(Screen.EditReview.route) {}
-        composable(Screen.ReviewOverview.route) {}
-        composable(Screen.ReviewsByResidencyOverview.route) {}
+        composable(Screen.EditReview.ROUTE) {}
+        composable(Screen.ReviewOverview.ROUTE) {}
+        composable(Screen.ReviewsByResidencyOverview.ROUTE) {}
         composable(Screen.ProfileContributions.route) {}
-        composable(Screen.EditListing.route) {}
-        composable(Screen.ListingOverview.route) {}
+        composable(Screen.EditListing.ROUTE) {}
+        composable(Screen.ListingOverview.ROUTE) {}
       }
     }
     composeTestRule.waitForIdle()
@@ -114,7 +114,7 @@ class NavigationActionsTest : FirestoreTest() {
         val backStackEntry = navController.currentBackStackEntry
         val route = backStackEntry?.destination?.route
         val name = backStackEntry?.arguments?.getString("name")
-        result = route == Screen.BrowseOverview.route && name != null
+        result = route == Screen.BrowseOverview.ROUTE && name != null
       }
       result
     }
@@ -126,7 +126,7 @@ class NavigationActionsTest : FirestoreTest() {
       val currentRoute = navController.currentBackStackEntry?.destination?.route
       assertEquals(
           "Should navigate to BrowseOverview route pattern when user has location",
-          Screen.BrowseOverview.route,
+          Screen.BrowseOverview.ROUTE,
           currentRoute)
 
       // Verify the actual location values are in the navigation arguments
@@ -336,7 +336,7 @@ class NavigationActionsTest : FirestoreTest() {
       var result = false
       composeTestRule.runOnUiThread {
         result =
-            navController.currentBackStackEntry?.destination?.route == Screen.BrowseOverview.route
+            navController.currentBackStackEntry?.destination?.route == Screen.BrowseOverview.ROUTE
       }
       result
     }
@@ -345,7 +345,7 @@ class NavigationActionsTest : FirestoreTest() {
     composeTestRule.runOnUiThread {
       assertEquals(
           "Should be on BrowseOverview after navigateTo(Homepage)",
-          Screen.BrowseOverview.route,
+          Screen.BrowseOverview.ROUTE,
           navController.currentBackStackEntry?.destination?.route)
     }
 
@@ -431,14 +431,14 @@ class NavigationActionsTest : FirestoreTest() {
     composeTestRule.runOnUiThread {
       assertEquals(
           "Should be on EditReview",
-          Screen.EditReview.route,
+          Screen.EditReview.ROUTE,
           navController.currentBackStackEntry?.destination?.route)
     }
 
     // Simulate the deletion navigation logic from AppNavHost:
     // 1. Pop EditReview from backstack (inclusive = true)
     composeTestRule.runOnUiThread {
-      navController.popBackStack(Screen.EditReview.route, inclusive = true)
+      navController.popBackStack(Screen.EditReview.ROUTE, inclusive = true)
     }
     composeTestRule.waitForIdle()
 
@@ -466,7 +466,7 @@ class NavigationActionsTest : FirestoreTest() {
       val currentRoute = navController.currentBackStackEntry?.destination?.route
       assertEquals(
           "Should navigate to ReviewsByResidencyOverview after deleting review",
-          Screen.ReviewsByResidencyOverview.route,
+          Screen.ReviewsByResidencyOverview.ROUTE,
           currentRoute)
 
       // Verify the residency name argument
@@ -494,14 +494,14 @@ class NavigationActionsTest : FirestoreTest() {
     composeTestRule.runOnUiThread {
       assertEquals(
           "Should be on EditReview",
-          Screen.EditReview.route,
+          Screen.EditReview.ROUTE,
           navController.currentBackStackEntry?.destination?.route)
     }
 
     // Simulate the deletion navigation logic from AppNavHost:
     // 1. Pop EditReview from backstack (inclusive = true)
     composeTestRule.runOnUiThread {
-      navController.popBackStack(Screen.EditReview.route, inclusive = true)
+      navController.popBackStack(Screen.EditReview.ROUTE, inclusive = true)
     }
     composeTestRule.waitForIdle()
 
@@ -557,14 +557,14 @@ class NavigationActionsTest : FirestoreTest() {
     composeTestRule.runOnUiThread {
       assertEquals(
           "Should be on EditReview",
-          Screen.EditReview.route,
+          Screen.EditReview.ROUTE,
           navController.currentBackStackEntry?.destination?.route)
     }
 
     // Simulate the deletion navigation logic from AppNavHost:
     // 1. Pop EditReview from backstack (inclusive = true)
     composeTestRule.runOnUiThread {
-      navController.popBackStack(Screen.EditReview.route, inclusive = true)
+      navController.popBackStack(Screen.EditReview.ROUTE, inclusive = true)
     }
     composeTestRule.waitForIdle()
 
@@ -594,7 +594,7 @@ class NavigationActionsTest : FirestoreTest() {
       val currentRoute = navController.currentBackStackEntry?.destination?.route
       assertEquals(
           "Should stay on ReviewsByResidencyOverview after deleting review",
-          Screen.ReviewsByResidencyOverview.route,
+          Screen.ReviewsByResidencyOverview.ROUTE,
           currentRoute)
 
       // Verify the residency name argument is preserved
@@ -622,7 +622,7 @@ class NavigationActionsTest : FirestoreTest() {
     // Simulate the deletion navigation logic from AppNavHost:
     // 1. Pop EditReview from backstack (inclusive = true)
     composeTestRule.runOnUiThread {
-      navController.popBackStack(Screen.EditReview.route, inclusive = true)
+      navController.popBackStack(Screen.EditReview.ROUTE, inclusive = true)
     }
     composeTestRule.waitForIdle()
 
@@ -677,7 +677,7 @@ class NavigationActionsTest : FirestoreTest() {
     //    This ensures ReviewOverview is added before EditReview is popped
     composeTestRule.runOnUiThread {
       navController.navigate(Screen.ReviewOverview(reviewUid).route) {
-        popUpTo(Screen.EditReview.route) { inclusive = true }
+        popUpTo(Screen.EditReview.ROUTE) { inclusive = true }
         launchSingleTop = true
       }
     }
@@ -711,7 +711,7 @@ class NavigationActionsTest : FirestoreTest() {
     //    This ensures ListingOverview is added before EditListing is popped
     composeTestRule.runOnUiThread {
       navController.navigate(Screen.ListingOverview(listingUid).route) {
-        popUpTo(Screen.EditListing.route) { inclusive = true }
+        popUpTo(Screen.EditListing.ROUTE) { inclusive = true }
         launchSingleTop = true
       }
     }

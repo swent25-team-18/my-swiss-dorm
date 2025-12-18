@@ -43,7 +43,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
@@ -81,7 +80,6 @@ object HomePageScreenSizes {
  * The main screen for the home page, displaying a list of cities and a search bar.
  *
  * @param homePageViewModel The ViewModel for this screen.
- * @param credentialManager The credential manager for handling user credentials.
  * @param onSelectLocation A callback for when a city or custom location is selected.
  * @param navigationActions Actions for navigating to other screens.
  */
@@ -89,7 +87,6 @@ object HomePageScreenSizes {
 @Composable
 fun HomePageScreen(
     homePageViewModel: HomePageViewModel = viewModel(),
-    credentialManager: CredentialManager = CredentialManager.create(LocalContext.current),
     onSelectLocation: (Location) -> Unit = {},
     navigationActions: NavigationActions? = null
 ) {

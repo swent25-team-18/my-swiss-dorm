@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -28,19 +27,22 @@ import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import java.util.UUID
@@ -71,41 +73,50 @@ fun GalleryButton(
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
+  var isLauncherActive by remember { mutableStateOf(false) }
+
   val permission =
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-        // Android 12 and below
         Manifest.permission.READ_EXTERNAL_STORAGE
       } else {
-        // Android 13+
         Manifest.permission.READ_MEDIA_IMAGES
       }
+
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePictureContract) {
+        isLauncherActive = false
         it?.let { uri ->
           onSelect(Photo(image = uri, fileName = getFileNameFromUri(context = context, uri = uri)))
         }
       }
+
   val permissionLauncher =
       rememberLauncherForActivityResult(permissionContract) { isGranted ->
         if (isGranted) {
           galleryLauncher.launch("image/*")
         } else {
+          isLauncherActive = false
           Toast.makeText(
                   context, R.string.gallery_button_permission_denied_text, Toast.LENGTH_SHORT)
               .show()
         }
       }
+
+  LaunchedEffect(isLauncherActive) {
+    if (isLauncherActive) {
+      if (ContextCompat.checkSelfPermission(context, permission) !=
+          PackageManager.PERMISSION_GRANTED) {
+        permissionLauncher.launch(permission)
+      } else {
+        galleryLauncher.launch("image/*")
+      }
+    }
+  }
+
   Button(
-      onClick = {
-        if (ContextCompat.checkSelfPermission(context, permission) !=
-            PackageManager.PERMISSION_GRANTED) {
-          permissionLauncher.launch(permission)
-        } else {
-          galleryLauncher.launch("image/*")
-        }
-      },
+      onClick = { isLauncherActive = true },
       modifier = modifier.testTag(tag = C.GalleryButtonTag.SINGLE_TAG),
-      enabled = enabled,
+      enabled = enabled && !isLauncherActive,
       shape = shape,
       colors = colors,
       elevation = elevation,
@@ -143,14 +154,18 @@ fun GalleryButtonMultiplePick(
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
+  var isLauncherActive by remember { mutableStateOf(false) }
+
   val permission =
       if (Build.VERSION.SDK_INT < 33) {
         Manifest.permission.READ_EXTERNAL_STORAGE
       } else {
         Manifest.permission.READ_MEDIA_IMAGES
       }
+
   val galleryLauncher =
       rememberLauncherForActivityResult(choosePicturesContract) { uris ->
+        isLauncherActive = false
         if (uris.isNotEmpty()) {
           onSelect(
               uris.map {
@@ -158,29 +173,36 @@ fun GalleryButtonMultiplePick(
               })
         }
       }
+
   val permissionLauncher =
       rememberLauncherForActivityResult(permissionContract) { isGranted ->
         if (isGranted) {
           galleryLauncher.launch(
               PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         } else {
+          isLauncherActive = false
           Toast.makeText(
                   context, R.string.gallery_button_permission_denied_text, Toast.LENGTH_SHORT)
               .show()
         }
       }
+
+  LaunchedEffect(isLauncherActive) {
+    if (isLauncherActive) {
+      if (ContextCompat.checkSelfPermission(context, permission) !=
+          PackageManager.PERMISSION_GRANTED) {
+        permissionLauncher.launch(permission)
+      } else {
+        galleryLauncher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+      }
+    }
+  }
+
   Button(
-      onClick = {
-        if (ContextCompat.checkSelfPermission(context, permission) !=
-            PackageManager.PERMISSION_GRANTED) {
-          permissionLauncher.launch(permission)
-        } else {
-          galleryLauncher.launch(
-              PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-        }
-      },
+      onClick = { isLauncherActive = true },
       modifier = modifier.testTag(tag = C.GalleryButtonTag.MULTIPLE_TAG),
-      enabled = enabled,
+      enabled = enabled && !isLauncherActive,
       shape = shape,
       colors = colors,
       elevation = elevation,
@@ -282,10 +304,4 @@ private fun getFileNameFromUri(context: Context, uri: Uri): String {
     }
   } ?: throw IllegalArgumentException()
   return UUID.randomUUID().toString() + "." + fileName.substringAfterLast('.')
-}
-
-@Preview
-@Composable
-private fun Preview() {
-  MySwissDormAppTheme { DefaultGalleryButton({ Log.d("GalleryButton", "Selected : ${it.image}") }) }
 }

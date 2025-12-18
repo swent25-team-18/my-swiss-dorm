@@ -3,7 +3,6 @@ package com.android.mySwissDorm.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContract
@@ -24,6 +23,7 @@ import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.photo.Photo
@@ -42,7 +41,6 @@ import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import java.util.UUID
 
 /**
@@ -72,20 +70,24 @@ fun CameraButton(
     content: @Composable (RowScope.() -> Unit) = {}
 ) {
   val context = LocalContext.current
+  var isLauncherActive by remember { mutableStateOf(false) }
   var uriCaptured by remember { mutableStateOf<Uri>(Uri.EMPTY) }
   var photoCaptured by remember { mutableStateOf<Photo?>(null) }
 
   val cameraLauncher =
       rememberLauncherForActivityResult(takePictureContract) {
+        isLauncherActive = false
         if (it && photoCaptured != null && uriCaptured.path?.isNotEmpty() ?: false) {
           onSave(photoCaptured!!)
         }
       }
+
   val permissionLauncher =
       rememberLauncherForActivityResult(permissionContract) { isGranted ->
         if (isGranted) {
           cameraLauncher.launch(photoCaptured?.image ?: return@rememberLauncherForActivityResult)
         } else {
+          isLauncherActive = false
           if (Uri.EMPTY != uriCaptured) {
             Photo.deleteCapturablePhoto(context, uriCaptured)
           }
@@ -93,20 +95,25 @@ fun CameraButton(
               .show()
         }
       }
+
+  LaunchedEffect(isLauncherActive) {
+    if (isLauncherActive) {
+      val photo = Photo.createCapturablePhoto(context, UUID.randomUUID().toString() + ".jpg")
+      uriCaptured = photo.image
+      photoCaptured = photo
+      if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
+          PackageManager.PERMISSION_GRANTED) {
+        permissionLauncher.launch(Manifest.permission.CAMERA)
+      } else {
+        cameraLauncher.launch(photoCaptured?.image ?: return@LaunchedEffect)
+      }
+    }
+  }
+
   Button(
-      onClick = {
-        val photo = Photo.createCapturablePhoto(context, UUID.randomUUID().toString() + ".jpg")
-        uriCaptured = photo.image
-        photoCaptured = photo
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
-            PackageManager.PERMISSION_GRANTED) {
-          permissionLauncher.launch(Manifest.permission.CAMERA)
-        } else {
-          cameraLauncher.launch(input = photo.image)
-        }
-      },
+      onClick = { isLauncherActive = true },
       modifier = modifier.testTag(tag = C.CameraButtonTag.TAG),
-      enabled = enabled,
+      enabled = enabled && !isLauncherActive,
       shape = shape,
       colors = colors,
       elevation = elevation,
@@ -154,10 +161,4 @@ fun DefaultCameraButton(
         Spacer(Modifier.width(Dimens.SpacingDefault))
         Text(text = stringResource(R.string.camera_button_default_text))
       }
-}
-
-@Preview
-@Composable
-private fun Preview() {
-  MySwissDormAppTheme { DefaultCameraButton(onSave = { Log.d("CameraButton", "Photo taken") }) }
 }

@@ -1,13 +1,17 @@
 package com.android.mySwissDorm.ui.authentification
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Scaffold
@@ -21,8 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
@@ -31,7 +35,6 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.Typography
 import com.android.mySwissDorm.ui.theme.White
 
 /**
@@ -63,15 +66,14 @@ fun SignInScreen(
 
   Scaffold(modifier = Modifier.fillMaxSize().testTag(C.Tag.SIGN_IN_SCREEN)) { padding ->
     Column(
-        modifier = Modifier.padding(padding).fillMaxSize(),
+        modifier = Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center) {
           Spacer(modifier = Modifier.height(Dimens.SpacerHeightSmall))
-          Text(
-              text = stringResource(R.string.app_name),
-              style = Typography.titleLarge,
-              color = MainColor,
-              modifier = Modifier.testTag(C.Tag.SIGN_IN_APP_LOGO))
+          Image(
+              painter = painterResource(id = R.drawable.logo),
+              contentDescription = null,
+              modifier = Modifier.size(Dimens.ImageSizeXXLarge).testTag(C.Tag.SIGN_IN_APP_LOGO))
           Spacer(modifier = Modifier.height(Dimens.SpacingXLarge))
           Button(
               onClick = {
@@ -107,10 +109,4 @@ fun SignInScreen(
               }
         }
   }
-}
-
-@Preview
-@Composable
-private fun SignInScreenPreview() {
-  SignInScreen()
 }

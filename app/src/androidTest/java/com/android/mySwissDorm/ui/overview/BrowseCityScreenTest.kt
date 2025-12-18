@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.mySwissDorm.model.database.AppDatabase
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.map.LocationRepository
 import com.android.mySwissDorm.model.photo.Photo
@@ -27,6 +28,8 @@ import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.model.residency.Residency
 import com.android.mySwissDorm.model.review.ReviewsRepository
 import com.android.mySwissDorm.model.review.ReviewsRepositoryFirestore
+import com.android.mySwissDorm.model.review.ReviewsRepositoryHybrid
+import com.android.mySwissDorm.model.review.ReviewsRepositoryLocal
 import com.android.mySwissDorm.model.review.ReviewsRepositoryProvider
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.BrowseCityTags.RECOMMENDED
@@ -62,6 +65,9 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private lateinit var listingsRepo: RentalListingRepository
   private lateinit var reviewsRepo: ReviewsRepository
   private lateinit var residenciesRepo: ResidenciesRepository
+  // Keep reference to Firestore repo for adding test data (bypasses network check)
+  private lateinit var firestoreListingRepo: RentalListingRepositoryFirestore
+  private lateinit var firestoreReviewsRepo: ReviewsRepositoryFirestore
   val fakePhoto = Photo(File.createTempFile(FAKE_NAME, FAKE_SUFFIX).toUri(), FAKE_FILE_NAME)
   private lateinit var vm: BrowseCityViewModel
 
@@ -74,13 +80,25 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   private lateinit var listingFrib1: RentalListing
 
   override fun createRepositories() {
+    val context = InstrumentationRegistry.getInstrumentation().context
+    val database = AppDatabase.getDatabase(context)
+
     ProfileRepositoryProvider.repository = ProfileRepositoryFirestore(FirebaseEmulator.firestore)
+
+    // Use Hybrid repositories to enable blocking functionality
+    firestoreListingRepo = RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
+    val localListingRepo = RentalListingRepositoryLocal(database.rentalListingDao())
     RentalListingRepositoryProvider.repository =
-        RentalListingRepositoryFirestore(FirebaseEmulator.firestore)
-    ReviewsRepositoryProvider.repository = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
+        RentalListingRepositoryHybrid(context, firestoreListingRepo, localListingRepo)
+
+    firestoreReviewsRepo = ReviewsRepositoryFirestore(FirebaseEmulator.firestore)
+    val localReviewsRepo = ReviewsRepositoryLocal(database.reviewDao())
+    ReviewsRepositoryProvider.repository =
+        ReviewsRepositoryHybrid(context, firestoreReviewsRepo, localReviewsRepo)
+
     ResidenciesRepositoryProvider.repository =
         ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
-    PhotoRepositoryProvider.initialize(InstrumentationRegistry.getInstrumentation().context)
+    PhotoRepositoryProvider.initialize(context)
     runBlocking {
       ResidenciesRepositoryProvider.repository.addResidency(vortex)
       ResidenciesRepositoryProvider.repository.addResidency(woko)
@@ -170,13 +188,13 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
 
     runTest {
       switchToUser(FakeUser.FakeUser1)
-      listingsRepo.addRentalListing(listingLaus1)
-      reviewsRepo.addReview(reviewVortex1.copy(ownerId = ownerUid))
-      reviewsRepo.addReview(reviewVortex2.copy(ownerId = ownerUid))
+      firestoreListingRepo.addRentalListing(listingLaus1)
+      firestoreReviewsRepo.addReview(reviewVortex1.copy(ownerId = ownerUid))
+      firestoreReviewsRepo.addReview(reviewVortex2.copy(ownerId = ownerUid))
       switchToUser(FakeUser.FakeUser2)
-      listingsRepo.addRentalListing(listingLaus2)
-      listingsRepo.addRentalListing(listingZurich)
-      reviewsRepo.addReview(reviewWoko1.copy(ownerId = otherUid))
+      firestoreListingRepo.addRentalListing(listingLaus2)
+      firestoreListingRepo.addRentalListing(listingZurich)
+      firestoreReviewsRepo.addReview(reviewWoko1.copy(ownerId = otherUid))
     }
 
     vm =
@@ -840,6 +858,11 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
         error("Boom")
       }
 
+      override suspend fun getAllRentalListingsForUser(userId: String?): List<RentalListing> {
+        delay(50)
+        error("Boom")
+      }
+
       override suspend fun getAllRentalListingsByUser(userId: String): List<RentalListing> {
         error("unused")
       }
@@ -852,6 +875,11 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
       }
 
       override suspend fun getRentalListing(rentalPostId: String): RentalListing = error("unused")
+
+      override suspend fun getRentalListingForUser(
+          rentalPostId: String,
+          userId: String?
+      ): RentalListing = error("unused")
 
       override suspend fun addRentalListing(rentalPost: RentalListing) {}
 
@@ -890,7 +918,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
   @Test
   fun test_image_is_display_and_all_stuff() = runTest {
     switchToUser(FakeUser.FakeUser1)
-    listingsRepo.addRentalListing(listingFrib1)
+    firestoreListingRepo.addRentalListing(listingFrib1)
     val fakeLocalRepo = FakePhotoRepository({ fakePhoto }, {}, true)
     val fakeCloudRepo = FakePhotoRepositoryCloud({ fakePhoto }, {}, true, fakeLocalRepo)
     val vm = BrowseCityViewModel(photoRepositoryCloud = fakeCloudRepo)
@@ -907,11 +935,11 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val baseTime = Timestamp.now()
     val anonymousReview =
         reviewVortex1.copy(
-            uid = reviewsRepo.getNewUid(),
+            uid = firestoreReviewsRepo.getNewUid(),
             ownerId = ownerUid,
             postedAt = Timestamp(baseTime.seconds + 30, 0), // Definitely later than reviewVortex2
             isAnonymous = true)
-    reviewsRepo.addReview(anonymousReview)
+    firestoreReviewsRepo.addReview(anonymousReview)
 
     vm.loadResidencies(lausanneLocation, context)
     compose.setContent { BrowseCityScreen(location = lausanneLocation, browseCityViewModel = vm) }
@@ -948,12 +976,12 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val baseTime = Timestamp.now()
     val nonAnonymousReview =
         reviewVortex1.copy(
-            uid = reviewsRepo.getNewUid(),
+            uid = firestoreReviewsRepo.getNewUid(),
             ownerId = ownerUid,
             ownerName = profile1.userInfo.name + " " + profile1.userInfo.lastName,
             postedAt = Timestamp(baseTime.seconds + 30, 0), // Definitely later than reviewVortex2
             isAnonymous = false)
-    reviewsRepo.addReview(nonAnonymousReview)
+    firestoreReviewsRepo.addReview(nonAnonymousReview)
 
     vm.loadResidencies(lausanneLocation, context)
     compose.setContent { BrowseCityScreen(location = lausanneLocation, browseCityViewModel = vm) }
@@ -1050,7 +1078,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     switchToUser(FakeUser.FakeUser1)
     val duplicateListing =
         listingLaus1.copy(uid = "duplicate", title = "Duplicate Listing", pricePerMonth = 999.0)
-    listingsRepo.addRentalListing(duplicateListing)
+    firestoreListingRepo.addRentalListing(duplicateListing)
 
     var onMapScreen by mutableStateOf(false)
     var mapListings: List<ListingCardUI> = emptyList()
@@ -1122,7 +1150,7 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val expensiveListing =
         listingLaus1.copy(
             uid = "expensive_listing", title = "Expensive Penthouse", pricePerMonth = 2000.0)
-    listingsRepo.addRentalListing(expensiveListing)
+    firestoreListingRepo.addRentalListing(expensiveListing)
     vm.loadListings(lausanneLocation, context)
     compose.waitUntil(5_000) {
       vm.uiState.value.listings.items.any { it.listingUid == expensiveListing.uid }
@@ -1157,9 +1185,9 @@ class BrowseCityScreenFirestoreTest : FirestoreTest() {
     val bigRoom =
         listingLaus1.copy(uid = "wrongType", areaInM2 = 40, roomType = RoomType.COLOCATION)
     val perfectMatch = listingLaus1.copy(uid = "perfect", areaInM2 = 40, roomType = RoomType.STUDIO)
-    listingsRepo.addRentalListing(smallStudio)
-    listingsRepo.addRentalListing(bigRoom)
-    listingsRepo.addRentalListing(perfectMatch)
+    firestoreListingRepo.addRentalListing(smallStudio)
+    firestoreListingRepo.addRentalListing(bigRoom)
+    firestoreListingRepo.addRentalListing(perfectMatch)
 
     vm.loadListings(lausanneLocation, context)
     compose.waitUntil(5_000) { vm.uiState.value.listings.items.size >= 3 }

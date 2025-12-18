@@ -338,6 +338,10 @@ object C {
     const val LOADING_INDICATOR = "channelsLoadingIndicator"
   }
 
+  object ChatScreenTestTags {
+    const val CHAT_BLOCKED_BANNER = "BLOCKED_BANNER"
+  }
+
   object SanitizedResidencyDropdownTags {
     const val RESIDENCY_DROPDOWN_BOX = "sanitizedResidencyDropdownBox"
     const val PRIVATE_ACCOMMODATION = "privateAccommodation"

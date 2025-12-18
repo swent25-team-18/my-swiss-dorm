@@ -11,8 +11,6 @@ import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepository
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
-import com.android.mySwissDorm.model.profile.ProfileRepository
-import com.android.mySwissDorm.model.profile.ProfileRepositoryProvider
 import com.android.mySwissDorm.model.rental.RoomType
 import com.android.mySwissDorm.model.residency.ResidenciesRepository
 import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
@@ -66,12 +64,11 @@ data class ViewReviewUIState(
 
 class ViewReviewViewModel(
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
-    private val profilesRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val residencyRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
-    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloudRepository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ViewReviewUIState())
   val uiState: StateFlow<ViewReviewUIState> = _uiState.asStateFlow()
@@ -151,8 +148,10 @@ class ViewReviewViewModel(
   fun loadReview(reviewId: String, context: Context) {
     viewModelScope.launch {
       try {
-        val review = reviewsRepository.getReview(reviewId)
         val currentUserId = auth.currentUser?.uid
+        // Repository handles bidirectional blocking check
+        val review = reviewsRepository.getReviewForUser(reviewId, currentUserId)
+
         val fullNameOfPoster =
             if (review.isAnonymous) {
               context.getString(R.string.anonymous)
@@ -174,6 +173,15 @@ class ViewReviewViewModel(
         launch(Dispatchers.IO) {
           photoManager.initialize(review.imageUrls)
           _uiState.update { it.copy(images = photoManager.photoLoaded) }
+        }
+      } catch (e: NoSuchElementException) {
+        // Handle blocked review or not found
+        if (e.message?.contains("blocking restrictions") == true) {
+          setErrorMsg(context.getString(R.string.view_review_blocked_user))
+        } else {
+          Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)
+          setErrorMsg(
+              "${context.getString(R.string.view_review_failed_to_load_review)}: ${e.message}")
         }
       } catch (e: Exception) {
         Log.e("ViewReviewViewModel", "Error loading Review by ID: $reviewId", e)

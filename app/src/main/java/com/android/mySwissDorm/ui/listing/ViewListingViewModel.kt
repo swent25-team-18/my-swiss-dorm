@@ -22,8 +22,6 @@ import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
-import com.android.mySwissDorm.model.residency.ResidenciesRepository
-import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.android.mySwissDorm.ui.utils.calculatePOIDistances
@@ -79,10 +77,8 @@ class ViewListingViewModel(
     private val rentalListingRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository,
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository,
+        PhotoRepositoryProvider.cloudRepository,
     private val requestedMessageRepository: RequestedMessageRepository =
         RequestedMessageRepositoryProvider.repository
 ) : ViewModel() {
@@ -157,15 +153,18 @@ class ViewListingViewModel(
   fun loadListing(listingId: String, context: Context) {
     viewModelScope.launch {
       try {
-        val listing = rentalListingRepository.getRentalListing(listingId)
-        // Use stored ownerName from listing, fallback to "Unknown Owner" if null
-        val fullNameOfPoster = listing.ownerName ?: context.getString(R.string.unknown_owner_name)
         val currentUser = FirebaseAuth.getInstance().currentUser
         val currentUserId = currentUser?.uid
-        val isOwner = currentUserId == listing.ownerId
         val isGuest = currentUser?.isAnonymous ?: false
 
-        // Check if the listing owner has blocked the current user
+        // Repository handles bidirectional blocking check
+        val listing = rentalListingRepository.getRentalListingForUser(listingId, currentUserId)
+        val isOwner = currentUserId == listing.ownerId
+
+        // Use stored ownerName from listing, fallback to "Unknown Owner" if null
+        val fullNameOfPoster = listing.ownerName ?: context.getString(R.string.unknown_owner_name)
+
+        // Check if the listing owner has blocked the current user (for UI state)
         val isBlockedByOwner =
             if (currentUserId != null && !isOwner) {
               runCatching { profileRepository.getBlockedUserIds(listing.ownerId) }
@@ -235,6 +234,15 @@ class ViewListingViewModel(
           photoManager.initialize(listing.imageUrls)
           val photos = photoManager.photoLoaded
           _uiState.update { it.copy(images = photos) }
+        }
+      } catch (e: NoSuchElementException) {
+        // Handle blocked listing or not found
+        if (e.message?.contains("blocking restrictions") == true) {
+          setErrorMsg(context.getString(R.string.view_listing_blocked_user))
+        } else {
+          Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)
+          setErrorMsg(
+              "${context.getString(R.string.view_listing_failed_to_load_listings)} ${e.message}")
         }
       } catch (e: Exception) {
         Log.e("ViewListingViewModel", "Error loading listing by ID: $listingId", e)

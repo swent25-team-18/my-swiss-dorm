@@ -13,7 +13,12 @@ data class RequestedMessage(
     val message: String, // The actual message content
     val timestamp: Long, // When the message was sent
     val status: MessageStatus = MessageStatus.PENDING // Current status of the message
-)
+) {
+  companion object {
+    const val PROFILE_MESSAGE_ID = "Profile Message"
+    const val PROFILE_MESSAGE_TITLE = "Direct Message"
+  }
+}
 
 /** Status of a requested message */
 enum class MessageStatus {

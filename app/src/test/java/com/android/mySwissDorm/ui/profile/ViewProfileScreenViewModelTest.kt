@@ -3,6 +3,7 @@ package com.android.mySwissDorm.ui.profile
 import android.content.Context
 import android.net.Uri
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.profile.Language
@@ -39,6 +40,7 @@ class ViewProfileScreenViewModelTest {
   private lateinit var viewModel: ViewProfileScreenViewModel
   private lateinit var profileRepository: ProfileRepository
   private lateinit var photoRepositoryCloud: PhotoRepositoryCloud
+  private lateinit var requestedMessageRepository: RequestedMessageRepository
   private lateinit var auth: FirebaseAuth
   private lateinit var context: Context
   private lateinit var currentUser: FirebaseUser
@@ -51,6 +53,7 @@ class ViewProfileScreenViewModelTest {
 
     profileRepository = mockk(relaxed = true)
     photoRepositoryCloud = mockk(relaxed = true)
+    requestedMessageRepository = mockk(relaxed = true)
     auth = mockk(relaxed = true)
     context = mockk(relaxed = true)
     currentUser = mockk(relaxed = true)
@@ -70,7 +73,10 @@ class ViewProfileScreenViewModelTest {
 
     viewModel =
         ViewProfileScreenViewModel(
-            repo = profileRepository, auth = auth, photoRepositoryCloud = photoRepositoryCloud)
+            repo = profileRepository,
+            auth = auth,
+            photoRepositoryCloud = photoRepositoryCloud,
+            requestedMessageRepository = requestedMessageRepository)
   }
 
   @After

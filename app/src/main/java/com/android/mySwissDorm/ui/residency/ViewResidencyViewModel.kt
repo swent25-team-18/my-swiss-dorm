@@ -49,18 +49,27 @@ open class ViewResidencyViewModel(
       try {
         // Load residency first and show it immediately
         val residency = residenciesRepository.getResidency(residencyName)
+        Log.d(
+            "ViewResidencyViewModel",
+            "Loaded residency: ${residency.name}, imageUrls: ${residency.imageUrls}")
 
-        // Load images
+        // Load images with validation
         val images = mutableListOf<Photo>()
+        Log.d("ViewResidencyViewModel", "Total imageUrls to load: ${residency.imageUrls.size}")
         if (residency.imageUrls.isNotEmpty()) {
           residency.imageUrls.forEach { fileName ->
+            Log.d("ViewResidencyViewModel", "Attempting to load photo: $fileName")
             try {
               val photo = photoRepositoryCloud.retrievePhoto(fileName)
               images.add(photo)
+              Log.d("ViewResidencyViewModel", "Successfully loaded photo: $fileName")
             } catch (e: Exception) {
-              Log.e("ViewResidencyViewModel", "Error loading photo: $fileName", e)
+              Log.e("ViewResidencyViewModel", "Error loading photo: $fileName - ${e.message}", e)
+              // Photo will be skipped if corrupted or missing
             }
           }
+        } else {
+          Log.w("ViewResidencyViewModel", "No imageUrls found for residency: ${residency.name}")
         }
 
         _uiState.update {

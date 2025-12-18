@@ -152,18 +152,27 @@ class AdminPageViewModel(
     viewModelScope.launch {
       try {
         val residency = residenciesRepo.getResidency(residencyName)
-        // Load existing images
+        android.util.Log.d(
+            logTag,
+            "Loading residency for edit: ${residency.name}, imageUrls: ${residency.imageUrls}")
+        // Load existing images with validation
         val existingPhotos = mutableListOf<Photo>()
+        android.util.Log.d(logTag, "Total imageUrls to load: ${residency.imageUrls.size}")
         if (residency.imageUrls.isNotEmpty()) {
           residency.imageUrls.forEach { fileName ->
+            android.util.Log.d(logTag, "Attempting to load photo: $fileName")
             try {
               val photo = photoRepositoryCloud.retrievePhoto(fileName)
               existingPhotos.add(photo)
               photoManager.addPhoto(photo)
+              android.util.Log.d(logTag, "Successfully loaded photo: $fileName")
             } catch (e: Exception) {
-              android.util.Log.e(logTag, "Error loading photo: $fileName", e)
+              android.util.Log.e(logTag, "Error loading photo: $fileName - ${e.message}", e)
+              // Photo will be skipped if corrupted or missing
             }
           }
+        } else {
+          android.util.Log.w(logTag, "No imageUrls found for residency: ${residency.name}")
         }
 
         uiState =

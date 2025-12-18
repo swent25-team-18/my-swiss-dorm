@@ -412,13 +412,16 @@ class BrowseCityViewModel(
                       latestReview.ownerName ?: context.getString(R.string.unknown_owner_name)
                     }
                   } else context.getString(R.string.unknown_owner_name)
-              ResidencyCardUI(
-                  title = it.name,
-                  meanGrade = meanGrade,
-                  location = it.location.name,
-                  latestReview = latestReview,
-                  fullNameOfPoster = fullName,
-                  imageUrls = it.imageUrls)
+              val cardUI =
+                  ResidencyCardUI(
+                      title = it.name,
+                      meanGrade = meanGrade,
+                      location = it.location.name,
+                      latestReview = latestReview,
+                      fullNameOfPoster = fullName,
+                      imageUrls = it.imageUrls)
+              Log.d("BrowseCityViewModel", "Residency: ${it.name}, imageUrls: ${it.imageUrls}")
+              cardUI
             }
 
         _uiState.update {

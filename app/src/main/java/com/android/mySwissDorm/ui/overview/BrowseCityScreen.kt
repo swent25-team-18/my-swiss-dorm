@@ -852,30 +852,75 @@ private fun StartDateFilterContent(
 @Composable
 private fun ResidencyCardImage(imageUrls: List<String>, modifier: Modifier = Modifier) {
   val context = LocalContext.current
-  var imageUri by remember { mutableStateOf<android.net.Uri?>(null) }
+  var imageFile by remember { mutableStateOf<java.io.File?>(null) }
+  var isLoading by remember { mutableStateOf(false) }
 
   LaunchedEffect(imageUrls) {
+    android.util.Log.d("ResidencyCardImage", "LaunchedEffect triggered with imageUrls: $imageUrls")
     if (imageUrls.isNotEmpty()) {
       val photoRepositoryCloud: PhotoRepositoryCloud =
           PhotoRepositoryStorage(photoSubDir = "residencies/")
+      isLoading = true
+      android.util.Log.d("ResidencyCardImage", "Starting to load first photo: ${imageUrls.first()}")
       try {
+        // Check if file exists and is not empty
+        val file = java.io.File(context.filesDir, "photos/${imageUrls.first()}")
+        if (file.exists() && file.length() == 0L) {
+          android.util.Log.w(
+              "ResidencyCardImage", "Found corrupted empty file, deleting: ${file.absolutePath}")
+          file.delete()
+        }
+
         val photo = photoRepositoryCloud.retrievePhoto(imageUrls.first())
-        imageUri = photo.image
+        // Convert content:// URI to File for better Coil compatibility
+        val reloadedFile = java.io.File(context.filesDir, "photos/${imageUrls.first()}")
+        if (reloadedFile.exists() && reloadedFile.length() > 0) {
+          imageFile = reloadedFile
+          android.util.Log.d(
+              "ResidencyCardImage",
+              "Successfully loaded photo: ${imageUrls.first()}, file: ${reloadedFile.absolutePath}, size: ${reloadedFile.length()}")
+        } else {
+          android.util.Log.e(
+              "ResidencyCardImage",
+              "File does not exist or is empty after download: ${reloadedFile.absolutePath}, size: ${reloadedFile.length()}")
+          imageFile = null
+        }
       } catch (e: Exception) {
-        imageUri = null
+        android.util.Log.e(
+            "ResidencyCardImage", "Error loading photo: ${imageUrls.first()} - ${e.message}", e)
+        e.printStackTrace()
+        imageFile = null
+      } finally {
+        isLoading = false
       }
     } else {
-      imageUri = null
+      android.util.Log.d("ResidencyCardImage", "imageUrls is empty, skipping image load")
+      imageFile = null
+      isLoading = false
     }
   }
 
   Box(modifier = modifier) {
-    if (imageUri != null) {
+    if (isLoading) {
+      CircularProgressIndicator(
+          modifier = Modifier.align(Alignment.Center).size(24.dp), strokeWidth = 2.dp)
+    } else if (imageFile != null) {
       AsyncImage(
-          model = imageUri,
+          model = imageFile,
           contentDescription = null,
           modifier = Modifier.fillMaxSize(),
-          contentScale = ContentScale.Crop)
+          contentScale = ContentScale.Crop,
+          onError = { error ->
+            android.util.Log.e(
+                "ResidencyCardImage",
+                "AsyncImage failed to load: ${error.result.throwable.message}")
+            error.result.throwable.printStackTrace()
+          },
+          onSuccess = {
+            android.util.Log.d(
+                "ResidencyCardImage",
+                "AsyncImage successfully displayed for file: ${imageFile?.absolutePath}")
+          })
     } else {
       Text(
           stringResource(R.string.image),

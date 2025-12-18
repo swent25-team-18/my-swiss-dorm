@@ -261,7 +261,8 @@ fun ViewReviewScreen(
                     modifier = Modifier.testTag(C.ViewReviewTags.LOCATION))
               }
 
-              // Vote section (always shown, but disabled for owner or offline) - at the bottom of the review
+              // Vote section (always shown, but disabled for owner or offline) - at the bottom of
+              // the review
               Column(
                   modifier = Modifier.fillMaxWidth().testTag(C.ViewReviewTags.VOTE_BUTTONS),
                   horizontalAlignment = Alignment.CenterHorizontally) {

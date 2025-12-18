@@ -36,6 +36,8 @@ import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
+import com.android.mySwissDorm.ui.utils.showOfflineToast
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +52,10 @@ fun AddListingScreen(
   val scrollState = rememberScrollState()
   var showDatePicker by remember { mutableStateOf(false) }
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
   val onUseCurrentLocationClick = onUserLocationClickFunc(context, addListingViewModel)
   if (listingUIState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -78,11 +84,27 @@ fun AddListingScreen(
             val isButtonEnabled =
                 ui.isFormValid &&
                     !(FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) &&
-                    !ui.isSubmitting
+                    !ui.isSubmitting &&
+                    isNetworkAvailable
+            val isOffline = !isNetworkAvailable
             Button(
-                onClick = { addListingViewModel.submitForm(onConfirm, context) },
-                enabled = isButtonEnabled,
-                colors = ButtonDefaults.buttonColors(containerColor = MainColor),
+                onClick = {
+                  if (isOffline) {
+                    showOfflineToast(context)
+                  } else if (isButtonEnabled) {
+                    addListingViewModel.submitForm(onConfirm, context)
+                  }
+                },
+                colors =
+                    if (isOffline || !isButtonEnabled) {
+                      ButtonDefaults.buttonColors(
+                          containerColor = MainColor.copy(alpha = Dimens.AlphaDisabled),
+                          contentColor = White.copy(alpha = Dimens.AlphaDisabled),
+                          disabledContainerColor = MainColor.copy(alpha = Dimens.AlphaDisabled),
+                          disabledContentColor = White.copy(alpha = Dimens.AlphaDisabled))
+                    } else {
+                      ButtonDefaults.buttonColors(containerColor = MainColor)
+                    },
                 modifier =
                     Modifier.fillMaxWidth()
                         .height(Dimens.ButtonHeight)

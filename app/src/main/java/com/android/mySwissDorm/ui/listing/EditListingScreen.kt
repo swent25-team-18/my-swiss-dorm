@@ -37,6 +37,8 @@ import com.android.mySwissDorm.ui.utils.CustomDatePickerDialog
 import com.android.mySwissDorm.ui.utils.CustomLocationDialog
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
+import com.android.mySwissDorm.ui.utils.showOfflineToast
+import com.android.mySwissDorm.utils.NetworkUtils
 
 /**
  * Edit screen for an existing rental listing.
@@ -74,6 +76,11 @@ fun EditListingScreen(
     rentalListingID: String
 ) {
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
   // Load listing when entering the screen or when the id changes.
   LaunchedEffect(rentalListingID) {
     editListingViewModel.getRentalListing(rentalListingID, context)
@@ -106,12 +113,22 @@ fun EditListingScreen(
             actions = {
               IconButton(
                   onClick = {
-                    val cityName = editListingViewModel.getCityName(listingUIState.residencyName)
-                    editListingViewModel.deleteRentalListing(rentalListingID, context)
-                    onDelete(cityName)
+                    if (isOffline) {
+                      showOfflineToast(context)
+                    } else {
+                      val cityName = editListingViewModel.getCityName(listingUIState.residencyName)
+                      editListingViewModel.deleteRentalListing(rentalListingID, context)
+                      onDelete(cityName)
+                    }
                   },
+                  enabled = !isOffline,
                   modifier = Modifier.testTag(C.EditListingScreenTags.DELETE_BUTTON)) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MainColor)
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint =
+                            if (isOffline) MainColor.copy(alpha = Dimens.AlphaDisabled)
+                            else MainColor)
                   }
             })
       },
@@ -136,10 +153,14 @@ fun EditListingScreen(
 
                       Button(
                           onClick = {
-                            if (editListingViewModel.editRentalListing(rentalListingID, context))
-                                onConfirm()
+                            if (isOffline) {
+                              showOfflineToast(context)
+                            } else if (editListingViewModel.editRentalListing(
+                                rentalListingID, context)) {
+                              onConfirm()
+                            }
                           },
-                          enabled = ui.isFormValid,
+                          enabled = ui.isFormValid && !isOffline,
                           colors =
                               ButtonDefaults.buttonColors(
                                   containerColor = MainColor,

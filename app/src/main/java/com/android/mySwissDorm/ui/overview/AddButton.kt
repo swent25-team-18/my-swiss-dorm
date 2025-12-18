@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +45,7 @@ import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.White
+import com.android.mySwissDorm.ui.utils.showOfflineToast
 
 /**
  * Speed-dial FAB that shows two actions in a small popup above it.
@@ -55,10 +57,13 @@ fun AddFabMenu(
     modifier: Modifier = Modifier,
     onAddListing: () -> Unit,
     onAddReview: () -> Unit,
-    isGuest: Boolean = false
+    isGuest: Boolean = false,
+    isOffline: Boolean = false
 ) {
+  val context = LocalContext.current
   var expanded by remember { mutableStateOf(false) }
-  if (isGuest && expanded) {
+  val isDisabled = isGuest || isOffline
+  if (isDisabled && expanded) {
     expanded = false
   }
 
@@ -104,11 +109,19 @@ fun AddFabMenu(
               }
 
           FloatingActionButton(
-              onClick = { if (!isGuest) expanded = !expanded },
+              onClick = {
+                if (isDisabled) {
+                  if (isOffline) {
+                    showOfflineToast(context)
+                  }
+                } else {
+                  expanded = !expanded
+                }
+              },
               elevation =
                   FloatingActionButtonDefaults.elevation(defaultElevation = Dimens.SpacingMedium),
               shape = CircleShape,
-              containerColor = if (isGuest) Gray else MainColor,
+              containerColor = if (isDisabled) Gray else MainColor,
               modifier = Modifier.size(Dimens.FABSize).testTag(C.BrowseCityTags.FABMENU)) {
                 Icon(
                     imageVector = Icons.Filled.Add,

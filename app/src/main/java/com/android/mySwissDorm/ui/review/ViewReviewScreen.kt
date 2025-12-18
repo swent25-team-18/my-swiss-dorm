@@ -68,6 +68,7 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
+import com.android.mySwissDorm.ui.utils.showOfflineToast
 import com.android.mySwissDorm.utils.NetworkUtils
 import kotlin.math.floor
 
@@ -86,6 +87,12 @@ fun ViewReviewScreen(
         }
 ) {
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
+
   LaunchedEffect(reviewUid) { viewReviewViewModel.loadReview(reviewUid, context) }
 
   val uiState by viewReviewViewModel.uiState.collectAsState()
@@ -275,23 +282,37 @@ fun ViewReviewScreen(
                 // Owner sees an Edit button centered
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                   Button(
-                      onClick = onEdit,
+                      onClick = {
+                        if (isOffline) {
+                          showOfflineToast(context)
+                        } else {
+                          onEdit()
+                        }
+                      },
                       modifier =
                           Modifier.fillMaxWidth(0.55f)
                               .height(Dimens.ButtonHeight)
                               .testTag(C.ViewReviewTags.EDIT_BTN),
                       shape = RoundedCornerShape(Dimens.CardCornerRadius),
                       colors =
-                          ButtonColors(
-                              containerColor = MainColor,
-                              contentColor = TextBoxColor,
-                              disabledContainerColor = BackGroundColor,
-                              disabledContentColor = BackGroundColor),
+                          if (isOffline) {
+                            ButtonColors(
+                                containerColor = BackGroundColor,
+                                contentColor = BackGroundColor,
+                                disabledContainerColor = BackGroundColor,
+                                disabledContentColor = BackGroundColor)
+                          } else {
+                            ButtonColors(
+                                containerColor = MainColor,
+                                contentColor = TextBoxColor,
+                                disabledContainerColor = BackGroundColor,
+                                disabledContentColor = BackGroundColor)
+                          },
                   ) {
                     Text(
                         stringResource(R.string.edit),
                         style = MaterialTheme.typography.titleMedium,
-                        color = TextColor)
+                        color = if (isOffline) BackGroundColor else TextColor)
                   }
                 }
               }

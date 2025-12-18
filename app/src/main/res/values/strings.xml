@@ -536,6 +536,7 @@
     <string name="offline_banner_icon_description">Offline icon</string>
     <string name="unknown_owner_name">Unknown Owner</string>
     <string name="profile_offline_message">You need to be online to view other user\'s profile</string>
+    <string name="offline_feature_unavailable">You need to connect to Wi‑Fi to use this feature</string>
 
     <!-- Other -->
     <string name="title_activity_main">MySwissDorm</string>

@@ -22,6 +22,8 @@ import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +60,7 @@ import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.PriceFilterContent
 import com.android.mySwissDorm.ui.utils.SizeFilterContent
 import com.android.mySwissDorm.ui.utils.onUserLocationClickFunc
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.Timestamp
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -117,6 +120,11 @@ fun BrowseCityScreen(
     onQrNavigate: (String) -> Unit = {},
 ) {
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
 
   LaunchedEffect(location) {
     browseCityViewModel.loadResidencies(location, context)
@@ -175,6 +183,7 @@ fun BrowseCityScreen(
       onAddReviewClick = { navigationActions?.navigateTo(Screen.AddReview) },
       navigationActions = navigationActions,
       isGuest = uiState.isGuest,
+      isOffline = isOffline,
       onMapClick = onMapClick,
       onQrNavigate = onQrNavigate)
 
@@ -244,6 +253,7 @@ private fun BrowseCityScreenUI(
     navigationActions: NavigationActions? = null,
     startTab: Int = 1,
     isGuest: Boolean,
+    isOffline: Boolean = false,
     onMapClick: (List<ListingCardUI>) -> Unit = {},
     onQrNavigate: (String) -> Unit = {},
 ) {
@@ -263,7 +273,8 @@ private fun BrowseCityScreenUI(
             onAddListing = onAddListingClick,
             onAddReview = onAddReviewClick,
             modifier = Modifier.navigationBarsPadding().imePadding(),
-            isGuest = isGuest)
+            isGuest = isGuest,
+            isOffline = isOffline)
       },
       topBar = {
         CenterAlignedTopAppBar(

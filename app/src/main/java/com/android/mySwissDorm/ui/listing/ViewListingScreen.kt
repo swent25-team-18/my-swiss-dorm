@@ -16,6 +16,8 @@ import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +54,7 @@ import com.android.mySwissDorm.ui.theme.Violet
 import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatDate
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
+import com.android.mySwissDorm.ui.utils.showOfflineToast
 import com.android.mySwissDorm.utils.NetworkUtils
 
 /**
@@ -84,6 +87,12 @@ fun ViewListingScreen(
         }
 ) {
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
+
   LaunchedEffect(listingUid) { viewListingViewModel.loadListing(listingUid, context) }
 
   val listingUIState by viewListingViewModel.uiState.collectAsState()
@@ -460,16 +469,32 @@ fun ViewListingScreen(
                   // Owner sees an Edit button centered, same size as Apply
                   Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Button(
-                        onClick = onEdit,
+                        onClick = {
+                          if (isOffline) {
+                            showOfflineToast(context)
+                          } else {
+                            onEdit()
+                          }
+                        },
                         modifier =
                             Modifier.fillMaxWidth(0.55f)
                                 .height(Dimens.ButtonHeight)
                                 .testTag(C.ViewListingTags.EDIT_BTN),
-                        shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
+                        shape = RoundedCornerShape(Dimens.CardCornerRadius),
+                        colors =
+                            if (isOffline) {
+                              ButtonDefaults.buttonColors(
+                                  containerColor = MainColor.copy(alpha = Dimens.AlphaDisabled),
+                                  contentColor = MainColor.copy(alpha = Dimens.AlphaDisabled))
+                            } else {
+                              ButtonDefaults.buttonColors()
+                            }) {
                           Text(
                               stringResource(R.string.edit),
                               style = MaterialTheme.typography.titleMedium,
-                              color = MainColor)
+                              color =
+                                  if (isOffline) MainColor.copy(alpha = Dimens.AlphaDisabled)
+                                  else MainColor)
                         }
                   }
                 } else {

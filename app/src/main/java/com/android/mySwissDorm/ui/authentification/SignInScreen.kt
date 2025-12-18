@@ -33,6 +33,8 @@ import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.Typography
 import com.android.mySwissDorm.ui.theme.White
+import com.android.mySwissDorm.ui.utils.showOfflineToast
+import com.android.mySwissDorm.utils.NetworkUtils
 
 /**
  * This compose element represents the Sign In screen of the application
@@ -52,6 +54,12 @@ fun SignInScreen(
 ) {
   val context = LocalContext.current
   val uiState by authViewModel.uiState.collectAsState()
+
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
 
   LaunchedEffect(uiState.user) { uiState.user?.let { onSignedIn() } }
   LaunchedEffect(uiState.errMsg) {
@@ -75,10 +83,13 @@ fun SignInScreen(
           Spacer(modifier = Modifier.height(Dimens.SpacingXLarge))
           Button(
               onClick = {
-                if (!uiState.isLoading) {
+                if (isOffline) {
+                  showOfflineToast(context)
+                } else if (!uiState.isLoading) {
                   authViewModel.signIn(context, credentialManager)
                 }
               },
+              enabled = !uiState.isLoading,
               shape = RoundedCornerShape(Dimens.CornerRadiusSmall),
               colors =
                   ButtonColors(
@@ -92,17 +103,27 @@ fun SignInScreen(
           Spacer(modifier = Modifier.height(Dimens.SpacingTiny))
           TextButton(
               onClick = {
-                if (!uiState.isLoading) {
+                if (isOffline) {
+                  showOfflineToast(context)
+                } else if (!uiState.isLoading) {
                   authViewModel.signInAnonymously(context)
                 }
               },
+              enabled = !uiState.isLoading,
               modifier = Modifier.testTag(C.Tag.SIGN_IN_GUEST_BUTTON)) {
                 Text(text = stringResource(R.string.continue_as_guest), color = Gray)
               }
 
           Spacer(modifier = Modifier.height(Dimens.SpacerHeightLarge))
           TextButton(
-              onClick = onSignUp, modifier = Modifier.testTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON)) {
+              onClick = {
+                if (isOffline) {
+                  showOfflineToast(context)
+                } else {
+                  onSignUp()
+                }
+              },
+              modifier = Modifier.testTag(C.Tag.SIGN_IN_SIGN_UP_BUTTON)) {
                 Text(text = stringResource(R.string.create_account_text), color = Gray)
               }
         }

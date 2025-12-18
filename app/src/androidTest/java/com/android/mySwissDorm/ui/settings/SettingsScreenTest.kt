@@ -165,7 +165,6 @@ class SettingsScreenTest : FirestoreTest() {
 
   // ---------- tests ----------
 
-
   @Test
   fun blockedContacts_expandsAndCollapsesOnClick() = runTest {
     // Use FakeUser2 as the blocked user

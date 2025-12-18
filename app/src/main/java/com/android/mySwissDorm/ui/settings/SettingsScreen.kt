@@ -154,7 +154,6 @@ fun SettingsScreenContent(
     onAdminClick: () -> Unit = {},
 ) {
 
-
   // Dark mode preference - connected to theme
   val (darkModePreference, setDarkModePreference) = rememberDarkModePreference()
   val nightShift = darkModePreference ?: isSystemInDarkTheme()

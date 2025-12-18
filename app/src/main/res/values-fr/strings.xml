@@ -548,6 +548,7 @@
     <string name="offline_banner_icon_description">Icône hors ligne</string>
     <string name="unknown_owner_name">Propriétaire inconnu</string>
     <string name="profile_offline_message">Vous devez être en ligne pour voir le profil d\'un autre utilisateur</string>
+    <string name="offline_feature_unavailable">Vous devez vous connecter au Wi‑Fi pour utiliser cette fonctionnalité</string>
 
     <!-- Other -->
     <string name="title_activity_main">MySwissDorm</string>

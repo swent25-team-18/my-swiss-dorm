@@ -16,6 +16,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.slot
 import io.mockk.unmockkAll
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,8 +60,9 @@ class RequestedMessagesViewModelTest {
     mockkObject(StreamChatProvider)
     every { StreamChatProvider.isInitialized() } returns true
     coEvery { StreamChatProvider.connectUser(any(), any(), any()) } returns Unit
+    coEvery { StreamChatProvider.disconnectUser(any()) } returns Unit
     coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } returns Unit
-    coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } returns
+    coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any(), any()) } returns
         "channel:id"
 
     // Mock context strings
@@ -126,17 +128,142 @@ class RequestedMessagesViewModelTest {
         coVerify {
           requestedMessageRepository.updateMessageStatus(messageId, MessageStatus.APPROVED)
         }
-        coVerify { StreamChatProvider.connectUser("currentUserId", "My Self", "") }
-        coVerify { StreamChatProvider.upsertUser("senderId", "Sender Name", "") }
+        // We switch to sender to create channel + send first message, then reconnect receiver.
+        coVerify { StreamChatProvider.connectUser("senderId", "Sender Name", "") }
         coVerify {
           StreamChatProvider.createChannel(
               channelType = "messaging",
               channelId = null,
               memberIds = listOf("senderId", "currentUserId"),
-              extraData = mapOf("name" to "Chat"),
-              initialMessageText = "Hello")
+              extraData =
+                  match {
+                    it["listingTitle"] == "Title" &&
+                        it["listingId"] == "list1" &&
+                        it["name"] == "Title"
+                  },
+              listingTitle = "Title",
+              initialMessageText = "About: Title\n\nHello")
         }
         // Success message timing can be racy; we only verify channel creation was invoked.
+      }
+
+  @Test
+  fun approveMessage_profileFetchFails_usesFallbackNames_andStillCreatesChannel() =
+      runTest(testDispatcher) {
+        val messageId = "msg_fallback_names"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "l",
+                listingTitle = "t",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = 0L)
+
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+
+        // Force profile lookups to fail so the ViewModel uses "User <prefix>" fallback names.
+        coEvery { profileRepository.getProfile(any()) } throws RuntimeException("no profile")
+
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        // Sender connect should use fallback name.
+        coVerify {
+          StreamChatProvider.connectUser(
+              firebaseUserId = "senderId", displayName = "User sende", imageUrl = "")
+        }
+        // Channel still created with the original requested message as the first message.
+        coVerify {
+          StreamChatProvider.createChannel(
+              channelType = "messaging",
+              channelId = null,
+              memberIds = listOf("senderId", "currentUserId"),
+              extraData =
+                  match {
+                    it["listingTitle"] == "t" && it["listingId"] == "l" && it["name"] == "t"
+                  },
+              listingTitle = "t",
+              initialMessageText = "About: t\n\nHello")
+        }
+        // Reconnect receiver attempted with fallback name.
+        coVerify {
+          StreamChatProvider.connectUser(
+              firebaseUserId = "currentUserId", displayName = "User curre", imageUrl = "")
+        }
+      }
+
+  @Test
+  fun approveMessage_senderConnectFails_setsManualChatSuccessMessage() =
+      runTest(testDispatcher) {
+        val messageId = "msg_sender_connect_fail"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "l",
+                listingTitle = "t",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = 0L)
+
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+
+        val manualChatString = "Manual chat required"
+        every { context.getString(R.string.requested_messages_approved_manual_chat) } returns
+            manualChatString
+
+        // Fail only the sender connect step.
+        coEvery { StreamChatProvider.connectUser("senderId", any(), any()) } throws
+            RuntimeException("connect fail")
+
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        assertEquals(manualChatString, viewModel.uiState.value.successMessage)
+      }
+
+  @Test
+  fun approveMessage_disconnectFails_isSwallowed_andChannelStillCreated() =
+      runTest(testDispatcher) {
+        val messageId = "msg_disconnect_fail"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "senderId",
+                toUserId = "currentUserId",
+                listingId = "l",
+                listingTitle = "t",
+                message = "Hello",
+                status = MessageStatus.PENDING,
+                timestamp = 0L)
+
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+
+        // Make disconnect throw; ViewModel uses runCatching so this should not crash.
+        coEvery { StreamChatProvider.disconnectUser(any()) } throws RuntimeException("disconnect")
+
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        coVerify {
+          StreamChatProvider.createChannel(
+              channelType = "messaging",
+              channelId = null,
+              memberIds = listOf("senderId", "currentUserId"),
+              extraData =
+                  match {
+                    it["listingTitle"] == "t" && it["listingId"] == "l" && it["name"] == "t"
+                  },
+              listingTitle = "t",
+              initialMessageText = "About: t\n\nHello")
+        }
       }
 
   @Test
@@ -249,8 +376,9 @@ class RequestedMessagesViewModelTest {
         every { StreamChatProvider.isInitialized() } returns true
 
         // Mock channel creation failure
-        coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } throws
-            RuntimeException("Network error")
+        coEvery {
+          StreamChatProvider.createChannel(any(), any(), any(), any(), any(), any())
+        } throws RuntimeException("Network error")
 
         val manualChatString = "Manual chat required"
         every { context.getString(R.string.requested_messages_approved_manual_chat) } returns
@@ -262,6 +390,65 @@ class RequestedMessagesViewModelTest {
 
         // Then
         assertEquals(manualChatString, viewModel.uiState.value.successMessage)
+      }
+
+  @Test
+  fun approveMessage_includesListingMetadata_whenCreatingChannel() =
+      runTest(testDispatcher) {
+        val messageId = "msg_listing_meta"
+        val message =
+            RequestedMessage(
+                id = messageId,
+                fromUserId = "sender",
+                toUserId = "me",
+                listingId = "listing-1",
+                listingTitle = "Nice Listing",
+                message = "Hi, I'm interested",
+                status = MessageStatus.PENDING,
+                timestamp = 0L)
+
+        coEvery { requestedMessageRepository.getRequestedMessage(messageId) } returns message
+        coEvery { requestedMessageRepository.getPendingMessagesForUser(any()) } returns emptyList()
+        every { currentUser.isAnonymous } returns false
+        every { currentUser.uid } returns "me"
+
+        val senderProfile = mockk<Profile>(relaxed = true)
+        every { senderProfile.userInfo } returns UserInfo("S", "N", "", "")
+        coEvery { profileRepository.getProfile("sender") } returns senderProfile
+
+        val receiverProfile = mockk<Profile>(relaxed = true)
+        every { receiverProfile.userInfo } returns UserInfo("R", "O", "", "")
+        coEvery { profileRepository.getProfile("me") } returns receiverProfile
+
+        // Track listingTitle and extraData passed to createChannel
+        val listingSlot = slot<String>()
+        val extraSlot = slot<Map<String, Any>>()
+        val initialMessageSlot = slot<String>()
+        coEvery {
+          StreamChatProvider.createChannel(
+              channelType = any(),
+              channelId = any(),
+              memberIds = any(),
+              extraData = capture(extraSlot),
+              listingTitle = capture(listingSlot),
+              initialMessageText = capture(initialMessageSlot))
+        } returns "messaging:me-sender"
+
+        val channelCreatedString = "Channel created"
+        every { context.getString(R.string.requested_messages_approved_channel_created) } returns
+            channelCreatedString
+        every { StreamChatProvider.isInitialized() } returns true
+        coEvery { StreamChatProvider.connectUser(any(), any(), any()) } returns mockk()
+
+        viewModel.approveMessage(messageId, context)
+        advanceUntilIdle()
+
+        assertEquals("Nice Listing", listingSlot.captured)
+        assertEquals("Nice Listing", extraSlot.captured["listingTitle"])
+        assertEquals("Nice Listing", extraSlot.captured["name"])
+        assertEquals("listing-1", extraSlot.captured["listingId"])
+        assertEquals("About: Nice Listing\n\nHi, I'm interested", initialMessageSlot.captured)
+        assertEquals(channelCreatedString, viewModel.uiState.value.successMessage)
       }
 
   @Test
@@ -296,7 +483,7 @@ class RequestedMessagesViewModelTest {
         assertEquals(signInString, viewModel.uiState.value.successMessage)
         // Verify createChannel was NOT called
         coVerify(exactly = 0) {
-          StreamChatProvider.createChannel(any(), any(), any(), any(), any())
+          StreamChatProvider.createChannel(any(), any(), any(), any(), any(), any())
         }
       }
 
@@ -362,25 +549,33 @@ class RequestedMessagesViewModelTest {
         coEvery { profileRepository.getProfile("currentUserId") } returns myProfile
 
         every { StreamChatProvider.isInitialized() } returns true
-        coEvery { StreamChatProvider.connectUser(any(), any(), any()) } throws
+        // Only fail reconnecting the receiver; allow sender connect so channel creation can
+        // proceed.
+        coEvery { StreamChatProvider.connectUser("currentUserId", any(), any()) } throws
             RuntimeException("connect fail")
         // Upsert succeeds
         coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } returns Unit
-        coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } returns
-            "channel:id"
+        coEvery {
+          StreamChatProvider.createChannel(any(), any(), any(), any(), any(), any())
+        } returns "channel:id"
 
         viewModel.approveMessage(messageId, context)
         advanceUntilIdle()
 
-        // Even though connect failed, channel creation should still be attempted
-        coVerify { StreamChatProvider.upsertUser("senderId", "Sender Name", "") }
+        // Even though reconnects might fail, channel creation should still be attempted
         coVerify {
           StreamChatProvider.createChannel(
               channelType = "messaging",
               channelId = null,
               memberIds = listOf("senderId", "currentUserId"),
-              extraData = mapOf("name" to "Chat"),
-              initialMessageText = "Hello")
+              extraData =
+                  match {
+                    it["listingTitle"] == "Title" &&
+                        it["listingId"] == "list1" &&
+                        it["name"] == "Title"
+                  },
+              listingTitle = "Title",
+              initialMessageText = "About: Title\n\nHello")
         }
       }
 
@@ -415,20 +610,27 @@ class RequestedMessagesViewModelTest {
         coEvery { StreamChatProvider.connectUser(any(), any(), any()) } returns Unit
         coEvery { StreamChatProvider.upsertUser(any(), any(), any()) } throws
             RuntimeException("upsert fail")
-        coEvery { StreamChatProvider.createChannel(any(), any(), any(), any(), any()) } returns
-            "channel:id"
+        coEvery {
+          StreamChatProvider.createChannel(any(), any(), any(), any(), any(), any())
+        } returns "channel:id"
 
         viewModel.approveMessage(messageId, context)
         advanceUntilIdle()
 
-        // Create channel still called even if upsert failed
+        // Create channel still called even if upsert/reconnect flows fail
         coVerify {
           StreamChatProvider.createChannel(
               channelType = "messaging",
               channelId = null,
               memberIds = listOf("senderId", "currentUserId"),
-              extraData = mapOf("name" to "Chat"),
-              initialMessageText = "Hello")
+              extraData =
+                  match {
+                    it["listingTitle"] == "Title" &&
+                        it["listingId"] == "list1" &&
+                        it["name"] == "Title"
+                  },
+              listingTitle = "Title",
+              initialMessageText = "About: Title\n\nHello")
         }
       }
 }

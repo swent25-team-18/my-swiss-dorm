@@ -119,7 +119,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     // Manually set the listing in the ViewModel's state using reflection
@@ -211,7 +210,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     // Set listing and message
@@ -240,7 +238,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     // Set listing and message
@@ -268,7 +265,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     // Set listing with blank message
@@ -293,7 +289,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     // Set listing with blank uid
@@ -319,7 +314,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     // Set listing with blank ownerId
@@ -349,7 +343,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     // Set listing and message
@@ -401,7 +394,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = mockRepository)
 
     // Set listing and message
@@ -427,7 +419,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     // Set an error message using reflection
@@ -452,7 +443,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     val message = "Hello, I'm interested in this listing!"
@@ -470,7 +460,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     viewModel.loadListing(listing.uid, context)
@@ -496,7 +485,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     viewModel.loadListing(listing.uid, context)
@@ -520,7 +508,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     viewModel.loadListing(invalidListing.uid, context)
@@ -566,7 +553,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = profileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = mockRepository)
 
     // Set listing and message
@@ -621,7 +607,6 @@ class ViewListingViewModelTest : FirestoreTest() {
         ViewListingViewModel(
             rentalListingRepository = rentalListingRepository,
             profileRepository = mockProfileRepository,
-            residenciesRepository = residenciesRepository,
             requestedMessageRepository = requestedMessageRepository)
 
     // Load the listing first to set up state

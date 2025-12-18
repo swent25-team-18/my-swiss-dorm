@@ -87,7 +87,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   @Before
   override fun setUp() {
     super.setUp()
-    vm = ViewReviewViewModel(reviewsRepo, profilesRepo)
+    vm = ViewReviewViewModel(reviewsRepo)
 
     runTest {
       // Owner
@@ -337,7 +337,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun doNotShowsPostedByYouWhenNotOwner() = runTest {
     // Ensure we're viewing as FakeUser1 (not the owner of review2)
     switchToUser(FakeUser.FakeUser1)
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent { ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = review2.uid) }
     waitForScreenRoot()
     compose.waitUntil(10_000) { testVm.uiState.value.review.uid == review2.uid }
@@ -437,7 +437,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun errorMsg_triggers_onGoBack_and_showsToast() = runTest {
     var backCalled = false
     // Create a ViewModel that will fail to load
-    val failingVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val failingVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     // Try to load a non-existent review to trigger error
     compose.setContent {
       ViewReviewScreen(
@@ -491,7 +491,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   @Test
   fun errorMsg_showsToast_and_clearsError() = runTest {
     var backCalled = false
-    val failingVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val failingVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = failingVm,
@@ -520,7 +520,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     reviewsRepo.addReview(reviewNoLocation)
     delay(200)
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = reviewNoLocation.uid)
     }
@@ -734,7 +734,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     var navigatedToId: String? = null
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = testVm,
@@ -772,7 +772,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     var navigatedToId: String? = null
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = testVm,
@@ -806,7 +806,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     var navigatedToId: String? = null
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = testVm,
@@ -841,7 +841,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     var navigatedToId: String? = null
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = testVm,

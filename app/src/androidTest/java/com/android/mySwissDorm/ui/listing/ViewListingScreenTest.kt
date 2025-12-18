@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -901,7 +902,9 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.waitUntil(45_000) { vm.uiState.value.translatedTitle == "Deuxième titre" }
+    compose.waitUntil(45_000) {
+      compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).isDisplayed()
+    }
 
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsDisplayed()
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).performClick()

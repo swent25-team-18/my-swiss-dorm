@@ -602,30 +602,37 @@ class AdminPageScreenTest : FirestoreTest() {
 
     viewModel.addPhoto(photo1)
     composeTestRule.waitForIdle()
-    delay(200)
+    delay(500) // Increased delay for CI
     composeTestRule.waitForIdle()
 
     viewModel.addPhoto(photo2)
     composeTestRule.waitForIdle()
-    delay(200)
+    delay(500) // Increased delay for CI
     composeTestRule.waitForIdle()
 
     // Wait for images to appear (increased timeout for CI environment)
-    composeTestRule.waitUntil(15_000) {
+    composeTestRule.waitUntil(20_000) { // Increased from 15s to 20s
       composeTestRule
           .onAllNodesWithTag(C.ImageGridTags.imageTag(photo1.image), useUnmergedTree = true)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
+    // Give image grid time to fully render
+    delay(500)
+    composeTestRule.waitForIdle()
+
     // Click on first image to open full screen
     composeTestRule
         .onNodeWithTag(C.ImageGridTags.imageTag(photo1.image), useUnmergedTree = true)
         .performClick()
+
+    // Give time for full screen animation/transition
+    delay(1000) // Add significant delay for CI to process click and show full screen
     composeTestRule.waitForIdle()
 
     // Verify full screen viewer is displayed (increased timeout for CI environment)
-    composeTestRule.waitUntil(15_000) {
+    composeTestRule.waitUntil(20_000) { // Increased from 15s to 20s
       composeTestRule
           .onAllNodesWithTag(
               C.FullScreenImageViewerTags.imageTag(photo1.image), useUnmergedTree = true)

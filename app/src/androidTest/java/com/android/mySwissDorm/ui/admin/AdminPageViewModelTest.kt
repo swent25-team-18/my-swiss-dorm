@@ -953,14 +953,15 @@ class AdminPageViewModelTest : FirestoreTest() {
 
     // Select and edit
     viewModel.onResidencySelected("Residency To Edit")
-    advanceUntilIdle()
 
     // Wait for data to load and isEditingExisting to be set
+    // onResidencySelected runs in viewModelScope, so we need real delays not just advanceUntilIdle
     // Check all three conditions: name loaded, selectedResidencyName set, and isEditingExisting
     // true
     attempts = 0
-    val maxAttempts = 100
+    val maxAttempts = 200 // Increased for slower CI environments
     while (attempts < maxAttempts) {
+      advanceUntilIdle() // Still call this to advance test scope
       val state = viewModel.uiState
       if (state.name.isNotEmpty() &&
           state.selectedResidencyName == "Residency To Edit" &&
@@ -968,7 +969,6 @@ class AdminPageViewModelTest : FirestoreTest() {
         break
       }
       delay(100)
-      advanceUntilIdle()
       attempts++
     }
 

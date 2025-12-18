@@ -42,6 +42,8 @@ import com.android.mySwissDorm.ui.theme.Red
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
+import com.android.mySwissDorm.ui.utils.showOfflineToast
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.auth.FirebaseAuth
 
 /**
@@ -74,6 +76,12 @@ fun ViewUserProfileScreen(
     previewUi: ViewProfileUiState? = null
 ) {
   val context = LocalContext.current
+
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
 
   // Obtain a real VM only when NOT in preview
   val realVm: ViewProfileScreenViewModel? =
@@ -229,6 +237,7 @@ fun ViewUserProfileScreen(
                             OutlinedTextField(
                                 value = ui.messageText,
                                 onValueChange = { realVm?.updateMessageText(it) },
+                                enabled = isNetworkAvailable,
                                 placeholder = {
                                   Text(stringResource(R.string.write_msg), color = Gray)
                                 },
@@ -247,8 +256,14 @@ fun ViewUserProfileScreen(
                                         focusedTextColor = Black))
 
                             Button(
-                                onClick = { realVm?.sendDirectMessage(context, ownerId) },
-                                enabled = ui.messageText.isNotBlank(),
+                                onClick = {
+                                  if (isOffline) {
+                                    showOfflineToast(context)
+                                  } else {
+                                    realVm?.sendDirectMessage(context, ownerId)
+                                  }
+                                },
+                                enabled = ui.messageText.isNotBlank() && isNetworkAvailable,
                                 modifier = Modifier.align(Alignment.CenterHorizontally),
                                 shape = RoundedCornerShape(Dimens.CardCornerRadius),
                                 colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {

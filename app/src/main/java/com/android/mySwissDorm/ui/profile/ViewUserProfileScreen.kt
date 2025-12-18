@@ -37,7 +37,6 @@ import com.android.mySwissDorm.ui.theme.Black
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.OutlineColor
 import com.android.mySwissDorm.ui.theme.Red
 import com.android.mySwissDorm.ui.theme.TextBoxColor

@@ -293,6 +293,7 @@ fun MyChatScreen(
     val chatClient = chatClientProvider()
     val currentUser = currentUserProvider()
     var isConversationBlocked by remember { mutableStateOf(false) }
+    var isDeletedAccount by remember { mutableStateOf(false) }
     var channel by remember { mutableStateOf<Channel?>(null) }
 
     var isConnected by remember {
@@ -314,8 +315,9 @@ fun MyChatScreen(
           val repo = ProfileRepositoryProvider.repository
           val myBlockedList = repo.getBlockedUserIds(currentUserId)
           val iBlockedThem = myBlockedList.contains(otherUserId)
-          val theirProfile = repo.getProfile(otherUserId)
-          val theyBlockedMe = theirProfile.userInfo.blockedUserIds.contains(currentUserId)
+          val profile = runCatching { repo.getProfile(otherUserId) }.getOrNull()
+          isDeletedAccount = profile == null
+          val theyBlockedMe = profile?.userInfo?.blockedUserIds?.contains(currentUserId) ?: false
           isConversationBlocked = iBlockedThem || theyBlockedMe
         } catch (e: Exception) {}
       }
@@ -358,7 +360,7 @@ fun MyChatScreen(
 
       chatTheme {
         Box(modifier = modifier.fillMaxSize()) {
-          if (isConversationBlocked) {
+          if (isConversationBlocked || isDeletedAccount) {
             Column(modifier = Modifier.fillMaxSize()) {
               val actualBlockedContent =
                   blockedMessagesContent

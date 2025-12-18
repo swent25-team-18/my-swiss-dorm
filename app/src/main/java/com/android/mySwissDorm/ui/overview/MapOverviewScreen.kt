@@ -2,16 +2,22 @@ package com.android.mySwissDorm.ui.overview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.ui.map.MapScreenScaffold
@@ -20,7 +26,9 @@ import com.android.mySwissDorm.ui.map.SmallListingPreviewCard
 import com.android.mySwissDorm.ui.map.launchGoogleMaps
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.LightBlue
+import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -53,6 +61,39 @@ fun MapOverviewScreen(
     onListingClick: (String) -> Unit
 ) {
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
+
+  // If offline, show offline message instead of map
+  if (isOffline) {
+    MapScreenScaffold(
+        title = stringResource(R.string.map_view),
+        onGoBack = onGoBack,
+        cameraPositionState =
+            rememberCameraPositionState {
+              position = CameraPosition.fromLatLngZoom(LatLng(46.8182, 8.2275), 13f)
+            },
+        googleMapUiSettings =
+            MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false),
+        onMapClick = {},
+        onFabClick = {},
+        content = {},
+        overlayContent = {
+          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = stringResource(R.string.maps_not_available_offline),
+                style = MaterialTheme.typography.bodyLarge,
+                color = TextColor.copy(alpha = Dimens.AlphaHigh),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(Dimens.PaddingDefault))
+          }
+        })
+    return
+  }
+
   val groupedListings =
       remember(listings) { listings.groupBy { it.location.latitude to it.location.longitude } }
   var selectedListingsGroup by remember { mutableStateOf<List<ListingCardUI>?>(null) }

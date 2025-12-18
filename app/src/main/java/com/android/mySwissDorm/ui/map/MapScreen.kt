@@ -1,9 +1,23 @@
 package com.android.mySwissDorm.ui.map
 
 import androidx.annotation.StringRes
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import com.android.mySwissDorm.R
+import com.android.mySwissDorm.ui.theme.Dimens
+import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.MapUiSettings
@@ -41,6 +55,12 @@ fun MapScreen(
     @StringRes nameId: Int
 ) {
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
+
   val location = LatLng(latitude, longitude)
   val cameraPositionState = rememberCameraPositionState {
     position = CameraPosition.fromLatLngZoom(location, 15f)
@@ -51,7 +71,28 @@ fun MapScreen(
       onGoBack = onGoBack,
       cameraPositionState = cameraPositionState,
       googleMapUiSettings =
-          MapUiSettings(zoomControlsEnabled = true, myLocationButtonEnabled = true),
-      onFabClick = { launchGoogleMaps(context, "google.navigation:q=$latitude,$longitude") },
-      content = { Marker(state = MarkerState(position = location), title = title) })
+          if (isOffline) MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
+          else MapUiSettings(zoomControlsEnabled = true, myLocationButtonEnabled = true),
+      onFabClick = {
+        if (!isOffline) {
+          launchGoogleMaps(context, "google.navigation:q=$latitude,$longitude")
+        }
+      },
+      content = {
+        if (!isOffline) {
+          Marker(state = MarkerState(position = location), title = title)
+        }
+      },
+      overlayContent = {
+        if (isOffline) {
+          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = stringResource(R.string.maps_not_available_offline),
+                style = MaterialTheme.typography.bodyLarge,
+                color = TextColor.copy(alpha = Dimens.AlphaHigh),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(Dimens.PaddingDefault))
+          }
+        }
+      })
 }

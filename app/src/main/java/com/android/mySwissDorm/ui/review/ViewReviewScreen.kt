@@ -114,7 +114,12 @@ fun ViewReviewScreen(
     }
   }
 
-  LaunchedEffect(review) { viewReviewViewModel.translateReview(context) }
+  // Only translate if network is available
+  LaunchedEffect(review, isNetworkAvailable) {
+    if (isNetworkAvailable) {
+      viewReviewViewModel.translateReview(context)
+    }
+  }
 
   if (uiState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -154,18 +159,22 @@ fun ViewReviewScreen(
                     .imePadding()
                     .testTag(C.ViewReviewTags.ROOT),
             verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
-              val clickableText =
-                  if (isTranslated) {
-                    context.getString(R.string.see_original)
-                  } else {
-                    context.getString(R.string.view_review_translate_review)
-                  }
-              Text(
-                  text = clickableText,
-                  modifier =
-                      Modifier.clickable(onClick = { isTranslated = !isTranslated })
-                          .testTag(C.ViewReviewTags.TRANSLATE_BTN),
-                  color = MainColor)
+              if (isOffline) {
+                // Hide translate button when offline
+              } else {
+                val clickableText =
+                    if (isTranslated) {
+                      context.getString(R.string.see_original)
+                    } else {
+                      context.getString(R.string.view_review_translate_review)
+                    }
+                Text(
+                    text = clickableText,
+                    modifier =
+                        Modifier.clickable(onClick = { isTranslated = !isTranslated })
+                            .testTag(C.ViewReviewTags.TRANSLATE_BTN),
+                    color = MainColor)
+              }
               val titleToDisplay = if (isTranslated) uiState.translatedTitle else review.title
               Text(
                   text = titleToDisplay,

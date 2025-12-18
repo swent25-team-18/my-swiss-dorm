@@ -30,6 +30,7 @@ import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.utils.NetworkUtils
 
 /**
  * A Text composable that can be translated, by clicking on the "Translate" text below it.
@@ -64,8 +65,17 @@ fun TranslatableText(
   val state by viewModel.uiState.collectAsState()
   var isTranslated by remember { mutableStateOf(false) }
 
-  // Translate the text each time the input 'text' changes
-  LaunchedEffect(text) { viewModel.translate(text, context) }
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+
+  // Translate the text each time the input 'text' changes - only if network is available
+  LaunchedEffect(text, isNetworkAvailable) {
+    if (isNetworkAvailable) {
+      viewModel.translate(text, context)
+    }
+  }
 
   // Determines which version to display : original or translated
   val textToDisplay = if (isTranslated) state.translated else text
@@ -90,8 +100,9 @@ fun TranslatableText(
         onTextLayout = onTextLayout,
         style = style)
 
-    // Translation toggle button, visible only if the text input is not blank
-    if (text.isNotBlank()) {
+    // Translation toggle button, visible only if the text input is not blank and network is
+    // available
+    if (text.isNotBlank() && isNetworkAvailable) {
       Spacer(modifier = Modifier.height(Dimens.SpacingXSmall))
 
       // Either displays "Translate" or "See original"

@@ -26,6 +26,7 @@ import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.android.mySwissDorm.ui.utils.calculatePOIDistances
 import com.android.mySwissDorm.ui.utils.translateTextField
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.String
@@ -217,18 +218,24 @@ class ViewListingViewModel(
                 isBookmarked = isBookmarked,
                 poiDistances = emptyList(),
                 hasExistingMessage = hasExistingMessage)
-        updateUIState(listing, uiData, isLoadingPOIs = true)
+        // Only start POI calculation if network is available
+        if (NetworkUtils.isNetworkAvailable(context)) {
+          updateUIState(listing, uiData, isLoadingPOIs = true)
 
-        launch {
-          try {
-            val userUniversityName = getUserUniversityName(currentUserId, isGuest)
-            val poiDistances =
-                calculatePOIDistances(listing.location, userUniversityName, listing.uid)
-            _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIs = false) }
-          } catch (e: Exception) {
-            Log.e("ViewListingViewModel", "Error calculating POI distances asynchronously", e)
-            _uiState.update { it.copy(isLoadingPOIs = false) }
+          launch {
+            try {
+              val userUniversityName = getUserUniversityName(currentUserId, isGuest)
+              val poiDistances =
+                  calculatePOIDistances(listing.location, userUniversityName, listing.uid)
+              _uiState.update { it.copy(poiDistances = poiDistances, isLoadingPOIs = false) }
+            } catch (e: Exception) {
+              Log.e("ViewListingViewModel", "Error calculating POI distances asynchronously", e)
+              _uiState.update { it.copy(isLoadingPOIs = false) }
+            }
           }
+        } else {
+          // Offline: skip POI calculation
+          updateUIState(listing, uiData, isLoadingPOIs = false)
         }
         launch(Dispatchers.IO) {
           photoManager.initialize(listing.imageUrls)

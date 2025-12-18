@@ -124,7 +124,12 @@ fun ViewListingScreen(
     }
   }
 
-  LaunchedEffect(listing) { viewListingViewModel.translateListing(context) }
+  // Only translate if network is available
+  LaunchedEffect(listing, isNetworkAvailable) {
+    if (isNetworkAvailable) {
+      viewListingViewModel.translateListing(context)
+    }
+  }
 
   if (listingUIState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -215,18 +220,22 @@ fun ViewListingScreen(
                       .imePadding()
                       .testTag(C.ViewListingTags.ROOT),
               verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
-                val clickableText =
-                    if (isTranslated) {
-                      context.getString(R.string.see_original)
-                    } else {
-                      context.getString(R.string.view_listing_translate_listing)
-                    }
-                Text(
-                    text = clickableText,
-                    modifier =
-                        Modifier.clickable(onClick = { isTranslated = !isTranslated })
-                            .testTag(C.ViewListingTags.TRANSLATE_BTN),
-                    color = MainColor)
+                if (isOffline) {
+                  // Hide translate button when offline
+                } else {
+                  val clickableText =
+                      if (isTranslated) {
+                        context.getString(R.string.see_original)
+                      } else {
+                        context.getString(R.string.view_listing_translate_listing)
+                      }
+                  Text(
+                      text = clickableText,
+                      modifier =
+                          Modifier.clickable(onClick = { isTranslated = !isTranslated })
+                              .testTag(C.ViewListingTags.TRANSLATE_BTN),
+                      color = MainColor)
+                }
                 val titleToDisplay =
                     if (isTranslated) listingUIState.translatedTitle else listing.title
                 Text(
@@ -285,7 +294,16 @@ fun ViewListingScreen(
                             fontWeight = FontWeight.SemiBold),
                     modifier = Modifier.testTag(C.ViewListingTags.POI_DISTANCES))
 
-                if (listingUIState.isLoadingPOIs) {
+                if (isOffline) {
+                  Text(
+                      stringResource(R.string.poi_not_available_offline),
+                      style =
+                          MaterialTheme.typography.bodyMedium.copy(
+                              color =
+                                  MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                      alpha = Dimens.AlphaSecondary)),
+                      modifier = Modifier.padding(start = Dimens.PaddingDefault, top = 2.dp))
+                } else if (listingUIState.isLoadingPOIs) {
                   Row(
                       modifier = Modifier.padding(start = Dimens.PaddingDefault, top = 2.dp),
                       verticalAlignment = Alignment.CenterVertically,
@@ -432,7 +450,13 @@ fun ViewListingScreen(
                 // Location placeholder
                 viewListingViewModel.setLocationOfListing(listingUid)
                 val location = listingUIState.locationOfListing
-                if (location.latitude != 0.0 && location.longitude != 0.0) {
+                if (isOffline) {
+                  // Show offline message instead of map
+                  PlaceholderBlock(
+                      text = stringResource(R.string.maps_not_available_offline),
+                      height = Dimens.ImageSizeLarge,
+                      modifier = Modifier.testTag(C.ViewListingTags.LOCATION))
+                } else if (location.latitude != 0.0 && location.longitude != 0.0) {
                   MapPreview(
                       location = location,
                       title = listing.title,

@@ -432,18 +432,20 @@ fun ViewListingScreen(
                   BulletRow("${stringResource(R.string.starting)} ${formatDate(listing.startDate)}")
                 }
 
-                // Description
-                SectionCard(modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION)) {
-                  Text(
-                      "${stringResource(R.string.description)} :", fontWeight = FontWeight.SemiBold)
-                  Spacer(Modifier.height(Dimens.SpacingXSmall))
-                  val descriptionToDisplay =
-                      if (isTranslated) listingUIState.translatedDescription
-                      else listing.description
-                  Text(
-                      descriptionToDisplay,
-                      style = MaterialTheme.typography.bodyLarge,
-                      modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION_TEXT))
+                // Description (only show if description is not blank)
+                val descriptionToDisplay =
+                    if (isTranslated) listingUIState.translatedDescription else listing.description
+                if (descriptionToDisplay.isNotBlank()) {
+                  SectionCard(modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION)) {
+                    Text(
+                        "${stringResource(R.string.description)} :",
+                        fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(Dimens.SpacingXSmall))
+                    Text(
+                        descriptionToDisplay,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.testTag(C.ViewListingTags.DESCRIPTION_TEXT))
+                  }
                 }
 
                 ImageGrid(

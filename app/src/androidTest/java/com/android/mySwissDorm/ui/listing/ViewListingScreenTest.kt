@@ -675,6 +675,31 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun descriptionSection_isNotDisplayed_whenBlank() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    val listingWithBlankDescription =
+        rentalListing1.copy(
+            ownerId = ownerUid, title = "Listing without description", description = "")
+    firestoreListingRepo.addRentalListing(listingWithBlankDescription)
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = listingWithBlankDescription.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      val s = vm.uiState.value
+      s.listing.uid == listingWithBlankDescription.uid
+    }
+
+    // Description section should not be displayed when description is blank
+    compose
+        .onNodeWithTag(C.ViewListingTags.DESCRIPTION, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
+  @Test
   fun bulletSection_isDisplayed() = runTest {
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
     compose.setContent {

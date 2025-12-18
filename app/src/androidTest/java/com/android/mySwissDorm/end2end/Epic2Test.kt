@@ -117,6 +117,7 @@ class Epic2Test : FirestoreTest() {
     // 1. Sign up
     ComposeScreen.onComposeScreen<SignInScreen>(compose) {
       signUpButton {
+        performScrollTo()
         assertIsDisplayed()
         performClick()
       }
@@ -220,9 +221,17 @@ class Epic2Test : FirestoreTest() {
     compose.onNodeWithTag(C.ViewUserProfileTags.BACK_BTN).performClick()
 
     compose.waitForIdle()
+    if (compose.onAllNodesWithTag(C.ViewListingTags.BACK_BTN).fetchSemanticsNodes().isNotEmpty()) {
+      compose.onNodeWithTag(C.ViewListingTags.BACK_BTN).performClick()
+    }
+    if (compose
+        .onAllNodesWithTag(C.ViewListingTags.BLOCKED_BACK_BTN)
+        .fetchSemanticsNodes()
+        .isNotEmpty()) {
+      compose.onNodeWithTag(C.ViewListingTags.BLOCKED_BACK_BTN).performClick()
+    }
 
     // 5. Add Review
-    compose.onNodeWithTag(C.ViewListingTags.BACK_BTN).performClick()
 
     compose.waitUntil("FabScrim not displayed (for add review)", 5000) {
       compose.onNodeWithTag(C.BrowseCityTags.FABSCRIM).isDisplayed()

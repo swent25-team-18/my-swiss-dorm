@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -97,13 +98,15 @@ fun ListingCard(
 
                 Spacer(Modifier.width(Dimens.SpacingLarge))
 
-                Column(modifier = Modifier.weight(0.65f).fillMaxHeight()) {
+                Column(modifier = Modifier.weight(0.65f)) {
                   Text(
                       text = data.title,
                       style = MaterialTheme.typography.titleMedium,
                       fontWeight = FontWeight.SemiBold,
                       textAlign = TextAlign.Center,
                       color = TextColor,
+                      maxLines = 1,
+                      overflow = TextOverflow.Ellipsis,
                       modifier = Modifier.fillMaxWidth())
 
                   Spacer(Modifier.height(Dimens.SpacingDefault))

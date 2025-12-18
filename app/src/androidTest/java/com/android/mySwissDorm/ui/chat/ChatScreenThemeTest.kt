@@ -27,6 +27,7 @@ class ChatScreenThemeTest {
             isConnectedOverride = true,
             chatClientProvider = { fakeClient },
             currentUserProvider = { null },
+            currentUserId = null,
             userStateProvider = { null },
             connectUser = { _, _ -> },
             viewModelFactoryProvider = { _: Context, _: ChatClient, _: String, _: Int ->
@@ -36,7 +37,8 @@ class ChatScreenThemeTest {
               themeApplied = true
               content()
             },
-            messagesScreen = { _, _ -> messagesInvoked = true })
+            messagesScreen = { _, _ -> messagesInvoked = true },
+            channelFetcher = { _, _ -> null })
       }
     }
 

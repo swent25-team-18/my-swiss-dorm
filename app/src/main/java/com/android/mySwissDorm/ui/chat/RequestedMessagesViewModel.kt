@@ -166,30 +166,68 @@ class RequestedMessagesViewModel(
               return@launch
             }
 
+            // We want the first message in the created channel to appear as RECEIVED from the
+            // requester (message.fromUserId). Stream assigns the message author based on the
+            // currently connected user, so in dev-mode we temporarily connect as the sender to
+            // create the channel + send their requested message, then reconnect as the receiver.
+
+            val receiverId = currentUser.uid
+            val senderId = message.fromUserId
+
+            val receiverName =
+                runCatching {
+                      val profile = profileRepository.getProfile(receiverId)
+                      "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                    }
+                    .getOrNull()
+                    .orEmpty()
+                    .ifBlank { "User ${receiverId.take(5)}" }
+
+            val senderName =
+                runCatching {
+                      val profile = profileRepository.getProfile(senderId)
+                      "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+                    }
+                    .getOrNull()
+                    .orEmpty()
+                    .ifBlank { "User ${senderId.take(5)}" }
+
+            val hadConnectedUser =
+                runCatching { StreamChatProvider.getClient().clientState.user.value != null }
+                    .getOrDefault(false)
+
             try {
-              val profile = profileRepository.getProfile(currentUser.uid)
-              val displayName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
+              if (hadConnectedUser) {
+                runCatching { StreamChatProvider.disconnectUser(flushPersistence = false) }
+              }
+
               StreamChatProvider.connectUser(
-                  firebaseUserId = currentUser.uid, displayName = displayName, imageUrl = "")
-            } catch (connectError: Exception) {
-              Log.w("RequestedMessagesViewModel", "Could not connect current user", connectError)
+                  firebaseUserId = senderId, displayName = senderName, imageUrl = "")
+              StreamChatProvider.createChannel(
+                  channelType = "messaging",
+                  channelId = null,
+                  memberIds = listOf(senderId, message.toUserId),
+                  extraData =
+                      mapOf(
+                          "name" to message.listingTitle,
+                          "listingTitle" to message.listingTitle,
+                          "listingId" to message.listingId),
+                  listingTitle = message.listingTitle,
+                  initialMessageText =
+                      buildString {
+                        if (message.listingTitle.isNotBlank()) {
+                          append("About: ${message.listingTitle}")
+                          append("\n\n")
+                        }
+                        append(message.message)
+                      })
+            } finally {
+              runCatching { StreamChatProvider.disconnectUser(flushPersistence = false) }
+              runCatching {
+                StreamChatProvider.connectUser(
+                    firebaseUserId = receiverId, displayName = receiverName, imageUrl = "")
+              }
             }
-
-            try {
-              val profile = profileRepository.getProfile(message.fromUserId)
-              val senderName = "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
-              StreamChatProvider.upsertUser(
-                  userId = message.fromUserId, name = senderName, image = "")
-            } catch (upsertError: Exception) {
-              Log.e("RequestedMessagesViewModel", "Failed to upsert sender user", upsertError)
-            }
-
-            StreamChatProvider.createChannel(
-                channelType = "messaging",
-                channelId = null,
-                memberIds = listOf(message.fromUserId, message.toUserId),
-                extraData = mapOf("name" to "Chat"),
-                initialMessageText = message.message)
 
             setSuccessMessage(
                 context.getString(R.string.requested_messages_approved_channel_created))

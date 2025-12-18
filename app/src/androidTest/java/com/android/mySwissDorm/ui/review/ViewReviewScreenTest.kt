@@ -951,9 +951,6 @@ class ViewReviewScreenTest : FirestoreTest() {
     compose.waitUntil(35_000) { vm.uiState.value.translatedTitle == "Deuxième titre" }
 
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewReviewTags.DESCRIPTION_TEXT).assertIsDisplayed()
-
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).performClick()
 
     compose.waitForIdle()

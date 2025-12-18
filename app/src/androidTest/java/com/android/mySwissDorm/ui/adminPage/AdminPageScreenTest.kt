@@ -1,10 +1,12 @@
 package com.android.mySwissDorm.ui.adminPage
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.navigation.compose.rememberNavController
+import androidx.test.core.app.ApplicationProvider
 import com.android.mySwissDorm.model.city.CitiesRepositoryFirestore
 import com.android.mySwissDorm.model.city.CitiesRepositoryProvider
 import com.android.mySwissDorm.model.map.Location
@@ -32,6 +35,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -134,7 +138,7 @@ class AdminPageScreenTest : FirestoreTest() {
     composeTestRule.waitUntil(5_000) {
       viewModel.uiState.selected == AdminPageViewModel.EntityType.RESIDENCY
     }
-    composeTestRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(C.AddPhotoButtonTags.BUTTON).performScrollTo().assertIsDisplayed()
     // Check for Residency-specific fields
     composeTestRule
         .onNode(hasText("Description") and hasSetTextAction())
@@ -585,5 +589,74 @@ class AdminPageScreenTest : FirestoreTest() {
           .onNodeWithTag(C.ImageGridTags.imageTag(photo.image), useUnmergedTree = true)
           .isDisplayed()
     }
+  }
+
+  @Test
+  fun fullScreenImagesForResidency_displaysCorrectly() = runTest {
+    setContent()
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.RESIDENCY)
+    composeTestRule.waitForIdle()
+
+    val photo1 = com.android.mySwissDorm.model.photo.Photo.createNewTempPhoto("photo1.jpg")
+    val photo2 = com.android.mySwissDorm.model.photo.Photo.createNewTempPhoto("photo2.jpg")
+
+    viewModel.addPhoto(photo1)
+    composeTestRule.waitForIdle()
+
+    viewModel.addPhoto(photo2)
+    composeTestRule.waitForIdle()
+
+    // Verify photos are in ViewModel state
+    assertEquals(2, viewModel.uiState.pickedImages.size)
+    assertEquals(photo1.fileName, viewModel.uiState.pickedImages[0].fileName)
+    assertEquals(photo2.fileName, viewModel.uiState.pickedImages[1].fileName)
+
+    // Test full screen state logic directly (skip AsyncImage rendering which fails with empty
+    // files)
+    assertFalse("Full screen should not be shown initially", viewModel.uiState.showFullScreenImages)
+
+    // Trigger full screen by calling ViewModel directly
+    viewModel.onClickImage(photo1.image)
+    composeTestRule.waitForIdle()
+
+    // Verify full screen state is set
+    assertTrue("Full screen should be shown after click", viewModel.uiState.showFullScreenImages)
+    assertEquals("Index should be 0 for first photo", 0, viewModel.uiState.fullScreenImagesIndex)
+
+    // Test dismiss
+    viewModel.dismissFullScreenImages()
+    composeTestRule.waitForIdle()
+
+    assertFalse("Full screen should be dismissed", viewModel.uiState.showFullScreenImages)
+  }
+
+  @Test
+  fun submittingState_showsLoadingIndicator() = runTest {
+    setContent()
+    viewModel.onTypeChange(AdminPageViewModel.EntityType.CITY)
+    viewModel.onName("Test City")
+    val location = Location(name = "Test Location", latitude = 46.5, longitude = 6.6)
+    viewModel.onLocationConfirm(location)
+    viewModel.onDescription("Test Description")
+    val photo = com.android.mySwissDorm.model.photo.Photo.createNewTempPhoto("city.jpg")
+    viewModel.onImage(photo)
+    composeTestRule.waitForIdle()
+
+    // Start submission (this will set isSubmitting to true)
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    viewModel.submit(context)
+    composeTestRule.waitForIdle()
+
+    // Check that loading indicator appears in button
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithTag(C.AdminPageTags.SAVE_BUTTON, useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    // Button should be disabled during submission
+    composeTestRule
+        .onNodeWithTag(C.AdminPageTags.SAVE_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
   }
 }

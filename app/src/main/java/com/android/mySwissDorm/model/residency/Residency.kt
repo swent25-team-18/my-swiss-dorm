@@ -11,4 +11,5 @@ data class Residency(
     val email: String?,
     val phone: String?,
     val website: URL?,
+    val imageUrls: List<String> = emptyList(),
 )

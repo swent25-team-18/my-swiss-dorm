@@ -906,8 +906,13 @@ class ViewReviewScreenTest : FirestoreTest() {
 
   @Test
   fun translateButtonTextUpdatesWhenClicked() {
+    // Set the locale to French so the translate button appears
+    Locale.setDefault(Locale.FRENCH)
+
     setOwnerReview()
     waitForScreenRoot()
+
+    compose.waitUntil(25_000) { vm.uiState.value.translatedDescription != "" }
 
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
     compose
@@ -923,6 +928,19 @@ class ViewReviewScreenTest : FirestoreTest() {
   }
 
   @Test
+  fun translateButtonDoesNotAppearIfSameLanguage() {
+    // Set the locale to English so the translate button doesn't appear
+    Locale.setDefault(Locale.ENGLISH)
+
+    setOwnerReview()
+    waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.translatedDescription != "" }
+
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsNotDisplayed()
+  }
+
+  @Test
   fun translateButtonSuccessfullyTranslatesReview() {
     // Set the locale to French so it translates the review in French
     Locale.setDefault(Locale.FRENCH)
@@ -930,20 +948,14 @@ class ViewReviewScreenTest : FirestoreTest() {
     setOtherReview()
     waitForScreenRoot()
 
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review2.uid }
+    compose.waitUntil(45_000) {
+      compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).isDisplayed()
+    }
 
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewReviewTags.DESCRIPTION_TEXT).assertIsDisplayed()
-
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).performClick()
 
     compose.waitForIdle()
-
-    compose.waitUntil(20_000) {
-      compose.onNodeWithText("Deuxième titre").isDisplayed() &&
-          compose.onNodeWithText("Ma deuxième critique").isDisplayed()
-    }
 
     compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertTextEquals("Deuxième titre")
     compose

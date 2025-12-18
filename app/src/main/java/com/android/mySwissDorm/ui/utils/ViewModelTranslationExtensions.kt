@@ -3,7 +3,6 @@ package com.android.mySwissDorm.ui.utils
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.mySwissDorm.R
 import com.android.mySwissDorm.utils.Translator
 import java.util.Locale
 import kotlinx.coroutines.launch
@@ -23,12 +22,10 @@ import kotlinx.coroutines.launch
 fun ViewModel.translateTextField(
     text: String,
     context: Context,
-    onUpdateTranslating: (String) -> Unit,
     onUpdateTranslated: (String) -> Unit
 ) {
   if (text.isNotBlank()) {
     viewModelScope.launch {
-      onUpdateTranslating(context.getString(R.string.translator_translating))
       val translated = translateSingleText(text, context)
       onUpdateTranslated(translated)
     }

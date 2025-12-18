@@ -55,6 +55,8 @@ import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.LightGray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.utils.showOfflineToast
+import com.android.mySwissDorm.utils.NetworkUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +68,11 @@ fun ReviewsByResidencyScreen(
     onViewResidencyDetails: () -> Unit = {},
 ) {
   val context = LocalContext.current
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
 
   LaunchedEffect(residencyName) { reviewsByResidencyViewModel.loadReviews(residencyName, context) }
 
@@ -144,11 +151,21 @@ fun ReviewsByResidencyScreen(
                           ReviewCard(
                               item,
                               onSelectReview,
+                              isOffline = isOffline,
                               onUpvote = {
-                                reviewsByResidencyViewModel.upvoteReview(item.reviewUid, context)
+                                if (isOffline) {
+                                  showOfflineToast(context)
+                                } else {
+                                  reviewsByResidencyViewModel.upvoteReview(item.reviewUid, context)
+                                }
                               },
                               onDownvote = {
-                                reviewsByResidencyViewModel.downvoteReview(item.reviewUid, context)
+                                if (isOffline) {
+                                  showOfflineToast(context)
+                                } else {
+                                  reviewsByResidencyViewModel.downvoteReview(
+                                      item.reviewUid, context)
+                                }
                               })
                         }
                       }
@@ -162,6 +179,7 @@ fun ReviewsByResidencyScreen(
 private fun ReviewCard(
     data: ReviewCardUI,
     onClick: (ReviewCardUI) -> Unit,
+    isOffline: Boolean,
     onUpvote: () -> Unit,
     onDownvote: () -> Unit
 ) {
@@ -273,11 +291,12 @@ private fun ReviewCard(
                                                 C.ReviewsByResidencyTag.reviewPosterName(
                                                     data.reviewUid)))
 
-                                // Vote buttons (always shown, but disabled for owner)
+                                // Vote buttons (always shown, but disabled for owner or offline)
                                 CompactVoteButtons(
                                     netScore = data.netScore,
                                     userVote = data.userVote,
                                     isOwner = data.isOwner,
+                                    isOffline = isOffline,
                                     onUpvote = onUpvote,
                                     onDownvote = onDownvote,
                                     modifier =
@@ -297,6 +316,7 @@ private fun CompactVoteButtons(
     netScore: Int,
     userVote: VoteType,
     isOwner: Boolean,
+    isOffline: Boolean,
     onUpvote: () -> Unit,
     onDownvote: () -> Unit,
     modifier: Modifier = Modifier

@@ -436,7 +436,7 @@ private fun VoteButtons(
         // Upvote button
         IconButton(
             onClick = onUpvote,
-            enabled = !isOwner && !isOffline,
+            enabled = !isOwner,
             modifier = Modifier.testTag(C.ViewReviewTags.VOTE_UPVOTE_BUTTON)) {
               Icon(
                   imageVector = Icons.Filled.ArrowUpward,
@@ -466,7 +466,7 @@ private fun VoteButtons(
         // Downvote button
         IconButton(
             onClick = onDownvote,
-            enabled = !isOwner && !isOffline,
+            enabled = !isOwner,
             modifier = Modifier.testTag(C.ViewReviewTags.VOTE_DOWNVOTE_BUTTON)) {
               Icon(
                   imageVector = Icons.Filled.ArrowDownward,

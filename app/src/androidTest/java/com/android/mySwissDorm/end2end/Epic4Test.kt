@@ -113,7 +113,12 @@ class Epic4Test : FirestoreTest() {
     composeTestRule.setContent { MySwissDormApp(LocalContext.current, fakeCredentialManager) }
 
     println("DEBUG_STEP: Handling Sign In")
-    ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) { signUpButton { performClick() } }
+    ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
+      signUpButton {
+        performScrollTo()
+        performClick()
+      }
+    }
     composeTestRule.waitForIdle()
 
     println("DEBUG_STEP: Handling Sign Up Input")

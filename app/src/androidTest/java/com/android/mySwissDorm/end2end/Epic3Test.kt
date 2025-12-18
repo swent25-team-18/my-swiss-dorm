@@ -101,6 +101,7 @@ class Epic3Test : FirestoreTest() {
         ComposeScreen.onComposeScreen<SignInScreen>(composeTestRule) {
           assertIsDisplayed()
           signUpButton {
+            performScrollTo()
             assertIsDisplayed()
             performClick()
           }

@@ -45,10 +45,10 @@ fun EditPreferencesScreen(viewModel: ProfileScreenViewModel, onBack: () -> Unit)
       errorMsg = state.errorMsg,
       bottomButtonText = stringResource(R.string.save_preferences),
       isButtonEnabled = isFormValid,
-      onBottomButtonClick = { viewModel.savePreferences(context, onSuccess = onBack) },
+      onBottomButtonClick = { viewModel.savePreferences(onSuccess = onBack) },
       onUseCurrentLocationClick = onUseCurrentLocationClick,
       onClearClick = {
         viewModel.clearPreferences()
-        viewModel.savePreferences(context, onSuccess = onBack)
+        viewModel.savePreferences(onSuccess = onBack)
       })
 }

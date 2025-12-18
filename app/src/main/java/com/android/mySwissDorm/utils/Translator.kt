@@ -101,14 +101,14 @@ class Translator(
     langIdentifier.close()
   }
 
-  /**
-   * Utility function used to get the code of a language from the Locale code
-   *
-   * @param localeCode The locale code (e.g. "fr", "en-US") obtained from
-   *   Locale.getDefault().language.
-   * @return The language code understandable for TranslateLanguage.
-   */
   companion object {
+    /**
+     * Utility function used to get the code of a language from the Locale code
+     *
+     * @param localeCode The locale code (e.g. "fr", "en-US") obtained from
+     *   Locale.getDefault().language.
+     * @return The language code understandable for TranslateLanguage.
+     */
     fun getLanguageCodeFromLocale(localeCode: String): String {
       val simpleCode = localeCode.split("-").first()
       return TranslateLanguage.fromLanguageTag(simpleCode) ?: TranslateLanguage.ENGLISH

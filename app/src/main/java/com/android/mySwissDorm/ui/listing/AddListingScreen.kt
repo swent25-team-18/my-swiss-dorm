@@ -1,3 +1,5 @@
+package com.android.mySwissDorm.ui.listing
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.map.Location
 import com.android.mySwissDorm.model.rental.RentalListing
 import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.ui.DefaultAddPhotoButton
@@ -25,7 +28,6 @@ import com.android.mySwissDorm.ui.PriceField
 import com.android.mySwissDorm.ui.ResidencyDropdownResID
 import com.android.mySwissDorm.ui.RoomSizeField
 import com.android.mySwissDorm.ui.TitleField
-import com.android.mySwissDorm.ui.listing.AddListingViewModel
 import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.theme.DarkGray
@@ -294,12 +296,12 @@ fun AddListingScreen(
                 { query -> addListingViewModel.setCustomLocationQuery(query) }
               }
           val onDropDownLocationSelect =
-              remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+              remember<(Location) -> Unit> {
                 { location -> addListingViewModel.setCustomLocation(location) }
               }
           val onDismiss = remember { { addListingViewModel.dismissCustomLocationDialog() } }
           val onConfirm =
-              remember<(com.android.mySwissDorm.model.map.Location) -> Unit> {
+              remember<(Location) -> Unit> {
                 { location ->
                   addListingViewModel.setCustomLocation(location)
                   addListingViewModel.dismissCustomLocationDialog()

@@ -51,8 +51,7 @@ data class ViewProfileUiState(
 class ViewProfileScreenViewModel(
     private val repo: ProfileRepository = ProfileRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository
+    private val photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloudRepository
 ) : ViewModel() {
 
   // Backing mutable state; UI observes the exposed read-only StateFlow.

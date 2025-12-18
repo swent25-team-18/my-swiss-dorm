@@ -39,7 +39,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     return try {
       val profile = getProfile(ownerId)
       profile.userInfo.blockedUserIds
-    } catch (e: NoSuchElementException) {
+    } catch (_: NoSuchElementException) {
       // Return emptyList when profile is missing (maintains backward compatibility
       // with previous behavior that returned emptyList for missing field)
       emptyList()
@@ -128,7 +128,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
                 (item as? String)?.let { typeName ->
                   try {
                     RoomType.valueOf(typeName)
-                  } catch (e: IllegalArgumentException) {
+                  } catch (_: IllegalArgumentException) {
                     null // Skip invalid/renamed enum values to avoid crash
                   }
                 }

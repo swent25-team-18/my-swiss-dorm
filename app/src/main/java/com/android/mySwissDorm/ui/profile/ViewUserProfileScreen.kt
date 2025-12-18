@@ -26,17 +26,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
-import com.android.mySwissDorm.resources.C
 import com.android.mySwissDorm.resources.C.ViewUserProfileTags as T
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.Red
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -94,7 +91,6 @@ fun ViewUserProfileScreen(
   val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
   val isCurrentUser = ownerId == currentUserId
 
-  // ✅ IMPORTANT: ensure click handler always sees latest values
   val latestIsBlocked by rememberUpdatedState(ui.isBlocked)
   val latestOwnerId by rememberUpdatedState(ownerId)
 
@@ -158,9 +154,7 @@ fun ViewUserProfileScreen(
                                       model = ui.profilePicture.image,
                                       contentDescription = "Profile picture",
                                       contentScale = ContentScale.Crop,
-                                      modifier =
-                                          Modifier.fillMaxSize()
-                                              .testTag(C.ViewUserProfileTags.PROFILE_PICTURE),
+                                      modifier = Modifier.fillMaxSize().testTag(T.PROFILE_PICTURE),
                                   )
                                 } else {
                                   Icon(
@@ -169,7 +163,7 @@ fun ViewUserProfileScreen(
                                       tint = MainColor,
                                       modifier =
                                           Modifier.size(Dimens.ImageSizeSmall)
-                                              .testTag(C.ViewUserProfileTags.PROFILE_PICTURE))
+                                              .testTag(T.PROFILE_PICTURE))
                                 }
                               }
                         }
@@ -288,19 +282,4 @@ fun ViewUserProfileScreen(
               }
         }
       }
-}
-
-@Preview(showBackground = true, name = "ViewUserProfile – Preview")
-@Composable
-private fun Preview_ViewUserProfile() {
-  MySwissDormAppTheme {
-    ViewUserProfileScreen(
-        viewModel = null,
-        ownerId = null,
-        onBack = {},
-        onSendMessage = {},
-        previewUi =
-            ViewProfileUiState(
-                name = "Mansour Kanaan", residence = "Vortex, Coloc", image = null, error = null))
-  }
 }

@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.settings
 
-import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
@@ -32,7 +31,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,7 +41,6 @@ import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
@@ -120,14 +117,6 @@ fun SettingsScreen(
       isAdmin = isAdmin,
       onAdminClick = onAdminClick)
 }
-
-private val previewUiState =
-    SettingsUiState(
-        userName = "John Doe",
-        email = "john.doe@email.com",
-        errorMsg = null,
-        topItems = emptyList(),
-        accountItems = emptyList())
 
 /**
  * Content composable for the Settings screen UI.
@@ -537,26 +526,4 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
           }
     }
   }
-}
-
-// ---------- Previews ----------
-
-@Preview(
-    name = "Settings – Light Mode",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_NO,
-    widthDp = 360)
-@Composable
-private fun SettingsPreview_Light() {
-  MySwissDormAppTheme { SettingsScreenContent(ui = previewUiState) }
-}
-
-@Preview(
-    name = "Settings – Dark Mode",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    widthDp = 360)
-@Composable
-private fun SettingsPreview_Dark() {
-  MySwissDormAppTheme { SettingsScreenContent(ui = previewUiState) }
 }

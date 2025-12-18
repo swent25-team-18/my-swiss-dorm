@@ -21,7 +21,7 @@ data class Location(val name: String, val latitude: Double, val longitude: Doubl
  */
 // Haversine formula implementation with the help of AI
 fun Location.distanceTo(otherLoc: Location): Double {
-  val R = 6371.0 // Earth's mean radius in kilometers
+  val r = 6371.0 // Earth's mean radius in kilometers
 
   val latDistance = Math.toRadians(otherLoc.latitude - latitude)
   val lonDistance = Math.toRadians(otherLoc.longitude - longitude)
@@ -34,5 +34,5 @@ fun Location.distanceTo(otherLoc: Location): Double {
 
   val c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
-  return R * c // Distance in kilometers
+  return r * c // Distance in kilometers
 }

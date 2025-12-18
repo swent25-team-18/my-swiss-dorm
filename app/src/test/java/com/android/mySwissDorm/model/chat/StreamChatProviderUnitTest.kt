@@ -136,6 +136,48 @@ class StreamChatProviderUnitTest {
     coVerify { channelClient.watch() }
   }
 
+  @Test
+  fun createChannel_includesListingTitleInExtraData_whenProvided() = runTest {
+    val channelType = "messaging"
+    val memberIds = listOf("user1", "user2")
+    val channelId = "user1-user2"
+    val channel = mockk<Channel>(relaxed = true)
+
+    every { channel.messages } returns emptyList()
+    every { chatClient.channel(channelType, channelId) } returns channelClient
+
+    val createCall = mockk<Call<Channel>>()
+    coEvery { createCall.await() } returns Result.Success(channel)
+    every { channelClient.create(memberIds, capture(slot<Map<String, Any>>())) } answers
+        {
+          val extra = secondArg<Map<String, Any>>()
+          // Ensure listing metadata present and name set
+          assert(extra["listingTitle"] == "Listing ABC")
+          assert(extra["name"] == "Listing ABC")
+          createCall
+        }
+
+    val sendMessageCall = mockk<Call<Message>>()
+    coEvery { sendMessageCall.await() } returns Result.Success(mockk())
+    every { channelClient.sendMessage(any()) } returns sendMessageCall
+
+    val watchCall = mockk<Call<Channel>>()
+    coEvery { watchCall.await() } returns Result.Success(channel)
+    every { channelClient.watch() } returns watchCall
+
+    StreamChatProvider.createChannel(
+        channelType = channelType,
+        memberIds = memberIds,
+        initialMessageText = "Hi",
+        listingTitle = "Listing ABC",
+        extraData = emptyMap())
+
+    // verify create called and first sendMessage still happens
+    coVerify { channelClient.create(memberIds, any()) }
+    coVerify { channelClient.sendMessage(any()) }
+    coVerify { channelClient.watch() }
+  }
+
   // Helper to build a successful Call<T>
   private fun <T : Any> successCall(value: T): Call<T> {
     val call = mockk<Call<T>>()

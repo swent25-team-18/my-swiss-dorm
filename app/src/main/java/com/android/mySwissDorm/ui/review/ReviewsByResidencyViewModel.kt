@@ -74,8 +74,8 @@ class ReviewsByResidencyViewModel(
     private val reviewsRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val profilesRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
-    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloudRepository
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(ReviewsByResidencyUiState())
   val uiState: StateFlow<ReviewsByResidencyUiState> = _uiState.asStateFlow()

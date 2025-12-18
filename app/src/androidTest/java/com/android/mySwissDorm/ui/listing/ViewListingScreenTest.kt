@@ -212,7 +212,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     var navigatedBack = false
 
     compose.setContent {
-      val vm = ViewListingViewModel(listingsRepo, profileRepo, residenciesRepo)
+      val vm = ViewListingViewModel(listingsRepo, profileRepo)
       // Pass a non-existing uid so real repo throws
       ViewListingScreen(
           viewListingViewModel = vm,

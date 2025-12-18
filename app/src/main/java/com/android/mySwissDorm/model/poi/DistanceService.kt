@@ -91,8 +91,8 @@ class DistanceService(
             allDistances.add(fallbackFound)
           }
         } else {
-          addSupermarketIfNotNull(allDistances, nearestMigros, "Migros")
-          addSupermarketIfNotNull(allDistances, nearestDenner, "Denner")
+          addSupermarketIfNotNull(allDistances, nearestMigros)
+          addSupermarketIfNotNull(allDistances, nearestDenner)
         }
       }
     } catch (e: Exception) {
@@ -214,7 +214,7 @@ class DistanceService(
     if (allShops.isEmpty()) return@coroutineScope null
     val genericNames = setOf("Supermarket", "Supermarkt", "Shop", "Convenience Shop", "Kiosk")
     val (generic, good) = allShops.partition { genericNames.contains(it.name) || it.name.isBlank() }
-    val candidatePool = if (good.isNotEmpty()) good else generic
+    val candidatePool = good.ifEmpty { generic }
     val closestCandidates = candidatePool.sortedBy { location.distanceTo(it.location) }.take(3)
 
     val supermarketTimes =
@@ -238,11 +238,7 @@ class DistanceService(
         }
   }
 
-  private fun addSupermarketIfNotNull(
-      list: MutableList<POIDistance>,
-      item: POIDistance?,
-      label: String
-  ) {
+  private fun addSupermarketIfNotNull(list: MutableList<POIDistance>, item: POIDistance?) {
     if (item != null) list.add(item)
   }
   /**

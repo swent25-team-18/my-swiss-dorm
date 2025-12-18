@@ -45,8 +45,7 @@ class ViewReviewViewModelTest : FirestoreTest() {
     residenciesRepo = ResidenciesRepositoryFirestore(FirebaseEmulator.firestore)
   }
 
-  private fun freshVM(): ViewReviewViewModel =
-      ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+  private fun freshVM(): ViewReviewViewModel = ViewReviewViewModel(reviewsRepo, residenciesRepo)
 
   @Before
   override fun setUp() {

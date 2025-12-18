@@ -37,7 +37,10 @@ import com.android.mySwissDorm.utils.FakePhotoRepositoryCloud
 import com.android.mySwissDorm.utils.FakeUser
 import com.android.mySwissDorm.utils.FirebaseEmulator
 import com.android.mySwissDorm.utils.FirestoreTest
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.Timestamp
+import io.mockk.every
+import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import java.util.Date
 import java.util.Locale
@@ -49,6 +52,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -83,7 +87,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   @Before
   override fun setUp() {
     super.setUp()
-    vm = ViewReviewViewModel(reviewsRepo, profilesRepo)
+    vm = ViewReviewViewModel(reviewsRepo)
 
     runTest {
       // Owner
@@ -153,7 +157,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   @After
   override fun tearDown() {
     unmockkAll()
-    runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
+    runBlocking { PhotoRepositoryProvider.cloudRepository.deletePhoto(photo.fileName) }
     super.tearDown()
   }
 
@@ -198,7 +202,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun everythingIsDisplayed() {
     runTest {
       // Photo upload
-      PhotoRepositoryProvider.cloud_repository.uploadPhoto(photo)
+      PhotoRepositoryProvider.cloudRepository.uploadPhoto(photo)
       setOwnerReview()
       waitForScreenRoot()
       compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
@@ -333,7 +337,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun doNotShowsPostedByYouWhenNotOwner() = runTest {
     // Ensure we're viewing as FakeUser1 (not the owner of review2)
     switchToUser(FakeUser.FakeUser1)
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent { ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = review2.uid) }
     waitForScreenRoot()
     compose.waitUntil(10_000) { testVm.uiState.value.review.uid == review2.uid }
@@ -433,7 +437,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun errorMsg_triggers_onGoBack_and_showsToast() = runTest {
     var backCalled = false
     // Create a ViewModel that will fail to load
-    val failingVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val failingVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     // Try to load a non-existent review to trigger error
     compose.setContent {
       ViewReviewScreen(
@@ -487,7 +491,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   @Test
   fun errorMsg_showsToast_and_clearsError() = runTest {
     var backCalled = false
-    val failingVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val failingVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = failingVm,
@@ -516,7 +520,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     reviewsRepo.addReview(reviewNoLocation)
     delay(200)
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = reviewNoLocation.uid)
     }
@@ -720,6 +724,147 @@ class ViewReviewScreenTest : FirestoreTest() {
     assertTrue(
         "Should contain user name",
         nameText.contains("Bob", ignoreCase = true) || nameText.contains("King", ignoreCase = true))
+  }
+
+  @Test
+  fun clickingPosterName_offline_nonOwner_doesNotNavigate() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(any()) } returns false
+
+    var navigatedToId: String? = null
+
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = testVm,
+          reviewUid = review2.uid, // viewing other user's review (not owner)
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == review2.uid &&
+          testVm.uiState.value.fullNameOfPoster.isNotEmpty() &&
+          !testVm.uiState.value.review.isAnonymous
+    }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+    // The name should not be clickable when offline and not owner, so clicking should not trigger
+    // navigation
+    // Note: performClick might still work on the Text element, but the clickable modifier won't be
+    // applied
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()
+
+    // Verify navigation did NOT happen (since we're offline and it's not our profile)
+    compose.waitForIdle()
+    assertNull("Navigation should not happen when offline for non-owner", navigatedToId)
+  }
+
+  @Test
+  fun clickingPosterName_online_navigates() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(any()) } returns true
+
+    var navigatedToId: String? = null
+
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = testVm,
+          reviewUid = review2.uid, // viewing other user's review (not owner)
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == review2.uid &&
+          testVm.uiState.value.fullNameOfPoster.isNotEmpty() &&
+          !testVm.uiState.value.review.isAnonymous
+    }
+    compose.waitForIdle()
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+    compose.waitForIdle()
+
+    assertEquals("Navigation should happen when online", otherId, navigatedToId)
+  }
+
+  @Test
+  fun clickingPosterName_offline_owner_navigates() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(any()) } returns false
+
+    var navigatedToId: String? = null
+
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = testVm,
+          reviewUid = review1.uid, // viewing own review (owner)
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == review1.uid &&
+          testVm.uiState.value.fullNameOfPoster.isNotEmpty() &&
+          testVm.uiState.value.isOwner &&
+          !testVm.uiState.value.review.isAnonymous
+    }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .performClick()
+
+    // Verify navigation happens even when offline (because it's the owner's review)
+    compose.waitForIdle()
+    assertEquals("Navigation should happen when offline for owner", ownerId, navigatedToId)
+  }
+
+  @Test
+  fun clickingPosterName_anonymous_notClickable() = runTest {
+    switchToUser(FakeUser.FakeUser1)
+    mockkObject(NetworkUtils)
+    every { NetworkUtils.isNetworkAvailable(any()) } returns true
+
+    var navigatedToId: String? = null
+
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
+    compose.setContent {
+      ViewReviewScreen(
+          viewReviewViewModel = testVm,
+          reviewUid = anonymousReviewOwned.uid, // anonymous review
+          onViewProfile = { navigatedToId = it })
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(10_000) {
+      testVm.uiState.value.review.uid == anonymousReviewOwned.uid &&
+          testVm.uiState.value.review.isAnonymous
+    }
+
+    scrollListTo(C.ViewReviewTags.POSTED_BY_NAME)
+    compose
+        .onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true)
+        .assertIsDisplayed()
+    // The name should not be clickable for anonymous reviews, even when online
+    compose.onNodeWithTag(C.ViewReviewTags.POSTED_BY_NAME, useUnmergedTree = true).performClick()
+
+    // Verify navigation did NOT happen (anonymous reviews are not clickable)
+    compose.waitForIdle()
+    assertNull("Navigation should not happen for anonymous reviews", navigatedToId)
   }
 
   @Test

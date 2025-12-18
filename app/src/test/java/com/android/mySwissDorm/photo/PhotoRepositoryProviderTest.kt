@@ -16,6 +16,6 @@ class PhotoRepositoryProviderTest {
     val context: Context = RuntimeEnvironment.getApplication()
     FirebaseApp.initializeApp(context)
     PhotoRepositoryProvider.initialize(context)
-    assertNotNull(PhotoRepositoryProvider.local_repository)
+    assertNotNull(PhotoRepositoryProvider.localRepository)
   }
 }

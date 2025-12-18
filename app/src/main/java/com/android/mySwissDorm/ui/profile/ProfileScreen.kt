@@ -34,7 +34,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -51,7 +50,6 @@ import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.Red0
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -120,7 +118,7 @@ fun ProfileScreen(
                 Language.FRENCH.displayLanguage -> Language.FRENCH.codeLanguage
                 else -> Language.ENGLISH.codeLanguage
               }
-          viewModel.saveProfile(context, { onLanguageChange(langCode) })
+          viewModel.saveProfile(context) { onLanguageChange(langCode) }
         })
   }
 }
@@ -352,7 +350,7 @@ private fun ProfileScreenContent(
                   tag = "field_language",
                   enabled = state.isEditing,
                   modifier = Modifier.fillMaxWidth(),
-                  options = remember { Language.values().toList() })
+                  options = remember { Language.entries })
 
               // Residence dropdown (from ResidencyName enum)
               DropdownField(
@@ -569,7 +567,10 @@ private fun DropdownField(
                 },
             shape = RoundedCornerShape(Dimens.CornerRadiusDefault),
             modifier =
-                Modifier.menuAnchor().fillMaxWidth().height(Dimens.ImageSizeSmall).testTag(tag),
+                Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled)
+                    .fillMaxWidth()
+                    .height(Dimens.ImageSizeSmall)
+                    .testTag(tag),
             colors =
                 TextFieldDefaults.colors(
                     unfocusedIndicatorColor = Gray,
@@ -658,7 +659,7 @@ private fun CardBlock(modifier: Modifier = Modifier, content: @Composable Column
       border = BorderStroke(1.dp, TextBoxColor),
       shadowElevation = 0.dp,
       tonalElevation = 0.dp,
-      modifier = Modifier.fillMaxWidth()) {
+      modifier = modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), content = content)
       }
 }
@@ -670,56 +671,4 @@ private fun SectionLabel(text: String) {
       style = MaterialTheme.typography.titleMedium,
       color = TextColor,
       modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
-}
-
-/**
- * Interactive preview that lets you toggle between view/edit modes and simulate typing/selection
- * locally without a ViewModel.
- * - Tap the top-right "Modify/Cancel" to toggle modes.
- * - In edit mode, you can type and pick dropdown values.
- * - Pressing "SAVE" in this preview simply flips back to view mode.
- */
-@Preview(showBackground = true, name = "Profile – Light Mode")
-@Preview(
-    showBackground = true,
-    name = "Profile – Dark Mode",
-    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun Preview_Profile_Interactive() {
-  // Local preview state (no ViewModel involved)
-  var isEditing by rememberSaveable { mutableStateOf(false) }
-  var firstName by rememberSaveable { mutableStateOf("Mansour") }
-  var lastName by rememberSaveable { mutableStateOf("Kanaan") }
-  var university by rememberSaveable { mutableStateOf("EPFL") }
-  var language by rememberSaveable { mutableStateOf("English") }
-  var residence by rememberSaveable { mutableStateOf("Vortex, Coloc") }
-
-  val ui =
-      ProfileUiState(
-          firstName = firstName,
-          lastName = lastName,
-          university = university,
-          language = language,
-          residence = residence,
-          isEditing = isEditing,
-          isSaving = false,
-          errorMsg = null)
-
-  MySwissDormAppTheme {
-    ProfileScreenContent(
-        state = ui,
-        onFirstNameChange = { firstName = it },
-        onLastNameChange = { lastName = it },
-        onUniversityChange = { university = it },
-        onLanguageChange = { language = it },
-        onResidenceChange = { residence = it },
-        onLogout = {},
-        onChangeProfilePicture = {},
-        onSettingsClicked = {},
-        onToggleEditing = { isEditing = !isEditing },
-        onSave = { isEditing = false },
-        onEditPreferencesClick = {},
-        onContributionClick = {},
-        onViewBookmarks = {})
-  }
 }

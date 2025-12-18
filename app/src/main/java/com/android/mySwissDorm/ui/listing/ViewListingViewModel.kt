@@ -218,11 +218,13 @@ class ViewListingViewModel(
                 isBookmarked = isBookmarked,
                 poiDistances = emptyList(),
                 hasExistingMessage = hasExistingMessage)
-        // Only start POI calculation if network is available
-        if (NetworkUtils.isNetworkAvailable(context)) {
-          updateUIState(listing, uiData, isLoadingPOIs = true)
+        // Update UI state immediately so listing appears fast
+        updateUIState(listing, uiData, isLoadingPOIs = false)
 
-          launch {
+        // Check network state asynchronously and start POI calculation if available
+        launch {
+          if (NetworkUtils.isNetworkAvailable(context)) {
+            _uiState.update { it.copy(isLoadingPOIs = true) }
             try {
               val userUniversityName = getUserUniversityName(currentUserId, isGuest)
               val poiDistances =
@@ -233,9 +235,7 @@ class ViewListingViewModel(
               _uiState.update { it.copy(isLoadingPOIs = false) }
             }
           }
-        } else {
-          // Offline: skip POI calculation
-          updateUIState(listing, uiData, isLoadingPOIs = false)
+          // If offline, POIs remain empty (already set in uiData)
         }
         launch(Dispatchers.IO) {
           photoManager.initialize(listing.imageUrls)

@@ -43,14 +43,15 @@ open class ViewResidencyViewModel(
         // Load residency first and show it immediately
         val residency = residenciesRepository.getResidency(residencyName)
 
-        // Only start POI calculation if network is available
-        if (NetworkUtils.isNetworkAvailable(context)) {
-          _uiState.update {
-            it.copy(residency = residency, loading = false, errorMsg = null, isLoadingPOIs = true)
-          }
+        // Update UI state immediately so residency appears fast
+        _uiState.update {
+          it.copy(residency = residency, loading = false, errorMsg = null, isLoadingPOIs = false)
+        }
 
-          // Load POI distances in background (non-blocking)
-          launch {
+        // Check network state asynchronously and start POI calculation if available
+        launch {
+          if (NetworkUtils.isNetworkAvailable(context)) {
+            _uiState.update { it.copy(isLoadingPOIs = true) }
             try {
               val currentUser = FirebaseAuth.getInstance().currentUser
               val userUniversityName =
@@ -63,11 +64,7 @@ open class ViewResidencyViewModel(
               _uiState.update { it.copy(isLoadingPOIs = false) }
             }
           }
-        } else {
-          // Offline: skip POI calculation
-          _uiState.update {
-            it.copy(residency = residency, loading = false, errorMsg = null, isLoadingPOIs = false)
-          }
+          // If offline, POIs remain empty (already set in initial state)
         }
       } catch (e: Exception) {
         Log.e("ViewResidencyViewModel", "Error loading residency: $residencyName", e)

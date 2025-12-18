@@ -154,6 +154,7 @@
 
     <!-- ChannelsScreen -->
     <string name="channels_screen_please_sign_in">Veuillez vous connecter pour voir les discussions</string>
+    <string name="channels_screen_offline_message">Vous devez être en ligne pour utiliser le chat</string>
     <string name="channels_screen_chats">Discussions</string>
     <string name="channels_screen_search_chats">Rechercher…</string>
     <string name="channels_screen_no_chats_yet">Aucune discussion pour le moment</string>

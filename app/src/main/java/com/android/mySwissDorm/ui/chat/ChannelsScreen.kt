@@ -22,6 +22,8 @@ import androidx.compose.material3.*
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +53,7 @@ import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.Transparent
 import com.android.mySwissDorm.ui.theme.White
+import com.android.mySwissDorm.utils.NetworkUtils
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -215,10 +218,28 @@ fun ChannelsScreen(
     fetchChannels: (suspend () -> List<Channel>)? = null,
 ) {
   val currentUser = FirebaseAuth.getInstance().currentUser
+  val context = LocalContext.current
+
+  // Reactively observe network state changes
+  val isNetworkAvailable by
+      NetworkUtils.networkStateFlow(context)
+          .collectAsState(initial = NetworkUtils.isNetworkAvailable(context))
+  val isOffline = !isNetworkAvailable
 
   if (currentUser == null) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
       Text(stringResource(R.string.channels_screen_please_sign_in))
+    }
+    return
+  }
+
+  // If offline, show offline message and don't try to load anything
+  if (isOffline) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      Text(
+          text = stringResource(R.string.channels_screen_offline_message),
+          style = MaterialTheme.typography.bodyLarge,
+          color = TextColor.copy(alpha = Dimens.AlphaHigh))
     }
     return
   }
@@ -287,10 +308,16 @@ fun ChannelsScreen(
     }
   }
 
-  // Load channels when refreshKey changes (including initial load)
-  LaunchedEffect(refreshKey) {
-    Log.d("ChannelsScreen", "LaunchedEffect triggered with refreshKey: $refreshKey")
-    loadChannels()
+  // Load channels when refreshKey changes (including initial load) - only if online
+  LaunchedEffect(refreshKey, isNetworkAvailable) {
+    if (isNetworkAvailable) {
+      Log.d("ChannelsScreen", "LaunchedEffect triggered with refreshKey: $refreshKey")
+      loadChannels()
+    } else {
+      // If we go offline, clear channels and stop loading
+      channels = emptyList()
+      isLoading = false
+    }
   }
 
   // Resolve other-user full names once channels are loaded.
@@ -320,16 +347,18 @@ fun ChannelsScreen(
     }
   }
 
-  // Pull-to-refresh state
+  // Pull-to-refresh state - disabled when offline
   var isRefreshing by remember { mutableStateOf(false) }
   val pullRefreshState =
       rememberPullRefreshState(
           refreshing = isRefreshing,
           onRefresh = {
-            isRefreshing = true
-            coroutineScope.launch {
-              loadChannels()
-              isRefreshing = false
+            if (isNetworkAvailable) {
+              isRefreshing = true
+              coroutineScope.launch {
+                loadChannels()
+                isRefreshing = false
+              }
             }
           })
 

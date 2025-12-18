@@ -150,6 +150,7 @@
 
     <!-- ChannelsScreen -->
     <string name="channels_screen_please_sign_in">Please sign in to view chats</string>
+    <string name="channels_screen_offline_message">You need to be online to use chat</string>
     <string name="channels_screen_chats">Chats</string>
     <string name="channels_screen_search_chats">Search chats…</string>
     <string name="channels_screen_no_chats_yet">No chats yet</string>

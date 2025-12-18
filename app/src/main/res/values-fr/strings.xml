@@ -535,6 +535,7 @@
     <!-- ViewProfileScreen -->
     <string name="view_profile_has_msg">Vous avez déjà contacté cet utilisateur.</string>
     <string name="view_profile_has_msg_secondary">Veuillez patienter pour obtenir une réponse ou consultez votre boîte de réception pour envoyer un autre message.</string>
+    <string name="write_msg">Écrivez un message…</string>
     <!-- Offline -->
     <string name="offline_banner_you_are_offline">Vous êtes hors ligne</string>
     <string name="offline_banner_last_updated">Dernière mise à jour %1$s</string>

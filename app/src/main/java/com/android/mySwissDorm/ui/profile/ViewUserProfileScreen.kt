@@ -234,7 +234,9 @@ fun ViewUserProfileScreen(
                             OutlinedTextField(
                                 value = ui.messageText,
                                 onValueChange = { realVm?.updateMessageText(it) },
-                                placeholder = { Text("Write a message...", color = Gray) },
+                                placeholder = {
+                                  Text(stringResource(R.string.write_msg), color = Gray)
+                                },
                                 modifier = Modifier.fillMaxWidth().testTag(T.SEND_MESSAGE),
                                 shape = RoundedCornerShape(Dimens.CardCornerRadius),
                                 minLines = 2,

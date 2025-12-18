@@ -107,8 +107,9 @@ fun ViewListingScreen(
   var showShareDialog by remember { mutableStateOf(false) }
   var isTranslated by remember { mutableStateOf(false) }
 
-  // Button is enabled only if there's a message, user is not blocked, and no existing message
-  val canApply = hasMessage && !isBlockedByOwner && !hasExistingMessage
+  // Button is enabled only if there's a message, user is not blocked, no existing message, and
+  // online
+  val canApply = hasMessage && !isBlockedByOwner && !hasExistingMessage && isNetworkAvailable
   // Button color: violet if blocked, red (MainColor) if normal
   val buttonColor = if (isBlockedByOwner && hasMessage) Violet else MainColor
 
@@ -525,6 +526,7 @@ fun ViewListingScreen(
                     OutlinedTextField(
                         value = listingUIState.contactMessage,
                         onValueChange = { viewListingViewModel.setContactMessage(it) },
+                        enabled = isNetworkAvailable,
                         placeholder = {
                           Text(
                               stringResource(R.string.view_listing_contact_announcer), color = Gray)
@@ -544,26 +546,39 @@ fun ViewListingScreen(
                                 focusedTextColor = Black))
 
                     // Apply now button (centered, half width, rounded, red or violet)
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                      Button(
-                          onClick = onApply,
-                          enabled = canApply,
-                          modifier =
-                              Modifier.fillMaxWidth(0.55f)
-                                  .height(Dimens.ButtonHeight)
-                                  .testTag(C.ViewListingTags.APPLY_BTN),
-                          shape = RoundedCornerShape(Dimens.CardCornerRadius),
-                          colors =
-                              ButtonDefaults.buttonColors(
-                                  containerColor = buttonColor,
-                                  disabledContainerColor = PinkyWhite,
-                                  disabledContentColor = White)) {
-                            Text(
-                                stringResource(R.string.view_listing_apply_now),
-                                color = White,
-                                style = MaterialTheme.typography.titleMedium)
-                          }
-                    }
+                    Box(
+                        modifier =
+                            if (isOffline && !canApply) {
+                              Modifier.fillMaxWidth().clickable { showOfflineToast(context) }
+                            } else {
+                              Modifier.fillMaxWidth()
+                            },
+                        contentAlignment = Alignment.Center) {
+                          Button(
+                              onClick = {
+                                if (isOffline) {
+                                  showOfflineToast(context)
+                                } else {
+                                  onApply()
+                                }
+                              },
+                              enabled = canApply,
+                              modifier =
+                                  Modifier.fillMaxWidth(0.55f)
+                                      .height(Dimens.ButtonHeight)
+                                      .testTag(C.ViewListingTags.APPLY_BTN),
+                              shape = RoundedCornerShape(Dimens.CardCornerRadius),
+                              colors =
+                                  ButtonDefaults.buttonColors(
+                                      containerColor = buttonColor,
+                                      disabledContainerColor = PinkyWhite,
+                                      disabledContentColor = White)) {
+                                Text(
+                                    stringResource(R.string.view_listing_apply_now),
+                                    color = White,
+                                    style = MaterialTheme.typography.titleMedium)
+                              }
+                        }
                   }
                 }
               }

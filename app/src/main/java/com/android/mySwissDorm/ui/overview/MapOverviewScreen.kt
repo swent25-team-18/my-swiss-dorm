@@ -19,7 +19,7 @@ import com.android.mySwissDorm.ui.map.MultiListingCarouselCard
 import com.android.mySwissDorm.ui.map.SmallListingPreviewCard
 import com.android.mySwissDorm.ui.map.launchGoogleMaps
 import com.android.mySwissDorm.ui.theme.Dimens
-import com.android.mySwissDorm.ui.theme.MainColor
+import com.android.mySwissDorm.ui.theme.LightBlue
 import com.android.mySwissDorm.ui.theme.White
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -83,34 +83,34 @@ fun MapOverviewScreen(
       },
       content = {
         if (centerLocation != null) {
-          Marker(
+          MarkerComposable(
+              keys = arrayOf("centerLoc"),
               state =
-                  MarkerState(position = LatLng(centerLocation.latitude, centerLocation.longitude)),
-              title = centerLocation.name,
-              snippet = "Browsing Location")
+                  MarkerState(
+                      position = LatLng(centerLocation.latitude, centerLocation.longitude))) {
+                Box(
+                    modifier =
+                        Modifier.size(Dimens.IconSizeLarge)
+                            .clip(CircleShape)
+                            .background(White)
+                            .padding(Dimens.PaddingXSmall)
+                            .clip(CircleShape)
+                            .background(LightBlue))
+              }
         }
 
         groupedListings.forEach { (locationPair, listingsInGroup) ->
           if (locationPair.first != 0.0 && locationPair.second != 0.0) {
             val position = LatLng(locationPair.first, locationPair.second)
-            val representative = listingsInGroup.first()
-
-            MarkerComposable(
-                keys = arrayOf(representative.listingUid),
+            Marker(
                 state = MarkerState(position = position),
+                title =
+                    if (listingsInGroup.size == 1) "1 Listing"
+                    else "${listingsInGroup.size} Listings",
                 onClick = {
                   selectedListingsGroup = listingsInGroup
                   true
-                }) {
-                  Box(
-                      modifier =
-                          Modifier.size(Dimens.IconSizeLarge)
-                              .clip(CircleShape)
-                              .background(White)
-                              .padding(Dimens.PaddingXSmall)
-                              .clip(CircleShape)
-                              .background(MainColor))
-                }
+                })
           }
         }
       },

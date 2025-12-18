@@ -41,6 +41,7 @@ import com.android.mySwissDorm.ui.photo.FullScreenImageViewer
 import com.android.mySwissDorm.ui.photo.ImageGrid
 import com.android.mySwissDorm.ui.share.ShareLinkDialog
 import com.android.mySwissDorm.ui.theme.AlmostWhite
+import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Black
 import com.android.mySwissDorm.ui.theme.DarkGray
 import com.android.mySwissDorm.ui.theme.Dimens
@@ -484,18 +485,22 @@ fun ViewListingScreen(
                         shape = RoundedCornerShape(Dimens.CardCornerRadius),
                         colors =
                             if (isOffline) {
-                              ButtonDefaults.buttonColors(
-                                  containerColor = MainColor.copy(alpha = Dimens.AlphaDisabled),
-                                  contentColor = MainColor.copy(alpha = Dimens.AlphaDisabled))
+                              ButtonColors(
+                                  containerColor = BackGroundColor,
+                                  contentColor = BackGroundColor,
+                                  disabledContainerColor = BackGroundColor,
+                                  disabledContentColor = BackGroundColor)
                             } else {
-                              ButtonDefaults.buttonColors()
+                              ButtonColors(
+                                  containerColor = MainColor,
+                                  contentColor = TextBoxColor,
+                                  disabledContainerColor = BackGroundColor,
+                                  disabledContentColor = BackGroundColor)
                             }) {
                           Text(
                               stringResource(R.string.edit),
                               style = MaterialTheme.typography.titleMedium,
-                              color =
-                                  if (isOffline) MainColor.copy(alpha = Dimens.AlphaDisabled)
-                                  else MainColor)
+                              color = White)
                         }
                   }
                 } else {

@@ -67,6 +67,7 @@ import com.android.mySwissDorm.ui.theme.Gray
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
+import com.android.mySwissDorm.ui.theme.White
 import com.android.mySwissDorm.ui.utils.DateTimeUi.formatRelative
 import com.android.mySwissDorm.ui.utils.showOfflineToast
 import com.android.mySwissDorm.utils.NetworkUtils
@@ -312,7 +313,7 @@ fun ViewReviewScreen(
                     Text(
                         stringResource(R.string.edit),
                         style = MaterialTheme.typography.titleMedium,
-                        color = if (isOffline) BackGroundColor else TextColor)
+                        color = White)
                   }
                 }
               }

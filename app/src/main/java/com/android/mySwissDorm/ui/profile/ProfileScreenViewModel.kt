@@ -90,9 +90,9 @@ data class ProfileUiState(
 class ProfileScreenViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val profileRepo: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    private val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository,
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository,
+        PhotoRepositoryProvider.cloudRepository,
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository
 ) : BaseLocationSearchViewModel() {
   override val logTag = "ProfileScreenViewModel"
@@ -145,7 +145,7 @@ class ProfileScreenViewModel(
               maxSize = profile.userInfo.maxSize,
               selectedRoomTypes = profile.userInfo.preferredRoomTypes.toSet())
         }
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         Log.d("ProfileViewModel", "Profile not found for $uid, assuming new user.")
       }
     }
@@ -291,7 +291,7 @@ class ProfileScreenViewModel(
         val existingProfile =
             try {
               profileRepo.getProfile(uid)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
               null
             }
 
@@ -342,7 +342,7 @@ class ProfileScreenViewModel(
     }
   }
 
-  fun savePreferences(context: Context, onSuccess: () -> Unit) {
+  fun savePreferences(onSuccess: () -> Unit) {
     val uid = auth.currentUser?.uid ?: return
 
     viewModelScope.launch {

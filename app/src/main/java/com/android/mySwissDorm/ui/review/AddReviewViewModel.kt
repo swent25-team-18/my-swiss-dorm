@@ -63,8 +63,8 @@ class AddReviewViewModel(
     private val reviewRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
-    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
-    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloudRepository
 ) : ViewModel() {
   private val _uiState =
       MutableStateFlow(
@@ -147,7 +147,7 @@ class AddReviewViewModel(
       try {
         val residencies = residenciesRepository.getAllResidencies()
         _uiState.value = _uiState.value.copy(residencies = residencies)
-      } catch (e: Exception) {}
+      } catch (_: Exception) {}
     }
   }
 
@@ -187,7 +187,7 @@ class AddReviewViewModel(
             try {
               val profile = ProfileRepositoryProvider.repository.getProfile(currentUserId)
               "${profile.userInfo.name} ${profile.userInfo.lastName}".trim()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
               null // If profile fetch fails, ownerName will be null
             }
 

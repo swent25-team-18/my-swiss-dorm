@@ -42,7 +42,7 @@ object ReviewsRepositoryProvider {
    */
   var repository: ReviewsRepository
     get() {
-      checkNotNull(_repository == null) {
+      checkNotNull(_repository) {
         "ReviewsRepositoryProvider not initialized. Call initialize(context) first."
       }
       return _repository!!

@@ -29,9 +29,9 @@ abstract class BaseListingFormViewModel(
         RentalListingRepositoryProvider.repository,
     protected val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
-    protected val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
+    protected val photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository,
     protected val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository,
+        PhotoRepositoryProvider.cloudRepository,
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository
 ) : BaseLocationSearchViewModel() {
 
@@ -178,7 +178,6 @@ abstract class BaseListingFormViewModel(
     _uiState.value =
         _uiState.value.copy(
             showCustomLocationDialog = false, customLocationQuery = "" // ok to reset the query
-            // ✅ keep customLocation as-is, do NOT null it out here
             )
   }
 
@@ -189,7 +188,6 @@ abstract class BaseListingFormViewModel(
     val state = _uiState.value
 
     return if (state.residencyName == "Private Accommodation") {
-      // ✅ For private accommodation, we now require an explicit customLocation
       val custom = state.customLocation
       if (custom != null) {
         custom

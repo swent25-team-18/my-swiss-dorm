@@ -26,8 +26,8 @@ class EditListingViewModel(
     rentalListingRepository: RentalListingRepository = RentalListingRepositoryProvider.repository,
     residenciesRepository: ResidenciesRepository = ResidenciesRepositoryProvider.repository,
     locationRepository: LocationRepository = LocationRepositoryProvider.repository,
-    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
-    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloudRepository
 ) :
     BaseListingFormViewModel(
         rentalListingRepository = rentalListingRepository,

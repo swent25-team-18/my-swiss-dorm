@@ -148,7 +148,7 @@ fun FullScreenImageViewer(
                     }
 
                 IconButton(
-                    onClick = { currentIndex = Math.floorMod(currentIndex - 1, imageUris.size) },
+                    onClick = { currentIndex = Math.floorMod(currentIndex + 1, imageUris.size) },
                     modifier =
                         Modifier.background(color = buttonBackGroundColor)
                             .testTag(C.FullScreenImageViewerTags.RIGHT_ARROW_BUTTON)) {
@@ -161,13 +161,3 @@ fun FullScreenImageViewer(
         }
   }
 }
-
-// @Preview
-// @Composable
-// fun FullScreenImageViewerPreview() {
-//  val context = LocalContext.current
-//  val uri = "android.resource://${context.packageName}/${R.drawable.zurich}".toUri()
-//  MySwissDormAppTheme {
-//    FullScreenImageViewer(imageUris = listOf(uri, uri), onDismiss = {}, initialIndex = 0)
-//  }
-// }

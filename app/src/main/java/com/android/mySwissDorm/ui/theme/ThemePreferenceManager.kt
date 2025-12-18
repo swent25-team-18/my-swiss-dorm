@@ -92,7 +92,7 @@ object DarkModePreferenceHelper {
           val existingProfile =
               try {
                 profileRepository.getProfile(user.uid)
-              } catch (e: Exception) {
+              } catch (_: Exception) {
                 null
               }
 
@@ -102,7 +102,7 @@ object DarkModePreferenceHelper {
                     userSettings = existingProfile.userSettings.copy(darkMode = enabled))
             profileRepository.editProfile(updatedProfile)
           }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
           // If Firestore sync fails, SharedPreferences is already saved, so we're done
         }
       }

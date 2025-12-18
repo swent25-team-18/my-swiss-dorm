@@ -5,21 +5,22 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Dimens
+import com.android.mySwissDorm.ui.theme.Green
 import com.android.mySwissDorm.ui.theme.LightGray0
 import com.android.mySwissDorm.ui.theme.MainColor
 import com.android.mySwissDorm.ui.theme.TextColor
@@ -100,7 +101,7 @@ fun RequestedMessagesScreen(
             title = { Text(stringResource(R.string.requested_messages), color = TextColor) },
             navigationIcon = {
               IconButton(onClick = onBackClick) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
               }
             },
             colors =
@@ -174,7 +175,7 @@ fun RequestedMessagesScreen(
  */
 @Composable
 fun RequestedMessageItem(
-    message: com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage,
+    message: RequestedMessage,
     fromUserName: String,
     fromUserImageUrl: String?,
     fromUserId: String,
@@ -215,7 +216,7 @@ fun RequestedMessageItem(
               // Right side: Action buttons aligned with name
               Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onApprove, modifier = Modifier.size(Dimens.IconSizeButton)) {
-                  Icon(Icons.Default.Check, contentDescription = "Approve", tint = Color.Green)
+                  Icon(Icons.Default.Check, contentDescription = "Approve", tint = Green)
                 }
                 IconButton(onClick = onReject, modifier = Modifier.size(Dimens.IconSizeButton)) {
                   Icon(Icons.Default.Close, contentDescription = "Reject", tint = MainColor)

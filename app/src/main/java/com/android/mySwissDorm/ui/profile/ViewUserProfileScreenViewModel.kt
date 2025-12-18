@@ -58,7 +58,7 @@ class ViewProfileScreenViewModel(
     private val repo: ProfileRepository = ProfileRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository,
+        PhotoRepositoryProvider.cloudRepository,
     private val requestedMessageRepository: RequestedMessageRepository =
         RequestedMessageRepositoryProvider.repository
 ) : ViewModel() {

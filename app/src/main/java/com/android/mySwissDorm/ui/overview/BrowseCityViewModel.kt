@@ -174,7 +174,7 @@ class BrowseCityViewModel(
     override val locationRepository: LocationRepository = LocationRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloud_repository
+    private val photoRepositoryCloud: PhotoRepository = PhotoRepositoryProvider.cloudRepository
 ) : BaseLocationSearchViewModel() {
   override val logTag = "BrowseCityViewModel"
   private val _uiState = MutableStateFlow(BrowseCityUiState())
@@ -505,7 +505,7 @@ class BrowseCityViewModel(
   }
 
   /** Toggles bookmark status for a listing. */
-  fun toggleBookmark(listingId: String, context: Context) {
+  fun toggleBookmark(listingId: String) {
     val currentUserId = bookmarkHandler.getCurrentUserId()
     if (currentUserId == null) {
       return

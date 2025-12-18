@@ -60,11 +60,11 @@ abstract class AppDatabase : RoomDatabase() {
      */
     private val MIGRATION_1_2 =
         object : Migration(1, 2) {
-          override fun migrate(database: SupportSQLiteDatabase) {
+          override fun migrate(db: SupportSQLiteDatabase) {
             // Add ownerName column to reviews table
-            database.execSQL("ALTER TABLE reviews ADD COLUMN ownerName TEXT")
+            db.execSQL("ALTER TABLE reviews ADD COLUMN ownerName TEXT")
             // Add ownerName column to rental_listings table
-            database.execSQL("ALTER TABLE rental_listings ADD COLUMN ownerName TEXT")
+            db.execSQL("ALTER TABLE rental_listings ADD COLUMN ownerName TEXT")
           }
         }
 
@@ -75,8 +75,8 @@ abstract class AppDatabase : RoomDatabase() {
      */
     private val MIGRATION_2_3 =
         object : Migration(2, 3) {
-          override fun migrate(database: SupportSQLiteDatabase) {
-            database.execSQL(
+          override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
                 """
                 CREATE TABLE IF NOT EXISTS profiles (
                     ownerId TEXT NOT NULL PRIMARY KEY,
@@ -117,11 +117,11 @@ abstract class AppDatabase : RoomDatabase() {
      */
     private val MIGRATION_3_4 =
         object : Migration(3, 4) {
-          override fun migrate(database: SupportSQLiteDatabase) {
+          override fun migrate(db: SupportSQLiteDatabase) {
             // Drop the existing table
-            database.execSQL("DROP TABLE IF EXISTS profiles")
+            db.execSQL("DROP TABLE IF EXISTS profiles")
             // Recreate it - Room will recalculate the schema hash after this migration
-            database.execSQL(
+            db.execSQL(
                 """
                 CREATE TABLE profiles (
                     ownerId TEXT NOT NULL PRIMARY KEY,
@@ -159,11 +159,10 @@ abstract class AppDatabase : RoomDatabase() {
      */
     private val MIGRATION_4_5 =
         object : Migration(4, 5) {
-          override fun migrate(database: SupportSQLiteDatabase) {
+          override fun migrate(db: SupportSQLiteDatabase) {
             // Add column as NOT NULL with default empty string
             // Empty string will be converted to emptyMap() by TypeConverter
-            database.execSQL(
-                "ALTER TABLE profiles ADD COLUMN blockedUserNames TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE profiles ADD COLUMN blockedUserNames TEXT NOT NULL DEFAULT ''")
           }
         }
 
@@ -183,10 +182,10 @@ abstract class AppDatabase : RoomDatabase() {
      */
     private val MIGRATION_5_6 =
         object : Migration(5, 6) {
-          override fun migrate(database: SupportSQLiteDatabase) {
+          override fun migrate(db: SupportSQLiteDatabase) {
             // Clear all listings and reviews to force fresh sync from Firestore
-            database.execSQL("DELETE FROM rental_listings")
-            database.execSQL("DELETE FROM reviews")
+            db.execSQL("DELETE FROM rental_listings")
+            db.execSQL("DELETE FROM reviews")
           }
         }
 

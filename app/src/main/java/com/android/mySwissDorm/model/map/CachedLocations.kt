@@ -1,4 +1,4 @@
-import com.android.mySwissDorm.model.map.Location
+package com.android.mySwissDorm.model.map
 
 /**
  * A data class that holds a list of locations along with the timestamp of when they were fetched.

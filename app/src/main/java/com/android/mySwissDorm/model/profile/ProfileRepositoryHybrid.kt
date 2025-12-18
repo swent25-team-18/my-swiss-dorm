@@ -39,7 +39,7 @@ class ProfileRepositoryHybrid(
       try {
         remoteRepo.createProfile(profile)
       } catch (e: Exception) {
-        Log.w(TAG, "Failed to create profile remotely, but saved locally", e)
+        Log.w(tag, "Failed to create profile remotely, but saved locally", e)
       }
     }
   }
@@ -71,7 +71,7 @@ class ProfileRepositoryHybrid(
           // Sync remote to local for future offline access
           syncProfileToLocal(remoteProfile)
           remoteProfile
-        } catch (remoteException: Exception) {
+        } catch (_: Exception) {
           throw e // Throw original NoSuchElementException
         }
       } else {
@@ -113,7 +113,7 @@ class ProfileRepositoryHybrid(
       try {
         remoteRepo.editProfile(profile)
       } catch (e: Exception) {
-        Log.w(TAG, "Failed to edit profile remotely, but saved locally", e)
+        Log.w(tag, "Failed to edit profile remotely, but saved locally", e)
       }
     }
   }
@@ -133,7 +133,7 @@ class ProfileRepositoryHybrid(
       try {
         remoteRepo.deleteProfile(ownerId)
       } catch (e: Exception) {
-        Log.w(TAG, "Failed to delete profile remotely, but deleted locally", e)
+        Log.w(tag, "Failed to delete profile remotely, but deleted locally", e)
       }
     }
   }
@@ -150,7 +150,7 @@ class ProfileRepositoryHybrid(
    */
   private suspend fun syncProfile(ownerId: String) {
     if (!NetworkUtils.isNetworkAvailable(context)) {
-      Log.d(TAG, "[syncProfile] No network available, skipping sync")
+      Log.d(tag, "[syncProfile] No network available, skipping sync")
       return
     }
 
@@ -158,27 +158,27 @@ class ProfileRepositoryHybrid(
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
     if (ownerId != currentUserId) {
       Log.d(
-          TAG,
+          tag,
           "[syncProfile] Skipping sync - profile belongs to different user (ownerId: $ownerId, currentUser: $currentUserId)")
       return
     }
 
     try {
       val localProfile = localRepo.getProfile(ownerId)
-      Log.d(TAG, "[syncProfile] Pushing local profile to remote for ownerId: $ownerId")
+      Log.d(tag, "[syncProfile] Pushing local profile to remote for ownerId: $ownerId")
 
       // Push local profile to remote (local is source of truth for offline changes)
       try {
         remoteRepo.editProfile(localProfile)
-        Log.d(TAG, "[syncProfile] Successfully pushed local profile to remote")
+        Log.d(tag, "[syncProfile] Successfully pushed local profile to remote")
       } catch (e: Exception) {
-        Log.w(TAG, "[syncProfile] Failed to push local profile to remote", e)
+        Log.w(tag, "[syncProfile] Failed to push local profile to remote", e)
       }
-    } catch (e: NoSuchElementException) {
+    } catch (_: NoSuchElementException) {
       // Local profile doesn't exist, nothing to sync
-      Log.d(TAG, "[syncProfile] Local profile doesn't exist, nothing to sync")
+      Log.d(tag, "[syncProfile] Local profile doesn't exist, nothing to sync")
     } catch (e: Exception) {
-      Log.w(TAG, "[syncProfile] Failed to sync profile", e)
+      Log.w(tag, "[syncProfile] Failed to sync profile", e)
     }
   }
 
@@ -202,7 +202,7 @@ class ProfileRepositoryHybrid(
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
     if (profile.ownerId != currentUserId) {
       Log.d(
-          TAG,
+          tag,
           "[syncProfileToLocal] Skipping sync - profile belongs to different user (ownerId: ${profile.ownerId}, currentUser: $currentUserId)")
       return
     }
@@ -212,7 +212,7 @@ class ProfileRepositoryHybrid(
     } catch (e: Exception) {
       // If createProfile fails (e.g., no user logged in),
       // log but don't throw - we still want to return the remote data
-      Log.w(TAG, "Failed to sync profile to local storage", e)
+      Log.w(tag, "Failed to sync profile to local storage", e)
     }
   }
 
@@ -253,7 +253,7 @@ class ProfileRepositoryHybrid(
 
     return try {
       remoteRepo.getBlockedUserIds(ownerId)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       emptyList()
     }
   }
@@ -277,7 +277,7 @@ class ProfileRepositoryHybrid(
 
     return try {
       localRepo.getBlockedUserNames(ownerId)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       emptyMap() // Return empty if profile doesn't exist or other error
     }
   }
@@ -303,7 +303,7 @@ class ProfileRepositoryHybrid(
             "${targetProfile.userInfo.name} ${targetProfile.userInfo.lastName}".trim()
       } catch (e: Exception) {
         Log.w(
-            TAG, "Failed to fetch target user's profile for display name, continuing without it", e)
+            tag, "Failed to fetch target user's profile for display name, continuing without it", e)
       }
     }
 
@@ -317,7 +317,7 @@ class ProfileRepositoryHybrid(
           val remoteProfile = remoteRepo.getProfile(ownerId)
           localRepo.createProfile(remoteProfile)
         } catch (e2: Exception) {
-          Log.w(TAG, "Failed to fetch and create local profile before adding blocked user", e2)
+          Log.w(tag, "Failed to fetch and create local profile before adding blocked user", e2)
           throw e // Re-throw original exception
         }
       } else {
@@ -337,7 +337,7 @@ class ProfileRepositoryHybrid(
       try {
         remoteRepo.addBlockedUser(ownerId, targetUid)
       } catch (e: Exception) {
-        Log.w(TAG, "Failed to add blocked user remotely, but saved locally", e)
+        Log.w(tag, "Failed to add blocked user remotely, but saved locally", e)
       }
     }
   }
@@ -358,7 +358,7 @@ class ProfileRepositoryHybrid(
       try {
         remoteRepo.removeBlockedUser(ownerId, targetUid)
       } catch (e: Exception) {
-        Log.w(TAG, "Failed to remove blocked user remotely, but saved locally", e)
+        Log.w(tag, "Failed to remove blocked user remotely, but saved locally", e)
       }
     }
   }
@@ -409,7 +409,7 @@ class ProfileRepositoryHybrid(
           getLocal(ownerId)
         } catch (e: Exception) {
           if (logTag.isNotEmpty()) {
-            Log.w(TAG, "$logTag Failed to get local data", e)
+            Log.w(tag, "$logTag Failed to get local data", e)
           }
           null
         }
@@ -431,7 +431,7 @@ class ProfileRepositoryHybrid(
         getRemote(ownerId)
       } catch (e: Exception) {
         if (logTag.isNotEmpty()) {
-          Log.w(TAG, "$logTag Failed to get remote data", e)
+          Log.w(tag, "$logTag Failed to get remote data", e)
         }
         emptyList()
       }
@@ -450,7 +450,7 @@ class ProfileRepositoryHybrid(
     return try {
       remoteRepo.getBookmarkedListingIds(ownerId)
     } catch (e: Exception) {
-      Log.w(TAG, "[getBookmarkedListingIds] Failed to get remote bookmarks", e)
+      Log.w(tag, "[getBookmarkedListingIds] Failed to get remote bookmarks", e)
       emptyList()
     }
   }
@@ -471,7 +471,7 @@ class ProfileRepositoryHybrid(
       try {
         remoteRepo.addBookmark(ownerId, listingId)
       } catch (e: Exception) {
-        Log.w(TAG, "[addBookmark] Failed to add bookmark remotely, but saved locally", e)
+        Log.w(tag, "[addBookmark] Failed to add bookmark remotely, but saved locally", e)
       }
     }
   }
@@ -492,7 +492,7 @@ class ProfileRepositoryHybrid(
       try {
         remoteRepo.removeBookmark(ownerId, listingId)
       } catch (e: Exception) {
-        Log.w(TAG, "[removeBookmark] Failed to remove bookmark remotely, but saved locally", e)
+        Log.w(tag, "[removeBookmark] Failed to remove bookmark remotely, but saved locally", e)
       }
     }
   }

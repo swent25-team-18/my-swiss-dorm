@@ -1,3 +1,4 @@
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -87,37 +88,37 @@ fun AddListingScreen(
                     !ui.isSubmitting &&
                     isNetworkAvailable
             val isOffline = !isNetworkAvailable
-            Button(
-                onClick = {
-                  if (isOffline) {
-                    showOfflineToast(context)
-                  } else if (isButtonEnabled) {
-                    addListingViewModel.submitForm(onConfirm, context)
-                  }
-                },
-                colors =
-                    if (isOffline || !isButtonEnabled) {
-                      ButtonDefaults.buttonColors(
-                          containerColor = MainColor.copy(alpha = Dimens.AlphaDisabled),
-                          contentColor = White.copy(alpha = Dimens.AlphaDisabled),
-                          disabledContainerColor = MainColor.copy(alpha = Dimens.AlphaDisabled),
-                          disabledContentColor = White.copy(alpha = Dimens.AlphaDisabled))
-                    } else {
-                      ButtonDefaults.buttonColors(containerColor = MainColor)
-                    },
+            Box(
                 modifier =
-                    Modifier.fillMaxWidth()
-                        .height(Dimens.ButtonHeight)
-                        .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
-                shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
-                  if (ui.isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(Dimens.IconSizeDefault),
-                        color = White,
-                        strokeWidth = Dimens.CircularProgressIndicatorStrokeWidth)
-                  } else {
-                    Text(stringResource(R.string.confirm_listing), color = White)
-                  }
+                    if (isOffline) {
+                      Modifier.clickable { showOfflineToast(context) }
+                    } else {
+                      Modifier
+                    }) {
+                  Button(
+                      onClick = {
+                        if (isOffline) {
+                          showOfflineToast(context)
+                        } else if (isButtonEnabled) {
+                          addListingViewModel.submitForm(onConfirm, context)
+                        }
+                      },
+                      enabled = isButtonEnabled,
+                      colors = ButtonDefaults.buttonColors(containerColor = MainColor),
+                      modifier =
+                          Modifier.fillMaxWidth()
+                              .height(Dimens.ButtonHeight)
+                              .testTag(C.AddListingScreenTags.CONFIRM_BUTTON),
+                      shape = RoundedCornerShape(Dimens.CardCornerRadius)) {
+                        if (ui.isSubmitting) {
+                          CircularProgressIndicator(
+                              modifier = Modifier.size(Dimens.IconSizeDefault),
+                              color = White,
+                              strokeWidth = Dimens.CircularProgressIndicatorStrokeWidth)
+                        } else {
+                          Text(stringResource(R.string.confirm_listing), color = White)
+                        }
+                      }
                 }
             Spacer(Modifier.height(Dimens.SpacingDefault))
             if (!ui.isFormValid || FirebaseAuth.getInstance().currentUser?.isAnonymous ?: true) {

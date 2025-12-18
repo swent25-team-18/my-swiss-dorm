@@ -87,7 +87,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   @Before
   override fun setUp() {
     super.setUp()
-    vm = ViewReviewViewModel(reviewsRepo, profilesRepo)
+    vm = ViewReviewViewModel(reviewsRepo)
 
     runTest {
       // Owner
@@ -157,7 +157,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   @After
   override fun tearDown() {
     unmockkAll()
-    runBlocking { PhotoRepositoryProvider.cloud_repository.deletePhoto(photo.fileName) }
+    runBlocking { PhotoRepositoryProvider.cloudRepository.deletePhoto(photo.fileName) }
     super.tearDown()
   }
 
@@ -202,7 +202,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun everythingIsDisplayed() {
     runTest {
       // Photo upload
-      PhotoRepositoryProvider.cloud_repository.uploadPhoto(photo)
+      PhotoRepositoryProvider.cloudRepository.uploadPhoto(photo)
       setOwnerReview()
       waitForScreenRoot()
       compose.waitUntil(5_000) { vm.uiState.value.review.uid == review1.uid }
@@ -337,7 +337,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun doNotShowsPostedByYouWhenNotOwner() = runTest {
     // Ensure we're viewing as FakeUser1 (not the owner of review2)
     switchToUser(FakeUser.FakeUser1)
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent { ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = review2.uid) }
     waitForScreenRoot()
     compose.waitUntil(10_000) { testVm.uiState.value.review.uid == review2.uid }
@@ -437,7 +437,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   fun errorMsg_triggers_onGoBack_and_showsToast() = runTest {
     var backCalled = false
     // Create a ViewModel that will fail to load
-    val failingVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val failingVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     // Try to load a non-existent review to trigger error
     compose.setContent {
       ViewReviewScreen(
@@ -491,7 +491,7 @@ class ViewReviewScreenTest : FirestoreTest() {
   @Test
   fun errorMsg_showsToast_and_clearsError() = runTest {
     var backCalled = false
-    val failingVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val failingVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = failingVm,
@@ -520,7 +520,7 @@ class ViewReviewScreenTest : FirestoreTest() {
     reviewsRepo.addReview(reviewNoLocation)
     delay(200)
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = reviewNoLocation.uid)
     }
@@ -734,7 +734,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     var navigatedToId: String? = null
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = testVm,
@@ -772,7 +772,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     var navigatedToId: String? = null
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = testVm,
@@ -806,7 +806,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     var navigatedToId: String? = null
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = testVm,
@@ -841,7 +841,7 @@ class ViewReviewScreenTest : FirestoreTest() {
 
     var navigatedToId: String? = null
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       ViewReviewScreen(
           viewReviewViewModel = testVm,
@@ -906,8 +906,13 @@ class ViewReviewScreenTest : FirestoreTest() {
 
   @Test
   fun translateButtonTextUpdatesWhenClicked() {
+    // Set the locale to French so the translate button appears
+    Locale.setDefault(Locale.FRENCH)
+
     setOwnerReview()
     waitForScreenRoot()
+
+    compose.waitUntil(25_000) { vm.uiState.value.translatedDescription != "" }
 
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
     compose
@@ -923,6 +928,19 @@ class ViewReviewScreenTest : FirestoreTest() {
   }
 
   @Test
+  fun translateButtonDoesNotAppearIfSameLanguage() {
+    // Set the locale to English so the translate button doesn't appear
+    Locale.setDefault(Locale.ENGLISH)
+
+    setOwnerReview()
+    waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.translatedDescription != "" }
+
+    compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsNotDisplayed()
+  }
+
+  @Test
   fun translateButtonSuccessfullyTranslatesReview() {
     // Set the locale to French so it translates the review in French
     Locale.setDefault(Locale.FRENCH)
@@ -930,20 +948,14 @@ class ViewReviewScreenTest : FirestoreTest() {
     setOtherReview()
     waitForScreenRoot()
 
-    compose.waitUntil(5_000) { vm.uiState.value.review.uid == review2.uid }
+    compose.waitUntil(45_000) {
+      compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).isDisplayed()
+    }
 
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewReviewTags.DESCRIPTION_TEXT).assertIsDisplayed()
-
     compose.onNodeWithTag(C.ViewReviewTags.TRANSLATE_BTN).performClick()
 
     compose.waitForIdle()
-
-    compose.waitUntil(20_000) {
-      compose.onNodeWithText("Deuxième titre").isDisplayed() &&
-          compose.onNodeWithText("Ma deuxième critique").isDisplayed()
-    }
 
     compose.onNodeWithTag(C.ViewReviewTags.TITLE).assertTextEquals("Deuxième titre")
     compose

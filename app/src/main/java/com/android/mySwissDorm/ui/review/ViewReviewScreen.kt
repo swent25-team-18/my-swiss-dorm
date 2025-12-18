@@ -50,7 +50,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -95,6 +94,7 @@ fun ViewReviewScreen(
   val isOwner = uiState.isOwner
   var showShareDialog by remember { mutableStateOf(false) }
   var isTranslated by remember { mutableStateOf(false) }
+  var showTranslateButton by remember { mutableStateOf(false) }
 
   // Generate share link
   val shareLink = "https://my-swiss-dorm.web.app/review/$reviewUid"
@@ -108,6 +108,12 @@ fun ViewReviewScreen(
   }
 
   LaunchedEffect(review) { viewReviewViewModel.translateReview(context) }
+
+  LaunchedEffect(uiState.translatedDescription) {
+    showTranslateButton =
+        review.reviewText != uiState.translatedDescription ||
+            review.title != uiState.translatedTitle
+  }
 
   if (uiState.showFullScreenImages) {
     FullScreenImageViewer(
@@ -147,18 +153,20 @@ fun ViewReviewScreen(
                     .imePadding()
                     .testTag(C.ViewReviewTags.ROOT),
             verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXLarge)) {
-              val clickableText =
-                  if (isTranslated) {
-                    context.getString(R.string.see_original)
-                  } else {
-                    context.getString(R.string.view_review_translate_review)
-                  }
-              Text(
-                  text = clickableText,
-                  modifier =
-                      Modifier.clickable(onClick = { isTranslated = !isTranslated })
-                          .testTag(C.ViewReviewTags.TRANSLATE_BTN),
-                  color = MainColor)
+              if (showTranslateButton) {
+                val clickableText =
+                    if (isTranslated) {
+                      context.getString(R.string.see_original)
+                    } else {
+                      context.getString(R.string.view_review_translate_review)
+                    }
+                Text(
+                    text = clickableText,
+                    modifier =
+                        Modifier.clickable(onClick = { isTranslated = !isTranslated })
+                            .testTag(C.ViewReviewTags.TRANSLATE_BTN),
+                    color = MainColor)
+              }
               val titleToDisplay = if (isTranslated) uiState.translatedTitle else review.title
               Text(
                   text = titleToDisplay,
@@ -444,10 +452,4 @@ private fun VoteButtons(
                   modifier = Modifier.size(Dimens.IconSizeXXXLarge))
             }
       }
-}
-
-@Composable
-@Preview
-private fun ViewReviewScreenPreview() {
-  ViewReviewScreen(reviewUid = "preview")
 }

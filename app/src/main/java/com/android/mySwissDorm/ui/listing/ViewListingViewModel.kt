@@ -22,8 +22,6 @@ import com.android.mySwissDorm.model.rental.RentalListingRepository
 import com.android.mySwissDorm.model.rental.RentalListingRepositoryProvider
 import com.android.mySwissDorm.model.rental.RentalStatus
 import com.android.mySwissDorm.model.rental.RoomType
-import com.android.mySwissDorm.model.residency.ResidenciesRepository
-import com.android.mySwissDorm.model.residency.ResidenciesRepositoryProvider
 import com.android.mySwissDorm.ui.photo.PhotoManager
 import com.android.mySwissDorm.ui.utils.BookmarkHandler
 import com.android.mySwissDorm.ui.utils.calculatePOIDistances
@@ -79,10 +77,8 @@ class ViewListingViewModel(
     private val rentalListingRepository: RentalListingRepository =
         RentalListingRepositoryProvider.repository,
     private val profileRepository: ProfileRepository = ProfileRepositoryProvider.repository,
-    private val residenciesRepository: ResidenciesRepository =
-        ResidenciesRepositoryProvider.repository,
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository,
+        PhotoRepositoryProvider.cloudRepository,
     private val requestedMessageRepository: RequestedMessageRepository =
         RequestedMessageRepositoryProvider.repository
 ) : ViewModel() {
@@ -112,14 +108,12 @@ class ViewListingViewModel(
     translateTextField(
         text = listing.title,
         context = context,
-        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedTitle = msg) } },
         onUpdateTranslated = { translated ->
           _uiState.update { it.copy(translatedTitle = translated) }
         })
     translateTextField(
         text = listing.description,
         context = context,
-        onUpdateTranslating = { msg -> _uiState.update { it.copy(translatedDescription = msg) } },
         onUpdateTranslated = { translated ->
           _uiState.update { it.copy(translatedDescription = translated) }
         })

@@ -95,7 +95,10 @@ class NavigationActions(
             }
             // Only navigate if we're not already on the destination
             if (current != destination.route) {
-              navigateToScreen(destination)
+              // Fix: Treat the resolved destination as top-level because we are navigating
+              // via the Homepage bottom bar item. This ensures we pop up to start destination
+              // and restore state instead of pushing a new screen on top.
+              navigateToScreen(destination, isTopLevel = true)
             }
           }
         }
@@ -113,12 +116,16 @@ class NavigationActions(
   /**
    * Internal helper to navigate to a screen with proper navigation options. This is separated so we
    * can reuse it for both direct navigation and ViewModel-determined navigation.
+   *
+   * @param screen The screen to navigate to.
+   * @param isTopLevel Whether this navigation should be treated as a top-level tab switch (clearing
+   *   back stack to start, saving/restoring state). Defaults to the screen's property.
    */
-  private fun navigateToScreen(screen: Screen) {
+  private fun navigateToScreen(screen: Screen, isTopLevel: Boolean = screen.isTopLevelDestination) {
     val current = currentRoute()
 
     // Avoid reselecting the same top-level destination
-    if (screen.isTopLevelDestination && current == screen.route) return
+    if (isTopLevel && current == screen.route) return
 
     navController.navigate(screen.route) {
       when {
@@ -129,7 +136,7 @@ class NavigationActions(
         }
 
         // Bottom bar destinations
-        screen.isTopLevelDestination -> {
+        isTopLevel -> {
           launchSingleTop = true
           restoreState = true
           popUpTo(navController.graph.startDestinationId) { saveState = true }

@@ -5,6 +5,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.mySwissDorm.R
+import com.android.mySwissDorm.model.chat.requestedmessage.MessageStatus
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessage
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepository
+import com.android.mySwissDorm.model.chat.requestedmessage.RequestedMessageRepositoryProvider
 import com.android.mySwissDorm.model.photo.Photo
 import com.android.mySwissDorm.model.photo.PhotoRepositoryCloud
 import com.android.mySwissDorm.model.photo.PhotoRepositoryProvider
@@ -34,6 +38,8 @@ data class ViewProfileUiState(
     val error: String? = null,
     val isBlocked: Boolean = false,
     val profilePicture: Photo? = null,
+    val messageText: String = "",
+    val hasExistingMessage: Boolean = false
 )
 
 /**
@@ -52,7 +58,9 @@ class ViewProfileScreenViewModel(
     private val repo: ProfileRepository = ProfileRepositoryProvider.repository,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val photoRepositoryCloud: PhotoRepositoryCloud =
-        PhotoRepositoryProvider.cloud_repository
+        PhotoRepositoryProvider.cloudRepository,
+    private val requestedMessageRepository: RequestedMessageRepository =
+        RequestedMessageRepositoryProvider.repository
 ) : ViewModel() {
 
   // Backing mutable state; UI observes the exposed read-only StateFlow.
@@ -74,6 +82,9 @@ class ViewProfileScreenViewModel(
     _ui.update { it.copy(error = errorMsg) }
   }
 
+  fun updateMessageText(text: String) {
+    _ui.update { it.copy(messageText = text) }
+  }
   /**
    * Loads the profile for the provided [ownerId] and updates the UI state.
    *
@@ -112,7 +123,19 @@ class ViewProfileScreenViewModel(
             } else {
               false
             }
-
+        // to check if a direct message has already been sent
+        val hasExistingMessage =
+            if (currentUid != null) {
+              runCatching {
+                    requestedMessageRepository.hasExistingMessage(
+                        fromUserId = currentUid,
+                        toUserId = ownerId,
+                        listingId = RequestedMessage.PROFILE_MESSAGE_ID)
+                  }
+                  .getOrDefault(false)
+            } else {
+              false
+            }
         // Handle null residency name
         val residenceText =
             profile.userInfo.residencyName
@@ -143,11 +166,43 @@ class ViewProfileScreenViewModel(
                 image = null,
                 error = null,
                 profilePicture = photo,
-                isBlocked = isBlocked)
+                isBlocked = isBlocked,
+                hasExistingMessage = hasExistingMessage)
       } catch (e: Exception) {
         Log.e("ViewUserProfileViewModel", "Error loading profile", e)
         setErrorMsg(
             "${context.getString(R.string.view_user_profile_failed_to_load_profile)} ${e.message}")
+      }
+    }
+  }
+  /** Sends a direct message request to the profile owner. */
+  fun sendDirectMessage(context: Context, toUserId: String) {
+    val currentUser = auth.currentUser ?: return
+    val text = _ui.value.messageText.trim()
+    if (text.isBlank()) return
+    viewModelScope.launch {
+      try {
+        if (requestedMessageRepository.hasExistingMessage(
+            currentUser.uid, toUserId, RequestedMessage.PROFILE_MESSAGE_ID)) {
+          _ui.update { it.copy(hasExistingMessage = true) }
+          return@launch
+        }
+        val id = requestedMessageRepository.getNewUid()
+        val message =
+            RequestedMessage(
+                id = id,
+                fromUserId = currentUser.uid,
+                toUserId = toUserId,
+                listingId = RequestedMessage.PROFILE_MESSAGE_ID,
+                listingTitle = RequestedMessage.PROFILE_MESSAGE_TITLE,
+                message = text,
+                timestamp = System.currentTimeMillis(),
+                status = MessageStatus.PENDING)
+        requestedMessageRepository.createRequestedMessage(message)
+        _ui.update { it.copy(hasExistingMessage = true, messageText = "") }
+      } catch (e: Exception) {
+        Log.e("ViewUserProfileViewModel", "Error sending message", e)
+        setErrorMsg("Failed to send message: ${e.message}")
       }
     }
   }

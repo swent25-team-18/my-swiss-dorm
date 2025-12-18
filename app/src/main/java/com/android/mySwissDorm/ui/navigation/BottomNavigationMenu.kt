@@ -1,8 +1,8 @@
 package com.android.mySwissDorm.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,7 +28,7 @@ fun BottomNavigationMenu(
       val (label, icon) =
           when (screen) {
             Screen.Homepage -> stringResource(screen.nameId) to Icons.Filled.Home
-            Screen.Inbox -> stringResource(screen.nameId) to Icons.Filled.Chat
+            Screen.Inbox -> stringResource(screen.nameId) to Icons.AutoMirrored.Filled.Chat
             Screen.Profile -> stringResource(screen.nameId) to Icons.Filled.AccountBox
             else -> stringResource(screen.nameId) to Icons.Filled.Home
           }

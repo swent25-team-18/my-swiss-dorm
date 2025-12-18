@@ -2,6 +2,7 @@ package com.android.mySwissDorm.ui.listing
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
@@ -216,7 +217,7 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     var navigatedBack = false
 
     compose.setContent {
-      val vm = ViewListingViewModel(listingsRepo, profileRepo, residenciesRepo)
+      val vm = ViewListingViewModel(listingsRepo, profileRepo)
       // Pass a non-existing uid so real repo throws
       ViewListingScreen(
           viewListingViewModel = vm,
@@ -847,12 +848,17 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
 
   @Test
   fun translateButtonTextUpdatesWhenClicked() {
+    // Set the locale to French so the button appears
+    Locale.setDefault(Locale.FRENCH)
+
     val vm = ViewListingViewModel(listingsRepo, profileRepo)
 
     compose.setContent {
       ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
     }
     waitForScreenRoot()
+
+    compose.waitUntil(25_000) { vm.uiState.value.translatedDescription != "" }
 
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsDisplayed()
     compose
@@ -868,6 +874,23 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
   }
 
   @Test
+  fun translateButtonDoesNotAppearIfSameLanguage() {
+    // Set the locale to English so the button doesn't appear
+    Locale.setDefault(Locale.ENGLISH)
+
+    val vm = ViewListingViewModel(listingsRepo, profileRepo)
+
+    compose.setContent {
+      ViewListingScreen(viewListingViewModel = vm, listingUid = otherListing.uid)
+    }
+    waitForScreenRoot()
+
+    compose.waitUntil(5_000) { vm.uiState.value.translatedDescription != "" }
+
+    compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsNotDisplayed()
+  }
+
+  @Test
   fun translateButtonSuccessfullyTranslatesListing() {
     // Set the locale to French so it translates the listing in French
     Locale.setDefault(Locale.FRENCH)
@@ -879,20 +902,14 @@ class ViewListingScreenFirestoreTest : FirestoreTest() {
     }
     waitForScreenRoot()
 
-    compose.waitUntil(5_000) { vm.uiState.value.listing.uid == otherListing.uid }
+    compose.waitUntil(45_000) {
+      compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).isDisplayed()
+    }
 
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewListingTags.TITLE).assertIsDisplayed()
-    compose.onNodeWithTag(C.ViewListingTags.DESCRIPTION_TEXT).assertIsDisplayed()
-
     compose.onNodeWithTag(C.ViewListingTags.TRANSLATE_BTN).performClick()
 
     compose.waitForIdle()
-
-    compose.waitUntil(20_000) {
-      compose.onNodeWithText("Deuxième titre").isDisplayed() &&
-          compose.onNodeWithText("Un bon studio proche du campus.").isDisplayed()
-    }
 
     compose.onNodeWithTag(C.ViewListingTags.TITLE).assertTextEquals("Deuxième titre")
     compose

@@ -17,6 +17,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -26,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
@@ -53,7 +53,7 @@ import com.android.mySwissDorm.ui.theme.Dimens
 fun SanitizedOutlinedTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    fieldType: InputSanitizers.FieldType,
+    fieldType: FieldType,
     modifier: Modifier = Modifier,
     label: String? = null,
     placeholder: String? = null,
@@ -83,13 +83,11 @@ fun SanitizedOutlinedTextField(
           cursorColor = TextColor)
 
   var hasBlurred by remember { mutableStateOf(false) }
-  var selection by remember { mutableStateOf(TextRange(value.length)) }
 
   // Sanitize while typing (cursor kept best-effort at end for simplicity)
   val onSanitizedChange: (String) -> Unit = { raw ->
     val sanitized = InputSanitizers.normalizeWhileTyping(fieldType, raw)
     onValueChange(sanitized)
-    selection = TextRange(sanitized.length)
   }
 
   // Build error state
@@ -343,13 +341,13 @@ fun HousingTypeDropdown(selected: String?, onSelected: (RoomType) -> Unit, accen
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
         leadingIcon = { Icon(Icons.Default.Apartment, null, tint = MainColor) },
         colors =
-            androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MainColor, // Focused outline color (Red)
                 unfocusedBorderColor = MainColor, // Remove the default border when not focused
                 focusedLabelColor = MainColor, // Optional: Change label color when focused
                 unfocusedLabelColor = Gray // Optional: Change label color when not focused
                 ),
-        modifier = Modifier.menuAnchor().fillMaxWidth(),
+        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(),
     )
     val context = LocalContext.current
     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -376,8 +374,7 @@ fun ResidencyDropdownResID(
     modifier: Modifier = Modifier
 ) {
   var expanded by remember { mutableStateOf(false) }
-  val label =
-      selected?.toString() ?: stringResource(R.string.sanitized_text_fields_select_residency_label)
+  val label = selected ?: stringResource(R.string.sanitized_text_fields_select_residency_label)
 
   ExposedDropdownMenuBox(
       expanded = expanded,
@@ -396,7 +393,7 @@ fun ResidencyDropdownResID(
                     unfocusedBorderColor = MainColor,
                     focusedLabelColor = MainColor,
                     unfocusedLabelColor = Gray),
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
           residencies.forEach { residency ->

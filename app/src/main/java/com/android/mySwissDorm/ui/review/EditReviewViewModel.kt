@@ -115,8 +115,8 @@ class EditReviewViewModel(
     private val reviewRepository: ReviewsRepository = ReviewsRepositoryProvider.repository,
     private val residenciesRepository: ResidenciesRepository =
         ResidenciesRepositoryProvider.repository,
-    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.local_repository,
-    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloud_repository
+    photoRepositoryLocal: PhotoRepository = PhotoRepositoryProvider.localRepository,
+    photoRepositoryCloud: PhotoRepositoryCloud = PhotoRepositoryProvider.cloudRepository
 ) : ViewModel() {
   private val _uiState =
       MutableStateFlow(
@@ -284,7 +284,7 @@ class EditReviewViewModel(
       try {
         val residencies = residenciesRepository.getAllResidencies()
         _uiState.value = _uiState.value.copy(residencies = residencies)
-      } catch (e: Exception) {}
+      } catch (_: Exception) {}
     }
   }
 

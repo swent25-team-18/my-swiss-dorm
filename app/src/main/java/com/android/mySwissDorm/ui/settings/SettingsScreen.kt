@@ -1,6 +1,5 @@
 package com.android.mySwissDorm.ui.settings
 
-import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
@@ -32,7 +31,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,7 +41,6 @@ import com.android.mySwissDorm.ui.navigation.Screen
 import com.android.mySwissDorm.ui.theme.BackGroundColor
 import com.android.mySwissDorm.ui.theme.Dimens
 import com.android.mySwissDorm.ui.theme.MainColor
-import com.android.mySwissDorm.ui.theme.MySwissDormAppTheme
 import com.android.mySwissDorm.ui.theme.TextBoxColor
 import com.android.mySwissDorm.ui.theme.TextColor
 import com.android.mySwissDorm.ui.theme.White
@@ -57,9 +54,8 @@ import com.android.mySwissDorm.ui.theme.rememberDarkModePreference
  * This screen provides a comprehensive interface for users to manage their app settings, account
  * information, and preferences. It includes:
  * - **Profile Section**: Displays user name and avatar with navigation to profile screen
- * - **Notifications**: Toggle switches for message and listing notifications
  * - **Account**: Email display and contributions button
- * - **Privacy**: Read receipts toggle and blocked contacts management
+ * - **Privacy**: Blocked contacts management
  * - **Accessibility**: Dark mode preference and anonymous mode toggle
  * - **Admin Section**: Admin page access (only visible to admins)
  * - **Delete Account**: Button to permanently delete the user account
@@ -121,14 +117,6 @@ fun SettingsScreen(
       onAdminClick = onAdminClick)
 }
 
-private val previewUiState =
-    SettingsUiState(
-        userName = "John Doe",
-        email = "john.doe@email.com",
-        errorMsg = null,
-        topItems = emptyList(),
-        accountItems = emptyList())
-
 /**
  * Content composable for the Settings screen UI.
  *
@@ -154,10 +142,6 @@ fun SettingsScreenContent(
     isAdmin: Boolean = false,
     onAdminClick: () -> Unit = {},
 ) {
-  // Independent toggle states
-  var notificationsMessages by remember { mutableStateOf(true) }
-  var notificationsListings by remember { mutableStateOf(false) }
-  var readReceipts by remember { mutableStateOf(true) }
 
   // Dark mode preference - connected to theme
   val (darkModePreference, setDarkModePreference) = rememberDarkModePreference()
@@ -211,29 +195,10 @@ fun SettingsScreenContent(
                           bottom = Dimens.PaddingLarge)) {
                     item {
                       Column(modifier = Modifier.fillMaxWidth().widthIn(max = contentWidthCap)) {
-                        // ---- Notifications ---------------------------------------------------
-                        SectionLabel(stringResource(R.string.notifications))
-                        CardBlock {
-                          SettingSwitchRow(
-                              label = stringResource(R.string.settings_notifications_messages),
-                              checked = if (ui.isGuest) false else notificationsMessages,
-                              onCheckedChange = { notificationsMessages = it })
-                          SoftDivider()
-                          SettingSwitchRow(
-                              label = stringResource(R.string.settings_notifications_listings),
-                              checked = if (ui.isGuest) false else notificationsListings,
-                              onCheckedChange = { notificationsListings = it })
-                        }
 
                         // ---- Privacy ---------------------------------------------------------
                         SectionLabel(stringResource(R.string.privacy))
                         CardBlock {
-                          SettingSwitchRow(
-                              label = stringResource(R.string.settings_read_receipts),
-                              checked = if (ui.isGuest) true else readReceipts,
-                              onCheckedChange = { readReceipts = it })
-                          SoftDivider()
-
                           Row(
                               modifier =
                                   Modifier.fillMaxWidth()
@@ -537,26 +502,4 @@ private fun SettingSwitchRow(label: String, checked: Boolean, onCheckedChange: (
           }
     }
   }
-}
-
-// ---------- Previews ----------
-
-@Preview(
-    name = "Settings – Light Mode",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_NO,
-    widthDp = 360)
-@Composable
-private fun SettingsPreview_Light() {
-  MySwissDormAppTheme { SettingsScreenContent(ui = previewUiState) }
-}
-
-@Preview(
-    name = "Settings – Dark Mode",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    widthDp = 360)
-@Composable
-private fun SettingsPreview_Dark() {
-  MySwissDormAppTheme { SettingsScreenContent(ui = previewUiState) }
 }

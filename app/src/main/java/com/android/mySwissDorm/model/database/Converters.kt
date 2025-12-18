@@ -64,7 +64,7 @@ class Converters {
       if (parts.size == 3) {
         try {
           Location(name = parts[0], latitude = parts[1].toDouble(), longitude = parts[2].toDouble())
-        } catch (e: NumberFormatException) {
+        } catch (_: NumberFormatException) {
           null
         }
       } else {
@@ -140,7 +140,7 @@ class Converters {
               }
             }
             .toMap()
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         emptyMap() // Return empty map on parsing error
       }
     }

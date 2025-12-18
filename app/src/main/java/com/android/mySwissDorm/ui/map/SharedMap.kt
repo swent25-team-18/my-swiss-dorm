@@ -2,7 +2,6 @@ package com.android.mySwissDorm.ui.map
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import com.android.mySwissDorm.R
 import com.android.mySwissDorm.resources.C
@@ -109,7 +109,7 @@ fun MapScreenScaffold(
  * @param uriString The URI string (e.g., "geo:0,0?q=...") to be opened.
  */
 fun launchGoogleMaps(context: Context, uriString: String) {
-  val gmmIntentUri = Uri.parse(uriString)
+  val gmmIntentUri = uriString.toUri()
   val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
   mapIntent.setPackage("com.google.android.apps.maps")
   if (mapIntent.resolveActivity(context.packageManager) != null) {

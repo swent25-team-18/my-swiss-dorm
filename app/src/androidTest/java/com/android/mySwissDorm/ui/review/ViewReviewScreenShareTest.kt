@@ -52,7 +52,7 @@ class ViewReviewScreenShareTest : FirestoreTest() {
   @Before
   override fun setUp() {
     super.setUp()
-    vm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    vm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
 
     runTest {
       // Owner
@@ -243,7 +243,7 @@ class ViewReviewScreenShareTest : FirestoreTest() {
   @Test
   fun shareButton_worksForNonOwner() = runTest {
     switchToUser(FakeUser.FakeUser2)
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
 
     compose.setContent {
       MySwissDormAppTheme {
@@ -318,7 +318,7 @@ class ViewReviewScreenShareTest : FirestoreTest() {
     val anonymousReview = testReview.copy(uid = reviewsRepo.getNewUid(), isAnonymous = true)
     reviewsRepo.addReview(anonymousReview)
 
-    val testVm = ViewReviewViewModel(reviewsRepo, profilesRepo, residenciesRepo)
+    val testVm = ViewReviewViewModel(reviewsRepo, residenciesRepo)
     compose.setContent {
       MySwissDormAppTheme {
         ViewReviewScreen(viewReviewViewModel = testVm, reviewUid = anonymousReview.uid)

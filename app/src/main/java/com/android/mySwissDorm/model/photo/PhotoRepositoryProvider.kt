@@ -11,8 +11,8 @@ import android.content.Context
  * The repositories are mutable for testing purposes.
  */
 object PhotoRepositoryProvider {
-  private lateinit var _local_repository: PhotoRepository
-  private lateinit var _cloud_repository: PhotoRepositoryCloud
+  private lateinit var _localRepository: PhotoRepository
+  private lateinit var _cloudRepository: PhotoRepositoryCloud
   private var initialized = false
 
   /**
@@ -22,15 +22,15 @@ object PhotoRepositoryProvider {
    */
   fun initialize(context: Context) {
     if (!initialized) {
-      _local_repository = PhotoRepositoryLocal(context)
-      _cloud_repository = PhotoRepositoryStorage()
+      _localRepository = PhotoRepositoryLocal(context)
+      _cloudRepository = PhotoRepositoryStorage()
       initialized = true
     }
   }
 
-  val local_repository: PhotoRepository
-    get() = _local_repository
+  val localRepository: PhotoRepository
+    get() = _localRepository
 
-  val cloud_repository: PhotoRepositoryCloud
-    get() = _cloud_repository
+  val cloudRepository: PhotoRepositoryCloud
+    get() = _cloudRepository
 }
